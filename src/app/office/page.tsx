@@ -1,10 +1,12 @@
-import Office3D from '@/components/Office3D/Office3D';
+'use client';
 
-export const metadata = {
-  title: 'The Office 3D | Mission Control',
-  description: 'Visualiza tus agentes trabajando en tiempo real en un entorno 3D',
-};
+import Office3D from '@/components/Office3D/Office3D';
+import { RealtimeProvider } from '@/components/RealtimeProvider';
 
 export default function OfficePage() {
-  return <Office3D />;
+  return (
+    <RealtimeProvider>
+      <Office3D />
+    </RealtimeProvider>
+  );
 }
