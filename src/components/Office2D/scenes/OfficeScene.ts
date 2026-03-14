@@ -197,7 +197,15 @@ export class OfficeScene extends Phaser.Scene {
     this.doorManager.initDoors();
 
     resetWanderClock();
-    this.initBossSeat(bossSpawn);
+
+    // -- React <-> Phaser EventBridge (Supabase Realtime agents) --
+    this.bridge = this.game.registry.get("eventBridge") as EventBridge | null;
+
+    // Only init boss seat terminal when no EventBridge (standalone Agent Town mode)
+    // With bridge, the boss seat "Press E" / terminal is unused
+    if (!this.bridge) {
+      this.initBossSeat(bossSpawn);
+    }
 
     this.cleanupEventBridge = initSceneEventBridge(
       this.workerManager,
@@ -209,9 +217,6 @@ export class OfficeScene extends Phaser.Scene {
     );
 
     gameEvents.emit("seats-discovered", workerSpawns);
-
-    // -- React <-> Phaser EventBridge (Supabase Realtime agents) --
-    this.bridge = this.game.registry.get("eventBridge") as EventBridge | null;
     if (this.bridge) {
       this.cleanupBridge = this.initRealtimeBridge(this.bridge, workerSpawns);
     }
@@ -366,17 +371,37 @@ export class OfficeScene extends Phaser.Scene {
     this.doorManager.updateDoors();
 
     // Worker proximity + E-key interaction
-    if (this.interactionManager.updateProximity(this.eKey)) {
-      // Emit agent-approached via EventBridge when E pressed near a worker
-      const nearest = this.interactionManager.nearestWorker;
-      if (nearest?.agentId && this.bridge) {
-        this.bridge.emit("agent-approached", { agentId: nearest.agentId });
+    if (this.bridge) {
+      // React AgentPanel mode: detect proximity + E key ourselves, emit bridge events
+      // Do NOT open Agent Town's InteractionMenu (it freezes the player)
+      const nearest = this.interactionManager.findNearestWorker();
+
+      // Update prompt text visibility
+      if (this.interactionManager.workerPromptText) {
+        if (nearest) {
+          this.interactionManager.workerPromptText.setPosition(
+            nearest.sprite.x,
+            nearest.sprite.y - 40,
+          );
+          this.interactionManager.workerPromptText.setVisible(true);
+        } else {
+          this.interactionManager.workerPromptText.setVisible(false);
+        }
       }
-      return;
+
+      if (nearest?.agentId && Phaser.Input.Keyboard.JustDown(this.eKey)) {
+        this.bridge.emit("agent-approached", { agentId: nearest.agentId });
+        // Don't return — player keeps moving
+      }
+    } else {
+      // Fallback: Agent Town's built-in InteractionMenu (no bridge)
+      if (this.interactionManager.updateProximity(this.eKey)) {
+        return;
+      }
     }
 
-    // Boss terminal interaction
-    if (!this.interactionManager.nearestWorker && this.terminalZone && this.promptText) {
+    // Boss terminal interaction (only without bridge — with bridge, boss seat is unused)
+    if (!this.bridge && !this.interactionManager.nearestWorker && this.terminalZone && this.promptText) {
       const dist = Phaser.Math.Distance.Between(
         this.player.sprite.x,
         this.player.sprite.y,
