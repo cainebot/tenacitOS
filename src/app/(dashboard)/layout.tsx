@@ -2,6 +2,7 @@
 
 import { Dock, TopBar, StatusBar } from "@/components/TenacitOS";
 import { RealtimeProvider } from "@/components/RealtimeProvider";
+import NodeStatusStrip from "@/components/NodeStatusStrip";
 
 export default function DashboardLayout({
   children,
@@ -23,6 +24,7 @@ export default function DashboardLayout({
             padding: "24px",
           }}
         >
+          <NodeStatusStrip />
           {children}
         </main>
 
