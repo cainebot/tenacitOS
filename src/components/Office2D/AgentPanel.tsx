@@ -478,22 +478,24 @@ export default function AgentPanel({ agent, tasks, position, onClose, nodes }: A
             Assign Task
           </button>
           <button
-            style={styles.iconBtn}
-            aria-label="Settings"
-            title="Settings"
-            onMouseEnter={(e) => { (e.target as HTMLElement).style.background = '#e5e7eb' }}
-            onMouseLeave={(e) => { (e.target as HTMLElement).style.background = '#f3f4f6' }}
+            style={{
+              ...styles.iconBtn,
+              fontSize: '12px',
+              width: 'auto',
+              padding: '0 10px',
+              borderRadius: '18px',
+              color: '#7c3aed',
+              fontWeight: 600,
+              border: '1px solid #7c3aed40',
+              background: '#7c3aed12',
+            }}
+            aria-label="View Profile"
+            title="View full agent profile"
+            onClick={() => { window.location.href = `/agents/${agent.agent_id}` }}
+            onMouseEnter={(e) => { (e.target as HTMLElement).style.background = '#7c3aed20' }}
+            onMouseLeave={(e) => { (e.target as HTMLElement).style.background = '#7c3aed12' }}
           >
-            &#x2699;
-          </button>
-          <button
-            style={styles.iconBtn}
-            aria-label="More options"
-            title="More"
-            onMouseEnter={(e) => { (e.target as HTMLElement).style.background = '#e5e7eb' }}
-            onMouseLeave={(e) => { (e.target as HTMLElement).style.background = '#f3f4f6' }}
-          >
-            &#x22EF;
+            Profile
           </button>
         </div>
       </div>
