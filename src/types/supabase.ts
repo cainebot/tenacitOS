@@ -42,6 +42,7 @@ export interface DepartmentRow {
   color: string;
   icon: string;
   sort_order: number;
+  zone_bounds: { x: number; y: number; width: number; height: number } | null;
   created_at: string;
   updated_at: string;
 }

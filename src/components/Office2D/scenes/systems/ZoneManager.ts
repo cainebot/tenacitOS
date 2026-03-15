@@ -2,6 +2,9 @@
  * ZoneManager — draws colored department zone rectangles in the Phaser OfficeScene
  * and provides zone-aware agent placement via grid packing.
  *
+ * Zone bounds are persisted in Supabase (departments.zone_bounds JSONB).
+ * Departments without zone_bounds are skipped (no zone rendered).
+ *
  * Depth layering:
  *   - Graphics (fill + border): depth 1 — above floor/wall layers (depth 0), below workers (depth 4+)
  *   - Labels: depth 2
@@ -31,40 +34,34 @@ export class ZoneManager {
   }
 
   /**
-   * Redraws all zone rectangles. Called on 'departments-updated'.
-   * Divides tilemap width equally by department count, sorted by sort_order.
-   * The last zone absorbs any rounding remainder to avoid edge gaps (Pitfall 3).
+   * Redraws all zone rectangles from persisted zone_bounds.
+   * Departments without zone_bounds are skipped.
    */
-  updateZones(departments: DepartmentRow[], mapWidth: number, mapHeight: number): void {
+  updateZones(departments: DepartmentRow[]): void {
     this.graphics.clear()
     this.labels.forEach((l) => l.destroy())
     this.labels = []
     this.zones = []
 
     const sorted = [...departments].sort((a, b) => a.sort_order - b.sort_order)
-    if (sorted.length === 0) return
 
-    const zoneWidth = Math.floor(mapWidth / sorted.length)
+    for (const dept of sorted) {
+      if (!dept.zone_bounds) continue
 
-    sorted.forEach((dept, index) => {
-      const x = index * zoneWidth
-      const y = 0
-      // Last zone absorbs any rounding remainder
-      const w = index === sorted.length - 1 ? mapWidth - x : zoneWidth
-      const h = mapHeight
+      const { x, y, width, height } = dept.zone_bounds
 
-      // Parse '#rrggbb' to integer — NOT Number() which returns NaN for hex strings (Pitfall 6)
+      // Parse '#rrggbb' to integer for Phaser fillStyle
       const colorInt = parseInt(dept.color.replace('#', ''), 16)
 
       // Semi-transparent fill
       this.graphics.fillStyle(colorInt, 0.08)
-      this.graphics.fillRect(x, y, w, h)
+      this.graphics.fillRect(x, y, width, height)
 
       // Solid border
       this.graphics.lineStyle(2, colorInt, 0.4)
-      this.graphics.strokeRect(x, y, w, h)
+      this.graphics.strokeRect(x, y, width, height)
 
-      // Zone label at top-left of zone
+      // Zone label at top-left
       const label = this.scene.add.text(x + 8, y + 8, dept.display_name, {
         fontSize: '11px',
         color: dept.color,
@@ -74,8 +71,8 @@ export class ZoneManager {
       label.setDepth(2)
       this.labels.push(label)
 
-      this.zones.push({ x, y, width: w, height: h, departmentId: dept.id })
-    })
+      this.zones.push({ x, y, width, height, departmentId: dept.id })
+    }
   }
 
   /**

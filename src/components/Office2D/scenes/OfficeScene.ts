@@ -273,7 +273,7 @@ export class OfficeScene extends Phaser.Scene {
     unsubs.push(
       bridge.on("departments-updated", (departments: DepartmentRow[]) => {
         this.latestDepartments = departments;
-        this.zoneManager.updateZones(departments, this.mapWidth, this.mapHeight);
+        this.zoneManager.updateZones(departments);
         // Rebuild agent placements if agents are already cached
         if (this.latestAgents.length > 0) {
           this.rebuildAgentPlacements(bridge);
