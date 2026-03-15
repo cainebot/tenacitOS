@@ -1,9 +1,29 @@
 'use client'
 
-import { useState } from 'react'
-import { Building2, Plus, Edit2, Trash2, Users, X, Check } from 'lucide-react'
+import { useState, useEffect, type ComponentType } from 'react'
+import { Building2, Plus, Edit2, Trash2, Users, X, Check, Search, LayoutGrid, Shield, Briefcase, Zap, Target, type LucideProps } from 'lucide-react'
 import { useRealtimeDepartments } from '@/hooks/useRealtimeDepartments'
+import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import type { DepartmentRow } from '@/types/supabase'
+
+// Map icon name strings from DB to actual lucide-react components
+const ICON_MAP: Record<string, ComponentType<LucideProps>> = {
+  search: Search,
+  kanban: LayoutGrid,
+  shield: Shield,
+  briefcase: Briefcase,
+  zap: Zap,
+  target: Target,
+  building: Building2,
+}
+
+function DeptIcon({ name, className, style }: { name: string; className?: string; style?: React.CSSProperties }) {
+  const IconComponent = ICON_MAP[name]
+  if (IconComponent) return <IconComponent className={className} style={style} />
+  // Fallback: if it looks like an emoji, render as text; otherwise use Building2
+  if (/\p{Emoji}/u.test(name)) return <span className={className} style={style}>{name}</span>
+  return <Building2 className={className} style={style} />
+}
 
 interface DepartmentFormData {
   display_name: string
@@ -29,6 +49,7 @@ interface DepartmentWithCount extends DepartmentRow {
 export default function DepartmentsPage() {
   const { departments: rawDepartments, loading, error } = useRealtimeDepartments()
   const departments = rawDepartments as DepartmentWithCount[]
+  const { agents } = useRealtimeAgents()
 
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -36,9 +57,17 @@ export default function DepartmentsPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  // Count agents per department from realtime agents data
+  const agentCountMap: Record<string, number> = {}
+  agents.forEach((agent) => {
+    const deptId = (agent as unknown as { department_id?: string | null }).department_id ?? null
+    if (deptId) {
+      agentCountMap[deptId] = (agentCountMap[deptId] || 0) + 1
+    }
+  })
+
   const getAgentCount = (dept: DepartmentWithCount): number => {
-    if (!dept.agents || dept.agents.length === 0) return 0
-    return dept.agents[0].count ?? 0
+    return agentCountMap[dept.id] || 0
   }
 
   const openCreateForm = () => {
@@ -375,7 +404,7 @@ export default function DepartmentsPage() {
                     <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{dept.icon}</span>
+                          <DeptIcon name={dept.icon} className="w-6 h-6" style={{ color: dept.color }} />
                           <div>
                             <h3
                               className="font-semibold"
