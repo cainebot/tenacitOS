@@ -35,3 +35,23 @@ export function createServerClient(): SupabaseClient {
     auth: { persistSession: false }
   })
 }
+
+// Service role client — bypasses RLS for admin write operations (departments, agent profile edits)
+// Requires SUPABASE_SERVICE_ROLE_KEY env var (NOT prefixed with NEXT_PUBLIC_ — server-side only)
+export function createServiceRoleClient(): SupabaseClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL')
+  }
+  if (!serviceRoleKey) {
+    throw new Error(
+      'Missing SUPABASE_SERVICE_ROLE_KEY — add it to control-panel/.env.local (Supabase Dashboard > Settings > API > service_role)'
+    )
+  }
+
+  return createClient(url, serviceRoleKey, {
+    auth: { persistSession: false }
+  })
+}
