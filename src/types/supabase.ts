@@ -1,6 +1,8 @@
 // ============================================================
 // Supabase Database Types
 // Mirrors the schema defined in infrastructure/init_supabase.sql
+// Extended in Phase 9 to include departments, agent roles/skills,
+// and enhanced task fields.
 // ============================================================
 
 export type NodeStatus = 'online' | 'offline' | 'degraded';
@@ -11,6 +13,10 @@ export type AgentStatus = 'idle' | 'working' | 'error' | 'offline' | 'thinking' 
 export type TaskStatus = 'pending' | 'claimed' | 'in_progress' | 'completed' | 'failed';
 
 export type TaskType = 'general' | 'code-review' | 'deploy' | 'research' | 'build' | 'test';
+
+// Phase 9: Agent role and badge types
+export type AgentRole = 'lead' | 'specialist' | 'intern';
+export type AgentBadge = 'LEAD' | 'SPC' | 'INT';
 
 export interface NodeRow {
   node_id: string;
@@ -27,6 +33,19 @@ export interface NodeRow {
   updated_at: string;
 }
 
+// Phase 9: Department table
+export interface DepartmentRow {
+  id: string;
+  name: string;
+  display_name: string;
+  objective: string | null;
+  color: string;
+  icon: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AgentRow {
   agent_id: string;
   node_id: string;
@@ -39,6 +58,14 @@ export interface AgentRow {
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+  // Phase 9 extensions
+  department_id?: string | null;
+  role?: AgentRole;
+  skills?: string[];
+  about?: string | null;
+  soul_config?: Record<string, unknown>;
+  badge?: AgentBadge;
+  soul_dirty?: boolean;
 }
 
 export interface TaskRow {
@@ -59,6 +86,12 @@ export interface TaskRow {
   started_at: string | null;
   completed_at: string | null;
   updated_at: string;
+  // Phase 9 extensions
+  required_skills?: string[];
+  description?: string | null;
+  labels?: string[];
+  due_date?: string | null;  // ISO timestamp
+  comments?: Array<{ author: string; text: string; created_at: string }>;
 }
 
 // Helper type for Supabase Realtime postgres_changes events
