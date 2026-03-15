@@ -86,12 +86,12 @@ export interface TaskRow {
   started_at: string | null;
   completed_at: string | null;
   updated_at: string;
-  // Phase 9 extensions
-  required_skills?: string[];
-  description?: string | null;
-  labels?: string[];
-  due_date?: string | null;  // ISO timestamp
-  comments?: Array<{ author: string; text: string; created_at: string }>;
+  // Phase 9 extensions (non-optional — DB defaults ensure these are always present)
+  required_skills: string[];
+  description: string | null;
+  labels: string[];
+  due_date: string | null;  // ISO timestamp
+  comments: Array<{ author: string; text: string; created_at: string }>;
 }
 
 // Helper type for Supabase Realtime postgres_changes events

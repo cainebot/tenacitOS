@@ -59,6 +59,13 @@ export function useRealtimeTasks(): UseRealtimeTasksResult {
             setTasks((prev) => [newTask, ...prev])
           } else if (eventType === 'UPDATE') {
             const updatedTask = payload.new as TaskRow
+            const oldTask = payload.old as Partial<TaskRow>
+            // FLOW-05: Emit custom DOM event on task completion for Phase 13 Phaser animation hook
+            if (updatedTask.status === 'completed' && oldTask?.status !== 'completed') {
+              window.dispatchEvent(new CustomEvent('task-completed', {
+                detail: { taskId: updatedTask.task_id, agentId: updatedTask.target_agent_id }
+              }))
+            }
             setTasks((prev) =>
               prev.map((t) => (t.task_id === updatedTask.task_id ? updatedTask : t))
             )
