@@ -9,6 +9,8 @@ import { CardRichTextEditor } from './CardRichTextEditor'
 import { CardFieldReorder } from './CardFieldReorder'
 import { CardAttachments } from './CardAttachments'
 import { CardHierarchy } from './CardHierarchy'
+import { CustomFieldManager } from './CustomFieldManager'
+import { CardActivityTimeline } from './CardActivityTimeline'
 
 interface CardDetailPanelProps {
   cardId: string
@@ -58,6 +60,7 @@ export function CardDetailPanel({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [reorderMode, setReorderMode] = useState(false)
+  const [showFieldManager, setShowFieldManager] = useState(false)
   const [visible, setVisible] = useState(false)
 
   // Workflow states for the state dropdown
@@ -528,26 +531,47 @@ export function CardDetailPanel({
               >
                 Fields
               </span>
-              <button
-                onClick={() => setReorderMode(!reorderMode)}
-                title={reorderMode ? 'Done customizing' : 'Customize fields'}
-                style={{
-                  background: reorderMode ? 'var(--accent, #6366f1)' : 'none',
-                  border: reorderMode ? 'none' : '1px solid var(--border)',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  color: reorderMode ? '#fff' : 'var(--text-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '2px 4px',
-                  gap: '3px',
-                  fontSize: '11px',
-                  fontFamily: 'var(--font-body)',
-                }}
-              >
-                <Settings size={12} />
-                {reorderMode ? 'Done' : 'Customize'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button
+                  onClick={() => setShowFieldManager(true)}
+                  title="Manage custom field definitions"
+                  style={{
+                    background: 'none',
+                    border: '1px solid var(--border)',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '2px 6px',
+                    gap: '3px',
+                    fontSize: '11px',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  Manage Fields
+                </button>
+                <button
+                  onClick={() => setReorderMode(!reorderMode)}
+                  title={reorderMode ? 'Done customizing' : 'Customize fields'}
+                  style={{
+                    background: reorderMode ? 'var(--accent, #6366f1)' : 'none',
+                    border: reorderMode ? 'none' : '1px solid var(--border)',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    color: reorderMode ? '#fff' : 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '2px 4px',
+                    gap: '3px',
+                    fontSize: '11px',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  <Settings size={12} />
+                  {reorderMode ? 'Done' : 'Customize'}
+                </button>
+              </div>
             </div>
 
             <CardFieldReorder
@@ -587,6 +611,33 @@ export function CardDetailPanel({
             attachments={card.attachments}
             onAttachmentAdded={refetch}
           />
+
+          {/* Activity Timeline */}
+          <div style={{ marginTop: '16px' }}>
+            <div
+              style={{
+                borderTop: '1px solid var(--border)',
+                marginBottom: '12px',
+              }}
+            />
+            <div
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '10px',
+              }}
+            >
+              Activity
+            </div>
+            <CardActivityTimeline
+              cardId={card.card_id}
+              comments={card.comments}
+            />
+          </div>
         </div>
 
         {/* Delete confirmation dialog */}
@@ -676,6 +727,16 @@ export function CardDetailPanel({
           </div>
         )}
       </div>
+
+      {/* Custom Field Manager modal */}
+      {showFieldManager && (
+        <CustomFieldManager
+          workflowId={card.workflow_id}
+          cardType={card.card_type}
+          onClose={() => setShowFieldManager(false)}
+          onFieldsChanged={refetch}
+        />
+      )}
     </>
   )
 }
