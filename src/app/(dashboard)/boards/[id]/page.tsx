@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import type { BoardRow, CardRow } from '@/types/workflow'
+import type { BoardRow, CardRow, WorkflowStateRow } from '@/types/workflow'
 import { useBoardData } from '@/hooks/useBoardData'
 import { useRealtimeCards } from '@/hooks/useRealtimeCards'
 import { BoardKanban } from '@/components/BoardKanban'
 import { BoardFilterBar } from '@/components/BoardFilterBar'
 import { CardDetailPanel } from '@/components/CardDetailPanel'
+import { ColumnManager } from '@/components/ColumnManager'
 
 // Loading skeleton for the Kanban board
 function KanbanSkeleton() {
@@ -76,6 +77,12 @@ export default function BoardPage() {
   // Selected card for detail panel
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
 
+  // Column manager visibility
+  const [showColumnManager, setShowColumnManager] = useState(false)
+
+  // Workflow states (for ColumnManager state mapping)
+  const [workflowStates, setWorkflowStates] = useState<WorkflowStateRow[]>([])
+
   // All boards for the tab bar
   const [allBoards, setAllBoards] = useState<BoardRow[]>([])
 
@@ -87,6 +94,16 @@ export default function BoardPage() {
     setCards(initialCards)
     prevCardIdsRef.current = new Set(initialCards.map((c) => c.card_id))
   }, [initialCards])
+
+  // Fetch workflow states when board loads (needed for ColumnManager state mapping)
+  useEffect(() => {
+    if (board?.workflow_id) {
+      fetch(`/api/workflows/${board.workflow_id}/states`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((states: WorkflowStateRow[]) => setWorkflowStates(states))
+        .catch(() => {}) // non-critical — ColumnManager degrades gracefully
+    }
+  }, [board?.workflow_id])
 
   // Fetch all boards for the tab bar
   useEffect(() => {
@@ -264,19 +281,73 @@ export default function BoardPage() {
         </div>
       )}
 
-      {/* Board title */}
+      {/* Board title + toolbar */}
       {board && (
-        <h1
+        <div
           style={{
-            fontFamily: 'var(--font-heading)',
-            fontSize: '20px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
             margin: '12px 0 8px 0',
           }}
         >
-          {board.name}
-        </h1>
+          <h1
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontSize: '20px',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              margin: 0,
+              flex: 1,
+            }}
+          >
+            {board.name}
+          </h1>
+          {/* Manage Columns button */}
+          <button
+            onClick={() => setShowColumnManager(true)}
+            title="Manage Columns"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              fontFamily: 'var(--font-body)',
+              fontSize: '12px',
+              color: 'var(--text-secondary)',
+              background: 'none',
+              border: '1px solid var(--border)',
+              borderRadius: '6px',
+              padding: '4px 10px',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'background 0.1s ease, color 0.1s ease',
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLButtonElement
+              el.style.background = 'var(--surface-alt, rgba(255,255,255,0.06))'
+              el.style.color = 'var(--text-primary)'
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLButtonElement
+              el.style.background = 'none'
+              el.style.color = 'var(--text-secondary)'
+            }}
+          >
+            {/* Settings icon */}
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            Manage Columns
+          </button>
+        </div>
       )}
 
       {/* Filter bar — always visible when board is loaded */}
@@ -339,6 +410,17 @@ export default function BoardPage() {
           onClose={() => setSelectedCardId(null)}
           onCardDeleted={refetch}
           onNavigateToCard={setSelectedCardId}
+        />
+      )}
+
+      {/* Column Manager modal */}
+      {showColumnManager && board && (
+        <ColumnManager
+          boardId={boardId}
+          columns={board.columns}
+          workflowStates={workflowStates}
+          onClose={() => setShowColumnManager(false)}
+          onColumnsChanged={refetch}
         />
       )}
 
