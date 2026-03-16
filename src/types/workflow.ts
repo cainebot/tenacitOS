@@ -12,16 +12,6 @@ export type CardType = 'epic' | 'story' | 'task' | 'subtask' | 'bug'
 
 export type Priority = 'baja' | 'media' | 'alta'
 
-export type FieldType =
-  | 'text'
-  | 'number'
-  | 'date'
-  | 'url'
-  | 'email'
-  | 'select'
-  | 'multi_select'
-  | 'checkbox'
-
 export type NotificationType =
   | 'mention'
   | 'state_change'
@@ -103,24 +93,6 @@ export interface CardRow {
   updated_at: string
 }
 
-export interface CardFieldDefinitionRow {
-  field_id: string
-  workflow_id: string
-  card_type_filter: string | null
-  name: string
-  field_type: FieldType
-  options: string[] | null
-  required: boolean
-  position: number
-  created_at: string
-}
-
-export interface CardFieldValueRow {
-  card_id: string
-  field_id: string
-  value: unknown // JSONB — can be string, number, boolean, string[]
-}
-
 export interface CardAttachmentRow {
   attachment_id: string
   card_id: string
@@ -182,7 +154,6 @@ export type BoardWithColumns = BoardRow & {
 }
 
 export type CardDetail = CardRow & {
-  field_values: CardFieldValueRow[]
   attachments: CardAttachmentRow[]
   comments: CardCommentRow[]
   parent: { card_id: string; title: string; card_type: CardType } | null

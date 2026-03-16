@@ -2,7 +2,6 @@ import { createServerClient, createServiceRoleClient } from '@/lib/supabase'
 import type {
   CardRow,
   CardDetail,
-  CardFieldValueRow,
   CardAttachmentRow,
   CardCommentRow,
   CursorPage,
@@ -141,12 +140,8 @@ export async function getCard(id: string): Promise<CardDetail> {
   const cardRow = card as CardRow
 
   // Fetch related data in parallel
-  const [fieldValuesRes, attachmentsRes, commentsRes, childrenRes] =
+  const [attachmentsRes, commentsRes, childrenRes] =
     await Promise.all([
-      client
-        .from('card_field_values')
-        .select('*')
-        .eq('card_id', id),
       client
         .from('card_attachments')
         .select('*')
@@ -163,7 +158,6 @@ export async function getCard(id: string): Promise<CardDetail> {
         .eq('parent_card_id', id),
     ])
 
-  if (fieldValuesRes.error) throw fieldValuesRes.error
   if (attachmentsRes.error) throw attachmentsRes.error
   if (commentsRes.error) throw commentsRes.error
   if (childrenRes.error) throw childrenRes.error
@@ -190,7 +184,6 @@ export async function getCard(id: string): Promise<CardDetail> {
 
   return {
     ...cardRow,
-    field_values: fieldValuesRes.data as CardFieldValueRow[],
     attachments: attachmentsRes.data as CardAttachmentRow[],
     comments: commentsRes.data as CardCommentRow[],
     parent,
