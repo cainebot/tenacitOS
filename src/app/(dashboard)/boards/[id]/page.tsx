@@ -8,6 +8,7 @@ import { useBoardData } from '@/hooks/useBoardData'
 import { useRealtimeCards } from '@/hooks/useRealtimeCards'
 import { BoardKanban } from '@/components/BoardKanban'
 import { BoardFilterBar } from '@/components/BoardFilterBar'
+import { CardDetailPanel } from '@/components/CardDetailPanel'
 
 // Loading skeleton for the Kanban board
 function KanbanSkeleton() {
@@ -71,6 +72,9 @@ export default function BoardPage() {
 
   // Filtered cards state — null means "no filter active, show all"
   const [filteredCards, setFilteredCards] = useState<CardRow[] | null>(null)
+
+  // Selected card for detail panel
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
 
   // All boards for the tab bar
   const [allBoards, setAllBoards] = useState<BoardRow[]>([])
@@ -169,9 +173,9 @@ export default function BoardPage() {
     [refetch]
   )
 
-  // Card click: console.log for now (Plan 03 wires detail panel)
+  // Card click: open detail panel
   const handleCardClick = useCallback((cardId: string) => {
-    console.log('Card clicked:', cardId)
+    setSelectedCardId(cardId)
   }, [])
 
   // Card created inline: add to local state + trigger refetch for Realtime consistency
@@ -304,18 +308,37 @@ export default function BoardPage() {
         </div>
       )}
 
-      {/* Kanban board */}
+      {/* Kanban board — shrinks when detail panel is open */}
       {!loading && !error && board && (
-        <BoardKanban
-          board={board}
-          cards={cards}
-          filteredCards={filteredCards}
-          onMoveCard={handleMoveCard}
-          onReorderCard={handleReorderCard}
-          onCardClick={handleCardClick}
-          onCardCreated={handleCardCreated}
-          onImportComplete={handleImportComplete}
-          newCardIds={newCardIds}
+        <div
+          style={{
+            flex: 1,
+            overflow: 'hidden',
+            transition: 'padding-right 0.2s ease-out',
+            paddingRight: selectedCardId ? '488px' : '0',
+          }}
+        >
+          <BoardKanban
+            board={board}
+            cards={cards}
+            filteredCards={filteredCards}
+            onMoveCard={handleMoveCard}
+            onReorderCard={handleReorderCard}
+            onCardClick={handleCardClick}
+            onCardCreated={handleCardCreated}
+            onImportComplete={handleImportComplete}
+            newCardIds={newCardIds}
+          />
+        </div>
+      )}
+
+      {/* Card detail panel */}
+      {selectedCardId && (
+        <CardDetailPanel
+          cardId={selectedCardId}
+          onClose={() => setSelectedCardId(null)}
+          onCardDeleted={refetch}
+          onNavigateToCard={setSelectedCardId}
         />
       )}
 
