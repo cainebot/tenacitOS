@@ -773,6 +773,7 @@ export function CardDetailPanel({
             <CardActivityTimeline
               cardId={card.card_id}
               comments={card.comments}
+              workflowId={card.workflow_id}
             />
           </div>
         </div>
