@@ -3,7 +3,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import type { BoardRow, CardRow, WorkflowStateRow } from '@/types/workflow'
+import type {
+  BoardRow,
+  CardRow,
+  WorkflowStateRow,
+  CustomFieldDefinitionRow,
+  CardCustomFieldValueRow,
+} from '@/types/workflow'
+import { createBrowserClient } from '@/lib/supabase'
 import { useBoardData } from '@/hooks/useBoardData'
 import { useRealtimeCards } from '@/hooks/useRealtimeCards'
 import { BoardKanban } from '@/components/BoardKanban'
@@ -83,6 +90,12 @@ export default function BoardPage() {
   // Workflow states (for ColumnManager state mapping)
   const [workflowStates, setWorkflowStates] = useState<WorkflowStateRow[]>([])
 
+  // Custom field data for filter bar
+  const [fieldDefs, setFieldDefs] = useState<CustomFieldDefinitionRow[]>([])
+  const [fieldValuesByCard, setFieldValuesByCard] = useState<
+    Record<string, CardCustomFieldValueRow[]>
+  >({})
+
   // All boards for the tab bar
   const [allBoards, setAllBoards] = useState<BoardRow[]>([])
 
@@ -104,6 +117,52 @@ export default function BoardPage() {
         .catch(() => {}) // non-critical — ColumnManager degrades gracefully
     }
   }, [board?.workflow_id])
+
+  // Fetch custom field definitions when board loads (needed for filter bar custom field support)
+  useEffect(() => {
+    if (board?.workflow_id) {
+      fetch(`/api/workflows/${board.workflow_id}/fields`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((defs: CustomFieldDefinitionRow[]) => setFieldDefs(defs))
+        .catch(() => {}) // non-critical — filter bar degrades gracefully without field defs
+    }
+  }, [board?.workflow_id])
+
+  // Fetch card custom field values when cards change (needed for filter bar filtering)
+  useEffect(() => {
+    if (cards.length === 0) {
+      setFieldValuesByCard({})
+      return
+    }
+    const cardIds = cards.map((c) => c.card_id)
+    const supabase = createBrowserClient()
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('card_custom_field_values')
+          .select('card_id, field_id, value')
+          .in('card_id', cardIds)
+        // Gracefully handle table-not-found (42P01) or other errors
+        if (
+          error &&
+          (error.code === '42P01' ||
+            (error.message && error.message.includes('card_custom_field_values')))
+        ) {
+          return // Table doesn't exist yet — skip silently
+        }
+        if (error || !data) return
+        // Group by card_id
+        const grouped: Record<string, CardCustomFieldValueRow[]> = {}
+        for (const row of data as CardCustomFieldValueRow[]) {
+          if (!grouped[row.card_id]) grouped[row.card_id] = []
+          grouped[row.card_id].push(row)
+        }
+        setFieldValuesByCard(grouped)
+      } catch {
+        // non-critical
+      }
+    })()
+  }, [cards])
 
   // Fetch all boards for the tab bar
   useEffect(() => {
@@ -357,6 +416,8 @@ export default function BoardPage() {
           cards={cards}
           agents={[]}
           onFilterChange={handleFilterChange}
+          fieldDefinitions={fieldDefs}
+          cardFieldValues={fieldValuesByCard}
         />
       )}
 
