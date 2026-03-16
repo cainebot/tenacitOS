@@ -1,27 +1,33 @@
 'use client'
 
 import { useState } from 'react'
-import type { BoardColumnRow, CardRow } from '@/types/workflow'
+import type { BoardColumnRow, CardRow, CardType } from '@/types/workflow'
 import { KanbanCard } from './KanbanCard'
+import { InlineCardCreate } from './InlineCardCreate'
 
 interface KanbanColumnProps {
   column: BoardColumnRow & { state_ids: string[] }
   cards: CardRow[]
+  workflowId: string
+  defaultCardType: CardType
   onDropCard: (cardId: string, targetColumn: BoardColumnRow & { state_ids: string[] }) => void
   onCardClick: (cardId: string) => void
-  onAddCard: (columnId: string) => void
+  onCardCreated: (card: CardRow) => void
   newCardIds?: Set<string>
 }
 
 export function KanbanColumn({
   column,
   cards,
+  workflowId,
+  defaultCardType,
   onDropCard,
   onCardClick,
-  onAddCard,
+  onCardCreated,
   newCardIds,
 }: KanbanColumnProps) {
   const [isDragOver, setIsDragOver] = useState(false)
+  const [showInlineCreate, setShowInlineCreate] = useState(false)
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -51,6 +57,18 @@ export function KanbanColumn({
     if (a.sort_order > b.sort_order) return 1
     return 0
   })
+
+  // First state_id is the default for new cards created in this column
+  const defaultStateId = column.state_ids[0] ?? ''
+
+  const handleCardCreated = (card: CardRow) => {
+    onCardCreated(card)
+    // Keep inline create open for another card
+  }
+
+  const handleCancelInlineCreate = () => {
+    setShowInlineCreate(false)
+  }
 
   return (
     <div
@@ -120,13 +138,15 @@ export function KanbanColumn({
 
         {/* Add card button */}
         <button
-          onClick={() => onAddCard(column.column_id)}
+          onClick={() => setShowInlineCreate((v) => !v)}
           title="Add card"
           style={{
-            background: 'none',
+            background: showInlineCreate
+              ? 'var(--surface-alt, rgba(255,255,255,0.08))'
+              : 'none',
             border: 'none',
             cursor: 'pointer',
-            color: 'var(--text-secondary)',
+            color: showInlineCreate ? 'var(--text-primary)' : 'var(--text-secondary)',
             fontSize: '18px',
             lineHeight: 1,
             padding: '0 2px',
@@ -141,8 +161,12 @@ export function KanbanColumn({
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
           }}
           onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
-            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            ;(e.currentTarget as HTMLButtonElement).style.background = showInlineCreate
+              ? 'var(--surface-alt, rgba(255,255,255,0.08))'
+              : 'none'
+            ;(e.currentTarget as HTMLButtonElement).style.color = showInlineCreate
+              ? 'var(--text-primary)'
+              : 'var(--text-secondary)'
           }}
         >
           +
@@ -181,7 +205,7 @@ export function KanbanColumn({
             isNew={newCardIds?.has(card.card_id)}
           />
         ))}
-        {sortedCards.length === 0 && (
+        {sortedCards.length === 0 && !showInlineCreate && (
           <div
             style={{
               flex: 1,
@@ -197,6 +221,17 @@ export function KanbanColumn({
           >
             Drop here
           </div>
+        )}
+
+        {/* Inline card create — shown at bottom of column */}
+        {showInlineCreate && (
+          <InlineCardCreate
+            workflowId={workflowId}
+            stateId={defaultStateId}
+            defaultCardType={defaultCardType}
+            onCardCreated={handleCardCreated}
+            onCancel={handleCancelInlineCreate}
+          />
         )}
       </div>
     </div>
