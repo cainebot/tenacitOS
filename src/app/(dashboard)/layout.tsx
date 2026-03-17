@@ -1,8 +1,7 @@
 "use client";
 
-import { Dock, TopBar, StatusBar } from "@/components/TenacitOS";
 import { RealtimeProvider } from "@/components/RealtimeProvider";
-import NodeStatusStrip from "@/components/NodeStatusStrip";
+import { DashboardSidebar } from "@/components/organisms/DashboardSidebar";
 
 export default function DashboardLayout({
   children,
@@ -11,24 +10,11 @@ export default function DashboardLayout({
 }) {
   return (
     <RealtimeProvider>
-      <div className="tenacios-shell" style={{ minHeight: "100vh" }}>
-        <Dock />
-        <TopBar />
-
-        <main
-          style={{
-            marginLeft: "68px", // Width of dock
-            marginTop: "48px", // Height of top bar
-            marginBottom: "32px", // Height of status bar
-            minHeight: "calc(100vh - 48px - 32px)",
-            padding: "24px",
-          }}
-        >
-          <NodeStatusStrip />
+      <div className="flex min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
+        <DashboardSidebar />
+        <main className="flex-1 p-6 overflow-auto">
           {children}
         </main>
-
-        <StatusBar />
       </div>
     </RealtimeProvider>
   );
