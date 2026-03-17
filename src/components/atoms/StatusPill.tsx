@@ -21,7 +21,7 @@ interface StatusPillProps {
 
 /**
  * A badge pill showing the agent status with the appropriate color variant
- * from the TenacitOS design system (badge-positive, badge-warning, badge-info, badge-negative).
+ * from the design system (badge-positive, badge-warning, badge-info, badge-negative).
  */
 export function StatusPill({ status, className }: StatusPillProps) {
   const badgeClass = STATUS_BADGE_CLASS[status.toLowerCase()] ?? DEFAULT_BADGE_CLASS;
