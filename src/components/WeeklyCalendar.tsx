@@ -26,10 +26,9 @@ export function WeeklyCalendar() {
   );
 
   useEffect(() => {
-    fetch("/api/tasks")
-      .then((res) => res.json())
-      .then(setTasks)
-      .catch(() => setTasks([]));
+    // TODO(v1.3): Wire to Card→Task bridge when agent task system is connected
+    // Old /api/tasks endpoint was removed — tasks will come from Supabase cards
+    setTasks([]);
   }, []);
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));

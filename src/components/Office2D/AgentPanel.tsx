@@ -308,15 +308,9 @@ export default function AgentPanel({ agent, tasks, position, onClose, nodes }: A
     if (!assignTitle.trim() || assigning) return
     setAssigning(true)
     try {
-      await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: assignTitle.trim(),
-          target_agent_id: agent.agent_id,
-          source_agent_id: null,
-        }),
-      })
+      // TODO(v1.3): Wire to Card→Task bridge — create card + task via Supabase
+      // Old /api/tasks endpoint was removed
+      console.warn('[AgentPanel] Task assignment not yet connected — Card→Task bridge coming in v1.3')
       setAssignTitle('')
       setShowAssignForm(false)
     } catch (err) {

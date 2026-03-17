@@ -64,8 +64,8 @@ export default function AboutPage() {
     Promise.all([
       fetch("/api/activities").then((r) => r.json()),
       fetch("/api/skills").then((r) => r.json()),
-      fetch("/api/tasks").then((r) => r.json()),
-    ]).then(([activities, skills, tasks]) => {
+      // TODO(v1.3): Wire task count from Supabase cards when Card→Task bridge lands
+    ]).then(([activities, skills]) => {
       const total = activities.activities?.length || activities.length || 0;
       const success = (activities.activities || activities).filter(
         (a: { status: string }) => a.status === "success"
@@ -74,7 +74,7 @@ export default function AboutPage() {
         totalActivities: total,
         successRate: total > 0 ? Math.round((success / total) * 100) : 100,
         skillsCount: skills.length || 0,
-        cronJobs: tasks.length || 0,
+        cronJobs: 0,
       });
     });
 
