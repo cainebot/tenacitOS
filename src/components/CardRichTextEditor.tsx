@@ -1,23 +1,6 @@
 'use client'
 
-import { useEffect, useCallback, useState, useRef } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Placeholder from '@tiptap/extension-placeholder'
-import Link from '@tiptap/extension-link'
-import {
-  Bold,
-  Italic,
-  Strikethrough,
-  List,
-  ListOrdered,
-  Quote,
-  Code,
-  Heading1,
-  Heading2,
-  Heading3,
-  Link as LinkIcon,
-} from 'lucide-react'
+import { useState, useRef, useCallback } from 'react'
 
 interface RichTextEditorProps {
   value: string
@@ -25,311 +8,88 @@ interface RichTextEditorProps {
   placeholder?: string
 }
 
-const toolbarButtonStyle = (active: boolean): React.CSSProperties => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '28px',
-  height: '28px',
-  borderRadius: '4px',
-  border: 'none',
-  cursor: 'pointer',
-  background: active ? 'var(--accent, #6366f1)' : 'transparent',
-  color: active ? '#fff' : 'var(--text-secondary)',
-  transition: 'background 0.1s, color 0.1s',
-  flexShrink: 0,
-})
-
+// Native contenteditable rich text editor — replaces tiptap while
+// Next.js 16 + Turbopack has a bug resolving @tiptap/pm subpath exports.
+// Same interface: accepts HTML string value, emits HTML on change.
 export function CardRichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
   const [isFocused, setIsFocused] = useState(false)
-  const [showLinkInput, setShowLinkInput] = useState(false)
-  const [linkUrl, setLinkUrl] = useState('')
-
-  // Debounce timer ref — must be useRef to persist across renders
+  const editorRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Keep onChange in a ref so Tiptap callbacks always call the latest version
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({
-        placeholder: placeholder ?? 'Add a description...',
-      }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          rel: 'noopener noreferrer',
-          target: '_blank',
-        },
-      }),
-    ],
-    content: value,
-    onUpdate: ({ editor }) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-      debounceRef.current = setTimeout(() => {
-        onChangeRef.current(editor.getHTML())
-      }, 500)
-    },
-    onFocus: () => setIsFocused(true),
-    onBlur: ({ editor }) => {
-      setIsFocused(false)
-      // Immediate save on blur
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-      onChangeRef.current(editor.getHTML())
-    },
-    editorProps: {
-      attributes: {
-        style: [
-          'min-height: 120px',
-          'outline: none',
-          'font-family: var(--font-body)',
-          'font-size: 13px',
-          'line-height: 1.6',
-          'color: var(--text-primary)',
-          'word-break: break-word',
-        ].join('; '),
-      },
-    },
+  const handleInput = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      onChangeRef.current(editorRef.current?.innerHTML ?? '')
+    }, 500)
+  }, [])
+
+  const handleBlur = useCallback(() => {
+    setIsFocused(false)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    onChangeRef.current(editorRef.current?.innerHTML ?? '')
+  }, [])
+
+  const exec = (cmd: string, value?: string) => {
+    document.execCommand(cmd, false, value)
+    editorRef.current?.focus()
+  }
+
+  const btnStyle = (active?: boolean): React.CSSProperties => ({
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    width: 28, height: 28, borderRadius: 4, border: 'none', cursor: 'pointer',
+    background: active ? 'var(--accent, #FF3B30)' : 'transparent',
+    color: active ? '#fff' : 'var(--text-secondary)',
+    fontSize: 12, fontWeight: 600, flexShrink: 0,
   })
 
-  // Sync external value changes (e.g., navigating to different card)
-  useEffect(() => {
-    if (editor && !editor.isFocused) {
-      const current = editor.getHTML()
-      if (current !== value) {
-        editor.commands.setContent(value ?? '', false)
-      }
-    }
-  }, [value, editor])
-
-  const insertLink = useCallback(() => {
-    if (!editor || !linkUrl) return
-    if (editor.state.selection.empty) {
-      editor.chain().focus().setLink({ href: linkUrl }).insertContent(linkUrl).run()
-    } else {
-      editor.chain().focus().setLink({ href: linkUrl }).run()
-    }
-    setLinkUrl('')
-    setShowLinkInput(false)
-  }, [editor, linkUrl])
-
-  if (!editor) return null
-
-  const containerStyle: React.CSSProperties = {
-    border: `1px solid ${isFocused ? 'var(--accent, #6366f1)' : 'var(--border)'}`,
-    borderRadius: '6px',
-    overflow: 'hidden',
-    transition: 'border-color 0.15s',
-    background: 'var(--surface)',
-  }
-
-  const toolbarStyle: React.CSSProperties = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '2px',
-    padding: '4px 6px',
-    borderBottom: '1px solid var(--border)',
-    background: 'var(--surface)',
-    opacity: isFocused ? 1 : 0.6,
-    transition: 'opacity 0.15s',
-  }
-
-  const editorAreaStyle: React.CSSProperties = {
-    padding: '8px 12px',
-  }
-
   return (
-    <div style={containerStyle}>
-      {/* Formatting toolbar */}
-      <div style={toolbarStyle}>
-        {/* Headings */}
-        <button
-          type="button"
-          title="Heading 1"
-          style={toolbarButtonStyle(editor.isActive('heading', { level: 1 }))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 1 }).run() }}
-        >
-          <Heading1 size={14} />
-        </button>
-        <button
-          type="button"
-          title="Heading 2"
-          style={toolbarButtonStyle(editor.isActive('heading', { level: 2 }))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 2 }).run() }}
-        >
-          <Heading2 size={14} />
-        </button>
-        <button
-          type="button"
-          title="Heading 3"
-          style={toolbarButtonStyle(editor.isActive('heading', { level: 3 }))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 3 }).run() }}
-        >
-          <Heading3 size={14} />
-        </button>
-
-        <div style={{ width: '1px', background: 'var(--border)', margin: '2px 2px' }} />
-
-        {/* Inline formats */}
-        <button
-          type="button"
-          title="Bold"
-          style={toolbarButtonStyle(editor.isActive('bold'))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run() }}
-        >
-          <Bold size={14} />
-        </button>
-        <button
-          type="button"
-          title="Italic"
-          style={toolbarButtonStyle(editor.isActive('italic'))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run() }}
-        >
-          <Italic size={14} />
-        </button>
-        <button
-          type="button"
-          title="Strikethrough"
-          style={toolbarButtonStyle(editor.isActive('strike'))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleStrike().run() }}
-        >
-          <Strikethrough size={14} />
-        </button>
-        <button
-          type="button"
-          title="Code"
-          style={toolbarButtonStyle(editor.isActive('code'))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleCode().run() }}
-        >
-          <Code size={14} />
-        </button>
-
-        <div style={{ width: '1px', background: 'var(--border)', margin: '2px 2px' }} />
-
-        {/* Lists */}
-        <button
-          type="button"
-          title="Bullet List"
-          style={toolbarButtonStyle(editor.isActive('bulletList'))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBulletList().run() }}
-        >
-          <List size={14} />
-        </button>
-        <button
-          type="button"
-          title="Ordered List"
-          style={toolbarButtonStyle(editor.isActive('orderedList'))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run() }}
-        >
-          <ListOrdered size={14} />
-        </button>
-        <button
-          type="button"
-          title="Blockquote"
-          style={toolbarButtonStyle(editor.isActive('blockquote'))}
-          onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run() }}
-        >
-          <Quote size={14} />
-        </button>
-
-        <div style={{ width: '1px', background: 'var(--border)', margin: '2px 2px' }} />
-
-        {/* Link */}
-        <button
-          type="button"
-          title="Insert Link"
-          style={toolbarButtonStyle(editor.isActive('link') || showLinkInput)}
-          onMouseDown={(e) => { e.preventDefault(); setShowLinkInput(!showLinkInput) }}
-        >
-          <LinkIcon size={14} />
-        </button>
+    <div style={{
+      border: `1px solid ${isFocused ? 'var(--accent, #FF3B30)' : 'var(--border)'}`,
+      borderRadius: 6, overflow: 'hidden', transition: 'border-color 0.15s',
+      background: 'var(--surface)',
+    }}>
+      {/* Toolbar */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 2, padding: '4px 6px',
+        borderBottom: '1px solid var(--border)', background: 'var(--surface)',
+        opacity: isFocused ? 1 : 0.6, transition: 'opacity 0.15s',
+      }}>
+        <button type="button" title="Bold" style={btnStyle()} onMouseDown={(e) => { e.preventDefault(); exec('bold') }}>B</button>
+        <button type="button" title="Italic" style={{ ...btnStyle(), fontStyle: 'italic' }} onMouseDown={(e) => { e.preventDefault(); exec('italic') }}>I</button>
+        <button type="button" title="Underline" style={{ ...btnStyle(), textDecoration: 'underline' }} onMouseDown={(e) => { e.preventDefault(); exec('underline') }}>U</button>
+        <div style={{ width: 1, background: 'var(--border)', margin: '2px 2px' }} />
+        <button type="button" title="Bullet list" style={btnStyle()} onMouseDown={(e) => { e.preventDefault(); exec('insertUnorderedList') }}>• —</button>
+        <button type="button" title="Numbered list" style={btnStyle()} onMouseDown={(e) => { e.preventDefault(); exec('insertOrderedList') }}>1.</button>
+        <div style={{ width: 1, background: 'var(--border)', margin: '2px 2px' }} />
+        <button type="button" title="Clear formatting" style={btnStyle()} onMouseDown={(e) => { e.preventDefault(); exec('removeFormat') }}>Tx</button>
       </div>
 
-      {/* Link input */}
-      {showLinkInput && (
-        <div style={{ display: 'flex', gap: '6px', padding: '6px 8px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
-          <input
-            type="url"
-            placeholder="https://..."
-            value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); insertLink() }
-              if (e.key === 'Escape') { setShowLinkInput(false); setLinkUrl('') }
-            }}
-            autoFocus
-            style={{
-              flex: 1,
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '4px',
-              padding: '3px 8px',
-              fontSize: '12px',
-              color: 'var(--text-primary)',
-              fontFamily: 'var(--font-body)',
-              outline: 'none',
-            }}
-          />
-          <button
-            type="button"
-            onClick={insertLink}
-            style={{
-              background: 'var(--accent, #6366f1)',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '3px 10px',
-              cursor: 'pointer',
-              color: '#fff',
-              fontSize: '12px',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            Insert
-          </button>
-          <button
-            type="button"
-            onClick={() => { setShowLinkInput(false); setLinkUrl('') }}
-            style={{
-              background: 'none',
-              border: '1px solid var(--border)',
-              borderRadius: '4px',
-              padding: '3px 8px',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              fontSize: '12px',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            Cancel
-          </button>
-        </div>
-      )}
+      {/* Editable area */}
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        dangerouslySetInnerHTML={{ __html: value ?? '' }}
+        onInput={handleInput}
+        onFocus={() => setIsFocused(true)}
+        onBlur={handleBlur}
+        data-placeholder={placeholder ?? 'Add a description...'}
+        style={{
+          minHeight: 120, padding: '8px 12px', outline: 'none',
+          fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.6,
+          color: 'var(--text-primary)', wordBreak: 'break-word',
+        }}
+      />
 
-      {/* Editor content */}
-      <div style={editorAreaStyle}>
-        <EditorContent editor={editor} />
-      </div>
-
-      {/* Tiptap content styles */}
       <style>{`
-        .tiptap p { margin: 0 0 8px 0; }
-        .tiptap p:last-child { margin-bottom: 0; }
-        .tiptap h1 { font-size: 18px; font-weight: 700; margin: 0 0 8px 0; color: var(--text-primary); }
-        .tiptap h2 { font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: var(--text-primary); }
-        .tiptap h3 { font-size: 14px; font-weight: 600; margin: 0 0 6px 0; color: var(--text-primary); }
-        .tiptap ul { margin: 0 0 8px 0; padding-left: 20px; list-style-type: disc; }
-        .tiptap ol { margin: 0 0 8px 0; padding-left: 20px; list-style-type: decimal; }
-        .tiptap li { margin-bottom: 2px; }
-        .tiptap li p { margin: 0; }
-        .tiptap blockquote { border-left: 3px solid var(--accent, #6366f1); margin: 0 0 8px 0; padding-left: 12px; color: var(--text-secondary); font-style: italic; }
-        .tiptap code { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-radius: 3px; padding: 1px 5px; font-size: 12px; font-family: 'JetBrains Mono', 'Fira Code', monospace; color: #e06c75; }
-        .tiptap pre { background: rgba(0,0,0,0.3); border: 1px solid var(--border, #333); border-radius: 6px; padding: 12px 16px; margin: 0 0 8px 0; overflow-x: auto; }
-        .tiptap pre code { background: none; border: none; padding: 0; color: #abb2bf; font-size: 12px; line-height: 1.5; }
-        .tiptap a { color: var(--accent, #6366f1); text-decoration: underline; }
-        .tiptap hr { border: none; border-top: 1px solid var(--border, #333); margin: 12px 0; }
-        .tiptap .is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--text-muted); pointer-events: none; float: left; height: 0; }
+        [contenteditable]:empty:before { content: attr(data-placeholder); color: var(--text-muted); pointer-events: none; }
+        [contenteditable] b, [contenteditable] strong { font-weight: 700; }
+        [contenteditable] i, [contenteditable] em { font-style: italic; }
+        [contenteditable] ul { margin: 0 0 8px 0; padding-left: 20px; list-style-type: disc; }
+        [contenteditable] ol { margin: 0 0 8px 0; padding-left: 20px; }
+        [contenteditable] li { margin-bottom: 2px; }
       `}</style>
     </div>
   )
