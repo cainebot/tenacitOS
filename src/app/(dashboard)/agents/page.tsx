@@ -2,7 +2,6 @@
 
 import {
   Bot,
-  Circle,
   HardDrive,
   Users,
   Activity,
@@ -17,6 +16,7 @@ import { useState } from 'react'
 import { AgentOrganigrama } from '@/components/AgentOrganigrama'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import { useRealtimeDepartments } from '@/hooks/useRealtimeDepartments'
+import { StatusDot } from '@/components/atoms/StatusDot'
 import type { AgentRow, AgentStatus } from '@/types/supabase'
 
 const STATUS_COLORS: Record<AgentStatus, string> = {
@@ -186,10 +186,7 @@ export default function AgentsPage() {
                         {agent.name}
                       </h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Circle
-                          className="w-2 h-2"
-                          style={{ fill: statusColor, color: statusColor }}
-                        />
+                        <StatusDot status={agent.status} variant="agent" />
                         <span className="text-xs font-medium" style={{ color: statusColor }}>
                           {agent.status}
                         </span>

@@ -13,8 +13,8 @@ import {
   Clock,
   Shield,
   Building2,
-  Circle,
 } from 'lucide-react'
+import { StatusDot } from '@/components/atoms/StatusDot'
 import type { AgentRow, AgentBadge, AgentRole, AgentStatus, DepartmentRow, TaskRow } from '@/types/supabase'
 
 // API response extends AgentRow with joined data
@@ -302,7 +302,7 @@ export default function AgentProfilePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Status */}
                   <div className="flex items-center gap-1">
-                    <Circle className="w-2 h-2" style={{ fill: statusColor, color: statusColor }} />
+                    <StatusDot status={agent.status} variant="agent" />
                     <span className="text-xs font-medium capitalize" style={{ color: statusColor }}>
                       {agent.status}
                     </span>

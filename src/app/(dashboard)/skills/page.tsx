@@ -11,7 +11,6 @@ import {
   FileText,
   X,
 } from "lucide-react";
-import { SectionHeader, MetricCard } from "@/components/TenacitOS";
 
 interface Skill {
   id: string;
@@ -116,19 +115,23 @@ export default function SkillsPage() {
           marginBottom: "24px",
         }}
       >
-        <MetricCard icon={Puzzle} value={skills.length} label="Total Skills" />
-        <MetricCard
-          icon={FolderOpen}
-          value={workspaceCount}
-          label="Workspace Skills"
-          changeColor="positive"
-        />
-        <MetricCard
-          icon={Package}
-          value={systemCount}
-          label="System Skills"
-          changeColor="secondary"
-        />
+        {[
+          { icon: Puzzle, value: skills.length, label: "Total Skills", color: "var(--text-primary)" },
+          { icon: FolderOpen, value: workspaceCount, label: "Workspace Skills", color: "var(--positive)" },
+          { icon: Package, value: systemCount, label: "System Skills", color: "var(--text-secondary)" },
+        ].map(({ icon: Icon, value, label, color }) => (
+          <div
+            key={label}
+            className="stats-card"
+            style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Icon style={{ width: "16px", height: "16px", color }} />
+              <span className="title">{label}</span>
+            </div>
+            <span className="value" style={{ color }}>{value}</span>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
@@ -255,7 +258,7 @@ export default function SkillsPage() {
           {/* Workspace Skills */}
           {workspaceSkills.length > 0 && (filterSource === "all" || filterSource === "workspace") && (
             <div>
-              <SectionHeader label="WORKSPACE SKILLS" />
+              <div className="section-header"><h2 className="title">Workspace Skills</h2></div>
               <div
                 style={{
                   display: "grid",
@@ -274,7 +277,7 @@ export default function SkillsPage() {
           {/* System Skills */}
           {systemSkills.length > 0 && (filterSource === "all" || filterSource === "system") && (
             <div>
-              <SectionHeader label="SYSTEM SKILLS" />
+              <div className="section-header"><h2 className="title">System Skills</h2></div>
               <div
                 style={{
                   display: "grid",

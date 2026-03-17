@@ -263,11 +263,13 @@ function OfficeContent() {
 }
 
 // ---------- Page ----------
+// NOTE: This page is inside (dashboard) route group, so DashboardSidebar is provided by the layout.
+// The -m-6 class negates the layout's p-6 padding so the Phaser canvas fills edge-to-edge.
 
 export default function OfficePage() {
   return (
     <RealtimeProvider>
-      <div style={{ width: '100%', height: 'calc(100vh - 80px)', position: 'relative' }}>
+      <div className="flex-1 -m-6" style={{ position: 'relative', padding: 0 }}>
         <OfficeContent />
       </div>
     </RealtimeProvider>
