@@ -4,7 +4,7 @@ import { createServerClient, createServiceRoleClient } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
 
 // Fields the UI is allowed to update — bridge-managed fields are excluded
-const EDITABLE_FIELDS = ['about', 'skills', 'department_id', 'soul_config', 'badge', 'role'] as const
+const EDITABLE_FIELDS = ['name', 'emoji', 'node_id', 'about', 'skills', 'department_id', 'soul_config', 'badge', 'role'] as const
 type EditableField = typeof EDITABLE_FIELDS[number]
 
 export async function GET(
@@ -58,11 +58,17 @@ export async function PUT(
     )
   }
 
+  // Auto-flag soul_dirty when soul-relevant fields change
+  const finalUpdates: Record<string, unknown> = { ...updates }
+  if ('about' in updates || 'soul_config' in updates) {
+    finalUpdates.soul_dirty = true
+  }
+
   const supabase = createServiceRoleClient()
 
   const { data, error } = await supabase
     .from('agents')
-    .update(updates)
+    .update(finalUpdates)
     .eq('agent_id', id)
     .select('*, departments(display_name, color, icon)')
     .single()
@@ -76,4 +82,59 @@ export async function PUT(
   }
 
   return NextResponse.json(data)
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const supabase = createServiceRoleClient()
+
+  // Check for active tasks — block deletion if any pending/claimed/in_progress tasks exist
+  const { count, error: taskCheckError } = await supabase
+    .from('tasks')
+    .select('task_id', { count: 'exact', head: true })
+    .eq('target_agent_id', id)
+    .in('status', ['pending', 'claimed', 'in_progress'])
+
+  if (taskCheckError) {
+    return NextResponse.json({ error: taskCheckError.message }, { status: 500 })
+  }
+
+  if (count && count > 0) {
+    return NextResponse.json(
+      { error: 'Cannot delete agent with active tasks', active_task_count: count },
+      { status: 409 }
+    )
+  }
+
+  // Find cards assigned to this agent before unassigning
+  const { data: cards } = await supabase
+    .from('cards')
+    .select('card_id, title')
+    .eq('assigned_agent_id', id)
+
+  // Unassign all cards from this agent
+  await supabase
+    .from('cards')
+    .update({ assigned_agent_id: null })
+    .eq('assigned_agent_id', id)
+
+  // Delete the agent
+  const { error: deleteError } = await supabase
+    .from('agents')
+    .delete()
+    .eq('agent_id', id)
+
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 500 })
+  }
+
+  return NextResponse.json({
+    deleted: true,
+    agent_id: id,
+    unassigned_cards: cards?.length || 0,
+    unassigned_card_titles: cards?.map(c => c.title) || [],
+  })
 }
