@@ -96,6 +96,24 @@ export interface TaskRow {
   comments: Array<{ author: string; text: string; created_at: string }>;
 }
 
+// Phase 25: Chat message channels
+export type MessageChannel = 'web' | 'telegram' | 'tui';
+export type MessageSenderType = 'user' | 'agent';
+
+// Phase 25: Unified chat message row
+export interface AgentMessageRow {
+  message_id: string;
+  sender_type: MessageSenderType;
+  sender_id: string;
+  recipient_agent_id: string;
+  topic: string;
+  text: string;
+  channel: MessageChannel;
+  mentions: Array<{ agent_id: string; username: string }>;
+  read_at: string | null;  // ISO timestamp or null
+  created_at: string;       // ISO timestamp
+}
+
 // Helper type for Supabase Realtime postgres_changes events
 export type RealtimePayload<T> = {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
