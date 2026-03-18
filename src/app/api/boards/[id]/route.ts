@@ -41,15 +41,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return errorResponse(400, 'Invalid JSON body')
   }
 
-  const { name, description, card_type_filter, state_filter, workflow_id } = body as {
+  const { name, description, card_type_filter, state_filter, workflow_id, scrum_master_agent_id } = body as {
     name?: string
     description?: string
     card_type_filter?: string
     state_filter?: string[]
     workflow_id?: string
+    scrum_master_agent_id?: string | null
   }
 
-  if (!name && description === undefined && !card_type_filter && !state_filter && !workflow_id) {
+  if (!name && description === undefined && !card_type_filter && !state_filter && !workflow_id && scrum_master_agent_id === undefined) {
     return errorResponse(
       400,
       'At least one field is required',
@@ -67,6 +68,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
   if (state_filter !== undefined) updateData.state_filter = state_filter
   if (workflow_id !== undefined) updateData.workflow_id = workflow_id
+  if (scrum_master_agent_id !== undefined) updateData.scrum_master_agent_id = scrum_master_agent_id
 
   try {
     const board = await updateBoard(id, updateData)
