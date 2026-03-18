@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
+import { readFileSync, mkdirSync, writeFileSync } from 'fs'
+import { join } from 'path'
 import { createServiceRoleClient, createServerClient } from '@/lib/supabase'
 import type { AgentRole, AgentBadge } from '@/types/supabase'
 
@@ -102,6 +104,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Agent ID already exists' }, { status: 409 })
     }
     return NextResponse.json({ error: insertError.message }, { status: 500 })
+  }
+
+  // Generate initial SOUL.md with base template
+  try {
+    const baseSoulPath = join(process.cwd(), '..', 'infrastructure', 'base-soul-template.md')
+    const baseTemplate = readFileSync(baseSoulPath, 'utf-8')
+
+    const skillsList = Array.isArray(body.skills)
+      ? (body.skills as string[]).map(s => `- ${s}`).join('\n')
+      : ''
+
+    const personality = (body.soul_config as Record<string, unknown>)?.personality as string || 'No personality defined.'
+
+    const agentSection = [
+      `# ${name}`,
+      '',
+      `**Role:** ${role}`,
+      `**Department:** ${(body.department_id as string) || 'Unassigned'}`,
+      `**Badge:** ${badge}`,
+      '',
+      '## About',
+      '',
+      (body.about as string) || '',
+      '',
+      '## Skills',
+      '',
+      skillsList,
+      '',
+      '## Personality',
+      '',
+      personality,
+    ].join('\n')
+
+    const soulContent = baseTemplate + '\n' + agentSection + '\n'
+
+    const agentDir = join(process.cwd(), '..', 'agents', agent_id.trim())
+    mkdirSync(agentDir, { recursive: true })
+    writeFileSync(join(agentDir, 'SOUL.md'), soulContent, 'utf-8')
+  } catch (err) {
+    // Non-fatal: SOUL.md generation is best-effort at create time
+    // The bridge daemon will regenerate via soul_dirty=true
+    console.warn('Failed to generate initial SOUL.md:', err)
   }
 
   const response: Record<string, unknown> = { ...agent, api_key: apiKey }
