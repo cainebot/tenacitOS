@@ -12,7 +12,7 @@ export type AgentStatus = 'idle' | 'working' | 'error' | 'offline' | 'thinking' 
 
 export type TaskStatus = 'pending' | 'claimed' | 'in_progress' | 'completed' | 'failed';
 
-export type TaskType = 'general' | 'code-review' | 'deploy' | 'research' | 'build' | 'test';
+export type TaskType = 'general' | 'code-review' | 'deploy' | 'research' | 'build' | 'test' | 'card-bridge';
 
 // Phase 9: Agent role and badge types
 export type AgentRole = 'lead' | 'specialist' | 'intern';
@@ -80,6 +80,7 @@ export interface TaskRow {
   payload: Record<string, unknown>;
   result: Record<string, unknown> | null;
   error_message: string | null;
+  card_id: string | null;       // FK to cards.card_id — Card→Task bridge link
   max_retries: number;
   retry_count: number;
   created_at: string;
