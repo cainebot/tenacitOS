@@ -78,7 +78,7 @@ function BoardPageInner() {
   const { board, cards: initialCards, loading, error, refetch } = useBoardData(boardId)
 
   // Agent filter context (provided by outer BoardPage wrapper)
-  const { agents, setAgents, selectedAgentId, setSelectedAgentId, agentPanelOpen, setAgentPanelOpen, setBoardId } = useAgentFilter()
+  const { agents, setAgents, selectedAgentId, setSelectedAgentId, agentPanelOpen, setAgentPanelOpen, setBoardId, setScrumMasterAgentId } = useAgentFilter()
 
   // Local cards state for optimistic updates
   const [cards, setCards] = useState<CardRow[]>([])
@@ -191,6 +191,13 @@ function BoardPageInner() {
   useEffect(() => {
     setBoardId(boardId)
   }, [boardId, setBoardId])
+
+  // Set scrum master from board data
+  useEffect(() => {
+    if (board?.scrum_master_agent_id !== undefined) {
+      setScrumMasterAgentId(board.scrum_master_agent_id)
+    }
+  }, [board?.scrum_master_agent_id, setScrumMasterAgentId])
 
   // Handle realtime card changes — skip refetch for self-edits on the selected card,
   // debounce rapid events to avoid "page refreshing like crazy" during typing

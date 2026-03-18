@@ -5,6 +5,7 @@ import { X, AlertTriangle, Clock, MessageCircle } from 'lucide-react'
 import { StatusDot } from '@/components/atoms/StatusDot'
 import { PriorityBadge } from '@/components/atoms/PriorityBadge'
 import { ChatPanel } from '@/components/organisms/ChatPanel'
+import { ContextBreadcrumbs } from '@/components/molecules/ContextBreadcrumbs'
 import type { AgentListItem } from '@/contexts/AgentFilterContext'
 import type { CardRow, CursorPage } from '@/types/workflow'
 
@@ -13,11 +14,11 @@ import type { CardRow, CursorPage } from '@/types/workflow'
 function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime()
   const diffMin = Math.floor(diffMs / 60_000)
-  if (diffMin < 60) return `hace ${diffMin}m`
+  if (diffMin < 60) return `${diffMin}m ago`
   const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return `hace ${diffH}h`
+  if (diffH < 24) return `${diffH}h ago`
   const diffD = Math.floor(diffH / 24)
-  return `hace ${diffD}d`
+  return `${diffD}d ago`
 }
 
 function statusLabel(status: string): string {
@@ -158,14 +159,14 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
       setIsEditingDesc(false)
       setDescError(null)
     } catch {
-      setDescError('No se pudo guardar.')
+      setDescError('Could not save. Try again.')
       setTimeout(() => setDescError(null), 3000)
     } finally {
       setDescSaving(false)
     }
   }, [agent.agent_id, descDraft])
 
-  // Assigned Cards
+  // Assigned Cards — kept for card list rendering
   const [assignedCards, setAssignedCards] = useState<CardRow[]>([])
   const [cardsLoading, setCardsLoading] = useState(true)
 
@@ -201,12 +202,42 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
       .catch(() => setUnreadCount(0))
   }, [agent.agent_id, activeTab])
 
+  // Attention count from dedicated endpoint
+  const [attentionInfo, setAttentionInfo] = useState<{ total: number; failed_tasks: number; unread_messages: number; attention_cards: number }>({ total: 0, failed_tasks: 0, unread_messages: 0, attention_cards: 0 })
+
+  useEffect(() => {
+    fetch(`/api/agents/${agent.agent_id}/attention`)
+      .then((r) => r.ok ? r.json() : { total: 0, failed_tasks: 0, unread_messages: 0, attention_cards: 0 })
+      .then((data) => setAttentionInfo(data))
+      .catch(() => setAttentionInfo({ total: 0, failed_tasks: 0, unread_messages: 0, attention_cards: 0 }))
+  }, [agent.agent_id])
+
+  // System events for context breadcrumbs
+  const [systemEvents, setSystemEvents] = useState<Array<{ description: string; created_at: string }>>([])
+
+  useEffect(() => {
+    fetch(`/api/activities?actor=${agent.agent_id}&type=system_event&limit=10`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((items: Array<{ action: string; created_at: string }>) => {
+        setSystemEvents(
+          Array.isArray(items)
+            ? items.map((item) => ({ description: item.action, created_at: item.created_at }))
+            : []
+        )
+      })
+      .catch(() => setSystemEvents([]))
+  }, [agent.agent_id])
+
   const statusPill = statusPillColors(agent.status)
   const agentBadge = badgeColors(agent.badge)
-  const attentionCount = assignedCards.length
+  const attentionCount = attentionInfo.total
+
+  // Suppress unused variable warning — assignedCards kept for potential future card list rendering
+  void cardsLoading
+  void assignedCards
 
   return (
-    <div style={panelStyle} role="complementary" aria-label={`Panel de ${agent.name}`}>
+    <div style={panelStyle} role="complementary" aria-label={`Agent profile: ${agent.name}`}>
 
       {/* AGENT PROFILE header bar */}
       <div
@@ -244,7 +275,7 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
             color: 'var(--text-muted)',
             borderRadius: '4px',
           }}
-          aria-label="Cerrar panel"
+          aria-label="Close panel"
           onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
           onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
         >
@@ -283,9 +314,32 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
 
         {/* Info column */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Name */}
-          <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', lineHeight: 1.2 }}>
-            {agent.name}
+          {/* Name + attention count */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)', lineHeight: 1.2 }}>
+              {agent.name}
+            </div>
+            {attentionCount > 0 && (
+              <span
+                title={`${attentionInfo.unread_messages} unread, ${attentionInfo.failed_tasks} failed tasks, ${attentionInfo.attention_cards} attention cards`}
+                style={{
+                  minWidth: '18px',
+                  height: '18px',
+                  borderRadius: '9999px',
+                  background: 'var(--negative, #FF453A)',
+                  color: '#fff',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-body)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 4px',
+                }}
+              >
+                {attentionCount > 9 ? '9+' : attentionCount}
+              </span>
+            )}
           </div>
 
           {/* Role */}
@@ -459,7 +513,7 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
                     minHeight: '24px',
                   }}
                 >
-                  {descDraft || 'Sin descripción.'}
+                  {descDraft || 'No description.'}
                 </div>
               )}
               {descError && (
@@ -491,7 +545,7 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
                   ))}
                 </div>
               ) : (
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin skills definidas.</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>No skills defined.</div>
               )}
             </div>
           </>
@@ -499,19 +553,22 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
 
         {/* Timeline tab */}
         {activeTab === 'timeline' && (
-          <div style={{ padding: '16px' }}>
-            {activities.length === 0 ? (
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin actividad reciente.</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {activities.map((item, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{item.action}</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', flexShrink: 0 }}>{relativeTime(item.created_at)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div>
+            <div style={{ padding: '16px' }}>
+              {activities.length === 0 ? (
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>No recent activity.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {activities.map((item, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{item.action}</span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', flexShrink: 0 }}>{relativeTime(item.created_at)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <ContextBreadcrumbs events={systemEvents} />
           </div>
         )}
 

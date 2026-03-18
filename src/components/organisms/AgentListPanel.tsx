@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PanelLeftClose, PanelLeftOpen, Users } from 'lucide-react'
 import { useAgentFilter } from '@/contexts/AgentFilterContext'
 import { StatusDot } from '@/components/atoms/StatusDot'
+import { AttentionBadge } from '@/components/atoms/AttentionBadge'
 
 /** Map agent status to display label */
 function statusLabel(status: string): string {
@@ -76,18 +77,36 @@ function roleLabel(role?: string): string {
 }
 
 export function AgentListPanel() {
-  const { agents, selectedAgentId, setSelectedAgentId, setAgentPanelOpen } = useAgentFilter()
+  const { agents, selectedAgentId, setSelectedAgentId, setAgentPanelOpen, scrumMasterAgentId } = useAgentFilter()
   const [collapsed, setCollapsed] = useState(false)
+
+  // Attention counts per agent
+  const [attentionData, setAttentionData] = useState<Record<string, { total: number; failed_tasks: number; unread_messages: number; attention_cards: number }>>({})
+
+  useEffect(() => {
+    if (agents.length === 0) return
+    // Fetch attention counts for all agents in parallel
+    Promise.all(
+      agents.map((agent) =>
+        fetch(`/api/agents/${agent.agent_id}/attention`)
+          .then((r) => r.ok ? r.json() : { total: 0, failed_tasks: 0, unread_messages: 0, attention_cards: 0 })
+          .catch(() => ({ total: 0, failed_tasks: 0, unread_messages: 0, attention_cards: 0 }))
+          .then((data) => [agent.agent_id, data] as const)
+      )
+    ).then((results) => {
+      setAttentionData(Object.fromEntries(results))
+    })
+  }, [agents])
 
   const activeCount = agents.filter((a) =>
     ['working', 'thinking', 'executing_tool', 'paused', 'idle', 'queued'].includes(a.status)
   ).length
 
-  // Sort: LEAD badge first, then alphabetical
+  // Sort: Scrum Master (from board FK) sorts first, then alphabetical
   const sortedAgents = [...agents].sort((a, b) => {
-    const aIsLead = a.badge === 'LEAD' ? -1 : 0
-    const bIsLead = b.badge === 'LEAD' ? -1 : 0
-    if (aIsLead !== bIsLead) return aIsLead - bIsLead
+    const aIsSM = a.agent_id === scrumMasterAgentId ? -1 : 0
+    const bIsSM = b.agent_id === scrumMasterAgentId ? -1 : 0
+    if (aIsSM !== bIsSM) return aIsSM - bIsSM
     return a.name.localeCompare(b.name)
   })
 
@@ -257,7 +276,6 @@ export function AgentListPanel() {
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {sortedAgents.map((agent) => {
           const isSelected = selectedAgentId === agent.agent_id
-          const badgeStyle = badgeColors(agent.badge)
 
           return (
             <button
@@ -329,8 +347,8 @@ export function AgentListPanel() {
                     >
                       {agent.name}
                     </span>
-                    {/* Badge pill (LEAD / SPC / INT) */}
-                    {agent.badge && (
+                    {/* Badge pill — LEAD for scrum master (from board FK), or agent's own badge if not LEAD */}
+                    {(agent.agent_id === scrumMasterAgentId || (agent.badge && agent.badge !== 'LEAD')) && (
                       <span
                         style={{
                           fontSize: '9px',
@@ -338,15 +356,19 @@ export function AgentListPanel() {
                           fontFamily: 'var(--font-body)',
                           textTransform: 'uppercase',
                           letterSpacing: '0.03em',
-                          background: badgeStyle.bg,
-                          color: badgeStyle.color,
+                          background: agent.agent_id === scrumMasterAgentId
+                            ? 'rgba(255,59,48,0.12)'
+                            : badgeColors(agent.badge).bg,
+                          color: agent.agent_id === scrumMasterAgentId
+                            ? '#FF3B30'
+                            : badgeColors(agent.badge).color,
                           borderRadius: '4px',
                           padding: '1px 5px',
                           flexShrink: 0,
                           lineHeight: '14px',
                         }}
                       >
-                        {agent.badge}
+                        {agent.agent_id === scrumMasterAgentId ? 'LEAD' : agent.badge}
                       </span>
                     )}
                   </div>
@@ -391,6 +413,20 @@ export function AgentListPanel() {
                   </span>
                 </span>
               )}
+
+              {/* Attention badge — expanded only */}
+              {!collapsed && (() => {
+                const attn = attentionData[agent.agent_id]
+                if (!attn || attn.total === 0) return null
+                return (
+                  <AttentionBadge
+                    total={attn.total}
+                    failedTasks={attn.failed_tasks}
+                    unreadMessages={attn.unread_messages}
+                    attentionCards={attn.attention_cards}
+                  />
+                )
+              })()}
             </button>
           )
         })}
