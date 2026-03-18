@@ -16,9 +16,10 @@ import { BoardKanban } from '@/components/BoardKanban'
 import { BoardFilterBar } from '@/components/BoardFilterBar'
 import { CardDetailPanel } from '@/components/CardDetailPanel'
 import { ColumnManager } from '@/components/ColumnManager'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Check } from 'lucide-react'
 import { AgentFilterProvider, useAgentFilter, type AgentListItem } from '@/contexts/AgentFilterContext'
 import { AgentSidePanel } from '@/components/organisms/AgentSidePanel'
+import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
 
 // Loading skeleton for the Kanban board
 function KanbanSkeleton() {
@@ -78,7 +79,7 @@ function BoardPageInner() {
   const { board, cards: initialCards, loading, error, refetch } = useBoardData(boardId)
 
   // Agent filter context (provided by outer BoardPage wrapper)
-  const { agents, setAgents, selectedAgentId, setSelectedAgentId, agentPanelOpen, setAgentPanelOpen, setBoardId, setScrumMasterAgentId } = useAgentFilter()
+  const { agents, setAgents, selectedAgentId, setSelectedAgentId, agentPanelOpen, setAgentPanelOpen, setBoardId, scrumMasterAgentId, setScrumMasterAgentId } = useAgentFilter()
 
   // Local cards state for optimistic updates
   const [cards, setCards] = useState<CardRow[]>([])
@@ -108,6 +109,12 @@ function BoardPageInner() {
   const [creatingBoard, setCreatingBoard] = useState(false)
   const [newBoardName, setNewBoardName] = useState('')
   const newBoardInputRef = useRef<HTMLInputElement>(null)
+
+  // Scrum Master assignment
+  const [showSMDropdown, setShowSMDropdown] = useState(false)
+  const [smConfirmAgent, setSMConfirmAgent] = useState<AgentListItem | null>(null)
+  const [smSaving, setSMSaving] = useState(false)
+  const [smError, setSMError] = useState<string | null>(null)
 
   // Track previous card IDs to detect new cards from realtime
   const prevCardIdsRef = useRef<Set<string>>(new Set())
@@ -321,6 +328,28 @@ function BoardPageInner() {
   const handleImportComplete = useCallback(async () => {
     await refetch()
   }, [refetch])
+
+  // Scrum Master save handler
+  const handleSetScrumMaster = useCallback(async (agentId: string | null) => {
+    setSMSaving(true)
+    setSMError(null)
+    try {
+      const res = await fetch(`/api/boards/${boardId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scrum_master_agent_id: agentId }),
+      })
+      if (!res.ok) throw new Error('Save failed')
+      setScrumMasterAgentId(agentId)
+      setSMConfirmAgent(null)
+      setShowSMDropdown(false)
+    } catch {
+      setSMError('Could not update Scrum Master. Try again.')
+      setTimeout(() => setSMError(null), 3000)
+    } finally {
+      setSMSaving(false)
+    }
+  }, [boardId, setScrumMasterAgentId])
 
   // Handle filter changes from BoardFilterBar
   const handleFilterChange = useCallback((filtered: CardRow[]) => {
@@ -633,6 +662,131 @@ function BoardPageInner() {
             </svg>
             Manage Columns
           </button>
+
+          {/* Scrum Master assignment */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              onClick={() => setShowSMDropdown(!showSMDropdown)}
+              title="Set Scrum Master"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontFamily: 'var(--font-body)',
+                fontSize: '12px',
+                color: 'var(--text-secondary)',
+                background: 'none',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                cursor: 'pointer',
+                transition: 'background 0.1s ease, color 0.1s ease',
+                maxWidth: '200px',
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLButtonElement
+                el.style.background = 'var(--surface-alt, rgba(255,255,255,0.06))'
+                el.style.color = 'var(--text-primary)'
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLButtonElement
+                el.style.background = 'none'
+                el.style.color = 'var(--text-secondary)'
+              }}
+            >
+              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                SCRUM MASTER
+              </span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100px' }}>
+                {scrumMasterAgentId
+                  ? (agents.find((a) => a.agent_id === scrumMasterAgentId)?.name ?? 'Unknown')
+                  : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No Scrum Master assigned</span>
+                }
+              </span>
+              <ChevronDown size={12} style={{ color: 'var(--text-muted)', flexShrink: 0, transform: showSMDropdown ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.15s' }} />
+            </button>
+
+            {smError && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                marginTop: '4px',
+                fontSize: '11px',
+                color: 'var(--negative)',
+                background: 'var(--surface-elevated, var(--surface))',
+                border: '1px solid var(--border)',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                whiteSpace: 'nowrap',
+                zIndex: 101,
+              }}>
+                {smError}
+              </div>
+            )}
+
+            {showSMDropdown && (
+              <>
+                <div
+                  style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                  onClick={() => setShowSMDropdown(false)}
+                />
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '4px',
+                  minWidth: '200px',
+                  background: 'var(--surface-elevated, var(--surface))',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+                  zIndex: 100,
+                  overflow: 'hidden',
+                }}>
+                  <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                    {agents.map((agent) => {
+                      const isCurrent = agent.agent_id === scrumMasterAgentId
+                      return (
+                        <button
+                          key={agent.agent_id}
+                          onClick={() => {
+                            setShowSMDropdown(false)
+                            setSMConfirmAgent(agent)
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            width: '100%',
+                            padding: '8px 12px',
+                            background: isCurrent ? 'rgba(255,59,48,0.08)' : 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontFamily: 'var(--font-body)',
+                            fontSize: '13px',
+                            fontWeight: isCurrent ? 600 : 400,
+                            color: isCurrent ? '#FF3B30' : 'var(--text-primary)',
+                            textAlign: 'left',
+                            transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={(e) => { if (!isCurrent) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                          onMouseLeave={(e) => { if (!isCurrent) e.currentTarget.style.background = 'none' }}
+                        >
+                          {isCurrent && <Check size={12} style={{ color: '#FF3B30', flexShrink: 0 }} />}
+                          {!isCurrent && <span style={{ width: '12px', flexShrink: 0 }} />}
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {agent.emoji && <span style={{ marginRight: '4px' }}>{agent.emoji}</span>}
+                            {agent.name}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -729,6 +883,21 @@ function BoardPageInner() {
           />
         )
       })()}
+
+      {/* Scrum Master confirmation dialog */}
+      {smConfirmAgent && (
+        <ConfirmActionDialog
+          open={!!smConfirmAgent}
+          onOpenChange={(open) => { if (!open) setSMConfirmAgent(null) }}
+          title="Set as Scrum Master"
+          description={`Set ${smConfirmAgent.name} as Scrum Master for this board? The previous lead will be reassigned to their standard role.`}
+          confirmLabel="Set as Scrum Master"
+          confirmingLabel="Saving..."
+          isConfirming={smSaving}
+          onConfirm={() => handleSetScrumMaster(smConfirmAgent.agent_id)}
+          errorMessage={smError}
+        />
+      )}
 
       {/* Global CSS for animations */}
       <style>{`
