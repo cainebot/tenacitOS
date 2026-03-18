@@ -12,10 +12,6 @@ interface TopicInfo {
   unread_count: number
 }
 
-interface AgentListEntry {
-  agent_id: string
-  name: string
-}
 
 export interface ChatPanelProps {
   agentId: string
@@ -48,13 +44,6 @@ function channelBadge(channel: AgentMessageRow['channel']): { label: string; bg:
   }
 }
 
-// Detect "@mention" at current cursor position
-function getMentionQuery(text: string, cursorPos: number): string | null {
-  const before = text.slice(0, cursorPos)
-  const match = before.match(/@(\w*)$/)
-  return match ? match[1] : null
-}
-
 // ---- Component ----
 
 export function ChatPanel({ agentId, agentName }: ChatPanelProps) {
@@ -63,13 +52,8 @@ export function ChatPanel({ agentId, agentName }: ChatPanelProps) {
   const [inputText, setInputText] = useState('')
   const [sending, setSending] = useState(false)
 
-  // @mention autocomplete
-  const [mentionQuery, setMentionQuery] = useState<string | null>(null)
-  const [allAgents, setAllAgents] = useState<AgentListEntry[]>([])
-  const [mentionIndex, setMentionIndex] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const mentionRegex = /@(\w*)$/
 
   const { messages, loading, error, sendMessage, loadMore, hasMore, markAsRead } =
     useRealtimeMessages({ agentId, topic: activeTopic })
@@ -100,14 +84,6 @@ export function ChatPanel({ agentId, agentName }: ChatPanelProps) {
   useEffect(() => {
     fetchTopics()
   }, [fetchTopics, activeTopic, messages.length])
-
-  // Fetch agent list for @mention
-  useEffect(() => {
-    fetch('/api/agents/list?limit=100')
-      .then((r) => r.ok ? r.json() : { data: [] })
-      .then((json: { data: AgentListEntry[] }) => setAllAgents(Array.isArray(json.data) ? json.data : []))
-      .catch(() => setAllAgents([]))
-  }, [])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -141,58 +117,15 @@ export function ChatPanel({ agentId, agentName }: ChatPanelProps) {
 
   // Handle keyboard in textarea
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (mentionQuery !== null) {
-      const filtered = allAgents.filter((a) =>
-        a.name.toLowerCase().startsWith(mentionQuery.toLowerCase())
-      )
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        setMentionIndex((i) => Math.min(i + 1, filtered.length - 1))
-        return
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        setMentionIndex((i) => Math.max(i - 1, 0))
-        return
-      }
-      if (e.key === 'Enter' || e.key === 'Tab') {
-        if (filtered.length > 0) {
-          e.preventDefault()
-          insertMention(filtered[mentionIndex]?.name ?? filtered[0].name)
-          return
-        }
-      }
-      if (e.key === 'Escape') {
-        setMentionQuery(null)
-        return
-      }
-    }
-
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
     }
   }
 
-  // Handle text change and detect @mention
+  // Handle text change
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value
-    setInputText(val)
-    const cursor = e.target.selectionStart ?? val.length
-    const query = getMentionQuery(val, cursor)
-    setMentionQuery(query)
-    setMentionIndex(0)
-  }
-
-  // Insert mention into textarea
-  const insertMention = (agentName: string) => {
-    const cursor = textareaRef.current?.selectionStart ?? inputText.length
-    const before = inputText.slice(0, cursor)
-    const after = inputText.slice(cursor)
-    const newBefore = before.replace(mentionRegex, `@${agentName} `)
-    setInputText(newBefore + after)
-    setMentionQuery(null)
-    textareaRef.current?.focus()
+    setInputText(e.target.value)
   }
 
   // New topic prompt
@@ -206,12 +139,6 @@ export function ChatPanel({ agentId, agentName }: ChatPanelProps) {
     })
     setActiveTopic(slug)
   }
-
-  // Filtered agents for mention popup
-  const mentionSuggestions =
-    mentionQuery !== null
-      ? allAgents.filter((a) => a.name.toLowerCase().startsWith(mentionQuery.toLowerCase())).slice(0, 6)
-      : []
 
   return (
     <div
@@ -423,60 +350,14 @@ export function ChatPanel({ agentId, agentName }: ChatPanelProps) {
           position: 'relative',
         }}
       >
-        {/* @mention autocomplete popup */}
-        {mentionQuery !== null && mentionSuggestions.length > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: '100%',
-              left: '16px',
-              right: '16px',
-              background: 'var(--surface-elevated, #242424)',
-              border: '1px solid var(--border)',
-              borderRadius: '6px',
-              boxShadow: '0 -4px 16px rgba(0,0,0,0.2)',
-              zIndex: 10,
-              overflow: 'hidden',
-              marginBottom: '4px',
-            }}
-          >
-            {mentionSuggestions.map((a, i) => (
-              <button
-                key={a.agent_id}
-                onMouseDown={(e) => {
-                  e.preventDefault() // Prevent textarea blur
-                  insertMention(a.name)
-                }}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 10px',
-                  background: i === mentionIndex ? 'var(--surface)' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontSize: '12px',
-                  color: 'var(--text-primary)',
-                  fontFamily: 'var(--font-body)',
-                }}
-                onMouseEnter={() => setMentionIndex(i)}
-              >
-                <span style={{ fontWeight: 600 }}>@{a.name}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
         <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
           <textarea
             ref={textareaRef}
             value={inputText}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder={`Message ${agentName}... (@ to mention, Enter to send)`}
-            rows={1}
+            placeholder={`Message ${agentName}... (Enter to send, Shift+Enter for new line)`}
+            rows={2}
             style={{
               flex: 1,
               fontSize: '13px',
@@ -484,9 +365,9 @@ export function ChatPanel({ agentId, agentName }: ChatPanelProps) {
               background: 'var(--surface)',
               border: '1px solid var(--border)',
               borderRadius: '6px',
-              minHeight: '36px',
-              maxHeight: '100px',
-              resize: 'none',
+              minHeight: '52px',
+              maxHeight: '150px',
+              resize: 'vertical',
               color: 'var(--text-primary)',
               padding: '8px 10px',
               outline: 'none',
@@ -495,8 +376,6 @@ export function ChatPanel({ agentId, agentName }: ChatPanelProps) {
             onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
             onBlur={(e) => {
               e.currentTarget.style.borderColor = 'var(--border)'
-              // Close mention popup after a short delay to allow click events
-              setTimeout(() => setMentionQuery(null), 150)
             }}
           />
           <button
