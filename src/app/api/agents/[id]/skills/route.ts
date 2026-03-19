@@ -14,7 +14,7 @@ export async function GET(
     .from('agent_skills')
     .select(`
       *,
-      skills (id, name, description, icon, source),
+      skills (id, name, description, icon, origin),
       skill_versions (id, version, content)
     `)
     .eq('agent_id', id)
@@ -71,7 +71,24 @@ export async function POST(
 
   if (error) {
     if (error.code === '23505') {
-      return NextResponse.json({ error: 'Skill already assigned to this agent' }, { status: 409 })
+      // v1.5.3: Handle re-assignment of a skill that was uninstalled (desired_state=absent)
+      const { data: updated, error: updateError } = await supabase
+        .from('agent_skills')
+        .update({
+          desired_state: 'present',
+          status: 'pending',
+          skill_version_id: versionId,
+          last_error: null,
+        })
+        .eq('agent_id', id)
+        .eq('skill_id', skill_id)
+        .select(`*, skills (id, name, icon)`)
+        .single()
+
+      if (updateError) {
+        return NextResponse.json({ error: updateError.message }, { status: 500 })
+      }
+      return NextResponse.json(updated, { status: 200 })
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
