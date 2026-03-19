@@ -93,21 +93,21 @@ function getInterpretationText(state: ModalState): string {
 
   if (state.phase === 'detecting') {
     const { draft } = state;
-    if (draft.type === 'github_url') return 'Interpreto que quieres registrar una skill desde GitHub. Obteniendo metadata...';
-    if (draft.type === 'command') return 'Interpreto que quieres instalar una skill desde el registro. Te preparo una preview.';
-    if (draft.type === 'file') return 'Interpreto que quieres registrar una skill desde un archivo. Te preparo una preview.';
-    if (draft.type === 'text') return 'Analizando tu descripción...';
+    if (draft.type === 'github_url') return 'Got it — GitHub repo detected. Te preparo una preview.';
+    if (draft.type === 'command') return 'Perfecto, detecto un comando npx. Buscando la skill en el registro...';
+    if (draft.type === 'file') return 'Recibido — archivo detectado. Procesando contenido...';
+    if (draft.type === 'text') return 'Analizando... dame un segundo.';
     return '';
   }
 
   if (state.phase === 'preview' || state.phase === 'editing' || state.phase === 'submitting') {
     const { draft } = state;
-    if (draft.type === 'github_url') return 'Interpreto que quieres registrar una skill desde GitHub. Te preparo una preview.';
-    if (draft.type === 'command') return 'Interpreto que quieres instalar una skill desde el registro. Aquí está la preview.';
-    if (draft.type === 'file') return 'Interpreto que quieres registrar una skill desde un archivo. Aquí está la preview.';
+    if (draft.type === 'github_url') return 'Got it — GitHub repo detected. Aquí está la preview.';
+    if (draft.type === 'command') return 'Perfecto, skill del registro. Lista para registrar.';
+    if (draft.type === 'file') return 'Archivo procesado. Revisa los datos antes de confirmar.';
     if (draft.type === 'text') {
-      if (draft.intent === 'skill_description') return 'Interpreto que quieres registrar una skill propia. Te preparo una preview.';
-      if (draft.intent === 'discovery_intent') return 'Interpreto que buscas una skill existente. Buscando en ClawHub...';
+      if (draft.intent === 'skill_description') return 'Detecto que quieres registrar tu propia skill. Te preparé una preview.';
+      if (draft.intent === 'discovery_intent') return 'Buscando skills relevantes en ClawHub...';
     }
     return '';
   }
