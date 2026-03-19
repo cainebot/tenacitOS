@@ -351,7 +351,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
               >
                 {/* Review header: chat-style message + source chip */}
                 <div style={{
-                  padding: '24px 24px 0',
+                  padding: '40px 24px 0',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '8px',
