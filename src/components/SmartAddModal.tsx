@@ -359,19 +359,20 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{
-                      fontSize: '10px',
+                      fontSize: '9px',
                       fontFamily: 'var(--font-body)',
                       color: 'var(--accent)',
                       fontWeight: 600,
                       letterSpacing: '0.05em',
                       textTransform: 'uppercase' as const,
+                      opacity: 0.7,
                     }}>
                       Caine
                     </span>
                     <p style={{
                       fontSize: '14px',
                       fontFamily: 'var(--font-body)',
-                      color: 'var(--text-secondary)',
+                      color: 'var(--text-muted)',
                       margin: '4px 0 0',
                       lineHeight: '1.4',
                     }}>
@@ -384,7 +385,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                       fontSize: '12px',
                       fontFamily: 'var(--font-mono)',
                       color: 'var(--text-muted)',
-                      backgroundColor: 'var(--surface)',
+                      backgroundColor: 'var(--surface-elevated)',
                       padding: '4px 10px',
                       borderRadius: '16px',
                       display: 'inline-flex',
@@ -448,7 +449,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                 {/* Action buttons */}
                 <div style={{
                   display: 'flex',
-                  gap: '12px',
+                  gap: '16px',
                   justifyContent: 'center',
                   padding: '8px 24px 24px',
                 }}>
@@ -467,12 +468,6 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                     {state.phase === 'submitting' ? 'Registrando...' : 'Confirm & Register'}
                   </Button>
                 </div>
-
-                {/* Separator line */}
-                <div style={{
-                  height: '1px',
-                  backgroundColor: 'var(--border)',
-                }} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -487,7 +482,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
               display: 'flex',
               flexDirection: 'column',
               gap: '0',
-              border: dragOver ? '2px dashed var(--accent)' : '2px dashed transparent',
+              border: dragOver ? '2px dashed var(--accent)' : '1px solid var(--border)',
               borderRadius: '12px',
               transition: 'border-color 150ms ease, opacity 200ms ease',
               opacity: isReviewMode ? 0.5 : 1,

@@ -73,7 +73,7 @@ function SkillPreviewCard({ draft, onDraftChange }: SkillPreviewCardProps) {
       style={{
         backgroundColor: 'var(--surface-elevated)',
         borderRadius: '12px',
-        border: '1px solid var(--border)',
+        border: '1px solid rgba(255,255,255,0.06)',
         padding: '20px',
         display: 'flex',
         flexDirection: 'column',
@@ -184,7 +184,7 @@ function SkillPreviewCard({ draft, onDraftChange }: SkillPreviewCardProps) {
             borderRadius: '6px',
             padding: '8px 10px',
             margin: 0,
-            minHeight: '140px',
+            minHeight: '160px',
             overflowY: 'auto',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',
