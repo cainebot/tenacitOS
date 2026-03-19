@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 500 })
   }
 
-  // Generate initial SOUL.md with base template
+  // Generate initial SOUL.md and TOOLS.md stubs
   try {
     const baseSoulPath = join(process.cwd(), '..', 'infrastructure', 'base-soul-template.md')
     const baseTemplate = readFileSync(baseSoulPath, 'utf-8')
@@ -128,24 +128,38 @@ export async function POST(request: NextRequest) {
       '',
       (body.about as string) || '',
       '',
-      '## Skills',
-      '',
-      skillsList,
-      '',
       '## Personality',
       '',
       personality,
+      '',
+      '## Runtime Layout',
+      '',
+      'Identity, behavior, and boundaries live in this file.',
+      'Installed skills and operational tool payloads live in `TOOLS.md`.',
     ].join('\n')
 
     const soulContent = baseTemplate + '\n' + agentSection + '\n'
+    const toolsContent = [
+      `# Tools - ${name}`,
+      '',
+      'Technical reference and installed skill payloads for this agent.',
+      '',
+      '---',
+      '',
+      '## Installed Skills',
+      '',
+      skillsList || '_No installed skills assigned._',
+      '',
+    ].join('\n')
 
     const agentDir = join(process.cwd(), '..', 'agents', agent_id.trim())
     mkdirSync(agentDir, { recursive: true })
     writeFileSync(join(agentDir, 'SOUL.md'), soulContent, 'utf-8')
+    writeFileSync(join(agentDir, 'TOOLS.md'), toolsContent, 'utf-8')
   } catch (err) {
-    // Non-fatal: SOUL.md generation is best-effort at create time
+    // Non-fatal: prompt file generation is best-effort at create time
     // The bridge daemon will regenerate via soul_dirty=true
-    console.warn('Failed to generate initial SOUL.md:', err)
+    console.warn('Failed to generate initial agent prompt files:', err)
   }
 
   const response: Record<string, unknown> = { ...agent, api_key: apiKey }

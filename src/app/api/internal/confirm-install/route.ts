@@ -23,6 +23,11 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  type InstalledSkillRelation =
+    | { name?: string | null }
+    | Array<{ name?: string | null }>
+    | null
+
   const supabase = createServiceRoleClient()
   const now = new Date().toISOString()
 
@@ -55,7 +60,6 @@ export async function POST(request: NextRequest) {
   }
 
   // v1.5.1: Build skills snapshot from installed skills only
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: installedSkills } = await supabase
     .from('agent_skills')
     .select('skills (name)')
@@ -63,10 +67,17 @@ export async function POST(request: NextRequest) {
     .eq('status', 'installed')
     .eq('desired_state', 'present')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const skillNames = (installedSkills ?? [])
-    .map((as: any) => as.skills?.name)
-    .filter(Boolean)
+    .flatMap((assignment: { skills?: InstalledSkillRelation }) => {
+      if (Array.isArray(assignment.skills)) {
+        return assignment.skills
+          .map((skill) => skill?.name?.trim())
+          .filter((name): name is string => Boolean(name))
+      }
+
+      const name = assignment.skills?.name?.trim()
+      return name ? [name] : []
+    })
 
   // v1.5.1: Check FULL convergence — desired_state must match status for ALL skills
   // Only clear soul_dirty if every skill has converged

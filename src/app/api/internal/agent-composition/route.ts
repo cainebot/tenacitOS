@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase'
+import {
+  composeAgentPromptFiles,
+  loadBundledAgentFile,
+} from '@/lib/agent-composition'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -28,7 +32,7 @@ export async function GET(request: NextRequest) {
   // Get agent with department
   const { data: agent, error: agentError } = await supabase
     .from('agents')
-    .select('agent_id, name, role, badge, about, department_id, departments(display_name)')
+    .select('agent_id, name, role, badge, about, soul_config, department_id, departments(display_name)')
     .eq('agent_id', agentId)
     .single()
 
@@ -36,7 +40,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
   }
 
-  // Get ALL assigned skills (including those being uninstalled)
+  // Get assigned skills for reconciliation.
+  // desired_state=absent still needs to flow through confirm-install,
+  // but it must not be rendered back into TOOLS.md.
   const { data: agentSkills } = await supabase
     .from('agent_skills')
     .select(`
@@ -48,6 +54,7 @@ export async function GET(request: NextRequest) {
     `)
     .eq('agent_id', agentId)
     .not('status', 'eq', 'removed')
+    .order('created_at', { ascending: true })
 
   // Build skills array with content
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,6 +68,7 @@ export async function GET(request: NextRequest) {
     desired_state: as.desired_state ?? 'present',
     assignment_id: as.id,
   }))
+  const presentSkills = skills.filter((skill) => skill.desired_state !== 'absent')
 
   // Load base soul template
   let baseTemplate = ''
@@ -71,6 +79,31 @@ export async function GET(request: NextRequest) {
     // Template not found — bridge will use fallback
   }
 
+  const bundledSoul = loadBundledAgentFile(agentId, 'SOUL.md')
+  const bundledTools = loadBundledAgentFile(agentId, 'TOOLS.md')
+  const department =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (agent.departments as any)?.display_name ?? null
+
+  const { soulContent, toolsContent } = composeAgentPromptFiles({
+    agent: {
+      agent_id: agent.agent_id,
+      name: agent.name,
+      role: agent.role,
+      badge: agent.badge,
+      about: agent.about,
+      department,
+      soul_config:
+        agent.soul_config && typeof agent.soul_config === 'object'
+          ? (agent.soul_config as Record<string, unknown>)
+          : null,
+    },
+    skills: presentSkills,
+    baseTemplate,
+    bundledSoul,
+    bundledTools,
+  })
+
   return NextResponse.json({
     agent: {
       agent_id: agent.agent_id,
@@ -78,10 +111,11 @@ export async function GET(request: NextRequest) {
       role: agent.role,
       badge: agent.badge,
       about: agent.about,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      department: (agent.departments as any)?.display_name ?? null,
+      department,
     },
     skills,
     base_template: baseTemplate,
+    soul_content: soulContent,
+    tools_content: toolsContent,
   })
 }
