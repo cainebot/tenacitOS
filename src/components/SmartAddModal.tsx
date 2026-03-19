@@ -397,7 +397,8 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-xl p-0 overflow-visible">
+      <DialogContent className="max-w-xl p-0 flex flex-col">
+        <div style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
         {/* Conversation history */}
         {messages.length > 0 && (
           <div ref={historyRef} style={{
@@ -800,6 +801,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
           >
             Fill in manually
           </button>
+        </div>
         </div>
       </DialogContent>
     </Dialog>
