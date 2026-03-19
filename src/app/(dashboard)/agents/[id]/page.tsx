@@ -13,6 +13,10 @@ import {
   Clock,
   Shield,
   Building2,
+  Plus,
+  CheckCircle,
+  AlertCircle,
+  Trash2,
 } from 'lucide-react'
 import { StatusDot } from '@/components/atoms/StatusDot'
 import type { AgentRow, AgentBadge, AgentRole, AgentStatus, DepartmentRow, TaskRow } from '@/types/supabase'
@@ -73,11 +77,27 @@ function roleToBadge(role: AgentRole): AgentBadge {
 
 interface EditFormState {
   about: string
-  skills: string[]
   department_id: string
   role: AgentRole
   badge: AgentBadge
   soul_config: string
+}
+
+interface AgentSkillEntry {
+  id: string
+  agent_id: string
+  skill_id: string
+  status: string
+  installed_at: string | null
+  skills: { id: string; name: string; description: string; icon: string; source: string } | null
+  skill_versions: { id: string; version: string } | null
+}
+
+interface SkillCatalogEntry {
+  id: string
+  name: string
+  icon: string
+  description: string
 }
 
 export default function AgentProfilePage() {
@@ -92,16 +112,19 @@ export default function AgentProfilePage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
+  // Agent skills from marketplace
+  const [agentSkills, setAgentSkills] = useState<AgentSkillEntry[]>([])
+  const [skillCatalog, setSkillCatalog] = useState<SkillCatalogEntry[]>([])
+  const [showSkillPicker, setShowSkillPicker] = useState(false)
+
   // Edit form state
   const [editForm, setEditForm] = useState<EditFormState>({
     about: '',
-    skills: [],
     department_id: '',
     role: 'intern',
     badge: 'INT',
     soul_config: '{}',
   })
-  const [newSkill, setNewSkill] = useState('')
 
   // Departments for the select
   const [departments, setDepartments] = useState<DepartmentRow[]>([])
@@ -125,6 +148,57 @@ export default function AgentProfilePage() {
     }
   }, [agentId])
 
+  const fetchAgentSkills = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/agents/${agentId}/skills`)
+      if (res.ok) {
+        const data = await res.json()
+        setAgentSkills(data.agent_skills ?? [])
+      }
+    } catch {
+      // Non-critical
+    }
+  }, [agentId])
+
+  const fetchSkillCatalog = useCallback(async () => {
+    try {
+      const res = await fetch('/api/skills')
+      if (res.ok) {
+        const data = await res.json()
+        setSkillCatalog((data.skills ?? []).map((s: { id: string; name: string; icon: string; description: string }) => ({
+          id: s.id, name: s.name, icon: s.icon, description: s.description
+        })))
+      }
+    } catch {
+      // Non-critical
+    }
+  }, [])
+
+  const assignSkill = async (skillId: string) => {
+    try {
+      const res = await fetch(`/api/agents/${agentId}/skills`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skill_id: skillId }),
+      })
+      if (res.ok) {
+        await fetchAgentSkills()
+        setShowSkillPicker(false)
+      }
+    } catch {
+      // Handle error
+    }
+  }
+
+  const removeAgentSkill = async (skillId: string) => {
+    try {
+      await fetch(`/api/agents/${agentId}/skills?skill_id=${skillId}`, { method: 'DELETE' })
+      await fetchAgentSkills()
+    } catch {
+      // Handle error
+    }
+  }
+
   const fetchDepartments = useCallback(async () => {
     try {
       const res = await fetch('/api/departments')
@@ -140,13 +214,14 @@ export default function AgentProfilePage() {
   useEffect(() => {
     fetchAgent()
     fetchDepartments()
-  }, [fetchAgent, fetchDepartments])
+    fetchAgentSkills()
+    fetchSkillCatalog()
+  }, [fetchAgent, fetchDepartments, fetchAgentSkills, fetchSkillCatalog])
 
   const enterEditMode = () => {
     if (!agent) return
     setEditForm({
       about: agent.about ?? '',
-      skills: agent.skills ? [...agent.skills] : [],
       department_id: agent.department_id ?? '',
       role: agent.role ?? 'intern',
       badge: agent.badge ?? 'INT',
@@ -161,17 +236,6 @@ export default function AgentProfilePage() {
   const cancelEdit = () => {
     setEditMode(false)
     setSaveError(null)
-  }
-
-  const addSkill = () => {
-    const skill = newSkill.trim()
-    if (!skill || editForm.skills.includes(skill)) return
-    setEditForm((f) => ({ ...f, skills: [...f.skills, skill] }))
-    setNewSkill('')
-  }
-
-  const removeSkill = (skill: string) => {
-    setEditForm((f) => ({ ...f, skills: f.skills.filter((s) => s !== skill) }))
   }
 
   const handleRoleChange = (role: AgentRole) => {
@@ -199,7 +263,6 @@ export default function AgentProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           about: editForm.about || null,
-          skills: editForm.skills,
           department_id: editForm.department_id || null,
           role: editForm.role,
           badge: editForm.badge,
@@ -429,86 +492,103 @@ export default function AgentProfilePage() {
           )}
         </Section>
 
-        {/* Skills */}
+        {/* Skills (from marketplace) */}
         <Section title="Skills" icon={<Tag className="w-4 h-4" />}>
-          {editMode ? (
-            <div className="space-y-3">
-              {/* Existing skills */}
-              <div className="flex flex-wrap gap-2">
-                {editForm.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full"
-                    style={{
-                      backgroundColor: `${deptColor}15`,
-                      color: 'var(--text-secondary)',
-                      border: '1px solid var(--border)',
-                    }}
+          {agentSkills.length > 0 ? (
+            <div className="space-y-2">
+              {agentSkills.map((as) => {
+                const statusConfig: Record<string, { icon: typeof CheckCircle; color: string; bg: string }> = {
+                  installed: { icon: CheckCircle, color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
+                  pending: { icon: Clock, color: '#eab308', bg: 'rgba(234,179,8,0.1)' },
+                  failed: { icon: AlertCircle, color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+                }
+                const cfg = statusConfig[as.status] ?? statusConfig.pending
+                const StatusIcon = cfg.icon
+                return (
+                  <div
+                    key={as.id}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg"
+                    style={{ backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)' }}
                   >
-                    {skill}
-                    <button
-                      type="button"
-                      onClick={() => removeSkill(skill)}
-                      style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1, padding: 0 }}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              {/* Add skill input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill() } }}
-                  placeholder="Add a skill..."
-                  className="flex-1 px-3 py-1.5 rounded-lg text-sm"
-                  style={{
-                    backgroundColor: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-primary)',
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={addSkill}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium"
-                  style={{
-                    backgroundColor: 'var(--accent)',
-                    color: '#fff',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Add
-                </button>
-              </div>
+                    <div className="flex items-center gap-2">
+                      <span style={{ fontSize: '16px' }}>{as.skills?.icon ?? '🔧'}</span>
+                      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                        {as.skills?.name ?? 'Unknown'}
+                      </span>
+                      {as.skill_versions && (
+                        <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                          v{as.skill_versions.version}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="flex items-center gap-1 text-xs px-2 py-0.5 rounded"
+                        style={{ backgroundColor: cfg.bg, color: cfg.color, fontWeight: 600 }}
+                      >
+                        <StatusIcon className="w-3 h-3" />
+                        {as.status}
+                      </span>
+                      {editMode && (
+                        <button
+                          type="button"
+                          onClick={() => removeAgentSkill(as.skill_id)}
+                          style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+                          title="Remove skill"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           ) : (
-            <>
-              {agent.skills && agent.skills.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {agent.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="text-xs px-3 py-1 rounded-full"
-                      style={{
-                        backgroundColor: `${deptColor}15`,
-                        color: 'var(--text-secondary)',
-                        border: '1px solid var(--border)',
-                      }}
-                    >
-                      {skill}
-                    </span>
-                  ))}
+            <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>No skills assigned.</p>
+          )}
+
+          {/* Assign skill button */}
+          {editMode && (
+            <div className="mt-3">
+              {showSkillPicker ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Select a skill to assign:</span>
+                    <button type="button" onClick={() => setShowSkillPicker(false)} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {skillCatalog
+                    .filter(s => !agentSkills.some(as => as.skill_id === s.id))
+                    .map(s => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => assignSkill(s.id)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm"
+                        style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                      >
+                        <span>{s.icon}</span>
+                        <span className="font-medium">{s.name}</span>
+                        <span className="text-xs ml-auto" style={{ color: 'var(--text-muted)' }}>{s.description?.slice(0, 40)}</span>
+                      </button>
+                    ))}
+                  {skillCatalog.filter(s => !agentSkills.some(as => as.skill_id === s.id)).length === 0 && (
+                    <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>All available skills are already assigned.</p>
+                  )}
                 </div>
               ) : (
-                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>No skills defined.</p>
+                <button
+                  type="button"
+                  onClick={() => setShowSkillPicker(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
+                  style={{ backgroundColor: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}
+                >
+                  <Plus className="w-3 h-3" /> Assign Skill
+                </button>
               )}
-            </>
+            </div>
           )}
         </Section>
 
