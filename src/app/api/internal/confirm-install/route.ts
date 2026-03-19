@@ -48,8 +48,9 @@ export async function POST(request: NextRequest) {
     .eq('agent_id', agent_id)
     .eq('status', 'installed')
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const skillNames = (installedSkills ?? [])
-    .map(as => (as.skills as { name: string })?.name)
+    .map((as: any) => as.skills?.name)
     .filter(Boolean)
 
   // Update agents.skills snapshot and clear soul_dirty

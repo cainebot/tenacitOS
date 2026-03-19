@@ -49,12 +49,13 @@ export async function GET(request: NextRequest) {
     .in('status', ['pending', 'installed'])
 
   // Build skills array with content
-  const skills = (agentSkills ?? []).map(as => ({
-    name: (as.skills as { name: string })?.name ?? 'unknown',
-    icon: (as.skills as { icon: string })?.icon ?? '🔧',
-    version: (as.skill_versions as { version: string })?.version ?? '1.0.0',
-    content: (as.skill_versions as { content: string })?.content ?? '',
-    install_spec: (as.skill_versions as { install_spec: Record<string, unknown> })?.install_spec ?? {},
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const skills = (agentSkills ?? []).map((as: any) => ({
+    name: as.skills?.name ?? 'unknown',
+    icon: as.skills?.icon ?? '🔧',
+    version: as.skill_versions?.version ?? '1.0.0',
+    content: as.skill_versions?.content ?? '',
+    install_spec: as.skill_versions?.install_spec ?? {},
     status: as.status,
     assignment_id: as.id,
   }))
@@ -75,7 +76,8 @@ export async function GET(request: NextRequest) {
       role: agent.role,
       badge: agent.badge,
       about: agent.about,
-      department: (agent.departments as { display_name: string })?.display_name ?? null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      department: (agent.departments as any)?.display_name ?? null,
     },
     skills,
     base_template: baseTemplate,
