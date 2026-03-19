@@ -453,12 +453,9 @@ code, pre, .font-mono {
   color: var(--warning);
 }
 
-/* Textarea resize handle — dark theme */
-textarea::-webkit-resizer {
-  background-color: var(--surface-hover);
-  border: 1px solid var(--border);
-  border-radius: 2px;
-}
+/* Hide default textarea resize handle (white on dark = ugly) */
+textarea::-webkit-resizer { display: none; }
+textarea { resize: none; }
 
 /* Sidebar */
 .sidebar-width { width: 240px; min-width: 240px; }
