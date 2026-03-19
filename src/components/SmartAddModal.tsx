@@ -140,6 +140,16 @@ function getDetectionBadge(state: ModalState): { label: string; variant: 'defaul
   }
 }
 
+// --- Chat message display formatter ---
+
+function formatChatText(text: string): string {
+  const fileMatch = text.match(/^__file__:\d+:(.+?)(\n|$)/);
+  if (fileMatch) {
+    return `\u{1F4CE} ${fileMatch[1]}`;
+  }
+  return text;
+}
+
 // --- Component ---
 
 interface SmartAddModalProps {
@@ -430,7 +440,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                   fontFamily: 'var(--font-body)',
                   lineHeight: '1.4',
                 }}>
-                  {msg.text}
+                  {formatChatText(msg.text)}
                 </div>
               </div>
             ))}
