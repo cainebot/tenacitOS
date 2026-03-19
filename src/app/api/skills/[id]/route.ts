@@ -93,8 +93,12 @@ export async function DELETE(
         .eq('agent_id', agentId)
     }
 
-    // Mark skill as pending deletion (don't hard delete yet)
-    // The skill stays in DB until bridge confirms all uninstalls
+    // Mark skill as pending deletion — hides from marketplace immediately
+    await supabase
+      .from('skills')
+      .update({ pending_deletion: true })
+      .eq('id', id)
+
     return NextResponse.json({
       pending_deletion: true,
       skill_id: id,

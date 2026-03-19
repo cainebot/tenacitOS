@@ -183,7 +183,7 @@ function SkillCard({ skill, onClick }: { skill: Skill; onClick: () => void }) {
 }
 
 // -- Skill Detail Modal --
-function SkillDetailModal({ skill, onClose, onDeleted }: { skill: Skill; onClose: () => void; onDeleted: () => void }) {
+function SkillDetailModal({ skill, onClose, onDeleted, onToast }: { skill: Skill; onClose: () => void; onDeleted: () => void; onToast: (msg: string) => void }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteResult, setDeleteResult] = useState<string | null>(null);
@@ -195,12 +195,13 @@ function SkillDetailModal({ skill, onClose, onDeleted }: { skill: Skill; onClose
       const res = await fetch(`/api/skills/${skill.id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.deleted) {
+        onToast(`"${skill.name}" deleted.`);
         onDeleted();
         onClose();
       } else if (data.pending_deletion) {
-        setDeleteResult(`Uninstalling from ${data.uninstalling_from.length} agent(s). Skill will be removed after bridge convergence.`);
-        // Refresh after a delay to show updated state
-        setTimeout(() => { onDeleted(); onClose(); }, 2000);
+        onToast(`Deleting "${skill.name}" — uninstalling from ${data.uninstalling_from.length} agent(s)...`);
+        onDeleted();
+        onClose();
       } else if (data.error) {
         setDeleteResult(`Error: ${data.error}`);
       }
@@ -316,6 +317,7 @@ export default function SkillsPage() {
   const [filterOrigin, setFilterOrigin] = useState<"all" | "local" | "github" | "skills_sh">("all");
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [showRegister, setShowRegister] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const fetchSkills = useCallback(async () => {
     setLoading(true);
@@ -413,7 +415,16 @@ export default function SkillsPage() {
         </div>
       )}
 
-      {selectedSkill && <SkillDetailModal skill={selectedSkill} onClose={() => setSelectedSkill(null)} onDeleted={fetchSkills} />}
+      {selectedSkill && <SkillDetailModal skill={selectedSkill} onClose={() => setSelectedSkill(null)} onDeleted={fetchSkills} onToast={(msg) => { setToast(msg); setTimeout(() => setToast(null), 5000); }} />}
+
+      {/* Toast */}
+      {toast && (
+        <div style={{ position: "fixed", bottom: "24px", right: "24px", backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", padding: "12px 20px", boxShadow: "0 4px 12px rgba(0,0,0,0.3)", zIndex: 200, display: "flex", alignItems: "center", gap: "8px", maxWidth: "400px" }}>
+          <RefreshCw className="w-4 h-4 animate-spin" style={{ color: "var(--accent)", flexShrink: 0 }} />
+          <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "var(--text-primary)" }}>{toast}</span>
+          <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "2px", flexShrink: 0 }}><X style={{ width: "14px", height: "14px" }} /></button>
+        </div>
+      )}
       {showRegister && <RegisterSkillModal onClose={() => setShowRegister(false)} onCreated={fetchSkills} />}
     </div>
   );

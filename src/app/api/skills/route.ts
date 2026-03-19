@@ -14,6 +14,7 @@ export async function GET() {
       skill_versions (id, version, created_at),
       agent_skills (id, agent_id, status)
     `)
+    .neq('pending_deletion', true)
     .order('created_at', { ascending: false })
 
   if (error) {
