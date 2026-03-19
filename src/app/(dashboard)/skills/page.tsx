@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import SmartAddModal from '@/components/SmartAddModal';
 import {
   Search,
   RefreshCw,
@@ -317,6 +318,7 @@ export default function SkillsPage() {
   const [filterOrigin, setFilterOrigin] = useState<"all" | "local" | "github" | "skills_sh">("all");
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [showRegister, setShowRegister] = useState(false);
+  const [showLegacyRegister, setShowLegacyRegister] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const fetchSkills = useCallback(async () => {
@@ -425,7 +427,20 @@ export default function SkillsPage() {
           <button onClick={() => setToast(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "2px", flexShrink: 0 }}><X style={{ width: "14px", height: "14px" }} /></button>
         </div>
       )}
-      {showRegister && <RegisterSkillModal onClose={() => setShowRegister(false)} onCreated={fetchSkills} />}
+      {showRegister && (
+        <SmartAddModal
+          onClose={() => setShowRegister(false)}
+          onCreated={fetchSkills}
+          onToast={(msg) => { setToast(msg); setTimeout(() => setToast(null), 5000); }}
+          onManual={() => { setShowRegister(false); setShowLegacyRegister(true); }}
+        />
+      )}
+      {showLegacyRegister && (
+        <RegisterSkillModal
+          onClose={() => setShowLegacyRegister(false)}
+          onCreated={() => { fetchSkills(); setShowLegacyRegister(false); }}
+        />
+      )}
     </div>
   );
 }

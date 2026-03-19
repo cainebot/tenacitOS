@@ -134,9 +134,10 @@ interface SmartAddModalProps {
   onClose: () => void;
   onCreated: () => void;
   onToast?: (msg: string) => void;
+  onManual?: () => void;
 }
 
-function SmartAddModal({ onClose, onCreated, onToast }: SmartAddModalProps) {
+function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalProps) {
   const [state, dispatch] = useReducer(modalReducer, { phase: 'idle' });
   const [inputValue, setInputValue] = useState('');
   const [inlineError, setInlineError] = useState<string | null>(null);
@@ -563,7 +564,7 @@ function SmartAddModal({ onClose, onCreated, onToast }: SmartAddModalProps) {
         {/* Fill in manually escape hatch */}
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => onManual ? onManual() : onClose()}
           style={{
             background: 'none',
             border: 'none',
