@@ -618,6 +618,113 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                 <ArrowUp size={18} />
               </button>
             </div>
+
+            {/* ========== DETECTION INFO (inside composer box) ========== */}
+            {(isDetecting || detectionBadge || (inlineError && !isReviewMode)) && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                paddingTop: '8px',
+              }}>
+                {/* Detection badge + loading dots + interpretation */}
+                {(isDetecting || detectionBadge) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <AnimatePresence>
+                      {detectionBadge && (
+                        <motion.div
+                          key={detectionBadge.label}
+                          initial={{ scale: 0.7, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.7, opacity: 0 }}
+                          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                          style={{ display: 'inline-flex' }}
+                        >
+                          <Badge variant={detectionBadge.variant}>
+                            Detected: {detectionBadge.label}
+                          </Badge>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    {isDetecting && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', marginRight: '6px' }}>
+                        {[0, 1, 2].map((i) => (
+                          <motion.span
+                            key={i}
+                            style={{
+                              width: '4px', height: '4px', borderRadius: '50%',
+                              backgroundColor: 'var(--text-muted)', display: 'inline-block',
+                            }}
+                            animate={{ scale: [1, 1.5, 1], opacity: [0.4, 1, 0.4] }}
+                            transition={{ repeat: Infinity, duration: 0.7, delay: i * 0.15, ease: 'easeInOut' }}
+                          />
+                        ))}
+                      </span>
+                    )}
+                    {isDetecting && 'draft' in state && (
+                      <p style={{
+                        fontSize: '13px',
+                        fontFamily: 'var(--font-body)',
+                        color: 'var(--text-secondary)',
+                        margin: 0,
+                        lineHeight: '1.5',
+                      }}>
+                        {getDetectingText(state.draft)}
+                      </p>
+                    )}
+                    {isReviewMode && 'draft' in state && (
+                      <p style={{
+                        fontSize: '13px',
+                        fontFamily: 'var(--font-body)',
+                        color: 'var(--text-secondary)',
+                        margin: 0,
+                        lineHeight: '1.5',
+                      }}>
+                        {getReviewMessage(state.draft)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Inline error (idle mode only) */}
+                {inlineError && !isReviewMode && (
+                  <p style={{
+                    fontSize: '13px',
+                    color: 'var(--negative)',
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}>
+                    {inlineError}
+                    {inlineError.includes('Reintentar') ? (
+                      <button
+                        type="button"
+                        onClick={() => { setInlineError(null); if (lastInput) handleDetect(lastInput); }}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'var(--accent)', padding: 0, fontSize: '13px',
+                          fontFamily: 'var(--font-body)', textDecoration: 'underline',
+                        }}
+                      >
+                        Reintentar
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setInlineError(null)}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'var(--negative)', padding: 0, display: 'flex', alignItems: 'center',
+                        }}
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Hidden file input */}
@@ -628,113 +735,6 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
             style={{ display: 'none' }}
             onChange={handleFileChange}
           />
-
-          {/* ========== DETECTION INFO (below composer) ========== */}
-          {(isDetecting || detectionBadge || (inlineError && !isReviewMode)) && (
-            <div style={{
-              padding: '0 16px 16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-            }}>
-              {/* Detection badge + loading dots + interpretation */}
-              {(isDetecting || detectionBadge) && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <AnimatePresence>
-                    {detectionBadge && (
-                      <motion.div
-                        key={detectionBadge.label}
-                        initial={{ scale: 0.7, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.7, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                        style={{ display: 'inline-flex' }}
-                      >
-                        <Badge variant={detectionBadge.variant}>
-                          Detected: {detectionBadge.label}
-                        </Badge>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  {isDetecting && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', marginRight: '6px' }}>
-                      {[0, 1, 2].map((i) => (
-                        <motion.span
-                          key={i}
-                          style={{
-                            width: '4px', height: '4px', borderRadius: '50%',
-                            backgroundColor: 'var(--text-muted)', display: 'inline-block',
-                          }}
-                          animate={{ scale: [1, 1.5, 1], opacity: [0.4, 1, 0.4] }}
-                          transition={{ repeat: Infinity, duration: 0.7, delay: i * 0.15, ease: 'easeInOut' }}
-                        />
-                      ))}
-                    </span>
-                  )}
-                  {isDetecting && 'draft' in state && (
-                    <p style={{
-                      fontSize: '13px',
-                      fontFamily: 'var(--font-body)',
-                      color: 'var(--text-secondary)',
-                      margin: 0,
-                      lineHeight: '1.5',
-                    }}>
-                      {getDetectingText(state.draft)}
-                    </p>
-                  )}
-                  {isReviewMode && 'draft' in state && (
-                    <p style={{
-                      fontSize: '13px',
-                      fontFamily: 'var(--font-body)',
-                      color: 'var(--text-secondary)',
-                      margin: 0,
-                      lineHeight: '1.5',
-                    }}>
-                      {getReviewMessage(state.draft)}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Inline error (idle mode only) */}
-              {inlineError && !isReviewMode && (
-                <p style={{
-                  fontSize: '13px',
-                  color: 'var(--negative)',
-                  margin: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}>
-                  {inlineError}
-                  {inlineError.includes('Reintentar') ? (
-                    <button
-                      type="button"
-                      onClick={() => { setInlineError(null); if (lastInput) handleDetect(lastInput); }}
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'var(--accent)', padding: 0, fontSize: '13px',
-                        fontFamily: 'var(--font-body)', textDecoration: 'underline',
-                      }}
-                    >
-                      Reintentar
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setInlineError(null)}
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'var(--negative)', padding: 0, display: 'flex', alignItems: 'center',
-                      }}
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                </p>
-              )}
-            </div>
-          )}
 
         </div>
       </DialogContent>
