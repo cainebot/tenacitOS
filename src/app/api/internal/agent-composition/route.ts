@@ -36,17 +36,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Agent not found' }, { status: 404 })
   }
 
-  // Get assigned skills with version content
+  // Get ALL assigned skills (including those being uninstalled)
   const { data: agentSkills } = await supabase
     .from('agent_skills')
     .select(`
       id,
       status,
+      desired_state,
       skills (id, name, icon),
       skill_versions (id, version, content, install_spec)
     `)
     .eq('agent_id', agentId)
-    .in('status', ['pending', 'installed'])
+    .not('status', 'eq', 'removed')
 
   // Build skills array with content
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
     content: as.skill_versions?.content ?? '',
     install_spec: as.skill_versions?.install_spec ?? {},
     status: as.status,
+    desired_state: as.desired_state ?? 'present',
     assignment_id: as.id,
   }))
 

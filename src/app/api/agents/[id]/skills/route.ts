@@ -92,9 +92,14 @@ export async function DELETE(
     return NextResponse.json({ error: 'skill_id query param is required' }, { status: 400 })
   }
 
+  // v1.5.1: Soft delete — mark desired_state=absent instead of hard delete.
+  // Bridge will handle actual uninstall and mark as 'removed' after cleanup.
   const { error } = await supabase
     .from('agent_skills')
-    .delete()
+    .update({
+      desired_state: 'absent',
+      status: 'uninstalling',
+    })
     .eq('agent_id', id)
     .eq('skill_id', skillId)
 
@@ -102,5 +107,5 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ deleted: true, agent_id: id, skill_id: skillId })
+  return NextResponse.json({ uninstalling: true, agent_id: id, skill_id: skillId })
 }
