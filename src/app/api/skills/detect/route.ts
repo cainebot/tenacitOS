@@ -6,9 +6,10 @@ import type { SkillDraft, TextIntent } from '@/types/supabase'
 
 export const dynamic = 'force-dynamic'
 
-// Per-request OpenAI client — token may come from env var or OAuth cookie
+// Per-request OpenAI client — supports direct API key or Codex proxy
 function createOpenAI(apiKey: string): OpenAI {
-  return new OpenAI({ apiKey })
+  const baseURL = process.env.OPENAI_BASE_URL ?? undefined
+  return new OpenAI({ apiKey, ...(baseURL && { baseURL }) })
 }
 
 // --- OpenAI prompt for text intent classification ---
@@ -42,7 +43,7 @@ async function classifyTextIntent(text: string, apiToken: string): Promise<{
   const openai = createOpenAI(apiToken)
 
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: text },
