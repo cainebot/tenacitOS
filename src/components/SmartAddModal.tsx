@@ -398,7 +398,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.22, ease: 'easeOut', delay: 0.08 }}
-                  style={{ padding: '16px 24px' }}
+                  style={{ padding: '16px 24px', marginTop: '-12px', position: 'relative', zIndex: 1 }}
                 >
                   {/* Discovery panel (if discovery_intent without source_url) */}
                   {state.draft.intent === 'discovery_intent' && !state.draft.source_url ? (
