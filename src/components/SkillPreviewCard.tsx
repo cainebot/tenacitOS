@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import type { SkillDraft } from '@/types/supabase';
 
-const EMOJI_OPTIONS = ['🔧','🛠️','⚙️','🧰','💻','🖥️','📦','🔌','🤖','🧠','📊','🔍','🚀','✨','🎯','📝','🔐','🌐','📁','⚡'];
+const EMOJI_OPTIONS = ['🔧','🛠️','⚙️','🧰','💻','🖥️','📦','🔌','🤖','🧠','📊','🔍','🚀','✨','🎯','📝','🔐','🌐','📁','⚡','🎨','🧪','📈','🔗','💡','🗂️','🏗️','📡','🧩','💬','🔔','🛡️','📋','🎮','🏷️','📐','🔥','💾','🗃️','🪝'];
 
 interface SkillPreviewCardProps {
   draft: SkillDraft;
@@ -64,7 +64,7 @@ function SkillPreviewCard({ draft, onConfirm, onDraftChange, confirming }: Skill
     padding: '2px 6px',
     borderRadius: '6px',
     margin: '2px -6px 0',
-    minHeight: '52px',
+    minHeight: '60px',
     resize: 'vertical',
     overflowY: 'auto',
     lineHeight: '1.5',
@@ -114,7 +114,7 @@ function SkillPreviewCard({ draft, onConfirm, onDraftChange, confirming }: Skill
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(5, 1fr)',
+                gridTemplateColumns: 'repeat(8, 1fr)',
                 gap: '4px',
               }}
             >
@@ -194,9 +194,11 @@ function SkillPreviewCard({ draft, onConfirm, onDraftChange, confirming }: Skill
         )}
       </div>
 
-      {/* Content excerpt (3-line clamp, read-only) */}
-      {draft.content && (
-        <pre
+      {/* Content — editable textarea */}
+      {draft.content != null && (
+        <textarea
+          value={draft.content}
+          onChange={(e) => onDraftChange({ ...draft, content: e.target.value })}
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
@@ -205,16 +207,19 @@ function SkillPreviewCard({ draft, onConfirm, onDraftChange, confirming }: Skill
             borderRadius: '6px',
             padding: '8px 10px',
             margin: 0,
-            overflow: 'hidden',
-            display: '-webkit-box',
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: 'vertical' as const,
+            minHeight: '140px',
+            resize: 'vertical',
+            overflowY: 'auto',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',
+            border: '1px solid transparent',
+            outline: 'none',
+            width: '100%',
+            transition: 'border-color 150ms',
           }}
-        >
-          {draft.content}
-        </pre>
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = 'transparent'; }}
+        />
       )}
 
       {/* Action row — only Confirm & Register */}
