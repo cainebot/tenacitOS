@@ -17,17 +17,16 @@ type ModalState =
   | { phase: 'idle' }
   | { phase: 'detecting'; draft: SkillDraft }
   | { phase: 'preview'; draft: SkillDraft }
-  | { phase: 'editing'; draft: SkillDraft }
   | { phase: 'submitting'; draft: SkillDraft };
 
 type ModalAction =
   | { type: 'DETECT'; payload: SkillDraft }
   | { type: 'PREVIEW'; payload: SkillDraft }
-  | { type: 'EDIT' }
   | { type: 'SUBMIT' }
   | { type: 'RESET' }
   | { type: 'ERROR' }
-  | { type: 'DISCOVERY_SELECT'; payload: SkillDraft };
+  | { type: 'DISCOVERY_SELECT'; payload: SkillDraft }
+  | { type: 'UPDATE_DRAFT'; payload: SkillDraft };
 
 // --- Conversation history ---
 
@@ -46,11 +45,11 @@ function modalReducer(state: ModalState, action: ModalAction): ModalState {
     case 'PREVIEW':
       if (state.phase === 'detecting') return { phase: 'preview', draft: action.payload };
       return state;
-    case 'EDIT':
-      if (state.phase === 'preview' && 'draft' in state) return { phase: 'editing', draft: state.draft };
+    case 'UPDATE_DRAFT':
+      if (state.phase === 'preview') return { phase: 'preview', draft: action.payload };
       return state;
     case 'SUBMIT':
-      if ((state.phase === 'preview' || state.phase === 'editing') && 'draft' in state) return { phase: 'submitting', draft: state.draft };
+      if ((state.phase === 'preview') && 'draft' in state) return { phase: 'submitting', draft: state.draft };
       return state;
     case 'RESET':
       return { phase: 'idle' };
@@ -110,7 +109,7 @@ function getInterpretationText(state: ModalState): string {
     return '';
   }
 
-  if (state.phase === 'preview' || state.phase === 'editing' || state.phase === 'submitting') {
+  if (state.phase === 'preview' || state.phase === 'submitting') {
     const { draft } = state;
     if (draft.type === 'github_url') return 'Got it — GitHub repo detected. Aquí está la preview.';
     if (draft.type === 'command') return 'Perfecto, skill del registro. Lista para registrar.';
@@ -171,21 +170,6 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
 
-  // Edit field state
-  const [editName, setEditName] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editIcon, setEditIcon] = useState('');
-  const [editContent, setEditContent] = useState('');
-
-  useEffect(() => {
-    if (state.phase === 'editing') {
-      setEditName(state.draft.name ?? '');
-      setEditDescription(state.draft.description ?? '');
-      setEditIcon(state.draft.icon ?? '🔧');
-      setEditContent(state.draft.content ?? '');
-    }
-  }, [state.phase]);
-
   // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
@@ -214,10 +198,9 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
   const interpretationText = getInterpretationText(state);
   const detectionBadge = getDetectionBadge(state);
 
-  function buildEditedDraft(): SkillDraft {
-    if (state.phase !== 'editing') throw new Error('buildEditedDraft called outside editing phase');
-    return { ...state.draft, name: editName, description: editDescription, icon: editIcon, content: editContent };
-  }
+  const handleDraftChange = (updated: SkillDraft) => {
+    dispatch({ type: 'UPDATE_DRAFT', payload: updated });
+  };
 
   const handleDetect = async (raw: string) => {
     appendMessage('user', raw);
@@ -255,7 +238,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
   };
 
   const handleConfirm = async () => {
-    const draft = state.phase === 'editing' ? buildEditedDraft() : (state as { phase: 'preview' | 'submitting'; draft: SkillDraft }).draft;
+    const draft = (state as { phase: 'preview' | 'submitting'; draft: SkillDraft }).draft;
     if (!draft.name?.trim()) {
       setInlineError('El nombre de la skill es obligatorio.');
       return;
@@ -382,18 +365,6 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
 
   const isInputDisabled = state.phase === 'detecting' || state.phase === 'submitting';
   const hasInput = inputValue.trim().length > 0;
-
-  // Edit form input style
-  const editInputStyle: React.CSSProperties = {
-    padding: '8px 10px',
-    borderRadius: '8px',
-    backgroundColor: 'var(--surface-elevated)',
-    border: '1px solid var(--border)',
-    color: 'var(--text-primary)',
-    fontFamily: 'var(--font-body)',
-    fontSize: '13px',
-    outline: 'none',
-  };
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -712,8 +683,8 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
               </p>
             )}
 
-            {/* Discovery panel — replaces stub from Phase 43 */}
-            {(state.phase === 'preview' || state.phase === 'editing' || state.phase === 'submitting') &&
+            {/* Discovery panel */}
+            {(state.phase === 'preview' || state.phase === 'submitting') &&
               'draft' in state && state.draft.intent === 'discovery_intent' && !state.draft.source_url && (
               <DiscoveryPanel
                 initialQuery={state.draft.raw_input?.replace('discovery:', '') ?? ''}
@@ -723,7 +694,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
 
             {/* Preview card */}
             <AnimatePresence>
-              {(state.phase === 'preview' || state.phase === 'editing' || state.phase === 'submitting') &&
+              {(state.phase === 'preview' || state.phase === 'submitting') &&
                 'draft' in state &&
                 (state.draft.intent !== 'discovery_intent' || state.draft.source_url) && (
                 <motion.div
@@ -734,46 +705,14 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                   transition={{ duration: 0.22, ease: 'easeOut' }}
                 >
                   <SkillPreviewCard
-                    draft={state.phase === 'editing' ? buildEditedDraft() : state.draft}
+                    draft={state.draft}
                     onConfirm={handleConfirm}
-                    onEdit={() => dispatch({ type: 'EDIT' })}
+                    onDraftChange={handleDraftChange}
                     confirming={state.phase === 'submitting'}
                   />
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Edit form */}
-            {state.phase === 'editing' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    value={editIcon}
-                    onChange={(e) => setEditIcon(e.target.value)}
-                    style={{ width: '48px', ...editInputStyle, textAlign: 'center', fontSize: '20px' }}
-                  />
-                  <input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="Skill name"
-                    style={{ flex: 1, ...editInputStyle }}
-                  />
-                </div>
-                <input
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  placeholder="Description"
-                  style={editInputStyle}
-                />
-                <textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  placeholder="Skill content (Markdown)"
-                  rows={5}
-                  style={{ ...editInputStyle, fontFamily: 'var(--font-mono)', fontSize: '12px', resize: 'vertical' }}
-                />
-              </div>
-            )}
           </div>
         )}
 
