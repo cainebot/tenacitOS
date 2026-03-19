@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   const supabase = createServiceRoleClient()
   const body = await request.json()
 
-  const { name, description, icon, source, source_url, content, version } = body
+  const { name, description, icon, origin, source_url, content, version } = body
 
   if (!name) {
     return NextResponse.json({ error: 'name is required' }, { status: 400 })
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       name,
       description: description ?? '',
       icon: icon ?? '🔧',
-      source: source ?? 'upload',
+      origin: origin ?? 'local',
       source_url: source_url ?? null,
     })
     .select()

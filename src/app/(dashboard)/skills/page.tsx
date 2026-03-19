@@ -32,7 +32,7 @@ interface Skill {
   name: string;
   description: string;
   icon: string;
-  source: "upload" | "github";
+  origin: "local" | "github" | "skills_sh";
   source_url: string | null;
   created_at: string;
   updated_at: string;
@@ -49,7 +49,7 @@ function RegisterSkillModal({ onClose, onCreated }: { onClose: () => void; onCre
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("🔧");
-  const [source, setSource] = useState<"upload" | "github">("upload");
+  const [origin, setOrigin] = useState<"local" | "github" | "skills_sh">("local");
   const [sourceUrl, setSourceUrl] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
@@ -65,7 +65,7 @@ function RegisterSkillModal({ onClose, onCreated }: { onClose: () => void; onCre
           name: name.trim(),
           description,
           icon,
-          source,
+          origin,
           source_url: sourceUrl || null,
           content: content || null,
           version: "1.0.0",
@@ -109,10 +109,11 @@ function RegisterSkillModal({ onClose, onCreated }: { onClose: () => void; onCre
             <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does this skill enable?" style={{ width: "100%", padding: "10px", borderRadius: "6px", backgroundColor: "var(--surface-elevated)", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: "var(--font-body)", fontSize: "13px" }} />
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button onClick={() => setSource("upload")} style={{ flex: 1, padding: "10px", borderRadius: "6px", backgroundColor: source === "upload" ? "var(--accent-soft)" : "var(--surface-elevated)", color: source === "upload" ? "var(--accent)" : "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600 }}>Upload .md</button>
-            <button onClick={() => setSource("github")} style={{ flex: 1, padding: "10px", borderRadius: "6px", backgroundColor: source === "github" ? "var(--accent-soft)" : "var(--surface-elevated)", color: source === "github" ? "var(--accent)" : "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600 }}>GitHub URL</button>
+            <button onClick={() => setOrigin("local")} style={{ flex: 1, padding: "10px", borderRadius: "6px", backgroundColor: origin === "local" ? "var(--accent-soft)" : "var(--surface-elevated)", color: origin === "local" ? "var(--accent)" : "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600 }}>Local</button>
+            <button onClick={() => setOrigin("github")} style={{ flex: 1, padding: "10px", borderRadius: "6px", backgroundColor: origin === "github" ? "var(--accent-soft)" : "var(--surface-elevated)", color: origin === "github" ? "var(--accent)" : "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600 }}>GitHub</button>
+            <button onClick={() => setOrigin("skills_sh")} style={{ flex: 1, padding: "10px", borderRadius: "6px", backgroundColor: origin === "skills_sh" ? "var(--accent-soft)" : "var(--surface-elevated)", color: origin === "skills_sh" ? "var(--accent)" : "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600 }}>skills.sh</button>
           </div>
-          {source === "github" && (
+          {origin !== "local" && (
             <div>
               <label style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "var(--text-secondary)", marginBottom: "4px", display: "block" }}>GitHub URL</label>
               <input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://github.com/org/repo/skill.md" style={{ width: "100%", padding: "10px", borderRadius: "6px", backgroundColor: "var(--surface-elevated)", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: "var(--font-mono)", fontSize: "12px" }} />
@@ -166,7 +167,7 @@ function SkillCard({ skill, onClick }: { skill: Skill; onClick: () => void }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "12px", borderTop: "1px solid var(--border)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ backgroundColor: skill.source === "upload" ? "var(--accent-soft)" : "var(--surface-elevated)", color: skill.source === "upload" ? "var(--accent)" : "var(--text-muted)", padding: "3px 8px", borderRadius: "4px", fontFamily: "var(--font-body)", fontSize: "9px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" as const }}>{skill.source}</span>
+          <span style={{ backgroundColor: skill.origin === "local" ? "var(--accent-soft)" : "var(--surface-elevated)", color: skill.origin === "local" ? "var(--accent)" : "var(--text-muted)", padding: "3px 8px", borderRadius: "4px", fontFamily: "var(--font-body)", fontSize: "9px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" as const }}>{{ local: "Local", github: "GitHub", skills_sh: "skills.sh" }[skill.origin] ?? skill.origin}</span>
           {skill.latest_version && (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--text-muted)" }}>v{skill.latest_version.version}</span>
           )}
@@ -194,7 +195,7 @@ function SkillDetailModal({ skill, onClose }: { skill: Skill; onClose: () => voi
               <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "24px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "8px" }}>{skill.name}</h2>
               <p style={{ fontFamily: "var(--font-body)", fontSize: "14px", color: "var(--text-secondary)", marginBottom: "12px" }}>{skill.description || "No description"}</p>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                <span className="badge-positive">{skill.source}</span>
+                <span className="badge-positive">{skill.origin}</span>
                 <span className="badge-info">{skill.version_count} version{skill.version_count !== 1 ? "s" : ""}</span>
                 <span className="badge-info">{skill.agent_count} agent{skill.agent_count !== 1 ? "s" : ""}</span>
               </div>
@@ -242,7 +243,7 @@ export default function SkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterSource, setFilterSource] = useState<"all" | "upload" | "github">("all");
+  const [filterOrigin, setFilterOrigin] = useState<"all" | "local" | "github" | "skills_sh">("all");
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [showRegister, setShowRegister] = useState(false);
 
@@ -272,14 +273,15 @@ export default function SkillsPage() {
   }
 
   let filtered = skills;
-  if (filterSource !== "all") filtered = filtered.filter((s) => s.source === filterSource);
+  if (filterOrigin !== "all") filtered = filtered.filter((s) => s.origin === filterOrigin);
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
     filtered = filtered.filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q));
   }
 
-  const uploadCount = skills.filter((s) => s.source === "upload").length;
-  const githubCount = skills.filter((s) => s.source === "github").length;
+  const localCount = skills.filter((s) => s.origin === "local").length;
+  const githubCount = skills.filter((s) => s.origin === "github").length;
+  const skillsShCount = skills.filter((s) => s.origin === "skills_sh").length;
   const totalInstalled = skills.reduce((sum, s) => sum + s.installed_count, 0);
 
   return (
@@ -299,8 +301,8 @@ export default function SkillsPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "24px" }}>
         {[
           { icon: Puzzle, value: skills.length, label: "Total Skills", color: "var(--text-primary)" },
-          { icon: Package, value: uploadCount, label: "Uploaded", color: "var(--positive)" },
-          { icon: ExternalLink, value: githubCount, label: "From GitHub", color: "var(--accent)" },
+          { icon: Package, value: localCount, label: "Local", color: "var(--positive)" },
+          { icon: ExternalLink, value: githubCount, label: "GitHub", color: "var(--accent)" },
           { icon: CheckCircle, value: totalInstalled, label: "Installed", color: "var(--positive)" },
         ].map(({ icon: Icon, value, label, color }) => (
           <div key={label} className="stats-card" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -320,9 +322,9 @@ export default function SkillsPage() {
           <input type="text" placeholder="Search skills..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ width: "100%", paddingLeft: "40px", paddingRight: "16px", paddingTop: "12px", paddingBottom: "12px", borderRadius: "6px", backgroundColor: "var(--surface-elevated)", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: "var(--font-body)", fontSize: "12px" }} />
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
-          {(["all", "upload", "github"] as const).map((src) => (
-            <button key={src} onClick={() => setFilterSource(src)} style={{ padding: "12px 20px", borderRadius: "6px", backgroundColor: filterSource === src ? "var(--accent-soft)" : "var(--surface)", color: filterSource === src ? "var(--accent)" : "var(--text-secondary)", border: "1px solid var(--border)", fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600, cursor: "pointer", textTransform: "capitalize" as const }}>
-              {src === "all" ? `All (${skills.length})` : src === "upload" ? `Upload (${uploadCount})` : `GitHub (${githubCount})`}
+          {(["all", "local", "github", "skills_sh"] as const).map((src) => (
+            <button key={src} onClick={() => setFilterOrigin(src)} style={{ padding: "12px 20px", borderRadius: "6px", backgroundColor: filterOrigin === src ? "var(--accent-soft)" : "var(--surface)", color: filterOrigin === src ? "var(--accent)" : "var(--text-secondary)", border: "1px solid var(--border)", fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+              {{ all: `All (${skills.length})`, local: `Local (${localCount})`, github: `GitHub (${githubCount})`, skills_sh: `skills.sh (${skillsShCount})` }[src]}
             </button>
           ))}
         </div>
