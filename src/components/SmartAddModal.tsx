@@ -117,7 +117,7 @@ function getInterpretationText(state: ModalState): string {
     if (draft.type === 'file') return 'Archivo procesado. Revisa los datos antes de confirmar.';
     if (draft.type === 'text') {
       if (draft.intent === 'skill_description') return 'Detecto que quieres registrar tu propia skill. Te preparé una preview.';
-      if (draft.intent === 'discovery_intent') return 'Buscando skills relevantes en ClawHub...';
+      if (draft.intent === 'discovery_intent') return 'Buscando skills relevantes en skills.sh...';
     }
     return '';
   }
@@ -231,7 +231,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
         if (d.type === 'command') return 'Perfecto, skill del registro. Lista para registrar.';
         if (d.type === 'file') return 'Archivo procesado. Revisa los datos antes de confirmar.';
         if (d.type === 'text' && d.intent === 'skill_description') return 'Detecto que quieres registrar tu propia skill. Te prepare una preview.';
-        if (d.type === 'text' && d.intent === 'discovery_intent') return 'Buscando skills relevantes en ClawHub...';
+        if (d.type === 'text' && d.intent === 'discovery_intent') return 'Buscando skills relevantes en skills.sh...';
         return '';
       })();
       if (caineText) appendMessage('caine', caineText);

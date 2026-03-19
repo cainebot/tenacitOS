@@ -61,7 +61,7 @@ export function DiscoveryPanel({ initialQuery = '', onSelect }: DiscoveryPanelPr
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Buscar skills en ClawHub..."
+        placeholder="Buscar skills en skills.sh..."
         style={{
           width: '100%',
           padding: '8px 12px',
@@ -137,12 +137,24 @@ export function DiscoveryPanel({ initialQuery = '', onSelect }: DiscoveryPanelPr
                   fontSize: '10px',
                   padding: '2px 6px',
                   borderRadius: '4px',
-                  backgroundColor: skill.source === 'clawhub' ? 'var(--accent)' : 'var(--border)',
-                  color: skill.source === 'clawhub' ? '#fff' : 'var(--text-secondary)',
+                  backgroundColor:
+                    skill.source === 'skills_sh'
+                      ? 'var(--accent)'
+                      : skill.source === 'clawhub'
+                      ? '#6366f1'
+                      : 'var(--border)',
+                  color:
+                    skill.source === 'skills_sh' || skill.source === 'clawhub'
+                      ? '#fff'
+                      : 'var(--text-secondary)',
                   fontFamily: 'var(--font-body)',
                   whiteSpace: 'nowrap',
                 }}>
-                  {skill.source === 'clawhub' ? 'ClawHub' : 'GitHub'}
+                  {skill.source === 'skills_sh'
+                    ? 'skills.sh'
+                    : skill.source === 'clawhub'
+                    ? 'ClawHub'
+                    : 'GitHub'}
                 </span>
               </div>
               <span style={{
