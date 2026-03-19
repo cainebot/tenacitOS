@@ -12,6 +12,7 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
+  Trash2,
 } from "lucide-react";
 
 interface SkillVersion {
@@ -182,7 +183,34 @@ function SkillCard({ skill, onClick }: { skill: Skill; onClick: () => void }) {
 }
 
 // -- Skill Detail Modal --
-function SkillDetailModal({ skill, onClose }: { skill: Skill; onClose: () => void }) {
+function SkillDetailModal({ skill, onClose, onDeleted }: { skill: Skill; onClose: () => void; onDeleted: () => void }) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteResult(null);
+    try {
+      const res = await fetch(`/api/skills/${skill.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.deleted) {
+        onDeleted();
+        onClose();
+      } else if (data.pending_deletion) {
+        setDeleteResult(`Uninstalling from ${data.uninstalling_from.length} agent(s). Skill will be removed after bridge convergence.`);
+        // Refresh after a delay to show updated state
+        setTimeout(() => { onDeleted(); onClose(); }, 2000);
+      } else if (data.error) {
+        setDeleteResult(`Error: ${data.error}`);
+      }
+    } catch {
+      setDeleteResult("Failed to delete skill");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", zIndex: 100 }} onClick={onClose}>
       <div style={{ backgroundColor: "var(--surface)", borderRadius: "12px", maxWidth: "700px", width: "100%", maxHeight: "90vh", overflow: "auto", border: "1px solid var(--border)" }} onClick={(e) => e.stopPropagation()}>
@@ -231,6 +259,49 @@ function SkillDetailModal({ skill, onClose }: { skill: Skill; onClose: () => voi
           ) : (
             <p style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "var(--text-muted)" }}>Not assigned to any agents</p>
           )}
+
+          {/* Delete Section */}
+          <div style={{ marginTop: "24px", paddingTop: "24px", borderTop: "1px solid var(--border)" }}>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "6px", backgroundColor: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600 }}
+              >
+                <Trash2 style={{ width: "14px", height: "14px" }} /> Delete Skill
+              </button>
+            ) : (
+              <div style={{ backgroundColor: "rgba(239,68,68,0.05)", borderRadius: "8px", padding: "16px", border: "1px solid rgba(239,68,68,0.2)" }}>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "#ef4444", fontWeight: 600, marginBottom: "8px" }}>
+                  Delete "{skill.name}"?
+                </p>
+                {skill.agent_count > 0 && (
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "var(--text-secondary)", marginBottom: "12px" }}>
+                    This skill is assigned to {skill.agent_count} agent{skill.agent_count !== 1 ? "s" : ""}. It will be uninstalled from all agents before deletion.
+                  </p>
+                )}
+                {deleteResult && (
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: deleteResult.startsWith("Error") ? "#ef4444" : "var(--text-secondary)", marginBottom: "12px" }}>
+                    {deleteResult}
+                  </p>
+                )}
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    style={{ padding: "8px 16px", borderRadius: "6px", backgroundColor: "#ef4444", color: "white", border: "none", cursor: deleting ? "not-allowed" : "pointer", fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600, opacity: deleting ? 0.5 : 1 }}
+                  >
+                    {deleting ? "Deleting..." : skill.agent_count > 0 ? "Uninstall & Delete" : "Delete"}
+                  </button>
+                  <button
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteResult(null); }}
+                    style={{ padding: "8px 16px", borderRadius: "6px", backgroundColor: "var(--surface-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "12px", fontWeight: 600 }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -342,7 +413,7 @@ export default function SkillsPage() {
         </div>
       )}
 
-      {selectedSkill && <SkillDetailModal skill={selectedSkill} onClose={() => setSelectedSkill(null)} />}
+      {selectedSkill && <SkillDetailModal skill={selectedSkill} onClose={() => setSelectedSkill(null)} onDeleted={fetchSkills} />}
       {showRegister && <RegisterSkillModal onClose={() => setShowRegister(false)} onCreated={fetchSkills} />}
     </div>
   );
