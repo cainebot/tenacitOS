@@ -5,7 +5,6 @@ import {
   Search,
   RefreshCw,
   Puzzle,
-  Package,
   Plus,
   ExternalLink,
   X,
@@ -298,11 +297,9 @@ export default function SkillsPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "24px" }}>
         {[
           { icon: Puzzle, value: skills.length, label: "Total Skills", color: "var(--text-primary)" },
-          { icon: Package, value: localCount, label: "Local", color: "var(--positive)" },
-          { icon: ExternalLink, value: githubCount, label: "GitHub", color: "var(--accent)" },
           { icon: CheckCircle, value: totalInstalled, label: "Installed", color: "var(--positive)" },
         ].map(({ icon: Icon, value, label, color }) => (
           <div key={label} className="stats-card" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
