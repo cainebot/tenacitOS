@@ -158,12 +158,20 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const isReviewMode = state.phase === 'preview' || state.phase === 'submitting';
   const isDetecting = state.phase === 'detecting';
   const isInputDisabled = isDetecting || state.phase === 'submitting';
   const hasInput = inputValue.trim().length > 0;
   const detectionBadge = getDetectionBadge(state);
+
+  // Scroll to top when entering review mode
+  useEffect(() => {
+    if (isReviewMode && scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [isReviewMode]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -337,7 +345,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-xl p-0 flex flex-col">
-        <div style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
+        <div ref={scrollRef} style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
 
           {/* ========== REVIEW SECTION (visible in preview/submitting) ========== */}
           <AnimatePresence>
