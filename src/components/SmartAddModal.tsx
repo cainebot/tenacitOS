@@ -155,6 +155,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
   const [inlineError, setInlineError] = useState<string | null>(null);
   const [lastInput, setLastInput] = useState<string | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -341,6 +342,34 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
     event.target.value = '';
   }
 
+  function handleDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragOver(false);
+    if (isInputDisabled) return;
+    const file = event.dataTransfer.files[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['md', 'skill', 'txt'].includes(ext ?? '')) {
+      setInlineError('Solo se aceptan archivos .md, .skill o .txt');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      handleDetect(`__file__:${file.size}:${file.name}\n${content}`);
+    };
+    reader.readAsText(file);
+  }
+
+  function handleDragOver(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragOver(true);
+  }
+
+  function handleDragLeave() {
+    setDragOver(false);
+  }
+
   const isInputDisabled = state.phase === 'detecting' || state.phase === 'submitting';
   const hasInput = inputValue.trim().length > 0;
 
@@ -409,12 +438,20 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
         )}
 
         {/* Chat-style input container */}
-        <div style={{
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0',
-        }}>
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          style={{
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0',
+            border: dragOver ? '2px dashed var(--accent)' : '2px dashed transparent',
+            borderRadius: '12px',
+            transition: 'border-color 150ms ease',
+          }}
+        >
           {/* Textarea */}
           <textarea
             ref={textareaRef}
