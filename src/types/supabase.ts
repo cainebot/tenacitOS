@@ -152,6 +152,37 @@ export interface AgentSkillRow {
   created_at: string;
 }
 
+// --- Smart Skill Intake: Input Detection Engine ---
+
+export type InputType = 'github_url' | 'command' | 'file' | 'text' | 'unknown';
+export type DetectionConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
+export type TextIntent = 'skill_description' | 'discovery_intent';
+
+/**
+ * SkillDraft is the single source of truth from detection through preview through POST.
+ * It mirrors the POST /api/skills body plus detection metadata and the original raw input.
+ * No re-derivation at confirm time — what was detected is what gets registered.
+ */
+export interface SkillDraft {
+  // Detection metadata
+  type: InputType;
+  confidence: DetectionConfidence;
+  intent?: TextIntent;           // only set when type === 'text'
+
+  // POST /api/skills body fields (all optional until confirmed)
+  name?: string;
+  description?: string;
+  icon?: string;
+  origin?: SkillOrigin;
+  source_url?: string;
+  content?: string;
+  version?: string;
+
+  // Internal tracking
+  raw_input: string;             // the original user input, unmodified
+  size_error?: boolean;          // true when file input exceeds 500KB cap
+}
+
 // Helper type for Supabase Realtime postgres_changes events
 export type RealtimePayload<T> = {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
