@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { detectInput } from '@/lib/input-detector'
+import { getOpenAIToken } from '@/lib/openai-token'
 import type { SkillDraft, TextIntent } from '@/types/supabase'
 
 export const dynamic = 'force-dynamic'
 
-// Lazy-init OpenAI client — not instantiated at module load to allow
-// the route to return 400/413 errors before any API key check
-let openaiClient: OpenAI | null = null
-
-function getOpenAI(): OpenAI {
-  if (!openaiClient) {
-    openaiClient = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
-  }
-  return openaiClient
+// Per-request OpenAI client — token may come from env var or OAuth cookie
+function createOpenAI(apiKey: string): OpenAI {
+  return new OpenAI({ apiKey })
 }
 
 // --- OpenAI prompt for text intent classification ---
@@ -40,13 +33,13 @@ Rules:
   Examples: "necesito algo para encontrar skills de Supabase", "quiero buscar skills de testing", "find me a skill for code review"
 - Respond ONLY with valid JSON. No markdown, no explanation.`
 
-async function classifyTextIntent(text: string): Promise<{
+async function classifyTextIntent(text: string, apiToken: string): Promise<{
   intent: TextIntent
   name?: string
   description?: string
   icon?: string
 }> {
-  const openai = getOpenAI()
+  const openai = createOpenAI(apiToken)
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
@@ -114,18 +107,20 @@ export async function POST(request: NextRequest) {
   }
 
   // Stage 2: LLM classification — only for text type
-  if (!process.env.OPENAI_API_KEY) {
-    // Graceful degradation: if key absent, return unclassified text draft
+  const apiToken = await getOpenAIToken(request)
+
+  if (!apiToken) {
+    // No API key or OAuth token — default to discovery_intent (safe fallback)
     const fallbackDraft: SkillDraft = {
       ...draft,
       confidence: 'LOW',
-      // No intent — caller treats as unknown text
+      intent: 'discovery_intent',
     }
     return NextResponse.json(fallbackDraft)
   }
 
   try {
-    const { intent, name, description, icon } = await classifyTextIntent(input.trim())
+    const { intent, name, description, icon } = await classifyTextIntent(input.trim(), apiToken)
 
     const enrichedDraft: SkillDraft = {
       ...draft,
