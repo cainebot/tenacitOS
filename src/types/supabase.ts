@@ -114,6 +114,40 @@ export interface AgentMessageRow {
   created_at: string;       // ISO timestamp
 }
 
+// Phase 31: Skill marketplace types
+export type SkillSource = 'upload' | 'github';
+export type AgentSkillStatus = 'pending' | 'installed' | 'failed';
+
+export interface SkillRow {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  source: SkillSource;
+  source_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SkillVersionRow {
+  id: string;
+  skill_id: string;
+  version: string;
+  content: string;
+  install_spec: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AgentSkillRow {
+  id: string;
+  agent_id: string;
+  skill_id: string;
+  skill_version_id: string | null;
+  status: AgentSkillStatus;
+  installed_at: string | null;
+  created_at: string;
+}
+
 // Helper type for Supabase Realtime postgres_changes events
 export type RealtimePayload<T> = {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
