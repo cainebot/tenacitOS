@@ -4,6 +4,7 @@ import { useState, useReducer, useRef, useEffect } from 'react';
 import { Plus, ArrowUp, Upload, Link, Terminal, X } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
 import { detectInput } from '@/lib/input-detector';
 import { SkillPreviewCard } from '@/components/SkillPreviewCard';
 import type { SkillDraft } from '@/types/supabase';
@@ -109,6 +110,21 @@ function getInterpretationText(state: ModalState): string {
   return '';
 }
 
+// --- Detection badge label ---
+
+function getDetectionBadge(state: ModalState): { label: string; variant: 'default' | 'accent' | 'success' | 'outline' } | null {
+  if (state.phase === 'idle') return null;
+  if (!('draft' in state)) return null;
+  const { draft } = state;
+  switch (draft.type) {
+    case 'github_url': return { label: 'GitHub URL', variant: 'accent' };
+    case 'command': return { label: 'npx command', variant: 'success' };
+    case 'file': return { label: 'File upload', variant: 'default' };
+    case 'text': return { label: 'Text', variant: 'outline' };
+    default: return null;
+  }
+}
+
 // --- Component ---
 
 interface SmartAddModalProps {
@@ -152,6 +168,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
   }, [inputValue]);
 
   const interpretationText = getInterpretationText(state);
+  const detectionBadge = getDetectionBadge(state);
 
   function buildEditedDraft(): SkillDraft {
     if (state.phase !== 'editing') throw new Error('buildEditedDraft called outside editing phase');
@@ -431,18 +448,27 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
             flexDirection: 'column',
             gap: '8px',
           }}>
-            {/* IA interpretation */}
-            {interpretationText && (
-              <p style={{
-                fontSize: '13px',
-                fontFamily: 'var(--font-body)',
-                color: 'var(--text-secondary)',
-                margin: 0,
-                lineHeight: '1.5',
-                transition: 'opacity 200ms ease',
-              }}>
-                {interpretationText}
-              </p>
+            {/* Detection badge + IA interpretation */}
+            {(detectionBadge || interpretationText) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {detectionBadge && (
+                  <Badge variant={detectionBadge.variant}>
+                    Detected: {detectionBadge.label}
+                  </Badge>
+                )}
+                {interpretationText && (
+                  <p style={{
+                    fontSize: '13px',
+                    fontFamily: 'var(--font-body)',
+                    color: 'var(--text-secondary)',
+                    margin: 0,
+                    lineHeight: '1.5',
+                    transition: 'opacity 200ms ease',
+                  }}>
+                    {interpretationText}
+                  </p>
+                )}
+              </div>
             )}
 
             {/* Inline error */}
