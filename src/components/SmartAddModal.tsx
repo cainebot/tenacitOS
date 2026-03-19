@@ -455,14 +455,13 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
             onDragLeave={handleDragLeave}
             style={{
               padding: '16px',
-              margin: '0 24px 24px',
+              margin: isReviewMode ? '0 24px 24px' : '0',
               display: 'flex',
               flexDirection: 'column',
               gap: '0',
-              border: dragOver ? '2px dashed var(--accent)' : '1px solid #393939',
+              border: dragOver ? '2px dashed var(--accent)' : isReviewMode ? '1px solid #393939' : '2px dashed transparent',
               borderRadius: '12px',
               transition: 'border-color 150ms ease, opacity 200ms ease',
-              opacity: 1,
             }}
           >
             {/* Textarea */}
