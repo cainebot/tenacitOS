@@ -59,22 +59,24 @@ const typeIcons: Record<string, React.ComponentType<{ className?: string; style?
   default: Zap,
 };
 
-const typeColorVars: Record<string, string> = {
-  file: "--type-file",
-  search: "--type-search",
-  message: "--type-message",
-  command: "--type-command",
-  security: "--type-security",
-  build: "--type-build",
-  task: "--type-task",
-  cron: "--type-cron",
-  memory: "--type-memory",
+// Tailwind classes for each activity type (bg, text, border)
+const typeClasses: Record<string, { bg: string; text: string; border: string }> = {
+  file:     { bg: "bg-[var(--blue-700)]/10",   text: "text-[var(--blue-700)]",    border: "border-[var(--blue-700)]/30" },
+  search:   { bg: "bg-[var(--warning-600)]/10", text: "text-[var(--warning-600)]", border: "border-[var(--warning-600)]/30" },
+  message:  { bg: "bg-[var(--success-600)]/10", text: "text-[var(--success-600)]", border: "border-[var(--success-600)]/30" },
+  command:  { bg: "bg-[#BF5AF2]/10",            text: "text-[#BF5AF2]",            border: "border-[#BF5AF2]/30" },
+  cron:     { bg: "bg-[#FF375F]/10",            text: "text-[#FF375F]",            border: "border-[#FF375F]/30" },
+  security: { bg: "bg-[var(--error-600)]/10",   text: "text-[var(--error-600)]",   border: "border-[var(--error-600)]/30" },
+  build:    { bg: "bg-[#FF9F0A]/10",            text: "text-[#FF9F0A]",            border: "border-[#FF9F0A]/30" },
+  task:     { bg: "bg-[var(--brand-600)]/10",   text: "text-[var(--brand-600)]",   border: "border-[var(--brand-600)]/30" },
+  memory:   { bg: "bg-[var(--blue-700)]/10",    text: "text-[var(--blue-700)]",    border: "border-[var(--blue-700)]/30" },
+  default:  { bg: "bg-[var(--bg-secondary)]",   text: "text-[var(--text-secondary-700)]", border: "border-[var(--border-primary)]" },
 };
 
-const statusConfig: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; colorVar: string }> = {
-  success: { icon: CheckCircle, colorVar: "--success" },
-  error: { icon: XCircle, colorVar: "--error" },
-  pending: { icon: Clock, colorVar: "--warning" },
+const statusClasses: Record<string, { text: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {
+  success: { icon: CheckCircle, text: "text-[var(--success-600)]", bg: "bg-[var(--success-600)]/10" },
+  error:   { icon: XCircle,     text: "text-[var(--error-600)]",   bg: "bg-[var(--error-600)]/10" },
+  pending: { icon: Clock,       text: "text-[var(--warning-600)]", bg: "bg-[var(--warning-600)]/10" },
 };
 
 const allTypes = ["file", "search", "message", "command", "security", "build", "task", "cron", "memory"];
@@ -104,7 +106,7 @@ export default function ActivityPage() {
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
-  
+
   // Filters
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -117,7 +119,7 @@ export default function ActivityPage() {
 
   const fetchActivities = useCallback(async (append = false) => {
     const currentOffset = append ? offset : 0;
-    
+
     if (append) {
       setLoadingMore(true);
     } else {
@@ -129,39 +131,39 @@ export default function ActivityPage() {
       params.set("limit", limit.toString());
       params.set("offset", currentOffset.toString());
       params.set("sort", sort);
-      
+
       if (selectedTypes.size > 0 && selectedTypes.size < allTypes.length) {
         if (selectedTypes.size === 1) {
           params.set("type", Array.from(selectedTypes)[0]);
         }
       }
-      
+
       if (filterStatus !== "all") {
         params.set("status", filterStatus);
       }
-      
+
       if (startDate) {
         params.set("startDate", startDate);
       }
-      
+
       if (endDate) {
         params.set("endDate", endDate);
       }
 
       const res = await fetch(`/api/activities?${params.toString()}`);
       const data: ActivitiesResponse = await res.json();
-      
+
       let filteredActivities = data.activities;
       if (selectedTypes.size > 1) {
         filteredActivities = data.activities.filter((a) => selectedTypes.has(a.type));
       }
-      
+
       if (append) {
         setActivities((prev) => [...prev, ...filteredActivities]);
       } else {
         setActivities(filteredActivities);
       }
-      
+
       setTotal(data.total);
       setHasMore(data.hasMore);
       setOffset(currentOffset + data.activities.length);
@@ -191,7 +193,7 @@ export default function ActivityPage() {
   const handlePresetClick = (days: number, index: number) => {
     setActivePreset(index);
     const end = format(endOfDay(new Date()), "yyyy-MM-dd");
-    
+
     if (days === -1) {
       setStartDate("");
       setEndDate("");
@@ -227,9 +229,9 @@ export default function ActivityPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
-          <RefreshCw className="w-8 h-8 animate-spin" style={{ color: 'var(--accent)' }} />
+      <div className="p-8">
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="w-8 h-8 animate-spin text-[var(--brand-600)]" />
         </div>
       </div>
     );
@@ -239,24 +241,15 @@ export default function ActivityPage() {
     <div className="p-4 md:p-8">
       <div className="mb-4 md:mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ 
-            color: 'var(--text-primary)',
-            fontFamily: 'var(--font-heading)'
-          }}>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 text-[var(--text-primary-900)] font-[family-name:var(--font-display)]">
             Activity Log
           </h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Complete history of agent actions</p>
+          <p className="text-[var(--text-secondary-700)]">Complete history of agent actions</p>
         </div>
         <a
           href="/api/activities?format=csv&limit=10000"
           download={`activities-${new Date().toISOString().split('T')[0]}.csv`}
-          style={{
-            display: "flex", alignItems: "center", gap: "0.5rem",
-            padding: "0.5rem 1rem", borderRadius: "0.5rem",
-            backgroundColor: "var(--card)", color: "var(--text-secondary)",
-            border: "1px solid var(--border)", textDecoration: "none",
-            fontSize: "0.875rem", cursor: "pointer", marginTop: "0.25rem",
-          }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-secondary-700)] border border-[var(--border-primary)] no-underline text-sm cursor-pointer mt-1"
         >
           <Download className="w-4 h-4" />
           Export CSV
@@ -269,38 +262,31 @@ export default function ActivityPage() {
       </div>
 
       {/* Date Range Picker */}
-      <div className="p-3 md:p-4 mb-4 md:mb-6 rounded-xl" style={{ 
-        backgroundColor: 'var(--card)'
-      }}>
+      <div className="p-3 md:p-4 mb-4 md:mb-6 rounded-xl bg-[var(--bg-secondary)]">
         <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
-          <Calendar className="w-4 h-4 md:w-5 md:h-5" style={{ color: 'var(--text-secondary)' }} />
-          <span className="text-xs md:text-sm" style={{ color: 'var(--text-secondary)' }}>Date Range</span>
+          <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[var(--text-secondary-700)]" />
+          <span className="text-xs md:text-sm text-[var(--text-secondary-700)]">Date Range</span>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-2 md:gap-3">
           {datePresets.map((preset, index) => (
             <button
               key={preset.label}
               onClick={() => handlePresetClick(preset.days, index)}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '0.5rem',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                transition: 'all 0.2s',
-                backgroundColor: activePreset === index ? 'rgba(255, 59, 48, 0.2)' : 'rgba(42, 42, 42, 0.5)',
-                color: activePreset === index ? 'var(--accent)' : 'var(--text-secondary)',
-                border: activePreset === index ? '1px solid rgba(255, 59, 48, 0.3)' : '1px solid transparent',
-                cursor: 'pointer'
-              }}
+              className={[
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                activePreset === index
+                  ? "bg-[var(--brand-600)]/20 text-[var(--brand-600)] border border-[var(--brand-600)]/30"
+                  : "bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] border border-transparent",
+              ].join(" ")}
             >
               {preset.label}
             </button>
           ))}
 
-          <div style={{ width: '1px', height: '2rem', backgroundColor: 'var(--border)', margin: '0 0.5rem' }} />
+          <div className="w-px h-8 bg-[var(--border-primary)] mx-2" />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="flex items-center gap-2">
             <input
               type="date"
               value={startDate}
@@ -308,17 +294,9 @@ export default function ActivityPage() {
                 setStartDate(e.target.value);
                 setActivePreset(null);
               }}
-              style={{
-                backgroundColor: 'rgba(42, 42, 42, 0.5)',
-                color: 'var(--text-secondary)',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.5rem',
-                border: '1px solid var(--border)',
-                fontSize: '0.875rem',
-                outline: 'none'
-              }}
+              className="bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] px-3 py-2 rounded-lg border border-[var(--border-primary)] text-sm outline-none"
             />
-            <span style={{ color: 'var(--text-muted)' }}>to</span>
+            <span className="text-[var(--text-quaternary-500)]">to</span>
             <input
               type="date"
               value={endDate}
@@ -326,71 +304,46 @@ export default function ActivityPage() {
                 setEndDate(e.target.value);
                 setActivePreset(null);
               }}
-              style={{
-                backgroundColor: 'rgba(42, 42, 42, 0.5)',
-                color: 'var(--text-secondary)',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.5rem',
-                border: '1px solid var(--border)',
-                fontSize: '0.875rem',
-                outline: 'none'
-              }}
+              className="bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] px-3 py-2 rounded-lg border border-[var(--border-primary)] text-sm outline-none"
             />
           </div>
         </div>
       </div>
 
       {/* Type Filter Chips */}
-      <div className="p-3 md:p-4 mb-4 md:mb-6 rounded-xl" style={{ 
-        backgroundColor: 'var(--card)'
-      }}>
+      <div className="p-3 md:p-4 mb-4 md:mb-6 rounded-xl bg-[var(--bg-secondary)]">
         <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
-          <Filter className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
-          <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Filter by Type</span>
+          <Filter className="w-5 h-5 text-[var(--text-secondary-700)]" />
+          <span className="text-sm text-[var(--text-secondary-700)]">Filter by Type</span>
           {selectedTypes.size > 0 && (
             <button
               onClick={clearTypeFilters}
-              style={{
-                fontSize: '0.75rem',
-                color: 'var(--accent)',
-                marginLeft: 'auto',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer'
-              }}
+              className="text-xs text-[var(--brand-600)] ml-auto bg-transparent border-none cursor-pointer"
             >
               Clear all
             </button>
           )}
         </div>
-        
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+
+        <div className="flex flex-wrap gap-2">
           {allTypes.map((type) => {
             const TypeIcon = typeIcons[type] || typeIcons.default;
-            const colorVar = typeColorVars[type] || "--text-secondary";
+            const colors = typeClasses[type] || typeClasses.default;
             const isSelected = selectedTypes.has(type);
-            
+
             return (
               <button
                 key={type}
                 onClick={() => toggleType(type)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.375rem 0.75rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  transition: 'all 0.2s',
-                  backgroundColor: isSelected ? `color-mix(in srgb, var(${colorVar}) 15%, transparent)` : 'rgba(42, 42, 42, 0.5)',
-                  color: isSelected ? `var(${colorVar})` : 'var(--text-muted)',
-                  border: isSelected ? `1px solid color-mix(in srgb, var(${colorVar}) 30%, transparent)` : '1px solid var(--border)',
-                  cursor: 'pointer'
-                }}
+                className={[
+                  "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer border",
+                  isSelected
+                    ? `${colors.bg} ${colors.text} ${colors.border}`
+                    : "bg-[var(--bg-quaternary)] text-[var(--text-quaternary-500)] border-[var(--border-primary)]",
+                ].join(" ")}
               >
                 <TypeIcon className="w-4 h-4" />
-                <span style={{ textTransform: 'capitalize' }}>{type}</span>
+                <span className="capitalize">{type}</span>
               </button>
             );
           })}
@@ -402,15 +355,7 @@ export default function ActivityPage() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          style={{
-            backgroundColor: 'rgba(42, 42, 42, 0.5)',
-            color: 'var(--text-secondary)',
-            padding: '0.5rem 0.75rem',
-            borderRadius: '0.5rem',
-            border: '1px solid var(--border)',
-            outline: 'none',
-            cursor: 'pointer'
-          }}
+          className="bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] px-3 py-2 rounded-lg border border-[var(--border-primary)] outline-none cursor-pointer"
         >
           <option value="all">All Statuses</option>
           <option value="success">Success</option>
@@ -420,135 +365,88 @@ export default function ActivityPage() {
 
         <button
           onClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            backgroundColor: 'rgba(42, 42, 42, 0.5)',
-            color: 'var(--text-secondary)',
-            padding: '0.5rem 0.75rem',
-            borderRadius: '0.5rem',
-            border: '1px solid var(--border)',
-            cursor: 'pointer',
-            transition: 'border-color 0.2s'
-          }}
+          className="flex items-center gap-2 bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] px-3 py-2 rounded-lg border border-[var(--border-primary)] cursor-pointer transition-colors"
         >
           <ArrowUpDown className="w-4 h-4" />
           <span>{sort === "newest" ? "Newest first" : "Oldest first"}</span>
         </button>
 
-        <div className="text-xs md:text-sm w-full md:w-auto md:ml-auto mt-2 md:mt-0" style={{ color: 'var(--text-muted)' }}>
+        <div className="text-xs md:text-sm w-full md:w-auto md:ml-auto mt-2 md:mt-0 text-[var(--text-quaternary-500)]">
           Showing {activities.length} of {total} activities
         </div>
       </div>
 
       {/* Activity List */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--card)' }}>
+      <div className="rounded-xl overflow-hidden bg-[var(--bg-secondary)]">
         {activities.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-secondary)' }}>
-            <Zap className="w-12 h-12" style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
+          <div className="text-center py-12 text-[var(--text-secondary-700)]">
+            <Zap className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No activities found</p>
           </div>
         )}
 
         {activities.map((activity, index) => {
           const TypeIcon = typeIcons[activity.type] || typeIcons.default;
-          const colorVar = typeColorVars[activity.type] || "--text-secondary";
-          const status = statusConfig[activity.status] || statusConfig.success;
+          const colors = typeClasses[activity.type] || typeClasses.default;
+          const status = statusClasses[activity.status] || statusClasses.success;
           const StatusIcon = status.icon;
 
           return (
             <div
               key={activity.id}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '1rem',
-                padding: '1.5rem',
-                transition: 'background-color 0.2s',
-                borderBottom: index !== activities.length - 1 ? '1px solid var(--border)' : 'none'
-              }}
+              className={[
+                "flex items-start gap-4 p-6 transition-colors",
+                index !== activities.length - 1 ? "border-b border-[var(--border-primary)]" : "",
+              ].join(" ")}
             >
-              <div style={{
-                padding: '0.75rem',
-                borderRadius: '0.5rem',
-                backgroundColor: `color-mix(in srgb, var(${colorVar}) 15%, transparent)`
-              }}>
-                <TypeIcon className="w-5 h-5" style={{ color: `var(${colorVar})` }} />
+              <div className={`p-3 rounded-lg ${colors.bg}`}>
+                <TypeIcon className={`w-5 h-5 ${colors.text}`} />
               </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                  <span style={{ 
-                    fontWeight: 500, 
-                    textTransform: 'capitalize', 
-                    color: `var(${colorVar})` 
-                  }}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className={`font-medium capitalize ${colors.text}`}>
                     {activity.type}
                   </span>
-                  <span style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    fontSize: '0.875rem',
-                    color: `var(${status.colorVar})`,
-                    backgroundColor: `color-mix(in srgb, var(${status.colorVar}) 15%, transparent)`,
-                    padding: '0.125rem 0.5rem',
-                    borderRadius: '0.25rem'
-                  }}>
+                  <span className={`flex items-center gap-1 text-sm px-2 py-0.5 rounded ${status.text} ${status.bg}`}>
                     <StatusIcon className="w-3 h-3" />
                     {activity.status}
                   </span>
                 </div>
-                <RichDescription text={activity.description} style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }} />
-                
+                <RichDescription text={activity.description} className="text-[var(--text-secondary-700)] mb-2" />
+
                 {/* Duration and Tokens */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem' }}>
+                <div className="flex items-center gap-4 text-sm">
                   {activity.duration_ms !== null && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-muted)' }}>
+                    <span className="flex items-center gap-1 text-[var(--text-quaternary-500)]">
                       <Timer className="w-3.5 h-3.5" />
                       {formatDuration(activity.duration_ms)}
                     </span>
                   )}
                   {activity.tokens_used !== null && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-muted)' }}>
+                    <span className="flex items-center gap-1 text-[var(--text-quaternary-500)]">
                       <Coins className="w-3.5 h-3.5" />
                       {formatTokens(activity.tokens_used)} tokens
                     </span>
                   )}
                 </div>
-                
+
                 {activity.metadata && Object.keys(activity.metadata).length > 0 && (
-                  <details style={{ marginTop: '0.75rem' }}>
-                    <summary style={{ 
-                      fontSize: '0.75rem', 
-                      color: 'var(--text-muted)', 
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem'
-                    }}>
+                  <details className="mt-3">
+                    <summary className="text-xs text-[var(--text-quaternary-500)] cursor-pointer flex items-center gap-1">
                       <ChevronDown className="w-3 h-3" />
                       View metadata
                     </summary>
-                    <pre style={{
-                      marginTop: '0.5rem',
-                      fontSize: '0.75rem',
-                      color: 'var(--text-muted)',
-                      backgroundColor: 'rgba(42, 42, 42, 0.5)',
-                      padding: '0.75rem',
-                      borderRadius: '0.5rem',
-                      overflowX: 'auto'
-                    }}>
+                    <pre className="mt-2 text-xs text-[var(--text-quaternary-500)] bg-[var(--bg-quaternary)] p-3 rounded-lg overflow-x-auto">
                       {JSON.stringify(activity.metadata, null, 2)}
                     </pre>
                   </details>
                 )}
               </div>
 
-              <div style={{ textAlign: 'right', fontSize: '0.875rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              <div className="text-right text-sm text-[var(--text-quaternary-500)] whitespace-nowrap">
                 <div>{format(new Date(activity.timestamp), "MMM d, yyyy")}</div>
-                <div style={{ color: 'var(--text-muted)', opacity: 0.7 }}>{format(new Date(activity.timestamp), "HH:mm:ss")}</div>
+                <div className="opacity-70">{format(new Date(activity.timestamp), "HH:mm:ss")}</div>
               </div>
             </div>
           );
@@ -557,24 +455,14 @@ export default function ActivityPage() {
 
       {/* Load More Button */}
       {hasMore && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+        <div className="flex justify-center mt-6">
           <button
             onClick={handleLoadMore}
             disabled={loadingMore}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              backgroundColor: 'rgba(42, 42, 42, 0.5)',
-              color: 'var(--text-secondary)',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '0.5rem',
-              fontWeight: 500,
-              border: 'none',
-              cursor: loadingMore ? 'not-allowed' : 'pointer',
-              opacity: loadingMore ? 0.5 : 1,
-              transition: 'background-color 0.2s'
-            }}
+            className={[
+              "flex items-center gap-2 bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] px-6 py-3 rounded-lg font-medium border-none transition-colors",
+              loadingMore ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+            ].join(" ")}
           >
             {loadingMore ? (
               <>
@@ -593,7 +481,7 @@ export default function ActivityPage() {
 
       {/* End of list indicator */}
       {!hasMore && activities.length > 0 && (
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+        <div className="text-center mt-6 text-[var(--text-quaternary-500)] text-sm">
           — End of activity log —
         </div>
       )}
