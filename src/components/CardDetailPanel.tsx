@@ -11,7 +11,7 @@ import { CardAttachments } from './CardAttachments'
 import { CardChildTasks } from './CardChildTasks'
 import { CustomFieldManager } from './CustomFieldManager'
 import { CardActivityTimeline } from './CardActivityTimeline'
-import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
+import { cx, ConfirmActionDialog } from '@openclaw/ui'
 
 interface CardDetailPanelProps {
   cardId: string
@@ -28,9 +28,9 @@ const MIN_WIDTH = 360
 const MAX_WIDTH = 800
 
 const stateCategoryColors: Record<string, string> = {
-  'to-do': 'var(--text-muted, #9ca3af)',
-  'in_progress': 'var(--accent, #6366f1)',
-  'done': '#22c55e',
+  'to-do': 'text-muted',
+  'in_progress': 'text-accent',
+  'done': 'text-success',
 }
 
 const cardTypeBadgeColors: Record<string, { bg: string; text: string }> = {
@@ -222,21 +222,13 @@ export function CardDetailPanel({
       case 'card_type': {
         const colors = cardTypeBadgeColors[card.card_type] ?? { bg: '#6b7280', text: '#fff' }
         return (
-          <div key="card_type" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', padding: '4px 0' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', width: '120px', flexShrink: 0 }}>
+          <div key="card_type" className="flex flex-row items-center gap-2 py-1">
+            <span className="font-body text-xs text-muted w-[120px] shrink-0">
               Type
             </span>
             <span
-              style={{
-                display: 'inline-block',
-                background: colors.bg,
-                color: colors.text,
-                borderRadius: '4px',
-                padding: '1px 8px',
-                fontSize: '11px',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 500,
-              }}
+              style={{ background: colors.bg, color: colors.text }}
+              className="inline-block rounded px-2 py-[1px] text-[11px] font-body font-medium"
             >
               {card.card_type}
             </span>
@@ -325,33 +317,18 @@ export function CardDetailPanel({
     )
   }
 
-  const panelStyle: React.CSSProperties = {
-    position: 'fixed',
-    right: 0,
-    top: '48px',
-    bottom: '32px',
-    width: `${width}px`,
-    background: 'var(--surface-elevated, var(--surface, #1a1a2e))',
-    borderLeft: '1px solid var(--border)',
-    zIndex: 50,
-    display: 'flex',
-    flexDirection: 'column',
-    transform: visible ? 'translateX(0)' : 'translateX(100%)',
-    transition: 'transform 0.2s ease-out',
-    boxShadow: '-4px 0 24px rgba(0,0,0,0.2)',
-    overflow: 'hidden',
-  }
-
-  const scrollAreaStyle: React.CSSProperties = {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '16px 20px',
-  }
+  const panelClasses = cx(
+    'fixed right-0 top-12 bottom-8 flex flex-col z-50',
+    'bg-surface-elevated border-l border-border overflow-hidden',
+    'shadow-[-4px_0_24px_rgba(0,0,0,0.2)]',
+    'transition-transform duration-200 ease-out',
+    visible ? 'translate-x-0' : 'translate-x-full'
+  )
 
   if (loading) {
     return (
-      <div style={panelStyle}>
-        <div style={{ padding: '16px 20px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', fontSize: '13px' }}>
+      <div className={panelClasses} style={{ width: `${width}px` }}>
+        <div className="p-5 text-muted font-body text-[13px]">
           Loading...
         </div>
       </div>
@@ -360,8 +337,8 @@ export function CardDetailPanel({
 
   if (error || !card) {
     return (
-      <div style={panelStyle}>
-        <div style={{ padding: '16px 20px', color: 'var(--text-muted)', fontFamily: 'var(--font-body)', fontSize: '13px' }}>
+      <div className={panelClasses} style={{ width: `${width}px` }}>
+        <div className="p-5 text-muted font-body text-[13px]">
           {error ?? 'Card not found'}
         </div>
       </div>
@@ -375,99 +352,39 @@ export function CardDetailPanel({
       {/* Resize handle */}
       <div
         onMouseDown={onResizeMouseDown}
-        style={{
-          position: 'fixed',
-          right: width - 2,
-          top: '48px',
-          bottom: '32px',
-          width: '4px',
-          cursor: 'col-resize',
-          zIndex: 51,
-          background: 'transparent',
-        }}
+        className="fixed top-12 bottom-8 w-1 cursor-col-resize z-[51] bg-transparent"
+        style={{ right: width - 2 }}
         title="Drag to resize"
       />
 
       {/* Panel */}
-      <div style={panelStyle}>
+      <div className={panelClasses} style={{ width: `${width}px` }}>
         {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 16px',
-            borderBottom: '1px solid var(--border)',
-            flexShrink: 0,
-          }}
-        >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
           <button
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              padding: '4px',
-              borderRadius: '4px',
-            }}
+            className="bg-transparent border-0 cursor-pointer text-secondary flex items-center p-1 rounded"
             title="Close (Esc)"
           >
             <X size={16} />
           </button>
 
-          <div style={{ position: 'relative' }}>
+          <div className="relative">
             <button
               onClick={() => setShowOverflow(!showOverflow)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '4px',
-                borderRadius: '4px',
-              }}
+              className="bg-transparent border-0 cursor-pointer text-secondary flex items-center p-1 rounded"
             >
               <MoreHorizontal size={16} />
             </button>
 
             {showOverflow && (
-              <div
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '28px',
-                  background: 'var(--surface-elevated, var(--surface))',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-                  minWidth: '160px',
-                  zIndex: 100,
-                }}
-              >
+              <div className="absolute right-0 top-7 bg-surface-elevated border border-border rounded-md shadow-[0_4px_16px_rgba(0,0,0,0.2)] min-w-[160px] z-[100]">
                 <button
                   onClick={() => {
                     setShowOverflow(false)
                     setShowDeleteConfirm(true)
                   }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    width: '100%',
-                    padding: '8px 12px',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#ef4444',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '13px',
-                    textAlign: 'left',
-                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 bg-transparent border-0 cursor-pointer text-[#ef4444] font-body text-[13px] text-left"
                 >
                   <Trash2 size={14} />
                   Delete card
@@ -480,13 +397,13 @@ export function CardDetailPanel({
         {/* Click outside to close overflow */}
         {showOverflow && (
           <div
-            style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+            className="fixed inset-0 z-[99]"
             onClick={() => setShowOverflow(false)}
           />
         )}
 
         {/* Scrollable content */}
-        <div style={scrollAreaStyle}>
+        <div className="flex-1 overflow-y-auto px-5 py-4">
           {/* Breadcrumb — JIRA style: parent codes as links + current code */}
           {(() => {
             const currentCode = card.code || cardCode
@@ -495,23 +412,6 @@ export function CardDetailPanel({
 
             if (!hasBreadcrumb) return null
 
-            const linkStyle: React.CSSProperties = {
-              fontFamily: 'var(--font-body)',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: 'var(--accent, #6366f1)',
-              letterSpacing: '0.02em',
-              cursor: 'pointer',
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              textDecoration: 'none',
-            }
-            const separatorStyle: React.CSSProperties = {
-              color: 'var(--text-muted)',
-              fontSize: '10px',
-              margin: '0 2px',
-            }
             const badgeStyle = (type: string): React.CSSProperties => ({
               display: 'inline-flex',
               alignItems: 'center',
@@ -520,34 +420,33 @@ export function CardDetailPanel({
               borderRadius: '3px',
               fontSize: '10px',
               fontWeight: 600,
-              fontFamily: 'var(--font-body)',
               textTransform: 'lowercase',
               background: cardTypeBadgeColors[type]?.bg ?? '#6b7280',
               color: cardTypeBadgeColors[type]?.text ?? '#fff',
             })
 
             return (
-              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+              <div className="mb-2 flex items-center gap-1 flex-wrap">
                 {/* Parent breadcrumb chain */}
                 {breadcrumbItems.map((bc) => {
                   const parentCode = bc.code || cardCodeMap[bc.card_id]
                   return (
-                    <span key={bc.card_id} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <span key={bc.card_id} className="inline-flex items-center gap-1">
                       <button
                         onClick={() => onNavigateToCard?.(bc.card_id)}
-                        style={linkStyle}
+                        className="font-body text-xs font-semibold text-accent tracking-wide cursor-pointer bg-transparent border-0 p-0 no-underline"
                         title={bc.title}
                       >
                         {parentCode || bc.card_type.toUpperCase()}
                       </button>
                       <span style={badgeStyle(bc.card_type)}>{bc.card_type}</span>
-                      <span style={separatorStyle}>/</span>
+                      <span className="text-muted text-[10px] mx-[2px]">/</span>
                     </span>
                   )
                 })}
                 {/* Current card */}
                 {currentCode && (
-                  <span style={{ ...linkStyle, color: 'var(--text-primary)', cursor: 'default' }}>
+                  <span className="font-body text-xs font-semibold text-primary cursor-default tracking-wide">
                     {currentCode}
                   </span>
                 )}
@@ -573,48 +472,26 @@ export function CardDetailPanel({
             onKeyDown={(e) => {
               if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur() }
             }}
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '16px',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              outline: 'none',
-              padding: '2px 0',
-              marginBottom: '12px',
-              lineHeight: 1.3,
-              wordBreak: 'break-word',
-              borderBottom: '1px solid transparent',
-              transition: 'border-color 0.15s',
-              cursor: 'text',
-            }}
-            onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent, #6366f1)' }}
+            className="font-body text-base font-semibold text-primary outline-none py-[2px] mb-3 leading-[1.3] break-words border-b border-transparent focus:border-accent transition-[border-color] duration-150 cursor-text"
             onBlurCapture={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}
           >
             {card.title}
           </div>
 
           {/* State dropdown */}
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             {workflowStates.length > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)' }}>
+              <div className="flex items-center gap-2">
+                <span className="font-body text-xs text-muted">
                   State
                 </span>
                 <select
                   value={card.state_id}
                   onChange={(e) => moveCard(e.target.value)}
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '6px',
-                    padding: '3px 8px',
-                    color: currentState ? (stateCategoryColors[currentState.category] ?? 'var(--text-primary)') : 'var(--text-primary)',
-                    cursor: 'pointer',
-                    outline: 'none',
-                  }}
+                  className={cx(
+                    'font-body text-xs font-medium bg-surface border border-border rounded-md px-2 py-[3px] cursor-pointer outline-none',
+                    currentState ? (stateCategoryColors[currentState.category] ?? 'text-primary') : 'text-primary'
+                  )}
                 >
                   {workflowStates.map((s) => (
                     <option key={s.state_id} value={s.state_id}>
@@ -625,17 +502,10 @@ export function CardDetailPanel({
               </div>
             ) : currentState ? (
               <span
-                style={{
-                  display: 'inline-block',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  padding: '3px 10px',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  color: stateCategoryColors[currentState.category] ?? 'var(--text-primary)',
-                  fontFamily: 'var(--font-body)',
-                }}
+                className={cx(
+                  'inline-block bg-surface border border-border rounded-md px-[10px] py-[3px] text-xs font-medium font-body',
+                  stateCategoryColors[currentState.category] ?? 'text-primary'
+                )}
               >
                 {formatStateName(currentState.name)}
               </span>
@@ -655,56 +525,28 @@ export function CardDetailPanel({
           />
 
           {/* Unified fields section */}
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-body text-[11px] font-semibold text-muted uppercase tracking-[0.05em]">
                 Fields
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => setShowFieldManager(true)}
                   title="Manage custom field definitions"
-                  style={{
-                    background: 'none',
-                    border: '1px solid var(--border)',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    color: 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '2px 6px',
-                    gap: '3px',
-                    fontSize: '11px',
-                    fontFamily: 'var(--font-body)',
-                  }}
+                  className="bg-transparent border border-border rounded cursor-pointer text-muted flex items-center px-[6px] py-[2px] gap-[3px] text-[11px] font-body"
                 >
                   Manage Fields
                 </button>
                 <button
                   onClick={() => setReorderMode(!reorderMode)}
                   title={reorderMode ? 'Done customizing' : 'Customize fields'}
-                  style={{
-                    background: reorderMode ? 'var(--accent, #6366f1)' : 'none',
-                    border: reorderMode ? 'none' : '1px solid var(--border)',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    color: reorderMode ? '#fff' : 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '2px 4px',
-                    gap: '3px',
-                    fontSize: '11px',
-                    fontFamily: 'var(--font-body)',
-                  }}
+                  className={cx(
+                    'rounded cursor-pointer flex items-center px-1 py-[2px] gap-[3px] text-[11px] font-body',
+                    reorderMode
+                      ? 'bg-accent border-0 text-white'
+                      : 'bg-transparent border border-border text-muted'
+                  )}
                 >
                   <Settings size={12} />
                   {reorderMode ? 'Done' : 'Customize'}
@@ -722,18 +564,8 @@ export function CardDetailPanel({
           </div>
 
           {/* Description */}
-          <div style={{ marginBottom: '16px' }}>
-            <div
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '8px',
-              }}
-            >
+          <div className="mb-4">
+            <div className="font-body text-[11px] font-semibold text-muted uppercase tracking-[0.05em] mb-2">
               Description
             </div>
             <CardRichTextEditor
@@ -751,24 +583,9 @@ export function CardDetailPanel({
           />
 
           {/* Activity Timeline */}
-          <div style={{ marginTop: '16px' }}>
-            <div
-              style={{
-                borderTop: '1px solid var(--border)',
-                marginBottom: '12px',
-              }}
-            />
-            <div
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '10px',
-              }}
-            >
+          <div className="mt-4">
+            <div className="border-t border-border mb-3" />
+            <div className="font-body text-[11px] font-semibold text-muted uppercase tracking-[0.05em] mb-[10px]">
               Activity
             </div>
             <CardActivityTimeline
