@@ -33,27 +33,27 @@ interface AgentProfile extends AgentRow {
 }
 
 const STATUS_COLORS: Record<AgentStatus, string> = {
-  idle: '#4ade80',
-  working: '#f59e0b',
-  error: '#ef4444',
-  offline: '#6b7280',
-  thinking: '#3b82f6',
-  queued: '#eab308',
-  executing_tool: '#f59e0b',
+  idle: 'text-success',
+  working: 'text-warning',
+  error: 'text-error',
+  offline: 'text-muted',
+  thinking: 'text-info',
+  queued: 'text-warning',
+  executing_tool: 'text-warning',
 }
 
 const BADGE_STYLES: Record<AgentBadge, { bg: string; color: string }> = {
-  LEAD: { bg: '#f59e0b20', color: '#f59e0b' },
-  SPC: { bg: '#3b82f620', color: '#3b82f6' },
-  INT: { bg: '#22c55e20', color: '#22c55e' },
+  LEAD: { bg: 'bg-warning/10', color: 'text-warning' },
+  SPC: { bg: 'bg-info/10', color: 'text-info' },
+  INT: { bg: 'bg-success/10', color: 'text-success' },
 }
 
 const TASK_STATUS_COLORS: Record<string, string> = {
-  pending: '#eab308',
-  claimed: '#3b82f6',
-  in_progress: '#8b5cf6',
-  completed: '#22c55e',
-  failed: '#ef4444',
+  pending: 'bg-warning',
+  claimed: 'bg-info',
+  in_progress: 'bg-accent',
+  completed: 'bg-success',
+  failed: 'bg-error',
 }
 
 function formatRelativeTime(timestamp: string): string {
@@ -288,7 +288,7 @@ export default function AgentProfilePage() {
     return (
       <div className="p-8">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-pulse text-lg" style={{ color: 'var(--text-muted)' }}>
+          <div className="animate-pulse text-lg text-muted">
             Loading agent profile...
           </div>
         </div>
@@ -301,18 +301,17 @@ export default function AgentProfilePage() {
       <div className="p-8">
         <button
           onClick={() => router.push('/agents')}
-          className="flex items-center gap-2 mb-6 text-sm"
-          style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+          className="flex items-center gap-2 mb-6 text-sm text-muted bg-transparent border-0 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Agents
         </button>
-        <div style={{ color: '#ef4444' }}>{error || 'Agent not found'}</div>
+        <div className="text-error">{error || 'Agent not found'}</div>
       </div>
     )
   }
 
-  const statusColor = STATUS_COLORS[agent.status] || '#6b7280'
+  const statusColorClass = STATUS_COLORS[agent.status] || 'text-muted'
   const badgeStyle = agent.badge ? BADGE_STYLES[agent.badge] : null
   const deptColor = agent.departments?.color ?? '#6366f1'
 
@@ -322,8 +321,7 @@ export default function AgentProfilePage() {
       <div className="mb-6">
         <button
           onClick={() => router.push('/agents')}
-          className="flex items-center gap-2 mb-4 text-sm transition-opacity hover:opacity-70"
-          style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+          className="flex items-center gap-2 mb-4 text-sm text-muted transition-opacity hover:opacity-70 bg-transparent border-0 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Agents
@@ -331,11 +329,9 @@ export default function AgentProfilePage() {
 
         {/* Agent header card */}
         <div
-          className="rounded-xl p-5"
+          className="rounded-xl p-5 bg-card border border-border"
           style={{
-            backgroundColor: 'var(--card)',
-            border: '1px solid var(--border)',
-            background: `linear-gradient(135deg, ${deptColor}12, var(--card))`,
+            background: `linear-gradient(135deg, ${deptColor}12, transparent)`,
           }}
         >
           <div className="flex items-start justify-between">
@@ -354,12 +350,8 @@ export default function AgentProfilePage() {
               {/* Info */}
               <div>
                 <h1
-                  className="text-2xl font-bold mb-1"
-                  style={{
-                    fontFamily: 'var(--font-heading)',
-                    color: 'var(--text-primary)',
-                    letterSpacing: '-1px',
-                  }}
+                  className="text-2xl font-bold mb-1 font-heading text-primary"
+                  style={{ letterSpacing: '-1px' }}
                 >
                   {agent.name}
                 </h1>
@@ -367,7 +359,7 @@ export default function AgentProfilePage() {
                   {/* Status */}
                   <div className="flex items-center gap-1">
                     <StatusDot status={agent.status} variant="agent" />
-                    <span className="text-xs font-medium capitalize" style={{ color: statusColor }}>
+                    <span className={`text-xs font-medium capitalize ${statusColorClass}`}>
                       {agent.status}
                     </span>
                   </div>
@@ -375,8 +367,7 @@ export default function AgentProfilePage() {
                   {/* Badge */}
                   {agent.badge && badgeStyle && (
                     <span
-                      className="text-xs font-bold px-2 py-0.5 rounded"
-                      style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.color }}
+                      className={`text-xs font-bold px-2 py-0.5 rounded ${badgeStyle.bg} ${badgeStyle.color}`}
                     >
                       {agent.badge}
                     </span>
@@ -398,7 +389,7 @@ export default function AgentProfilePage() {
 
                   {/* Role */}
                   {agent.role && (
-                    <span className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
+                    <span className="text-xs capitalize text-muted">
                       {agent.role}
                     </span>
                   )}
@@ -410,13 +401,7 @@ export default function AgentProfilePage() {
             {!editMode && (
               <button
                 onClick={enterEditMode}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium"
-                style={{
-                  backgroundColor: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                }}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-background border border-border text-secondary cursor-pointer"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit Profile
@@ -427,27 +412,14 @@ export default function AgentProfilePage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium"
-                  style={{
-                    backgroundColor: 'var(--accent)',
-                    border: 'none',
-                    color: '#fff',
-                    cursor: saving ? 'not-allowed' : 'pointer',
-                    opacity: saving ? 0.6 : 1,
-                  }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-accent border-0 text-white cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : 'Save'}
                 </button>
                 <button
                   onClick={cancelEdit}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium"
-                  style={{
-                    backgroundColor: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                  }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-background border border-border text-secondary cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                   Cancel
@@ -457,10 +429,7 @@ export default function AgentProfilePage() {
           </div>
 
           {saveError && (
-            <div
-              className="mt-3 text-sm px-3 py-2 rounded-lg"
-              style={{ backgroundColor: '#ef444420', color: '#ef4444' }}
-            >
+            <div className="mt-3 text-sm px-3 py-2 rounded-lg bg-error/10 text-error">
               {saveError}
             </div>
           )}
@@ -477,16 +446,10 @@ export default function AgentProfilePage() {
               onChange={(e) => setEditForm((f) => ({ ...f, about: e.target.value }))}
               placeholder="Describe this agent's purpose and personality..."
               rows={4}
-              className="w-full px-3 py-2 rounded-lg text-sm resize-none"
-              style={{
-                backgroundColor: 'var(--bg)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-primary)',
-                outline: 'none',
-              }}
+              className="w-full px-3 py-2 rounded-lg text-sm resize-none bg-background border border-border text-primary outline-none"
             />
           ) : (
-            <p className="text-sm" style={{ color: agent.about ? 'var(--text-secondary)' : 'var(--text-muted)', fontStyle: agent.about ? 'normal' : 'italic' }}>
+            <p className={`text-sm ${agent.about ? 'text-secondary' : 'text-muted italic'}`}>
               {agent.about ?? 'No about information.'}
             </p>
           )}
@@ -498,33 +461,31 @@ export default function AgentProfilePage() {
             <div className="space-y-2">
               {agentSkills.map((as) => {
                 const statusConfig: Record<string, { icon: typeof CheckCircle; color: string; bg: string }> = {
-                  installed: { icon: CheckCircle, color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
-                  pending: { icon: Clock, color: '#eab308', bg: 'rgba(234,179,8,0.1)' },
-                  failed: { icon: AlertCircle, color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+                  installed: { icon: CheckCircle, color: 'text-success', bg: 'bg-success/10' },
+                  pending: { icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
+                  failed: { icon: AlertCircle, color: 'text-error', bg: 'bg-error/10' },
                 }
                 const cfg = statusConfig[as.status] ?? statusConfig.pending
                 const StatusIcon = cfg.icon
                 return (
                   <div
                     key={as.id}
-                    className="flex items-center justify-between px-3 py-2 rounded-lg"
-                    style={{ backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)' }}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-surface-elevated border border-border"
                   >
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: '16px' }}>{as.skills?.icon ?? '🔧'}</span>
-                      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      <span className="text-sm font-medium text-primary">
                         {as.skills?.name ?? 'Unknown'}
                       </span>
                       {as.skill_versions && (
-                        <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                        <span className="text-xs text-muted font-mono">
                           v{as.skill_versions.version}
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span
-                        className="flex items-center gap-1 text-xs px-2 py-0.5 rounded"
-                        style={{ backgroundColor: cfg.bg, color: cfg.color, fontWeight: 600 }}
+                        className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded font-semibold ${cfg.bg} ${cfg.color}`}
                       >
                         <StatusIcon className="w-3 h-3" />
                         {as.status}
@@ -533,7 +494,7 @@ export default function AgentProfilePage() {
                         <button
                           type="button"
                           onClick={() => removeAgentSkill(as.skill_id)}
-                          style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+                          className="text-error bg-transparent border-0 cursor-pointer p-0.5"
                           title="Remove skill"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -545,7 +506,7 @@ export default function AgentProfilePage() {
               })}
             </div>
           ) : (
-            <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>No skills assigned.</p>
+            <p className="text-sm italic text-muted">No skills assigned.</p>
           )}
 
           {/* Assign skill button */}
@@ -554,8 +515,8 @@ export default function AgentProfilePage() {
               {showSkillPicker ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Select a skill to assign:</span>
-                    <button type="button" onClick={() => setShowSkillPicker(false)} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <span className="text-xs font-medium text-secondary">Select a skill to assign:</span>
+                    <button type="button" onClick={() => setShowSkillPicker(false)} className="text-muted bg-transparent border-0 cursor-pointer">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -566,24 +527,22 @@ export default function AgentProfilePage() {
                         key={s.id}
                         type="button"
                         onClick={() => assignSkill(s.id)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm"
-                        style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm bg-background border border-border text-primary cursor-pointer"
                       >
                         <span>{s.icon}</span>
                         <span className="font-medium">{s.name}</span>
-                        <span className="text-xs ml-auto" style={{ color: 'var(--text-muted)' }}>{s.description?.slice(0, 40)}</span>
+                        <span className="text-xs ml-auto text-muted">{s.description?.slice(0, 40)}</span>
                       </button>
                     ))}
                   {skillCatalog.filter(s => !agentSkills.some(as => as.skill_id === s.id)).length === 0 && (
-                    <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>All available skills are already assigned.</p>
+                    <p className="text-xs italic text-muted">All available skills are already assigned.</p>
                   )}
                 </div>
               ) : (
                 <button
                   type="button"
                   onClick={() => setShowSkillPicker(true)}
-                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
-                  style={{ backgroundColor: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer' }}
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-accent text-white border-0 cursor-pointer"
                 >
                   <Plus className="w-3 h-3" /> Assign Skill
                 </button>
@@ -600,13 +559,7 @@ export default function AgentProfilePage() {
               <select
                 value={editForm.department_id}
                 onChange={(e) => setEditForm((f) => ({ ...f, department_id: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg text-sm"
-                style={{
-                  backgroundColor: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                }}
+                className="w-full px-3 py-2 rounded-lg text-sm bg-background border border-border text-primary outline-none"
               >
                 <option value="">No department</option>
                 {departments.map((dept) => (
@@ -632,13 +585,13 @@ export default function AgentProfilePage() {
                       </span>
                     </div>
                     {agent.departments.objective && (
-                      <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                      <p className="text-xs mt-2 text-muted">
                         {agent.departments.objective}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Not assigned to a department.</p>
+                  <p className="text-sm italic text-muted">Not assigned to a department.</p>
                 )}
               </>
             )}
@@ -650,13 +603,7 @@ export default function AgentProfilePage() {
               <select
                 value={editForm.role}
                 onChange={(e) => handleRoleChange(e.target.value as AgentRole)}
-                className="w-full px-3 py-2 rounded-lg text-sm"
-                style={{
-                  backgroundColor: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                }}
+                className="w-full px-3 py-2 rounded-lg text-sm bg-background border border-border text-primary outline-none"
               >
                 <option value="lead">Lead</option>
                 <option value="specialist">Specialist</option>
@@ -665,20 +612,19 @@ export default function AgentProfilePage() {
             ) : (
               <div className="flex items-center gap-3">
                 {agent.role && (
-                  <span className="text-sm capitalize" style={{ color: 'var(--text-secondary)' }}>
+                  <span className="text-sm capitalize text-secondary">
                     {agent.role}
                   </span>
                 )}
                 {agent.badge && badgeStyle && (
                   <span
-                    className="text-sm font-bold px-2 py-0.5 rounded"
-                    style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.color }}
+                    className={`text-sm font-bold px-2 py-0.5 rounded ${badgeStyle.bg} ${badgeStyle.color}`}
                   >
                     {agent.badge}
                   </span>
                 )}
                 {!agent.role && !agent.badge && (
-                  <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>No role assigned.</p>
+                  <p className="text-sm italic text-muted">No role assigned.</p>
                 )}
               </div>
             )}
@@ -688,11 +634,11 @@ export default function AgentProfilePage() {
         {/* Current Task */}
         <Section title="Current Task" icon={<Briefcase className="w-4 h-4" />}>
           {agent.current_task_id ? (
-            <p className="text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-sm font-mono text-secondary">
               {agent.current_task_id}
             </p>
           ) : (
-            <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>No active task.</p>
+            <p className="text-sm italic text-muted">No active task.</p>
           )}
         </Section>
 
@@ -703,16 +649,10 @@ export default function AgentProfilePage() {
               value={editForm.soul_config}
               onChange={(e) => setEditForm((f) => ({ ...f, soul_config: e.target.value }))}
               rows={8}
-              className="w-full px-3 py-2 rounded-lg text-sm font-mono resize-vertical"
+              className="w-full px-3 py-2 rounded-lg text-sm font-mono resize-vertical bg-background border border-border text-primary outline-none"
               spellCheck={false}
-              style={{
-                backgroundColor: 'var(--bg)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-primary)',
-                outline: 'none',
-              }}
             />
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mt-1 text-muted">
               Changing soul_config will set soul_dirty = true in the database, triggering soul-sync.
             </p>
           </Section>
@@ -721,38 +661,37 @@ export default function AgentProfilePage() {
         {/* Task History */}
         <Section title="Task History" icon={<Clock className="w-4 h-4" />}>
           {agent.recent_tasks && agent.recent_tasks.length > 0 ? (
-            <div className="space-y-0 divide-y" style={{ borderColor: 'var(--border)' }}>
-              {agent.recent_tasks.map((task) => (
-                <div key={task.task_id} className="flex items-center gap-3 py-2.5">
-                  <span
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: TASK_STATUS_COLORS[task.status] || '#6b7280' }}
-                  />
-                  <span className="flex-1 text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
-                    {task.title}
-                  </span>
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded flex-shrink-0"
-                    style={{
-                      backgroundColor: `${TASK_STATUS_COLORS[task.status] || '#6b7280'}20`,
-                      color: TASK_STATUS_COLORS[task.status] || '#6b7280',
-                    }}
-                  >
-                    {task.status}
-                  </span>
-                  {task.type && (
-                    <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
-                      {task.type}
+            <div className="space-y-0 divide-y divide-border">
+              {agent.recent_tasks.map((task) => {
+                const taskBgClass = TASK_STATUS_COLORS[task.status] || 'bg-muted'
+                const taskTextClass = taskBgClass.replace('bg-', 'text-')
+                return (
+                  <div key={task.task_id} className="flex items-center gap-3 py-2.5">
+                    <span
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${taskBgClass}`}
+                    />
+                    <span className="flex-1 text-sm truncate text-secondary">
+                      {task.title}
                     </span>
-                  )}
-                  <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
-                    {formatRelativeTime(task.updated_at)}
-                  </span>
-                </div>
-              ))}
+                    <span
+                      className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 ${taskBgClass}/10 ${taskTextClass}`}
+                    >
+                      {task.status}
+                    </span>
+                    {task.type && (
+                      <span className="text-xs flex-shrink-0 text-muted">
+                        {task.type}
+                      </span>
+                    )}
+                    <span className="text-xs flex-shrink-0 text-muted">
+                      {formatRelativeTime(task.updated_at)}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
           ) : (
-            <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>No task history.</p>
+            <p className="text-sm italic text-muted">No task history.</p>
           )}
         </Section>
       </div>
@@ -771,13 +710,10 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <div
-      className="rounded-xl p-5"
-      style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }}
-    >
-      <div className="flex items-center gap-2 mb-3" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
-        <span style={{ color: 'var(--text-muted)' }}>{icon}</span>
-        <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+    <div className="rounded-xl p-5 bg-card border border-border">
+      <div className="flex items-center gap-2 mb-3 border-b border-border pb-2.5">
+        <span className="text-muted">{icon}</span>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
           {title}
         </h2>
       </div>
