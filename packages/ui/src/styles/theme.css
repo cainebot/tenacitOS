@@ -1,0 +1,311 @@
+/* ==========================================================================
+   UUI PRO — Design Token System
+   Dark theme (default) · Light theme override via [data-theme="light"]
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* -----------------------------------------------------------------------
+       Color Scale — Gray
+       ----------------------------------------------------------------------- */
+    --gray-25: #0C0C0E;
+    --gray-50: #111114;
+    --gray-100: #18181B;
+    --gray-200: #1F1F23;
+    --gray-300: #27272B;
+    --gray-400: #3F3F46;
+    --gray-500: #52525B;
+    --gray-600: #71717A;
+    --gray-700: #A1A1AA;
+    --gray-800: #D4D4D8;
+    --gray-900: #E4E4E7;
+    --gray-950: #FAFAFA;
+
+    /* -----------------------------------------------------------------------
+       Color Scale — Brand (Red)
+       Centered on brand-600 = #FF3B30
+       ----------------------------------------------------------------------- */
+    --brand-25: #1A0605;
+    --brand-50: #2D0B09;
+    --brand-100: #4A120F;
+    --brand-200: #6E1B16;
+    --brand-300: #92241D;
+    --brand-400: #C72F25;
+    --brand-500: #E8352B;
+    --brand-600: #FF3B30;
+    --brand-700: #FF6259;
+    --brand-800: #FF8A83;
+    --brand-900: #FFB3AE;
+    --brand-950: #FFE5E3;
+
+    /* -----------------------------------------------------------------------
+       Color Scale — Success (Green)
+       ----------------------------------------------------------------------- */
+    --success-25: #071A0B;
+    --success-50: #0C2912;
+    --success-100: #12401C;
+    --success-200: #1B5E2A;
+    --success-300: #247D38;
+    --success-400: #2D9C46;
+    --success-500: #34B553;
+    --success-600: #3CCB5E;
+    --success-700: #6DDB85;
+    --success-800: #9EEBAB;
+    --success-900: #C8F5D1;
+    --success-950: #EDFCF0;
+
+    /* -----------------------------------------------------------------------
+       Color Scale — Warning (Amber)
+       ----------------------------------------------------------------------- */
+    --warning-25: #1A1305;
+    --warning-50: #2D2109;
+    --warning-100: #4A360F;
+    --warning-200: #6E5016;
+    --warning-300: #926B1D;
+    --warning-400: #C79225;
+    --warning-500: #E8AB2B;
+    --warning-600: #FFBA30;
+    --warning-700: #FFCC59;
+    --warning-800: #FFDD83;
+    --warning-900: #FFEDAE;
+    --warning-950: #FFF8E3;
+
+    /* -----------------------------------------------------------------------
+       Color Scale — Error (Red — shares brand red)
+       ----------------------------------------------------------------------- */
+    --error-25: #1A0605;
+    --error-50: #2D0B09;
+    --error-100: #4A120F;
+    --error-200: #6E1B16;
+    --error-300: #92241D;
+    --error-400: #C72F25;
+    --error-500: #E8352B;
+    --error-600: #FF3B30;
+    --error-700: #FF6259;
+    --error-800: #FF8A83;
+    --error-900: #FFB3AE;
+    --error-950: #FFE5E3;
+
+    /* -----------------------------------------------------------------------
+       Color Scale — Blue / Info
+       ----------------------------------------------------------------------- */
+    --blue-25: #05101A;
+    --blue-50: #091B2D;
+    --blue-100: #0F2D4A;
+    --blue-200: #16436E;
+    --blue-300: #1D5A92;
+    --blue-400: #2578C7;
+    --blue-500: #2B8DE8;
+    --blue-600: #309FFF;
+    --blue-700: #59B5FF;
+    --blue-800: #83CAFF;
+    --blue-900: #AEDEFF;
+    --blue-950: #E3F3FF;
+
+    /* -----------------------------------------------------------------------
+       Background Tokens
+       ----------------------------------------------------------------------- */
+    --bg-primary: var(--gray-50);
+    --bg-secondary: var(--gray-100);
+    --bg-tertiary: var(--gray-200);
+    --bg-quaternary: var(--gray-300);
+
+    /* -----------------------------------------------------------------------
+       Text Tokens
+       ----------------------------------------------------------------------- */
+    --text-primary-900: var(--gray-950);
+    --text-secondary-700: var(--gray-700);
+    --text-tertiary-600: var(--gray-600);
+    --text-quaternary-500: var(--gray-500);
+    --text-disabled: var(--gray-400);
+
+    /* -----------------------------------------------------------------------
+       Border Tokens
+       ----------------------------------------------------------------------- */
+    --border-primary: var(--gray-300);
+    --border-secondary: var(--gray-200);
+    --border-tertiary: var(--gray-100);
+    --border-disabled: var(--gray-400);
+
+    /* -----------------------------------------------------------------------
+       Shadows
+       ----------------------------------------------------------------------- */
+    --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.40);
+    --shadow-sm: 0px 1px 3px 0px rgba(0, 0, 0, 0.50), 0px 1px 2px -1px rgba(0, 0, 0, 0.50);
+    --shadow-md: 0px 4px 6px -1px rgba(0, 0, 0, 0.50), 0px 2px 4px -2px rgba(0, 0, 0, 0.50);
+    --shadow-lg: 0px 10px 15px -3px rgba(0, 0, 0, 0.50), 0px 4px 6px -4px rgba(0, 0, 0, 0.50);
+    --shadow-xl: 0px 20px 25px -5px rgba(0, 0, 0, 0.50), 0px 8px 10px -6px rgba(0, 0, 0, 0.50);
+    --shadow-2xl: 0px 25px 50px -12px rgba(0, 0, 0, 0.70);
+    --shadow-3xl: 0px 35px 60px -15px rgba(0, 0, 0, 0.80);
+
+    /* -----------------------------------------------------------------------
+       Border Radius
+       ----------------------------------------------------------------------- */
+    --radius-none: 0px;
+    --radius-xxs: 2px;
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-3xl: 24px;
+    --radius-4xl: 32px;
+    --radius-full: 9999px;
+
+    /* -----------------------------------------------------------------------
+       Spacing Scale
+       ----------------------------------------------------------------------- */
+    --spacing-0: 0px;
+    --spacing-0-5: 2px;
+    --spacing-1: 4px;
+    --spacing-1-5: 6px;
+    --spacing-2: 8px;
+    --spacing-2-5: 10px;
+    --spacing-3: 12px;
+    --spacing-3-5: 14px;
+    --spacing-4: 16px;
+    --spacing-5: 20px;
+    --spacing-6: 24px;
+    --spacing-7: 28px;
+    --spacing-8: 32px;
+    --spacing-9: 36px;
+    --spacing-10: 40px;
+    --spacing-11: 44px;
+    --spacing-12: 48px;
+    --spacing-14: 56px;
+    --spacing-16: 64px;
+    --spacing-20: 80px;
+    --spacing-24: 96px;
+    --spacing-28: 112px;
+    --spacing-32: 128px;
+    --spacing-36: 144px;
+    --spacing-40: 160px;
+    --spacing-44: 176px;
+    --spacing-48: 192px;
+    --spacing-52: 208px;
+    --spacing-56: 224px;
+    --spacing-60: 240px;
+    --spacing-64: 256px;
+    --spacing-72: 288px;
+    --spacing-80: 320px;
+    --spacing-96: 384px;
+  }
+
+  /* =========================================================================
+     Light Theme Overrides
+     ========================================================================= */
+  [data-theme="light"] {
+    /* Gray — inverted for light mode */
+    --gray-25: #FAFAFA;
+    --gray-50: #F4F4F5;
+    --gray-100: #E4E4E7;
+    --gray-200: #D4D4D8;
+    --gray-300: #A1A1AA;
+    --gray-400: #71717A;
+    --gray-500: #52525B;
+    --gray-600: #3F3F46;
+    --gray-700: #27272B;
+    --gray-800: #1F1F23;
+    --gray-900: #18181B;
+    --gray-950: #111114;
+
+    /* Brand — adjusted for light backgrounds */
+    --brand-25: #FFF5F5;
+    --brand-50: #FFE5E3;
+    --brand-100: #FFB3AE;
+    --brand-200: #FF8A83;
+    --brand-300: #FF6259;
+    --brand-400: #FF3B30;
+    --brand-500: #E8352B;
+    --brand-600: #FF3B30;
+    --brand-700: #C72F25;
+    --brand-800: #92241D;
+    --brand-900: #6E1B16;
+    --brand-950: #2D0B09;
+
+    /* Success — adjusted for light backgrounds */
+    --success-25: #EDFCF0;
+    --success-50: #C8F5D1;
+    --success-100: #9EEBAB;
+    --success-200: #6DDB85;
+    --success-300: #3CCB5E;
+    --success-400: #34B553;
+    --success-500: #2D9C46;
+    --success-600: #3CCB5E;
+    --success-700: #247D38;
+    --success-800: #1B5E2A;
+    --success-900: #12401C;
+    --success-950: #0C2912;
+
+    /* Warning — adjusted for light backgrounds */
+    --warning-25: #FFF8E3;
+    --warning-50: #FFEDAE;
+    --warning-100: #FFDD83;
+    --warning-200: #FFCC59;
+    --warning-300: #FFBA30;
+    --warning-400: #E8AB2B;
+    --warning-500: #C79225;
+    --warning-600: #FFBA30;
+    --warning-700: #926B1D;
+    --warning-800: #6E5016;
+    --warning-900: #4A360F;
+    --warning-950: #2D2109;
+
+    /* Error — adjusted for light backgrounds */
+    --error-25: #FFF5F5;
+    --error-50: #FFE5E3;
+    --error-100: #FFB3AE;
+    --error-200: #FF8A83;
+    --error-300: #FF6259;
+    --error-400: #FF3B30;
+    --error-500: #E8352B;
+    --error-600: #FF3B30;
+    --error-700: #C72F25;
+    --error-800: #92241D;
+    --error-900: #6E1B16;
+    --error-950: #2D0B09;
+
+    /* Blue — adjusted for light backgrounds */
+    --blue-25: #E3F3FF;
+    --blue-50: #AEDEFF;
+    --blue-100: #83CAFF;
+    --blue-200: #59B5FF;
+    --blue-300: #309FFF;
+    --blue-400: #2B8DE8;
+    --blue-500: #2578C7;
+    --blue-600: #309FFF;
+    --blue-700: #1D5A92;
+    --blue-800: #16436E;
+    --blue-900: #0F2D4A;
+    --blue-950: #091B2D;
+
+    /* Background tokens */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: var(--gray-25);
+    --bg-tertiary: var(--gray-50);
+    --bg-quaternary: var(--gray-100);
+
+    /* Text tokens */
+    --text-primary-900: var(--gray-950);
+    --text-secondary-700: var(--gray-700);
+    --text-tertiary-600: var(--gray-600);
+    --text-quaternary-500: var(--gray-500);
+    --text-disabled: var(--gray-300);
+
+    /* Border tokens */
+    --border-primary: var(--gray-200);
+    --border-secondary: var(--gray-100);
+    --border-tertiary: var(--gray-50);
+    --border-disabled: var(--gray-300);
+
+    /* Shadows — lighter for light mode */
+    --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px -1px rgba(0, 0, 0, 0.10);
+    --shadow-md: 0px 4px 6px -1px rgba(0, 0, 0, 0.10), 0px 2px 4px -2px rgba(0, 0, 0, 0.10);
+    --shadow-lg: 0px 10px 15px -3px rgba(0, 0, 0, 0.10), 0px 4px 6px -4px rgba(0, 0, 0, 0.10);
+    --shadow-xl: 0px 20px 25px -5px rgba(0, 0, 0, 0.10), 0px 8px 10px -6px rgba(0, 0, 0, 0.10);
+    --shadow-2xl: 0px 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-3xl: 0px 35px 60px -15px rgba(0, 0, 0, 0.30);
+  }
+}

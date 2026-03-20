@@ -1,0 +1,9 @@
+{
+  "$schema": "https://figma.com/code-connect/schema/v1",
+  "codeConnect": {
+    "include": ["src/components/**/*.figma.tsx"],
+    "importPaths": {
+      "@openclaw/ui": "packages/ui/src"
+    }
+  }
+}

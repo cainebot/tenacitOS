@@ -1,18 +1,22 @@
 // @openclaw/ui — Untitled UI PRO Design System for OpenClaw
-// Barrel export — populated in Phase 1 (M2)
 
-// Components
-// export * from './components/base'
-// export * from './components/application'
-// export * from './components/foundations'
-// export * from './components/patterns'
+// Base Components
+export * from "./components/base"
+
+// Application Components
+export * from "./components/application"
+
+// Foundations
+export * from "./components/foundations"
+
+// Patterns (populated in Phase 3)
+// export * from "./components/patterns"
 
 // Providers
-// export * from './providers/theme'
-// export * from './providers/router-provider'
+export * from "./providers"
 
 // Hooks
-// export * from './hooks'
+export * from "./hooks"
 
 // Utils
-// export * from './utils/cx'
+export { cx } from "./utils/cx"
