@@ -34,8 +34,8 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. The analytics page chart wrappers use UUI tokens for layout — chart component internals remain as-is (allowlisted)
 **Plans:** 2/2 plans complete
 Plans:
-- [ ] 01-01-PLAN.md — Migrate skills and analytics pages to UUI tokens
-- [ ] 01-02-PLAN.md — Migrate costs and system pages to UUI tokens
+- [x] 01-01-PLAN.md — Migrate skills and analytics pages to UUI tokens
+- [x] 01-02-PLAN.md — Migrate costs and system pages to UUI tokens
 
 ### Phase 2: Wave C Boards
 **Goal**: The boards listing page, board detail page, and all four board sub-components (BoardKanban, BoardFilterBar, CardDetailPanel, ColumnManager) use exclusively UUI tokens
@@ -46,7 +46,12 @@ Plans:
   2. The boards/[id] page and its inline `<style>` block for keyframes are replaced — no legacy CSS vars remain in the file
   3. BoardKanban, BoardFilterBar, CardDetailPanel, and ColumnManager each use only UUI tokens — all ConfirmActionDialog imports come from @openclaw/ui, not @/components/ui/
   4. Boards kanban drag-and-drop and card detail panel open/close function correctly after migration
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 02-01-PLAN.md — Migrate boards listing page to UUI tokens
+- [ ] 02-02-PLAN.md — Migrate BoardKanban and BoardFilterBar to UUI tokens
+- [ ] 02-03-PLAN.md — Migrate CardDetailPanel and ColumnManager to UUI tokens
+- [ ] 02-04-PLAN.md — Migrate board detail page, replace keyframes, fix imports
 
 ### Phase 3: Wave C Agents + Office
 **Goal**: All agents pages, board-groups pages, and office React chrome use exclusively UUI tokens and @openclaw/ui components
@@ -80,6 +85,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Wave B Pages | 2/2 | Complete    | 2026-03-20 |
-| 2. Wave C Boards | 0/TBD | Not started | - |
+| 2. Wave C Boards | 0/4 | Planning complete | - |
 | 3. Wave C Agents + Office | 0/TBD | Not started | - |
 | 4. Animation Migration + Final Verification | 0/TBD | Not started | - |
