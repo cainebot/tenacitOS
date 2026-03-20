@@ -20,8 +20,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mission Control — The Digital Circus",
-  description: "The Digital Circus — Agent Mission Control",
+  title: "Mission Control — OpenClaw",
+  description: "OpenClaw — Agent Mission Control",
   manifest: "/manifest.json",
   themeColor: "#1a1a2e",
   appleWebApp: {

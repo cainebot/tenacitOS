@@ -302,7 +302,7 @@ export default function OrganizationPage() {
                 </h1>
                 <Badge variant="gray" className="flex items-center gap-2">
                   <Building2 className="h-3.5 w-3.5" />
-                  The Digital Circus
+                  OpenClaw
                 </Badge>
               </div>
               <p className="mt-1 text-sm text-quaternary">
