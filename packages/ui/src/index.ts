@@ -9,8 +9,8 @@ export * from "./components/application"
 // Foundations
 export * from "./components/foundations"
 
-// Patterns (populated in Phase 3)
-// export * from "./components/patterns"
+// Patterns
+export * from "./components/patterns"
 
 // Providers
 export * from "./providers"
