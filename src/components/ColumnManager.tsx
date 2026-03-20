@@ -83,8 +83,8 @@ function ColumnItem({
       className={cx(
         'flex items-center gap-2 px-3 py-[10px] rounded-md mb-[6px] transition-[background,border-color] duration-100 cursor-default border',
         isDragOver
-          ? 'bg-surface-alt border-accent'
-          : 'bg-surface border-border'
+          ? 'bg-secondary border-accent'
+          : 'bg-secondary border-secondary'
       )}
     >
       {/* Drag handle */}
@@ -112,7 +112,7 @@ function ColumnItem({
             onChange={(e) => setNameValue(e.target.value)}
             onBlur={() => void handleNameSave()}
             onKeyDown={handleNameKeyDown}
-            className="w-full font-body text-[13px] font-medium text-primary bg-surface-elevated border border-accent rounded px-[6px] py-[2px] outline-none"
+            className="w-full font-body text-[13px] font-medium text-primary bg-tertiary border border-accent rounded px-[6px] py-[2px] outline-none"
           />
         ) : (
           <span
@@ -184,7 +184,7 @@ function ColumnItem({
             </button>
             <button
               onClick={() => setConfirmDelete(false)}
-              className="font-body text-[11px] bg-transparent border border-border rounded-[3px] text-secondary px-[6px] py-[2px] cursor-pointer"
+              className="font-body text-[11px] bg-transparent border border-secondary rounded-[3px] text-secondary px-[6px] py-[2px] cursor-pointer"
             >
               No
             </button>
@@ -457,15 +457,15 @@ export function ColumnManager({
       />
 
       {/* Modal */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[201] bg-surface border border-border rounded-[10px] w-[540px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-64px)] flex flex-col shadow-[0_16px_48px_rgba(0,0,0,0.4)]">
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[201] bg-secondary border border-secondary rounded-[10px] w-[540px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-64px)] flex flex-col shadow-[0_16px_48px_rgba(0,0,0,0.4)]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-          <h2 className="font-heading text-base font-bold text-primary m-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-secondary shrink-0">
+          <h2 className="font-display text-base font-bold text-primary m-0">
             Manage Columns
           </h2>
           <button
             onClick={onClose}
-            className="bg-transparent border-0 cursor-pointer text-secondary p-1 flex items-center rounded hover:bg-surface-alt"
+            className="bg-transparent border-0 cursor-pointer text-secondary p-1 flex items-center rounded hover:bg-secondary"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -513,7 +513,7 @@ export function ColumnManager({
         </div>
 
         {/* Add column form */}
-        <div className="border-t border-border px-5 py-4 shrink-0">
+        <div className="border-t border-secondary px-5 py-4 shrink-0">
           <div className="font-body text-xs font-semibold text-secondary uppercase tracking-[0.05em] mb-[10px]">
             Add Column
           </div>
@@ -527,7 +527,7 @@ export function ColumnManager({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void handleAddColumn()
               }}
-              className="flex-1 font-body text-[13px] text-primary bg-surface-elevated border border-border rounded-md px-[10px] py-[6px] outline-none focus:border-accent"
+              className="flex-1 font-body text-[13px] text-primary bg-tertiary border border-secondary rounded-md px-[10px] py-[6px] outline-none focus:border-accent"
             />
 
             {/* State multi-select */}
@@ -535,16 +535,16 @@ export function ColumnManager({
               <button
                 onClick={() => setShowStateDropdown((v) => !v)}
                 className={cx(
-                  'font-body text-xs border border-border rounded-md px-[10px] py-[6px] cursor-pointer whitespace-nowrap',
+                  'font-body text-xs border border-secondary rounded-md px-[10px] py-[6px] cursor-pointer whitespace-nowrap',
                   newStateIds.length > 0
-                    ? 'text-white bg-accent'
-                    : 'text-secondary bg-surface'
+                    ? 'text-white bg-brand-50'
+                    : 'text-secondary bg-secondary'
                 )}
               >
                 States {newStateIds.length > 0 ? `(${newStateIds.length})` : ''}
               </button>
               {showStateDropdown && (
-                <div className="absolute bottom-[calc(100%+4px)] right-0 z-50 bg-surface border border-border rounded-md min-w-[200px] max-h-[200px] overflow-y-auto shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+                <div className="absolute bottom-[calc(100%+4px)] right-0 z-50 bg-secondary border border-secondary rounded-md min-w-[200px] max-h-[200px] overflow-y-auto shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
                   {workflowStates.length === 0 ? (
                     <div className="px-3 py-[10px] font-body text-xs text-secondary">
                       No workflow states available
@@ -553,7 +553,7 @@ export function ColumnManager({
                     workflowStates.map((s) => (
                       <label
                         key={s.state_id}
-                        className="flex items-center gap-2 px-3 py-[7px] cursor-pointer font-body text-[13px] text-primary border-b border-border hover:bg-surface-alt"
+                        className="flex items-center gap-2 px-3 py-[7px] cursor-pointer font-body text-[13px] text-primary border-b border-secondary hover:bg-secondary"
                       >
                         <input
                           type="checkbox"
@@ -580,8 +580,8 @@ export function ColumnManager({
               className={cx(
                 'font-body text-[13px] font-semibold border-0 rounded-md px-4 py-[6px] shrink-0 transition-[background] duration-100',
                 adding
-                  ? 'bg-surface text-secondary cursor-not-allowed'
-                  : 'bg-accent text-white cursor-pointer'
+                  ? 'bg-secondary text-secondary cursor-not-allowed'
+                  : 'bg-brand-50 text-white cursor-pointer'
               )}
             >
               {adding ? 'Adding...' : 'Add'}

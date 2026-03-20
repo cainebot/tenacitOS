@@ -59,22 +59,22 @@ export default function BoardGroupsPage() {
   return (
     <div className="-m-6">
       {/* Sticky header */}
-      <div className="sticky top-0 z-30 border-b border-border bg-surface">
+      <div className="sticky top-0 z-30 border-b border-secondary bg-secondary">
         <div className="px-4 pt-2 pb-4 md:px-8 md:pt-3 md:pb-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-semibold tracking-tight text-primary font-heading">
+                <h1 className="text-2xl font-semibold tracking-tight text-primary font-display">
                   Board groups
                 </h1>
               </div>
-              <p className="mt-1 text-sm text-muted">
+              <p className="mt-1 text-sm text-quaternary">
                 Group boards so agents can see related work. {groups.length} group{groups.length === 1 ? '' : 's'} total.
               </p>
             </div>
             <Link
               href="/board-groups/new"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80 bg-accent text-white"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80 bg-brand-50 text-white"
             >
               <Plus className="w-4 h-4" />
               Create group
@@ -86,14 +86,14 @@ export default function BoardGroupsPage() {
       {/* Body */}
       <div className="px-4 py-6 md:px-8">
         {loading && (
-          <div className="flex items-center justify-center py-24 gap-3 text-muted">
+          <div className="flex items-center justify-center py-24 gap-3 text-quaternary">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span className="text-sm">Loading groups…</span>
           </div>
         )}
 
         {error && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-error/10 border border-error/25 text-error">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-error/10 border border-error/25 text-error-600">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
           </div>
@@ -101,14 +101,14 @@ export default function BoardGroupsPage() {
 
         {!loading && !error && groups.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-            <FolderOpen className="w-12 h-12 opacity-20 text-muted" />
+            <FolderOpen className="w-12 h-12 opacity-20 text-quaternary" />
             <div>
               <p className="text-sm font-medium text-primary">No groups yet</p>
-              <p className="text-sm mt-1 text-muted">Create a board group to increase cross-board visibility for agents.</p>
+              <p className="text-sm mt-1 text-quaternary">Create a board group to increase cross-board visibility for agents.</p>
             </div>
             <Link
               href="/board-groups/new"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold mt-2 transition-opacity hover:opacity-80 bg-accent text-white"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold mt-2 transition-opacity hover:opacity-80 bg-brand-50 text-white"
             >
               <Plus className="w-4 h-4" />
               Create your first group
@@ -117,15 +117,15 @@ export default function BoardGroupsPage() {
         )}
 
         {!loading && !error && groups.length > 0 && (
-          <div className="rounded-2xl overflow-hidden border border-border bg-card">
+          <div className="rounded-2xl overflow-hidden border border-secondary bg-secondary">
             {/* Table header */}
             <div
-              className="grid px-4 py-2 md:px-6 border-b border-border bg-surface"
+              className="grid px-4 py-2 md:px-6 border-b border-secondary bg-secondary"
               style={{ gridTemplateColumns: '1fr 140px 80px' }}
             >
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted">Group</span>
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted">Updated</span>
-              <span className="text-xs font-semibold uppercase tracking-wider text-right text-muted">Actions</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-quaternary">Group</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-quaternary">Updated</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-right text-quaternary">Actions</span>
             </div>
 
             {/* Rows */}
@@ -144,7 +144,7 @@ export default function BoardGroupsPage() {
                     >
                       {group.name}
                     </Link>
-                    <p className="mt-1 text-xs line-clamp-2 text-muted">
+                    <p className="mt-1 text-xs line-clamp-2 text-quaternary">
                       {group.description ?? 'No description'}
                     </p>
                     {group.boards.length > 0 && (
@@ -153,14 +153,14 @@ export default function BoardGroupsPage() {
                           <Link
                             key={b.board_id}
                             href={`/boards/${b.board_id}`}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs hover:opacity-80 transition-opacity bg-surface border border-border text-muted"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs hover:opacity-80 transition-opacity bg-secondary border border-secondary text-quaternary"
                           >
                             <LayoutDashboard className="w-3 h-3" />
                             {b.name}
                           </Link>
                         ))}
                         {group.boards.length > 4 && (
-                          <span className="text-xs px-2 py-0.5 rounded-md text-muted">
+                          <span className="text-xs px-2 py-0.5 rounded-md text-quaternary">
                             +{group.boards.length - 4} more
                           </span>
                         )}
@@ -169,7 +169,7 @@ export default function BoardGroupsPage() {
                   </div>
 
                   {/* Updated date */}
-                  <div className="text-xs pt-0.5 text-muted">
+                  <div className="text-xs pt-0.5 text-quaternary">
                     {new Date(group.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </div>
 
@@ -177,14 +177,14 @@ export default function BoardGroupsPage() {
                   <div className="flex items-center justify-end gap-1">
                     <Link
                       href={`/board-groups/${group.workflow_id}/edit`}
-                      className="p-1.5 rounded-lg transition-colors hover:opacity-80 text-muted"
+                      className="p-1.5 rounded-lg transition-colors hover:opacity-80 text-quaternary"
                       title="Edit group"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </Link>
                     <button
                       onClick={() => setDeleteTarget(group)}
-                      className="p-1.5 rounded-lg transition-colors hover:opacity-80 text-muted"
+                      className="p-1.5 rounded-lg transition-colors hover:opacity-80 text-quaternary"
                       title="Delete group"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -195,7 +195,7 @@ export default function BoardGroupsPage() {
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 md:px-6 text-xs border-t border-border text-muted bg-surface">
+            <div className="px-4 py-3 md:px-6 text-xs border-t border-secondary text-quaternary bg-secondary">
               {groups.length} group{groups.length === 1 ? '' : 's'} · {totalBoards} board{totalBoards === 1 ? '' : 's'}
             </div>
           </div>

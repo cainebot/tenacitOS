@@ -15,7 +15,7 @@ const PRIORITY_COLORS: Record<Priority, { bg: string; color: string }> = {
   critica: { bg: 'rgba(239, 68, 68, 0.12)', color: '#ef4444' },
   alta:    { bg: 'rgba(249, 115, 22, 0.12)', color: '#f97316' },
   media:   { bg: 'rgba(234, 179, 8, 0.12)',  color: '#eab308' },
-  baja:    { bg: 'rgba(82, 82, 82, 0.12)',   color: 'var(--text-quaternary-500)' },
+  baja:    { bg: 'rgba(82, 82, 82, 0.12)',   color: "var(--text-quaternary-500)" },
 }
 
 const PRIORITY_OPTIONS: Priority[] = ['critica', 'alta', 'media', 'baja']
@@ -58,8 +58,8 @@ export function PriorityBadge({
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--bg-tertiary)',
-          color: 'var(--text-primary-900)',
-          border: '1px solid var(--border-primary)',
+          color: "var(--text-primary-900)",
+          border: "1px solid var(--border-primary)",
           borderRadius: 'var(--radius-sm)',
           fontSize: '10px',
           padding: '2px 4px',

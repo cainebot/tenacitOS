@@ -97,7 +97,7 @@ function ToastContainer({ toasts }: { toasts: Toast[] }) {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`bg-surface-elevated text-secondary rounded-lg border-l-4 ${TOAST_BORDER_COLORS[toast.type]}`}
+          className={`bg-tertiary text-secondary rounded-lg border-l-4 ${TOAST_BORDER_COLORS[toast.type]}`}
           style={{
             padding: '12px 16px',
             minWidth: '280px',

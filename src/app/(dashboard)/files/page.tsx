@@ -42,19 +42,19 @@ export default function FilesPage() {
     <div className="flex flex-col h-full gap-0">
       {/* Page header */}
       <div className="px-6 pt-6 pb-4">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-[-1px] text-[var(--text-primary-900)] mb-1">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-[-1px] text-primary mb-1">
           File Browser
         </h1>
-        <p className="font-[family-name:var(--font-text)] text-[13px] text-[var(--text-secondary-700)]">
+        <p className="font-[family-name:var(--font-text)] text-[13px] text-secondary">
           Navega por los workspaces y archivos de los agentes
         </p>
       </div>
 
       {/* Two-column layout */}
-      <div className="flex flex-1 overflow-hidden border-t border-[var(--border-primary)]">
+      <div className="flex flex-1 overflow-hidden border-t border-primary">
         {/* ── LEFT SIDEBAR: Workspace list ─────────────────────────────────── */}
-        <aside className="w-[220px] shrink-0 border-r border-[var(--border-primary)] overflow-y-auto py-4 bg-[var(--bg-secondary)]">
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[var(--text-quaternary-500)] px-4 pb-2 uppercase">
+        <aside className="w-[220px] shrink-0 border-r border-primary overflow-y-auto py-4 bg-secondary">
+          <p className="text-[10px] font-bold tracking-[0.08em] text-quaternary px-4 pb-2 uppercase">
             Workspaces
           </p>
 
@@ -68,8 +68,8 @@ export default function FilesPage() {
                   "w-full flex items-center gap-[10px] px-4 py-[9px]",
                   "border-none cursor-pointer text-left transition-all duration-[120ms] ease-linear",
                   isSelected
-                    ? "bg-[var(--brand-600)]/10 border-l-[3px] border-l-[var(--brand-600)]"
-                    : "bg-transparent border-l-[3px] border-l-transparent hover:bg-[var(--bg-quaternary)]",
+                    ? "bg-brand-600/10 border-l-[3px] border-l-[var(--brand-600)]"
+                    : "bg-transparent border-l-[3px] border-l-transparent hover:bg-quaternary",
                 ].join(" ")}
               >
                 <span className="text-[18px] leading-none shrink-0">{workspace.emoji}</span>
@@ -77,13 +77,13 @@ export default function FilesPage() {
                   <div
                     className={[
                       "font-[family-name:var(--font-display)] text-[13px] whitespace-nowrap overflow-hidden text-ellipsis",
-                      isSelected ? "font-semibold text-[var(--brand-600)]" : "font-normal text-[var(--text-primary-900)]",
+                      isSelected ? "font-semibold text-brand-600" : "font-normal text-primary",
                     ].join(" ")}
                   >
                     {workspace.name}
                   </div>
                   {workspace.agentName && (
-                    <div className="text-[11px] text-[var(--text-quaternary-500)] whitespace-nowrap overflow-hidden text-ellipsis">
+                    <div className="text-[11px] text-quaternary whitespace-nowrap overflow-hidden text-ellipsis">
                       {workspace.agentName}
                     </div>
                   )}
@@ -98,7 +98,7 @@ export default function FilesPage() {
           {selectedWorkspace && selectedWorkspaceData ? (
             <>
               {/* Breadcrumb bar + view toggle */}
-              <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] shrink-0 gap-3">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-primary bg-secondary shrink-0 gap-3">
                 <div className="flex-1 min-w-0">
                   <Breadcrumbs
                     path={currentPath}
@@ -115,8 +115,8 @@ export default function FilesPage() {
                     className={[
                       "p-[5px_7px] rounded-[6px] border-none cursor-pointer flex items-center justify-center transition-all duration-[120ms] ease-linear",
                       viewMode === "list"
-                        ? "bg-[var(--brand-600)] text-[var(--bg-primary)]"
-                        : "bg-transparent text-[var(--text-quaternary-500)]",
+                        ? "bg-brand-600 text-gray-50"
+                        : "bg-transparent text-quaternary",
                     ].join(" ")}
                   >
                     <List size={15} />
@@ -127,8 +127,8 @@ export default function FilesPage() {
                     className={[
                       "p-[5px_7px] rounded-[6px] border-none cursor-pointer flex items-center justify-center transition-all duration-[120ms] ease-linear",
                       viewMode === "grid"
-                        ? "bg-[var(--brand-600)] text-[var(--bg-primary)]"
-                        : "bg-transparent text-[var(--text-quaternary-500)]",
+                        ? "bg-brand-600 text-gray-50"
+                        : "bg-transparent text-quaternary",
                     ].join(" ")}
                   >
                     <Grid3X3 size={15} />
@@ -147,7 +147,7 @@ export default function FilesPage() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-[var(--text-quaternary-500)] text-sm">
+            <div className="flex-1 flex items-center justify-center text-quaternary text-sm">
               Selecciona un workspace para explorar sus archivos
             </div>
           )}

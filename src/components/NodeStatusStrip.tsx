@@ -22,34 +22,34 @@ function getRamPercent(node: NodeRow): number {
 }
 
 function getRamBarColor(percent: number): string {
-  if (percent > 85) return 'bg-[var(--error-600)]'
-  if (percent > 70) return 'bg-[var(--warning-600)]'
-  return 'bg-[var(--success-600)]'
+  if (percent > 85) return 'bg-error-600'
+  if (percent > 70) return 'bg-warning-600'
+  return 'bg-success-600'
 }
 
 function statusDotColor(status: NodeStatus): string {
-  if (status === 'online') return 'bg-[var(--success-600)]'
-  if (status === 'degraded') return 'bg-[var(--warning-600)]'
-  return 'bg-[var(--error-600)]'
+  if (status === 'online') return 'bg-success-600'
+  if (status === 'degraded') return 'bg-warning-600'
+  return 'bg-error-600'
 }
 
 function StatusIcon({ status }: { status: NodeStatus }) {
   if (status === 'online') {
     return (
-      <span className="text-[10px] font-bold text-[var(--success-600)]">
+      <span className="text-[10px] font-bold text-success-600">
         ✓
       </span>
     )
   }
   if (status === 'degraded') {
     return (
-      <span className="text-[10px] font-bold text-[var(--warning-600)]">
+      <span className="text-[10px] font-bold text-warning-600">
         ⚠
       </span>
     )
   }
   return (
-    <span className="text-[10px] font-bold text-[var(--error-600)]">
+    <span className="text-[10px] font-bold text-error-600">
       ✕
     </span>
   )
@@ -60,13 +60,13 @@ function NodeCard({ node }: { node: NodeRow }) {
   const shortId = node.node_id.length > 12 ? node.node_id.slice(0, 12) + '…' : node.node_id
 
   return (
-    <div className="flex flex-col gap-1 px-2.5 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md min-w-[120px] shrink-0">
+    <div className="flex flex-col gap-1 px-2.5 py-1.5 bg-secondary border border-primary rounded-md min-w-[120px] shrink-0">
       {/* Node ID + status */}
       <div className="flex items-center gap-1.5">
         <span className={cx("inline-block w-2 h-2 rounded-full shrink-0", statusDotColor(node.status))} />
         <StatusIcon status={node.status} />
         <span
-          className="text-[11px] font-semibold text-[var(--text-primary-900)] overflow-hidden text-ellipsis whitespace-nowrap"
+          className="text-[11px] font-semibold text-primary overflow-hidden text-ellipsis whitespace-nowrap"
           title={node.node_id}
         >
           {shortId}
@@ -74,7 +74,7 @@ function NodeCard({ node }: { node: NodeRow }) {
       </div>
 
       {/* RAM bar */}
-      <div className="w-full h-[3px] bg-[var(--border-primary)] rounded-sm overflow-hidden">
+      <div className="w-full h-[3px] bg-gray-300 rounded-sm overflow-hidden">
         <div
           className={cx("h-full rounded-sm transition-[width] duration-[400ms] ease-in-out", getRamBarColor(ramPercent))}
           style={{ width: `${ramPercent}%` }}
@@ -83,10 +83,10 @@ function NodeCard({ node }: { node: NodeRow }) {
 
       {/* Agent count */}
       <div className="flex justify-between items-center">
-        <span className="text-[10px] text-[var(--text-secondary-700)]">
+        <span className="text-[10px] text-secondary">
           {ramPercent}% RAM
         </span>
-        <span className="text-[10px] bg-[var(--border-primary)] rounded px-1.5 py-px text-[var(--text-primary-900)]">
+        <span className="text-[10px] bg-gray-300 rounded px-1.5 py-px text-primary">
           {node.agent_count} agent{node.agent_count !== 1 ? 's' : ''}
         </span>
       </div>
@@ -96,7 +96,7 @@ function NodeCard({ node }: { node: NodeRow }) {
 
 function SkeletonCard() {
   return (
-    <div className="flex flex-col gap-1.5 px-2.5 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md min-w-[120px] shrink-0">
+    <div className="flex flex-col gap-1.5 px-2.5 py-1.5 bg-secondary border border-primary rounded-md min-w-[120px] shrink-0">
       <div className="h-3 w-4/5 bg-white/[0.08] rounded animate-pulse" />
       <div className="h-[3px] w-full bg-white/[0.08] rounded-sm animate-pulse" />
       <div className="h-2.5 w-3/5 bg-white/[0.08] rounded animate-pulse" />
@@ -158,7 +158,7 @@ export default function NodeStatusStrip() {
     <div className="flex flex-col gap-1">
       {/* Disconnection banner */}
       {isDisconnected && (
-        <div className="bg-[var(--warning-600)]/15 border border-[var(--warning-600)] rounded px-2.5 py-1 text-[11px] text-[var(--warning-600)] text-center">
+        <div className="bg-warning-600/15 border border-warning-600 rounded px-2.5 py-1 text-[11px] text-warning-600 text-center">
           Connection lost — data may be stale
         </div>
       )}
@@ -171,7 +171,7 @@ export default function NodeStatusStrip() {
             <SkeletonCard />
           </>
         ) : nodes.length === 0 ? (
-          <span className="text-[11px] text-[var(--text-secondary-700)] py-1.5">
+          <span className="text-[11px] text-secondary py-1.5">
             No nodes registered
           </span>
         ) : (
@@ -188,8 +188,8 @@ export default function NodeStatusStrip() {
               className={cx(
                 "flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-[11px] font-medium animate-[fadeIn_0.2s_ease]",
                 notif.type === 'offline'
-                  ? "bg-[var(--error-600)]/[0.12] border border-[var(--error-600)] text-[var(--error-600)]"
-                  : "bg-[var(--success-600)]/[0.12] border border-[var(--success-600)] text-[var(--success-600)]"
+                  ? "bg-error-600/[0.12] border border-error-600 text-error-600"
+                  : "bg-success-600/[0.12] border border-success-600 text-success-600"
               )}
             >
               <span>{notif.message}</span>

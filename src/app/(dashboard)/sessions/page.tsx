@@ -102,7 +102,7 @@ function MessageBubble({ msg }: { msg: Message }) {
         <span className="shrink-0 font-semibold" style={{ color: "#60a5fa" }}>
           {msg.toolName}
         </span>
-        <span className="break-all text-[var(--text-quaternary-500)]">
+        <span className="break-all text-quaternary">
           {msg.content.replace(`${msg.toolName}(`, "").replace(/\)$/, "").slice(0, 200)}
         </span>
       </div>
@@ -112,7 +112,7 @@ function MessageBubble({ msg }: { msg: Message }) {
   if (isResult) {
     return (
       <div
-        className="px-3 py-1.5 rounded-md mb-2 text-xs text-[var(--text-quaternary-500)] font-mono overflow-hidden text-ellipsis whitespace-nowrap"
+        className="px-3 py-1.5 rounded-md mb-2 text-xs text-quaternary font-mono overflow-hidden text-ellipsis whitespace-nowrap"
         style={{
           maxHeight: "3rem",
           backgroundColor: "rgba(34,197,94,0.06)",
@@ -148,7 +148,7 @@ function MessageBubble({ msg }: { msg: Message }) {
 
       {/* Bubble */}
       <div
-        className="text-[0.82rem] leading-relaxed text-[var(--text-primary-900)] break-words whitespace-pre-wrap"
+        className="text-[0.82rem] leading-relaxed text-primary break-words whitespace-pre-wrap"
         style={{
           maxWidth: "78%",
           padding: "0.5rem 0.75rem",
@@ -211,12 +211,12 @@ function SessionDetail({
       onClick={onClose}
     >
       <div
-        className="flex flex-col overflow-hidden bg-[var(--bg-secondary)] border-l border-[var(--border-primary)]"
+        className="flex flex-col overflow-hidden bg-secondary border-l border-primary"
         style={{ width: "min(640px, 100vw)", height: "100%" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-[var(--border-primary)] shrink-0">
+        <div className="px-5 py-4 border-b border-primary shrink-0">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-xl">{session.typeEmoji}</span>
             <div className="flex-1 min-w-0">
@@ -234,7 +234,7 @@ function SessionDetail({
                 </span>
                 {session.aborted && (
                   <span
-                    className="text-[0.7rem] text-[var(--error-600)] px-2 rounded-full"
+                    className="text-[0.7rem] text-error-600 px-2 rounded-full"
                     style={{
                       padding: "0.15rem 0.5rem",
                       backgroundColor: "rgba(239,68,68,0.15)",
@@ -244,13 +244,13 @@ function SessionDetail({
                   </span>
                 )}
               </div>
-              <div className="font-mono text-[0.7rem] text-[var(--text-quaternary-500)] mt-[0.2rem] overflow-hidden text-ellipsis whitespace-nowrap">
+              <div className="font-mono text-[0.7rem] text-quaternary mt-[0.2rem] overflow-hidden text-ellipsis whitespace-nowrap">
                 {session.key}
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg bg-transparent border-none cursor-pointer text-[var(--text-quaternary-500)] shrink-0 hover:text-[var(--text-primary-900)]"
+              className="p-1.5 rounded-lg bg-transparent border-none cursor-pointer text-quaternary shrink-0 hover:text-primary"
             >
               <X style={{ width: "16px", height: "16px" }} />
             </button>
@@ -284,7 +284,7 @@ function SessionDetail({
 
         {/* Message stats strip */}
         {messages.length > 0 && (
-          <div className="flex gap-4 px-5 py-2 border-b border-[var(--border-primary)] bg-[var(--bg-tertiary)] shrink-0">
+          <div className="flex gap-4 px-5 py-2 border-b border-primary bg-tertiary shrink-0">
             {[
               { label: `${userCount} user`, color: "var(--brand-600)" },
               { label: `${assistantCount} assistant`, color: "#60a5fa" },
@@ -300,7 +300,7 @@ function SessionDetail({
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {loading && (
-            <div className="flex items-center justify-center p-12 text-[var(--text-quaternary-500)] gap-2">
+            <div className="flex items-center justify-center p-12 text-quaternary gap-2">
               <div
                 style={{
                   width: "16px",
@@ -316,7 +316,7 @@ function SessionDetail({
           )}
 
           {error && (
-            <div className="flex items-center gap-2 p-4 rounded-xl text-[var(--error-600)] text-sm"
+            <div className="flex items-center gap-2 p-4 rounded-xl text-error-600 text-sm"
               style={{ backgroundColor: "rgba(239,68,68,0.1)" }}
             >
               <AlertTriangle style={{ width: "16px", height: "16px" }} />
@@ -325,7 +325,7 @@ function SessionDetail({
           )}
 
           {!loading && !error && messages.length === 0 && (
-            <div className="text-center p-12 text-[var(--text-quaternary-500)]">
+            <div className="text-center p-12 text-quaternary">
               <MessageSquare
                 style={{ width: "40px", height: "40px", margin: "0 auto 0.75rem", opacity: 0.3 }}
               />
@@ -357,7 +357,7 @@ function SessionRow({
   return (
     <div
       onClick={onClick}
-      className="flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-[var(--border-primary)] transition-colors hover:bg-[var(--bg-tertiary)]"
+      className="flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-primary transition-colors hover:bg-tertiary"
     >
       {/* Type badge */}
       <div
@@ -388,11 +388,11 @@ function SessionRow({
             {session.typeLabel}
           </span>
           {session.aborted && (
-            <span className="text-[0.65rem] text-[var(--error-600)]">⚠ aborted</span>
+            <span className="text-[0.65rem] text-error-600">⚠ aborted</span>
           )}
         </div>
         <div
-          className="font-mono text-[0.72rem] text-[var(--text-quaternary-500)] overflow-hidden text-ellipsis whitespace-nowrap"
+          className="font-mono text-[0.72rem] text-quaternary overflow-hidden text-ellipsis whitespace-nowrap"
           title={session.key}
         >
           {session.key.replace("agent:main:", "")}
@@ -408,7 +408,7 @@ function SessionRow({
 
       {/* Tokens + ctx bar */}
       <div className="flex flex-col items-end" style={{ minWidth: "100px" }}>
-        <span className="text-[0.75rem] font-semibold text-[var(--text-primary-900)]">
+        <span className="text-[0.75rem] font-semibold text-primary">
           {formatTokens(session.totalTokens)}
         </span>
         {contextBar !== null && (
@@ -436,19 +436,19 @@ function SessionRow({
             />
           </div>
         )}
-        <span className="text-[0.65rem] text-[var(--text-quaternary-500)] mt-[0.1rem]">
+        <span className="text-[0.65rem] text-quaternary mt-[0.1rem]">
           {contextBar !== null ? `${contextBar}% ctx` : ""}
         </span>
       </div>
 
       {/* Age */}
       <div className="text-right" style={{ minWidth: "80px" }}>
-        <span className="text-[0.72rem] text-[var(--text-quaternary-500)] whitespace-nowrap">
+        <span className="text-[0.72rem] text-quaternary whitespace-nowrap">
           {formatDistanceToNow(new Date(session.updatedAt), { addSuffix: true })}
         </span>
       </div>
 
-      <ChevronRight className="text-[var(--text-quaternary-500)] shrink-0" style={{ width: "14px", height: "14px" }} />
+      <ChevronRight className="text-quaternary shrink-0" style={{ width: "14px", height: "14px" }} />
     </div>
   );
 }
@@ -515,10 +515,10 @@ export default function SessionsPage() {
       <div className="p-6 px-8 min-h-screen">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="font-[family-name:var(--font-display)] text-[1.75rem] font-bold text-[var(--text-primary-900)] tracking-[-1px] mb-1">
+          <h1 className="font-[family-name:var(--font-display)] text-[1.75rem] font-bold text-primary tracking-[-1px] mb-1">
             💬 Session History
           </h1>
-          <p className="text-[var(--text-secondary-700)] text-sm">
+          <p className="text-secondary text-sm">
             All OpenClaw agent sessions — main, cron, sub-agents, and chats
           </p>
         </div>
@@ -553,7 +553,7 @@ export default function SessionsPage() {
           ].map(({ label, value, icon: Icon, color }) => (
             <div
               key={label}
-              className="flex items-center gap-3 p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+              className="flex items-center gap-3 p-4 rounded-xl bg-secondary border border-primary"
             >
               <div
                 className="flex items-center justify-center shrink-0 rounded-lg"
@@ -566,19 +566,19 @@ export default function SessionsPage() {
                 <Icon style={{ width: "18px", height: "18px", color }} />
               </div>
               <div>
-                <div className="text-[1.25rem] font-bold text-[var(--text-primary-900)] leading-tight">
+                <div className="text-[1.25rem] font-bold text-primary leading-tight">
                   {value}
                 </div>
-                <div className="text-[0.72rem] text-[var(--text-quaternary-500)]">{label}</div>
+                <div className="text-[0.72rem] text-quaternary">{label}</div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Filters + Search */}
-        <div className="rounded-xl overflow-hidden bg-[var(--bg-secondary)] border border-[var(--border-primary)]">
+        <div className="rounded-xl overflow-hidden bg-secondary border border-primary">
           {/* Tab bar + search */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)] gap-3 flex-wrap">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-primary gap-3 flex-wrap">
             {/* Tabs */}
             <div className="flex gap-1 flex-wrap">
               {FILTER_TABS.map((tab) => {
@@ -614,18 +614,18 @@ export default function SessionsPage() {
 
             {/* Search + Refresh */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-[0.375rem] rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-primary)]">
-                <Search style={{ width: "13px", height: "13px" }} className="text-[var(--text-quaternary-500)]" />
+              <div className="flex items-center gap-2 px-3 py-[0.375rem] rounded-lg bg-tertiary border border-primary">
+                <Search style={{ width: "13px", height: "13px" }} className="text-quaternary" />
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Filter sessions..."
-                  className="bg-transparent border-none outline-none text-[var(--text-primary-900)] text-[0.8rem] w-40"
+                  className="bg-transparent border-none outline-none text-primary text-[0.8rem] w-40"
                 />
               </div>
               <button
                 onClick={() => { setLoading(true); loadSessions(); }}
-                className="flex items-center p-[0.375rem] rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-primary)] cursor-pointer text-[var(--text-quaternary-500)] hover:text-[var(--text-primary-900)]"
+                className="flex items-center p-[0.375rem] rounded-lg bg-tertiary border border-primary cursor-pointer text-quaternary hover:text-primary"
                 title="Refresh"
               >
                 <RefreshCw style={{ width: "14px", height: "14px" }} />
@@ -634,15 +634,15 @@ export default function SessionsPage() {
           </div>
 
           {/* Column headers */}
-          <div className="flex items-center gap-3 px-4 py-2 border-b border-[var(--border-primary)] bg-[var(--bg-tertiary)]">
+          <div className="flex items-center gap-3 px-4 py-2 border-b border-primary bg-tertiary">
             <div className="w-8 shrink-0" />
-            <div className="flex-1 text-[0.7rem] font-bold text-[var(--text-quaternary-500)] uppercase tracking-[0.05em]">
+            <div className="flex-1 text-[0.7rem] font-bold text-quaternary uppercase tracking-[0.05em]">
               Session
             </div>
-            <div className="text-right text-[0.7rem] font-bold text-[var(--text-quaternary-500)] uppercase tracking-[0.05em]" style={{ minWidth: "100px" }}>
+            <div className="text-right text-[0.7rem] font-bold text-quaternary uppercase tracking-[0.05em]" style={{ minWidth: "100px" }}>
               Tokens / ctx
             </div>
-            <div className="text-right text-[0.7rem] font-bold text-[var(--text-quaternary-500)] uppercase tracking-[0.05em]" style={{ minWidth: "80px" }}>
+            <div className="text-right text-[0.7rem] font-bold text-quaternary uppercase tracking-[0.05em]" style={{ minWidth: "80px" }}>
               Updated
             </div>
             <div className="w-[14px] shrink-0" />
@@ -650,7 +650,7 @@ export default function SessionsPage() {
 
           {/* Loading */}
           {loading && (
-            <div className="flex items-center justify-center p-12 gap-3 text-[var(--text-quaternary-500)]">
+            <div className="flex items-center justify-center p-12 gap-3 text-quaternary">
               <div
                 style={{
                   width: "20px",
@@ -667,7 +667,7 @@ export default function SessionsPage() {
 
           {/* Error */}
           {!loading && error && (
-            <div className="flex items-center gap-2 p-6 text-[var(--error-600)]">
+            <div className="flex items-center gap-2 p-6 text-error-600">
               <AlertTriangle style={{ width: "16px", height: "16px" }} />
               {error}
             </div>
@@ -675,7 +675,7 @@ export default function SessionsPage() {
 
           {/* Empty */}
           {!loading && !error && filtered.length === 0 && (
-            <div className="text-center p-12 text-[var(--text-quaternary-500)]">
+            <div className="text-center p-12 text-quaternary">
               <MessageSquare
                 style={{ width: "40px", height: "40px", margin: "0 auto 0.75rem", opacity: 0.3 }}
               />

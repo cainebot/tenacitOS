@@ -34,27 +34,27 @@ export default function BoardGroupDetailPage() {
   return (
     <div className="-m-6">
       {/* Sticky header */}
-      <div className="sticky top-0 z-30 border-b border-border bg-surface">
+      <div className="sticky top-0 z-30 border-b border-secondary bg-secondary">
         <div className="px-4 pt-2 pb-4 md:px-8 md:pt-3 md:pb-5">
           <div className="flex items-center gap-3 mb-1">
-            <Link href="/board-groups" className="flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity text-muted">
+            <Link href="/board-groups" className="flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity text-quaternary">
               <ArrowLeft className="w-4 h-4" />
               Board groups
             </Link>
           </div>
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-primary font-heading">
+              <h1 className="text-2xl font-semibold tracking-tight text-primary font-display">
                 {loading ? '…' : group?.name ?? 'Group'}
               </h1>
               {group?.description && (
-                <p className="mt-1 text-sm text-muted">{group.description}</p>
+                <p className="mt-1 text-sm text-quaternary">{group.description}</p>
               )}
             </div>
             {group && (
               <Link
                 href={`/board-groups/${groupId}/edit`}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 border border-border text-primary bg-card"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-80 border border-secondary text-primary bg-secondary"
               >
                 <Pencil className="w-3.5 h-3.5" />
                 Edit
@@ -66,14 +66,14 @@ export default function BoardGroupDetailPage() {
 
       <div className="px-4 py-6 md:px-8">
         {loading && (
-          <div className="flex items-center justify-center py-24 gap-3 text-muted">
+          <div className="flex items-center justify-center py-24 gap-3 text-quaternary">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span className="text-sm">Loading…</span>
           </div>
         )}
 
         {error && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-error/10 border border-error/25 text-error">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-error/10 border border-error/25 text-error-600">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
           </div>
@@ -83,12 +83,12 @@ export default function BoardGroupDetailPage() {
           <div className="space-y-6">
             {/* Stats row */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              <div className="rounded-2xl p-5 border border-border bg-card">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted">Boards</p>
+              <div className="rounded-2xl p-5 border border-secondary bg-secondary">
+                <p className="text-xs font-semibold uppercase tracking-wider text-quaternary">Boards</p>
                 <p className="mt-2 text-3xl font-bold text-primary">{group.boards.length}</p>
               </div>
-              <div className="rounded-2xl p-5 border border-border bg-card">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted">Updated</p>
+              <div className="rounded-2xl p-5 border border-secondary bg-secondary">
+                <p className="text-xs font-semibold uppercase tracking-wider text-quaternary">Updated</p>
                 <p className="mt-2 text-sm font-medium text-primary">
                   {new Date(group.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
@@ -96,14 +96,14 @@ export default function BoardGroupDetailPage() {
             </div>
 
             {/* Boards list */}
-            <div className="rounded-2xl overflow-hidden border border-border bg-card">
-              <div className="px-5 py-4 flex items-center justify-between border-b border-border">
+            <div className="rounded-2xl overflow-hidden border border-secondary bg-secondary">
+              <div className="px-5 py-4 flex items-center justify-between border-b border-secondary">
                 <h2 className="text-sm font-semibold text-primary">
                   Boards in this group
                 </h2>
                 <Link
                   href={`/board-groups/${groupId}/edit`}
-                  className="text-xs hover:opacity-70 transition-opacity text-muted"
+                  className="text-xs hover:opacity-70 transition-opacity text-quaternary"
                 >
                   Manage
                 </Link>
@@ -111,7 +111,7 @@ export default function BoardGroupDetailPage() {
 
               {group.boards.length === 0 ? (
                 <div className="px-5 py-8 text-center">
-                  <p className="text-sm text-muted">No boards in this group.</p>
+                  <p className="text-sm text-quaternary">No boards in this group.</p>
                   <Link
                     href={`/board-groups/${groupId}/edit`}
                     className="mt-2 inline-block text-sm underline hover:opacity-70 text-primary"
@@ -127,16 +127,16 @@ export default function BoardGroupDetailPage() {
                       href={`/boards/${board.board_id}`}
                       className="flex items-center gap-3 px-5 py-4 group hover:opacity-80 transition-opacity"
                     >
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-surface">
-                        <LayoutDashboard className="w-4 h-4 text-muted" />
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-secondary">
+                        <LayoutDashboard className="w-4 h-4 text-quaternary" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate text-primary">{board.name}</p>
                         {board.description && (
-                          <p className="text-xs mt-0.5 truncate text-muted">{board.description}</p>
+                          <p className="text-xs mt-0.5 truncate text-quaternary">{board.description}</p>
                         )}
                       </div>
-                      <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted" />
+                      <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-quaternary" />
                     </Link>
                   ))}
                 </div>

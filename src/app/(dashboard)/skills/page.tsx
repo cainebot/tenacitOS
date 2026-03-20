@@ -88,44 +88,44 @@ function RegisterSkillModal({ onClose, onCreated }: { onClose: () => void; onCre
       onClick={onClose}
     >
       <div
-        className="bg-surface rounded-xl max-w-[600px] w-full max-h-[90vh] overflow-auto border border-border"
+        className="bg-secondary rounded-xl max-w-[600px] w-full max-h-[90vh] overflow-auto border border-secondary"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-border flex justify-between items-center">
-          <h2 className="font-heading text-lg font-bold text-primary">Register Skill</h2>
-          <button onClick={onClose} className="bg-transparent border-0 cursor-pointer text-muted p-1"><X className="w-5 h-5" /></button>
+        <div className="p-6 border-b border-secondary flex justify-between items-center">
+          <h2 className="font-display text-lg font-bold text-primary">Register Skill</h2>
+          <button onClick={onClose} className="bg-transparent border-0 cursor-pointer text-quaternary p-1"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-6 flex flex-col gap-4">
           <div className="flex gap-3">
             <div className="flex-[0_0_60px]">
               <label className="font-body text-[11px] text-secondary mb-1 block">Icon</label>
-              <input value={icon} onChange={(e) => setIcon(e.target.value)} className="w-full p-[10px] rounded-md bg-surface-elevated border border-border text-primary text-xl text-center" />
+              <input value={icon} onChange={(e) => setIcon(e.target.value)} className="w-full p-[10px] rounded-md bg-tertiary border border-secondary text-primary text-xl text-center" />
             </div>
             <div className="flex-1">
               <label className="font-body text-[11px] text-secondary mb-1 block">Name *</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. hubspot-prospecting" className="w-full p-[10px] rounded-md bg-surface-elevated border border-border text-primary font-body text-[13px]" />
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. hubspot-prospecting" className="w-full p-[10px] rounded-md bg-tertiary border border-secondary text-primary font-body text-[13px]" />
             </div>
           </div>
           <div>
             <label className="font-body text-[11px] text-secondary mb-1 block">Description</label>
-            <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does this skill enable?" className="w-full p-[10px] rounded-md bg-surface-elevated border border-border text-primary font-body text-[13px]" />
+            <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does this skill enable?" className="w-full p-[10px] rounded-md bg-tertiary border border-secondary text-primary font-body text-[13px]" />
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setOrigin("local")} className={cx("flex-1 p-[10px] rounded-md border border-border cursor-pointer font-body text-xs font-semibold", origin === "local" ? "bg-accent-soft text-accent" : "bg-surface-elevated text-secondary")}>Local</button>
-            <button onClick={() => setOrigin("github")} className={cx("flex-1 p-[10px] rounded-md border border-border cursor-pointer font-body text-xs font-semibold", origin === "github" ? "bg-accent-soft text-accent" : "bg-surface-elevated text-secondary")}>GitHub</button>
-            <button onClick={() => setOrigin("skills_sh")} className={cx("flex-1 p-[10px] rounded-md border border-border cursor-pointer font-body text-xs font-semibold", origin === "skills_sh" ? "bg-accent-soft text-accent" : "bg-surface-elevated text-secondary")}>skills.sh</button>
+            <button onClick={() => setOrigin("local")} className={cx("flex-1 p-[10px] rounded-md border border-secondary cursor-pointer font-body text-xs font-semibold", origin === "local" ? "bg-brand-50 text-brand-600" : "bg-tertiary text-secondary")}>Local</button>
+            <button onClick={() => setOrigin("github")} className={cx("flex-1 p-[10px] rounded-md border border-secondary cursor-pointer font-body text-xs font-semibold", origin === "github" ? "bg-brand-50 text-brand-600" : "bg-tertiary text-secondary")}>GitHub</button>
+            <button onClick={() => setOrigin("skills_sh")} className={cx("flex-1 p-[10px] rounded-md border border-secondary cursor-pointer font-body text-xs font-semibold", origin === "skills_sh" ? "bg-brand-50 text-brand-600" : "bg-tertiary text-secondary")}>skills.sh</button>
           </div>
           {origin !== "local" && (
             <div>
               <label className="font-body text-[11px] text-secondary mb-1 block">GitHub URL</label>
-              <input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://github.com/org/repo/skill.md" className="w-full p-[10px] rounded-md bg-surface-elevated border border-border text-primary font-mono text-xs" />
+              <input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://github.com/org/repo/skill.md" className="w-full p-[10px] rounded-md bg-tertiary border border-secondary text-primary font-mono text-xs" />
             </div>
           )}
           <div>
             <label className="font-body text-[11px] text-secondary mb-1 block">Skill Content (Markdown)</label>
-            <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="# Skill instructions&#10;&#10;Paste your .md or .skill content here..." rows={10} className="w-full p-[10px] rounded-md bg-surface-elevated border border-border text-primary font-mono text-xs resize-y" />
+            <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="# Skill instructions&#10;&#10;Paste your .md or .skill content here..." rows={10} className="w-full p-[10px] rounded-md bg-tertiary border border-secondary text-primary font-mono text-xs resize-y" />
           </div>
-          <button onClick={handleSubmit} disabled={!name.trim() || saving} className={cx("px-6 py-3 rounded-md bg-accent text-white border-0 font-body text-[13px] font-semibold", name.trim() && !saving ? "cursor-pointer opacity-100" : "cursor-not-allowed opacity-50")}>
+          <button onClick={handleSubmit} disabled={!name.trim() || saving} className={cx("px-6 py-3 rounded-md bg-brand-50 text-white border-0 font-body text-[13px] font-semibold", name.trim() && !saving ? "cursor-pointer opacity-100" : "cursor-not-allowed opacity-50")}>
             {saving ? "Registering..." : "Register Skill"}
           </button>
         </div>
@@ -139,8 +139,8 @@ function StatusBadge({ status }: { status: string }) {
   const config = {
     installed: { icon: CheckCircle, colorClass: "text-success", bgClass: "bg-success/10", label: "Installed" },
     pending: { icon: Clock, colorClass: "text-warning", bgClass: "bg-warning/10", label: "Pending" },
-    failed: { icon: AlertCircle, colorClass: "text-error", bgClass: "bg-error/10", label: "Failed" },
-  }[status] ?? { icon: Clock, colorClass: "text-muted", bgClass: "bg-surface-elevated", label: status };
+    failed: { icon: AlertCircle, colorClass: "text-error-600", bgClass: "bg-error/10", label: "Failed" },
+  }[status] ?? { icon: Clock, colorClass: "text-quaternary", bgClass: "bg-tertiary", label: status };
 
   const Icon = config.icon;
   return (
@@ -155,27 +155,27 @@ function StatusBadge({ status }: { status: string }) {
 function SkillCard({ skill, onClick }: { skill: Skill; onClick: () => void }) {
   return (
     <div
-      className="bg-surface rounded-lg p-4 border border-border cursor-pointer transition-all duration-150 hover:bg-surface-hover hover:border-border-strong"
+      className="bg-secondary rounded-lg p-4 border border-secondary cursor-pointer transition-all duration-150 hover:bg-secondary-hover hover:border-secondary-strong"
       onClick={onClick}
     >
       <div className="flex items-start gap-3 mb-3">
         <span className="text-2xl shrink-0">{skill.icon}</span>
         <div className="flex-1 min-w-0">
-          <h3 className="font-heading text-sm font-semibold text-primary mb-1">{skill.name}</h3>
+          <h3 className="font-display text-sm font-semibold text-primary mb-1">{skill.name}</h3>
           <p className="font-body text-xs text-secondary leading-[1.5] line-clamp-2">{skill.description || "No description"}</p>
         </div>
       </div>
-      <div className="flex items-center justify-between pt-3 border-t border-border">
+      <div className="flex items-center justify-between pt-3 border-t border-secondary">
         <div className="flex items-center gap-2">
-          <span className={cx("px-2 py-[3px] rounded font-body text-[9px] font-bold tracking-widest uppercase", skill.origin === "local" ? "bg-accent-soft text-accent" : "bg-surface-elevated text-muted")}>{{ local: "Local", github: "GitHub", skills_sh: "skills.sh" }[skill.origin] ?? skill.origin}</span>
+          <span className={cx("px-2 py-[3px] rounded font-body text-[9px] font-bold tracking-widest uppercase", skill.origin === "local" ? "bg-brand-50 text-brand-600" : "bg-tertiary text-quaternary")}>{{ local: "Local", github: "GitHub", skills_sh: "skills.sh" }[skill.origin] ?? skill.origin}</span>
           {skill.latest_version && (
-            <span className="font-mono text-[10px] text-muted">v{skill.latest_version.version}</span>
+            <span className="font-mono text-[10px] text-quaternary">v{skill.latest_version.version}</span>
           )}
         </div>
         <div className="flex items-center gap-1">
-          <Users className="w-3 h-3 text-muted" />
-          <span className="font-body text-[10px] text-muted">{skill.agent_count}</span>
-          {skill.source_url && <ExternalLink className="w-3 h-3 text-muted ml-1" />}
+          <Users className="w-3 h-3 text-quaternary" />
+          <span className="font-body text-[10px] text-quaternary">{skill.agent_count}</span>
+          {skill.source_url && <ExternalLink className="w-3 h-3 text-quaternary ml-1" />}
         </div>
       </div>
     </div>
@@ -214,13 +214,13 @@ function SkillDetailModal({ skill, onClose, onDeleted, onToast }: { skill: Skill
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[100]" onClick={onClose}>
-      <div className="bg-surface rounded-xl max-w-[700px] w-full max-h-[90vh] overflow-auto border border-border" onClick={(e) => e.stopPropagation()}>
-        <div className="p-6 border-b border-border relative">
-          <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-md bg-transparent border-0 cursor-pointer text-muted"><X className="w-5 h-5" /></button>
+      <div className="bg-secondary rounded-xl max-w-[700px] w-full max-h-[90vh] overflow-auto border border-secondary" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6 border-b border-secondary relative">
+          <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-md bg-transparent border-0 cursor-pointer text-quaternary"><X className="w-5 h-5" /></button>
           <div className="flex items-start gap-4 pr-10">
             <span className="text-5xl">{skill.icon}</span>
             <div className="flex-1">
-              <h2 className="font-heading text-2xl font-bold text-primary mb-2">{skill.name}</h2>
+              <h2 className="font-display text-2xl font-bold text-primary mb-2">{skill.name}</h2>
               <p className="font-body text-sm text-secondary mb-3">{skill.description || "No description"}</p>
               <div className="flex gap-2 flex-wrap">
                 <span className="badge-positive">{skill.origin}</span>
@@ -232,47 +232,47 @@ function SkillDetailModal({ skill, onClose, onDeleted, onToast }: { skill: Skill
         </div>
         <div className="p-6">
           {/* Versions */}
-          <h3 className="font-heading text-sm font-semibold text-primary mb-3">Versions ({skill.skill_versions?.length ?? 0})</h3>
+          <h3 className="font-display text-sm font-semibold text-primary mb-3">Versions ({skill.skill_versions?.length ?? 0})</h3>
           {skill.skill_versions && skill.skill_versions.length > 0 ? (
             <div className="flex flex-col gap-2 mb-6">
               {skill.skill_versions.map((v) => (
-                <div key={v.id} className="flex justify-between px-3 py-2 bg-surface-elevated rounded-md border border-border">
+                <div key={v.id} className="flex justify-between px-3 py-2 bg-tertiary rounded-md border border-secondary">
                   <span className="font-mono text-xs text-primary">v{v.version}</span>
-                  <span className="font-body text-[11px] text-muted">{new Date(v.created_at).toLocaleDateString()}</span>
+                  <span className="font-body text-[11px] text-quaternary">{new Date(v.created_at).toLocaleDateString()}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="font-body text-xs text-muted mb-6">No versions yet</p>
+            <p className="font-body text-xs text-quaternary mb-6">No versions yet</p>
           )}
 
           {/* Agents */}
-          <h3 className="font-heading text-sm font-semibold text-primary mb-3">Assigned Agents ({skill.agent_skills?.length ?? 0})</h3>
+          <h3 className="font-display text-sm font-semibold text-primary mb-3">Assigned Agents ({skill.agent_skills?.length ?? 0})</h3>
           {skill.agent_skills && skill.agent_skills.length > 0 ? (
             <div className="flex flex-col gap-2">
               {skill.agent_skills.map((as) => (
-                <div key={as.id} className="flex justify-between items-center px-3 py-2 bg-surface-elevated rounded-md border border-border">
+                <div key={as.id} className="flex justify-between items-center px-3 py-2 bg-tertiary rounded-md border border-secondary">
                   <span className="font-mono text-xs text-primary">@{as.agent_id}</span>
                   <StatusBadge status={as.status} />
                 </div>
               ))}
             </div>
           ) : (
-            <p className="font-body text-xs text-muted">Not assigned to any agents</p>
+            <p className="font-body text-xs text-quaternary">Not assigned to any agents</p>
           )}
 
           {/* Delete Section */}
-          <div className="mt-6 pt-6 border-t border-border">
+          <div className="mt-6 pt-6 border-t border-secondary">
             {!showDeleteConfirm ? (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-error/10 text-error border border-error/20 cursor-pointer font-body text-xs font-semibold"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-error/10 text-error-600 border border-error/20 cursor-pointer font-body text-xs font-semibold"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete Skill
               </button>
             ) : (
               <div className="bg-error/5 rounded-lg p-4 border border-error/20">
-                <p className="font-body text-[13px] text-error font-semibold mb-2">
+                <p className="font-body text-[13px] text-error-600 font-semibold mb-2">
                   Delete "{skill.name}"?
                 </p>
                 {skill.agent_count > 0 && (
@@ -281,7 +281,7 @@ function SkillDetailModal({ skill, onClose, onDeleted, onToast }: { skill: Skill
                   </p>
                 )}
                 {deleteResult && (
-                  <p className={cx("font-body text-xs mb-3", deleteResult.startsWith("Error") ? "text-error" : "text-secondary")}>
+                  <p className={cx("font-body text-xs mb-3", deleteResult.startsWith("Error") ? "text-error-600" : "text-secondary")}>
                     {deleteResult}
                   </p>
                 )}
@@ -295,7 +295,7 @@ function SkillDetailModal({ skill, onClose, onDeleted, onToast }: { skill: Skill
                   </button>
                   <button
                     onClick={() => { setShowDeleteConfirm(false); setDeleteResult(null); }}
-                    className="px-4 py-2 rounded-md bg-surface-elevated text-secondary border border-border cursor-pointer font-body text-xs font-semibold"
+                    className="px-4 py-2 rounded-md bg-tertiary text-secondary border border-secondary cursor-pointer font-body text-xs font-semibold"
                   >
                     Cancel
                   </button>
@@ -339,7 +339,7 @@ export default function SkillsPage() {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center py-24">
-          <RefreshCw className="w-8 h-8 animate-spin text-accent" />
+          <RefreshCw className="w-8 h-8 animate-spin text-brand-600" />
         </div>
       </div>
     );
@@ -362,10 +362,10 @@ export default function SkillsPage() {
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-primary mb-1">Skills Marketplace</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-primary mb-1">Skills Marketplace</h1>
           <p className="font-body text-[13px] text-secondary">Installable knowledge packages for your agents</p>
         </div>
-        <button onClick={() => setShowRegister(true)} className="flex items-center gap-1.5 px-4 py-[10px] rounded-md bg-accent text-white border-0 cursor-pointer font-body text-xs font-semibold">
+        <button onClick={() => setShowRegister(true)} className="flex items-center gap-1.5 px-4 py-[10px] rounded-md bg-brand-50 text-white border-0 cursor-pointer font-body text-xs font-semibold">
           <Plus className="w-3.5 h-3.5" /> Register Skill
         </button>
       </div>
@@ -389,12 +389,12 @@ export default function SkillsPage() {
       {/* Filters */}
       <div className="flex gap-3 mb-6 flex-wrap">
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-          <input type="text" placeholder="Search skills..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-md bg-surface-elevated border border-border text-primary font-body text-xs" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-quaternary" />
+          <input type="text" placeholder="Search skills..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-md bg-tertiary border border-secondary text-primary font-body text-xs" />
         </div>
         <div className="flex gap-2">
           {(["all", "local", "github", "skills_sh"] as const).map((src) => (
-            <button key={src} onClick={() => setFilterOrigin(src)} className={cx("px-5 py-3 rounded-md border border-border font-body text-xs font-semibold cursor-pointer", filterOrigin === src ? "bg-accent-soft text-accent" : "bg-surface text-secondary")}>
+            <button key={src} onClick={() => setFilterOrigin(src)} className={cx("px-5 py-3 rounded-md border border-secondary font-body text-xs font-semibold cursor-pointer", filterOrigin === src ? "bg-brand-50 text-brand-600" : "bg-secondary text-secondary")}>
               {{ all: `All (${skills.length})`, local: `Local (${localCount})`, github: `GitHub (${githubCount})`, skills_sh: `skills.sh (${skillsShCount})` }[src]}
             </button>
           ))}
@@ -403,10 +403,10 @@ export default function SkillsPage() {
 
       {/* Grid */}
       {filtered.length === 0 ? (
-        <div className="bg-surface rounded-xl p-12 text-center">
-          <Puzzle className="w-12 h-12 text-muted mx-auto mb-4" />
+        <div className="bg-secondary rounded-xl p-12 text-center">
+          <Puzzle className="w-12 h-12 text-quaternary mx-auto mb-4" />
           <p className="text-secondary mb-4">No skills found</p>
-          <button onClick={() => setShowRegister(true)} className="px-5 py-[10px] rounded-md bg-accent text-white border-0 cursor-pointer font-body text-xs font-semibold">Register your first skill</button>
+          <button onClick={() => setShowRegister(true)} className="px-5 py-[10px] rounded-md bg-brand-50 text-white border-0 cursor-pointer font-body text-xs font-semibold">Register your first skill</button>
         </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
@@ -420,10 +420,10 @@ export default function SkillsPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 bg-surface border border-border rounded-lg px-5 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.3)] z-[200] flex items-center gap-2 max-w-[400px]">
-          <RefreshCw className="w-4 h-4 animate-spin text-accent shrink-0" />
+        <div className="fixed bottom-6 right-6 bg-secondary border border-secondary rounded-lg px-5 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.3)] z-[200] flex items-center gap-2 max-w-[400px]">
+          <RefreshCw className="w-4 h-4 animate-spin text-brand-600 shrink-0" />
           <span className="font-body text-[13px] text-primary">{toast}</span>
-          <button onClick={() => setToast(null)} className="bg-transparent border-0 cursor-pointer text-muted p-0.5 shrink-0"><X className="w-3.5 h-3.5" /></button>
+          <button onClick={() => setToast(null)} className="bg-transparent border-0 cursor-pointer text-quaternary p-0.5 shrink-0"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
       {showRegister && (

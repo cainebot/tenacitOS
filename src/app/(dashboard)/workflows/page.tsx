@@ -183,15 +183,15 @@ function StatusBadge({ status }: { status: "active" | "inactive" }) {
       <div
         className={`w-[6px] h-[6px] rounded-full ${
           status === "active"
-            ? "bg-[var(--success-600)]"
-            : "bg-[var(--text-quaternary-500)]"
+            ? "bg-success-600"
+            : "bg-gray-500"
         }`}
       />
       <span
         className={`font-[family-name:var(--font-text)] text-[10px] font-semibold uppercase tracking-[0.5px] ${
           status === "active"
-            ? "text-[var(--success-600)]"
-            : "text-[var(--text-quaternary-500)]"
+            ? "text-success-600"
+            : "text-quaternary"
         }`}
       >
         {status === "active" ? "Activo" : "Inactivo"}
@@ -206,7 +206,7 @@ function TriggerBadge({ trigger }: { trigger: "cron" | "demand" }) {
       className={`px-[7px] py-[2px] rounded-[5px] font-[family-name:var(--font-text)] text-[10px] font-semibold tracking-[0.4px] uppercase ${
         trigger === "cron"
           ? "bg-[rgba(59,130,246,0.12)] border border-[rgba(59,130,246,0.25)] text-[#60a5fa]"
-          : "bg-[var(--brand-600)]/10 border border-[var(--brand-600)]/25 text-[var(--brand-600)]"
+          : "bg-brand-600/10 border border-brand-600/25 text-brand-600"
       }`}
     >
       {trigger === "cron" ? "⏱ Cron" : "⚡ Demanda"}
@@ -219,10 +219,10 @@ export default function WorkflowsPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-[-1px] text-[var(--text-primary-900)] mb-1">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-[-1px] text-primary mb-1">
           Workflows
         </h1>
-        <p className="font-[family-name:var(--font-text)] text-[13px] text-[var(--text-secondary-700)]">
+        <p className="font-[family-name:var(--font-text)] text-[13px] text-secondary">
           {WORKFLOWS.filter(w => w.status === "active").length} flujos activos · {WORKFLOWS.filter(w => w.trigger === "cron").length} crons automáticos · {WORKFLOWS.filter(w => w.trigger === "demand").length} bajo demanda
         </p>
       </div>
@@ -230,18 +230,18 @@ export default function WorkflowsPage() {
       {/* Stats row */}
       <div className="flex gap-3 mb-8 flex-wrap">
         {[
-          { label: "Total workflows", value: WORKFLOWS.length, colorClass: "text-[var(--text-primary-900)]" },
+          { label: "Total workflows", value: WORKFLOWS.length, colorClass: "text-primary" },
           { label: "Crons activos", value: WORKFLOWS.filter(w => w.trigger === "cron" && w.status === "active").length, colorClass: "text-[#60a5fa]" },
-          { label: "Bajo demanda", value: WORKFLOWS.filter(w => w.trigger === "demand").length, colorClass: "text-[var(--brand-600)]" },
+          { label: "Bajo demanda", value: WORKFLOWS.filter(w => w.trigger === "demand").length, colorClass: "text-brand-600" },
         ].map((stat) => (
           <div
             key={stat.label}
-            className="px-5 py-4 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl min-w-[140px]"
+            className="px-5 py-4 bg-secondary border border-primary rounded-xl min-w-[140px]"
           >
             <div className={`font-[family-name:var(--font-display)] text-[28px] font-bold tracking-[-1px] ${stat.colorClass}`}>
               {stat.value}
             </div>
-            <div className="font-[family-name:var(--font-text)] text-[11px] text-[var(--text-quaternary-500)] mt-0.5">
+            <div className="font-[family-name:var(--font-text)] text-[11px] text-quaternary mt-0.5">
               {stat.label}
             </div>
           </div>
@@ -253,16 +253,16 @@ export default function WorkflowsPage() {
         {WORKFLOWS.map((workflow) => (
           <div
             key={workflow.id}
-            className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl px-6 py-5 shadow-[0_2px_8px_rgba(0,0,0,0.12)]"
+            className="bg-secondary border border-primary rounded-2xl px-6 py-5 shadow-[0_2px_8px_rgba(0,0,0,0.12)]"
           >
             {/* Card header */}
             <div className="flex items-start justify-between mb-3 gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-[10px] bg-[var(--bg-tertiary)] flex items-center justify-center text-[20px] border border-[var(--border-secondary)] shrink-0">
+                <div className="w-10 h-10 rounded-[10px] bg-tertiary flex items-center justify-center text-[20px] border border-secondary shrink-0">
                   {workflow.emoji}
                 </div>
                 <div>
-                  <h3 className="font-[family-name:var(--font-display)] text-base font-bold text-[var(--text-primary-900)] tracking-[-0.3px] mb-0.5">
+                  <h3 className="font-[family-name:var(--font-display)] text-base font-bold text-primary tracking-[-0.3px] mb-0.5">
                     {workflow.name}
                   </h3>
                   <div className="flex items-center gap-2">
@@ -272,26 +272,26 @@ export default function WorkflowsPage() {
                 </div>
               </div>
               {/* Schedule */}
-              <div className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg font-[family-name:var(--font-text)] text-[11px] text-[var(--text-secondary-700)] whitespace-nowrap shrink-0">
+              <div className="px-3 py-1.5 bg-tertiary border border-primary rounded-lg font-[family-name:var(--font-text)] text-[11px] text-secondary whitespace-nowrap shrink-0">
                 🕐 {workflow.schedule}
               </div>
             </div>
 
             {/* Description */}
-            <p className="font-[family-name:var(--font-text)] text-[13px] text-[var(--text-secondary-700)] leading-relaxed mb-4">
+            <p className="font-[family-name:var(--font-text)] text-[13px] text-secondary leading-relaxed mb-4">
               {workflow.description}
             </p>
 
             {/* Steps */}
-            <div className="bg-[var(--bg-tertiary)] rounded-[10px] px-4 py-3 border border-[var(--border-primary)]">
-              <div className="font-[family-name:var(--font-text)] text-[10px] font-semibold text-[var(--text-quaternary-500)] uppercase tracking-[0.7px] mb-2">
+            <div className="bg-tertiary rounded-[10px] px-4 py-3 border border-primary">
+              <div className="font-[family-name:var(--font-text)] text-[10px] font-semibold text-quaternary uppercase tracking-[0.7px] mb-2">
                 Pasos
               </div>
               <ol className="m-0 pl-4 flex flex-col gap-1">
                 {workflow.steps.map((step, i) => (
                   <li
                     key={i}
-                    className="font-[family-name:var(--font-text)] text-[12px] text-[var(--text-secondary-700)] leading-normal"
+                    className="font-[family-name:var(--font-text)] text-[12px] text-secondary leading-normal"
                   >
                     {step}
                   </li>

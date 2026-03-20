@@ -30,8 +30,8 @@ interface FieldEditorProps {
 }
 
 const priorityColors: Record<string, string> = {
-  baja: 'var(--text-muted, #9ca3af)',
-  media: 'var(--accent, #6366f1)',
+  baja: 'var(--text-quaternary, #9ca3af)',
+  media: 'var(--brand-600)',
   alta: '#ef4444',
 }
 
@@ -105,7 +105,7 @@ export function CardFieldEditor({
   const labelStyle: React.CSSProperties = {
     fontFamily: 'var(--font-inter), system-ui, sans-serif',
     fontSize: '12px',
-    color: 'var(--text-quaternary-500)',
+    color: "var(--text-quaternary-500)",
     width: '120px',
     flexShrink: 0,
     paddingTop: '3px',
@@ -127,9 +127,9 @@ export function CardFieldEditor({
   const inputStyle: React.CSSProperties = {
     fontFamily: 'var(--font-inter), system-ui, sans-serif',
     fontSize: '13px',
-    color: 'var(--text-primary-900)',
+    color: "var(--text-primary-900)",
     background: 'var(--bg-secondary)',
-    border: '1px solid var(--accent, #6366f1)',
+    border: '1px solid var(--brand-600)',
     borderRadius: '4px',
     padding: '2px 6px',
     flex: 1,
@@ -184,7 +184,7 @@ export function CardFieldEditor({
             href={String(value)}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ ...displayStyle, color: 'var(--accent, #6366f1)', textDecoration: 'underline' }}
+            style={{ ...displayStyle, color: 'var(--brand-600)', textDecoration: 'underline' }}
             onClick={(e) => e.stopPropagation()}
           >
             {String(value)}
@@ -196,7 +196,7 @@ export function CardFieldEditor({
         )}
         <button
           onClick={enterEdit}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-quaternary-500)', fontSize: '11px', padding: '2px' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: "var(--text-quaternary-500)", fontSize: '11px', padding: '2px' }}
         >
           Edit
         </button>
@@ -212,7 +212,7 @@ export function CardFieldEditor({
         {value ? (
           <a
             href={`mailto:${String(value)}`}
-            style={{ ...displayStyle, color: 'var(--accent, #6366f1)', textDecoration: 'underline' }}
+            style={{ ...displayStyle, color: 'var(--brand-600)', textDecoration: 'underline' }}
             onClick={(e) => e.stopPropagation()}
           >
             {String(value)}
@@ -224,7 +224,7 @@ export function CardFieldEditor({
         )}
         <button
           onClick={enterEdit}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-quaternary-500)', fontSize: '11px', padding: '2px' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: "var(--text-quaternary-500)", fontSize: '11px', padding: '2px' }}
         >
           Edit
         </button>
@@ -319,11 +319,11 @@ export function CardFieldEditor({
                 alignItems: 'center',
                 gap: '3px',
                 background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-primary)',
+                border: "1px solid var(--border-primary)",
                 borderRadius: '10px',
                 padding: '1px 6px',
                 fontSize: '11px',
-                color: 'var(--text-primary-900)',
+                color: "var(--text-primary-900)",
                 fontFamily: 'var(--font-inter), system-ui, sans-serif',
               }}
             >
@@ -334,7 +334,7 @@ export function CardFieldEditor({
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  color: 'var(--text-quaternary-500)',
+                  color: "var(--text-quaternary-500)",
                   fontSize: '11px',
                   padding: '0',
                   lineHeight: 1,
@@ -373,7 +373,7 @@ export function CardFieldEditor({
                   top: '100%',
                   left: 0,
                   zIndex: 100,
-                  background: 'var(--surface, #1e1e2e)',
+                  background: 'var(--bg-secondary)',
                   border: '1px solid var(--border, #333)',
                   borderRadius: '6px',
                   padding: '4px 0',
@@ -395,11 +395,11 @@ export function CardFieldEditor({
                       border: 'none',
                       padding: '5px 10px',
                       fontSize: '12px',
-                      color: 'var(--text-primary-900)',
+                      color: "var(--text-primary-900)",
                       cursor: 'pointer',
                       fontFamily: 'var(--font-inter), system-ui, sans-serif',
                     }}
-                    onMouseEnter={(e) => { (e.target as HTMLElement).style.background = 'var(--accent, #6366f1)' }}
+                    onMouseEnter={(e) => { (e.target as HTMLElement).style.background = 'var(--brand-600)' }}
                     onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'none' }}
                   >
                     {s}
@@ -416,12 +416,12 @@ export function CardFieldEditor({
                       border: 'none',
                       padding: '5px 10px',
                       fontSize: '12px',
-                      color: 'var(--accent, #6366f1)',
+                      color: 'var(--brand-600)',
                       cursor: 'pointer',
                       fontFamily: 'var(--font-inter), system-ui, sans-serif',
                       borderTop: filteredSuggestions.length > 0 ? '1px solid var(--border, #333)' : 'none',
                     }}
-                    onMouseEnter={(e) => { (e.target as HTMLElement).style.background = 'var(--surface, #2a2a3e)' }}
+                    onMouseEnter={(e) => { (e.target as HTMLElement).style.background = 'var(--bg-secondary)' }}
                     onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'none' }}
                   >
                     + Create &ldquo;{labelInput.trim()}&rdquo;
@@ -454,7 +454,7 @@ export function CardFieldEditor({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '3px',
-                background: 'var(--accent, #6366f1)',
+                background: 'var(--brand-600)',
                 color: '#fff',
                 borderRadius: '10px',
                 padding: '1px 8px',

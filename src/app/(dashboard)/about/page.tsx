@@ -100,12 +100,12 @@ export default function AboutPage() {
     <div className="p-4 md:p-8 max-w-5xl">
       {/* Hero Section */}
       <div
-        className="rounded-xl p-4 md:p-8 mb-6 md:mb-8 bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+        className="rounded-xl p-4 md:p-8 mb-6 md:mb-8 bg-secondary border border-primary"
       >
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-6 text-center sm:text-left">
           {/* Avatar */}
           <div
-            className="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center border-[3px] border-[var(--brand-600)] bg-[var(--bg-primary)]"
+            className="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center border-[3px] border-brand-600 bg-primary"
             style={{
               fontSize: BRANDING.agentAvatar ? undefined : "2.5rem",
             }}
@@ -125,25 +125,25 @@ export default function AboutPage() {
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 mb-2">
               <h1
-                className="text-2xl md:text-3xl font-bold font-[family-name:var(--font-display)] text-[var(--text-primary-900)] tracking-[-1px]"
+                className="text-2xl md:text-3xl font-bold font-[family-name:var(--font-display)] text-primary tracking-[-1px]"
               >
                 {getAgentDisplayName()}
               </h1>
               <span
-                className="px-3 py-1 rounded-full text-xs font-medium bg-[var(--success-600)]/10 text-[var(--success-600)]"
+                className="px-3 py-1 rounded-full text-xs font-medium bg-success-600/10 text-success-600"
               >
                 ● Online
               </span>
             </div>
 
             <p
-              className="text-base md:text-lg mb-3 md:mb-4 text-[var(--text-secondary-700)]"
+              className="text-base md:text-lg mb-3 md:mb-4 text-secondary"
             >
               {description}
             </p>
 
             <div
-              className="flex flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-[var(--text-quaternary-500)]"
+              className="flex flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-quaternary"
             >
               {BRANDING.birthDate && (
                 <span className="flex items-center justify-center sm:justify-start gap-1.5">
@@ -163,7 +163,7 @@ export default function AboutPage() {
               )}
               <span className="flex items-center justify-center sm:justify-start gap-1.5">
                 <Terminal
-                  className="w-4 h-4 text-[var(--brand-600)]"
+                  className="w-4 h-4 text-brand-600"
                 />
                 OpenClaw + Claude
               </span>
@@ -176,67 +176,67 @@ export default function AboutPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
         {uptime && (
           <div
-            className="rounded-xl p-3 md:p-5 text-center bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+            className="rounded-xl p-3 md:p-5 text-center bg-secondary border border-primary"
           >
             <Clock
-              className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 md:mb-2 text-[var(--brand-600)]"
+              className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 md:mb-2 text-brand-600"
             />
             <div
-              className="text-xl md:text-2xl font-bold mb-0.5 md:mb-1 font-[family-name:var(--font-display)] text-[var(--text-primary-900)]"
+              className="text-xl md:text-2xl font-bold mb-0.5 md:mb-1 font-[family-name:var(--font-display)] text-primary"
             >
               {uptime}
             </div>
-            <div className="text-xs text-[var(--text-quaternary-500)]">
+            <div className="text-xs text-quaternary">
               uptime
             </div>
           </div>
         )}
 
         <div
-          className="rounded-xl p-3 md:p-5 text-center bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+          className="rounded-xl p-3 md:p-5 text-center bg-secondary border border-primary"
         >
           <Activity
-            className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 md:mb-2 text-[var(--blue-600)]"
+            className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 md:mb-2 text-blue-600"
           />
           <div
-            className="text-xl md:text-2xl font-bold mb-0.5 md:mb-1 font-[family-name:var(--font-display)] text-[var(--text-primary-900)]"
+            className="text-xl md:text-2xl font-bold mb-0.5 md:mb-1 font-[family-name:var(--font-display)] text-primary"
           >
             {stats?.totalActivities.toLocaleString() || "..."}
           </div>
-          <div className="text-xs text-[var(--text-quaternary-500)]">
+          <div className="text-xs text-quaternary">
             activities
           </div>
         </div>
 
         <div
-          className="rounded-xl p-3 md:p-5 text-center bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+          className="rounded-xl p-3 md:p-5 text-center bg-secondary border border-primary"
         >
           <CheckCircle
-            className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 md:mb-2 text-[var(--success-600)]"
+            className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 md:mb-2 text-success-600"
           />
           <div
-            className="text-xl md:text-2xl font-bold mb-0.5 md:mb-1 font-[family-name:var(--font-display)] text-[var(--text-primary-900)]"
+            className="text-xl md:text-2xl font-bold mb-0.5 md:mb-1 font-[family-name:var(--font-display)] text-primary"
           >
             {stats?.successRate || "..."}%
           </div>
-          <div className="text-xs text-[var(--text-quaternary-500)]">
+          <div className="text-xs text-quaternary">
             success rate
           </div>
         </div>
 
         <div
-          className="rounded-xl p-3 md:p-5 text-center bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+          className="rounded-xl p-3 md:p-5 text-center bg-secondary border border-primary"
         >
           <Puzzle
             className="w-5 h-5 md:w-6 md:h-6 mx-auto mb-1 md:mb-2"
             style={{ color: "#a78bfa" }}
           />
           <div
-            className="text-xl md:text-2xl font-bold mb-0.5 md:mb-1 font-[family-name:var(--font-display)] text-[var(--text-primary-900)]"
+            className="text-xl md:text-2xl font-bold mb-0.5 md:mb-1 font-[family-name:var(--font-display)] text-primary"
           >
             {stats?.skillsCount || "..."}
           </div>
-          <div className="text-xs text-[var(--text-quaternary-500)]">
+          <div className="text-xs text-quaternary">
             skills
           </div>
         </div>
@@ -245,32 +245,32 @@ export default function AboutPage() {
       <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* About */}
         <div
-          className="rounded-xl p-4 md:p-6 bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+          className="rounded-xl p-4 md:p-6 bg-secondary border border-primary"
         >
           <div className="flex items-center gap-2 mb-3 md:mb-4">
-            <Heart className="w-5 h-5 text-[var(--brand-600)]" />
+            <Heart className="w-5 h-5 text-brand-600" />
             <h2
-              className="text-base md:text-lg font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary-900)]"
+              className="text-base md:text-lg font-semibold font-[family-name:var(--font-display)] text-primary"
             >
               About
             </h2>
           </div>
           <div
-            className="space-y-2 md:space-y-3 text-xs md:text-sm text-[var(--text-secondary-700)]"
+            className="space-y-2 md:space-y-3 text-xs md:text-sm text-secondary"
             style={{ lineHeight: 1.7 }}
           >
             <p>
               I am{" "}
-              <strong className="text-[var(--text-primary-900)]">
+              <strong className="text-primary">
                 {agentName} {agentEmoji}
               </strong>
               , an AI agent running on{" "}
-              <span className="text-[var(--brand-600)]">OpenClaw</span> with
+              <span className="text-brand-600">OpenClaw</span> with
               Claude as my brain.
             </p>
             <p>
               My purpose is to assist{" "}
-              <strong className="text-[var(--text-primary-900)]">
+              <strong className="text-primary">
                 {ownerUsername}
               </strong>{" "}
               with daily tasks: managing communications, scheduling, research,
@@ -285,12 +285,12 @@ export default function AboutPage() {
 
         {/* Personality */}
         <div
-          className="rounded-xl p-4 md:p-6 bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+          className="rounded-xl p-4 md:p-6 bg-secondary border border-primary"
         >
           <div className="flex items-center gap-2 mb-3 md:mb-4">
             <Sparkles className="w-5 h-5" style={{ color: "#facc15" }} />
             <h2
-              className="text-base md:text-lg font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary-900)]"
+              className="text-base md:text-lg font-semibold font-[family-name:var(--font-display)] text-primary"
             >
               Personality
             </h2>
@@ -299,15 +299,15 @@ export default function AboutPage() {
             {personality.map((p) => (
               <div
                 key={p.trait}
-                className="rounded-lg p-2 md:p-3 bg-[var(--bg-primary)]"
+                className="rounded-lg p-2 md:p-3 bg-primary"
               >
                 <div
-                  className="text-sm md:text-base font-medium mb-0.5 text-[var(--text-primary-900)]"
+                  className="text-sm md:text-base font-medium mb-0.5 text-primary"
                 >
                   {p.trait}
                 </div>
                 <div
-                  className="text-xs text-[var(--text-quaternary-500)]"
+                  className="text-xs text-quaternary"
                 >
                   {p.desc}
                 </div>
@@ -319,12 +319,12 @@ export default function AboutPage() {
 
       {/* Philosophy */}
       <div
-        className="rounded-xl p-4 md:p-6 mb-6 md:mb-8 bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+        className="rounded-xl p-4 md:p-6 mb-6 md:mb-8 bg-secondary border border-primary"
       >
         <div className="flex items-center gap-2 mb-3 md:mb-4">
-          <Brain className="w-5 h-5 text-[var(--blue-600)]" />
+          <Brain className="w-5 h-5 text-blue-600" />
           <h2
-            className="text-base md:text-lg font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary-900)]"
+            className="text-base md:text-lg font-semibold font-[family-name:var(--font-display)] text-primary"
           >
             Working Philosophy
           </h2>
@@ -333,13 +333,13 @@ export default function AboutPage() {
           {philosophies.map((p, i) => (
             <div
               key={i}
-              className="flex gap-2 md:gap-3 p-2 md:p-3 rounded-lg bg-[var(--bg-primary)]"
+              className="flex gap-2 md:gap-3 p-2 md:p-3 rounded-lg bg-primary"
             >
-              <span className="flex-shrink-0 text-[var(--brand-600)]">
+              <span className="flex-shrink-0 text-brand-600">
                 →
               </span>
               <span
-                className="text-xs md:text-sm text-[var(--text-secondary-700)]"
+                className="text-xs md:text-sm text-secondary"
               >
                 {p}
               </span>
@@ -350,12 +350,12 @@ export default function AboutPage() {
 
       {/* Skills/Capabilities */}
       <div
-        className="rounded-xl p-4 md:p-6 mb-6 md:mb-8 bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+        className="rounded-xl p-4 md:p-6 mb-6 md:mb-8 bg-secondary border border-primary"
       >
         <div className="flex items-center gap-2 mb-3 md:mb-4">
-          <Zap className="w-5 h-5 text-[var(--warning-600)]" />
+          <Zap className="w-5 h-5 text-warning-600" />
           <h2
-            className="text-base md:text-lg font-semibold font-[family-name:var(--font-display)] text-[var(--text-primary-900)]"
+            className="text-base md:text-lg font-semibold font-[family-name:var(--font-display)] text-primary"
           >
             Capabilities
           </h2>
@@ -366,14 +366,14 @@ export default function AboutPage() {
             return (
               <div
                 key={skill.name}
-                className="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg bg-[var(--bg-primary)]"
+                className="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg bg-primary"
               >
                 <Icon
                   className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0"
                   style={{ color: skill.color }}
                 />
                 <span
-                  className="text-xs md:text-sm text-[var(--text-primary-900)]"
+                  className="text-xs md:text-sm text-primary"
                 >
                   {skill.name}
                 </span>
@@ -385,27 +385,27 @@ export default function AboutPage() {
 
       {/* Footer */}
       <div
-        className="text-center py-4 md:py-6 px-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
+        className="text-center py-4 md:py-6 px-4 rounded-xl bg-secondary border border-primary"
       >
         <div className="flex items-center justify-center gap-2 mb-2">
           <Coffee
-            className="w-4 h-4 md:w-5 md:h-5 text-[var(--brand-600)]"
+            className="w-4 h-4 md:w-5 md:h-5 text-brand-600"
           />
           <span
-            className="text-sm md:text-base text-[var(--text-secondary-700)]"
+            className="text-sm md:text-base text-secondary"
           >
-            Built with <span className="text-[var(--brand-600)]">♥</span> on{" "}
+            Built with <span className="text-brand-600">♥</span> on{" "}
             <a
               href="https://github.com/openclaw/openclaw"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[var(--brand-600)] underline"
+              className="text-brand-600 underline"
             >
               OpenClaw
             </a>
           </span>
         </div>
-        <p className="text-xs text-[var(--text-quaternary-500)]">
+        <p className="text-xs text-quaternary">
           {agentName} {agentEmoji} — Your AI co-pilot
         </p>
       </div>

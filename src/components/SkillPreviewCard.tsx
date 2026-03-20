@@ -36,7 +36,7 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
   }
 
   return (
-    <div className="bg-surface-elevated rounded-xl border border-white/[0.06] p-5 flex flex-col gap-3">
+    <div className="bg-tertiary rounded-xl border border-white/[0.06] p-5 flex flex-col gap-3">
       {/* Header row: icon + name + description */}
       <div className="flex flex-row gap-3 items-start">
         {/* Emoji picker */}
@@ -46,7 +46,7 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
           trigger={
             <button
               type="button"
-              className="text-[36px] flex-shrink-0 leading-none bg-transparent border-none cursor-pointer p-0.5 rounded-md transition-colors hover:bg-surface"
+              className="text-[36px] flex-shrink-0 leading-none bg-transparent border-none cursor-pointer p-0.5 rounded-md transition-colors hover:bg-secondary"
               title="Change icon"
             >
               {draft.icon ?? '🔧'}
@@ -60,8 +60,8 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
                 type="button"
                 onClick={() => { onDraftChange({ ...draft, icon: emoji }); setEmojiOpen(false); }}
                 className={cx(
-                  'text-[22px] p-1.5 rounded-md border-none cursor-pointer transition-colors hover:bg-surface-elevated',
-                  draft.icon === emoji ? 'bg-surface-elevated' : 'bg-transparent'
+                  'text-[22px] p-1.5 rounded-md border-none cursor-pointer transition-colors hover:bg-tertiary',
+                  draft.icon === emoji ? 'bg-tertiary' : 'bg-transparent'
                 )}
               >
                 {emoji}
@@ -81,8 +81,8 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
             onFocus={() => setTitleFocus(true)}
             onBlur={() => setTitleFocus(false)}
             className={cx(
-              'border-none outline-none bg-transparent w-full transition-colors font-heading text-lg font-bold text-foreground px-1.5 py-0.5 rounded-md -mx-1.5',
-              titleFocus ? 'bg-surface border border-border' : titleHover ? 'bg-surface border border-transparent' : 'border border-transparent'
+              'border-none outline-none bg-transparent w-full transition-colors font-display text-lg font-bold text-primary px-1.5 py-0.5 rounded-md -mx-1.5',
+              titleFocus ? 'bg-secondary border border-secondary' : titleHover ? 'bg-secondary border border-transparent' : 'border border-transparent'
             )}
           />
           <textarea
@@ -94,8 +94,8 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
             onFocus={() => setDescFocus(true)}
             onBlur={() => setDescFocus(false)}
             className={cx(
-              'border-none outline-none bg-transparent w-full transition-colors font-sans text-[13px] text-muted-foreground px-1.5 py-0.5 rounded-md -mx-1.5 mt-0.5 min-h-[60px] overflow-y-auto leading-relaxed resize-none',
-              descFocus ? 'bg-surface border border-border' : descHover ? 'bg-surface border border-transparent' : 'border border-transparent'
+              'border-none outline-none bg-transparent w-full transition-colors font-sans text-[13px] text-quaternary px-1.5 py-0.5 rounded-md -mx-1.5 mt-0.5 min-h-[60px] overflow-y-auto leading-relaxed resize-none',
+              descFocus ? 'bg-secondary border border-secondary' : descHover ? 'bg-secondary border border-transparent' : 'border border-transparent'
             )}
           />
         </div>
@@ -109,7 +109,7 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
             href={draft.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-accent font-mono no-underline overflow-hidden text-ellipsis whitespace-nowrap max-w-[280px]"
+            className="text-xs text-brand-600 font-mono no-underline overflow-hidden text-ellipsis whitespace-nowrap max-w-[280px]"
           >
             {draft.source_url}
           </a>
@@ -124,8 +124,8 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
           onFocus={() => setContentFocus(true)}
           onBlur={() => setContentFocus(false)}
           className={cx(
-            'font-mono text-[13px] text-[#8B8B8B] bg-surface rounded-md px-2.5 py-2 m-0 min-h-[160px] overflow-y-auto whitespace-pre-wrap break-words outline-none w-full transition-colors resize-none',
-            contentFocus ? 'border border-border' : 'border border-transparent'
+            'font-mono text-[13px] text-[#8B8B8B] bg-secondary rounded-md px-2.5 py-2 m-0 min-h-[160px] overflow-y-auto whitespace-pre-wrap break-words outline-none w-full transition-colors resize-none',
+            contentFocus ? 'border border-secondary' : 'border border-transparent'
           )}
         />
       )}

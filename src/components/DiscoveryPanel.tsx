@@ -63,19 +63,19 @@ export function DiscoveryPanel({ initialQuery = '', onSelect }: DiscoveryPanelPr
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Buscar skills en skills.sh..."
-        className="w-full px-3 py-2 rounded-lg border border-border bg-surface-elevated text-foreground text-sm font-sans outline-none box-border"
+        className="w-full px-3 py-2 rounded-lg border border-secondary bg-tertiary text-primary text-sm font-sans outline-none box-border"
       />
 
       {/* Loading state */}
       {loading && (
-        <p className="text-xs text-muted-foreground font-sans m-0">
+        <p className="text-xs text-quaternary font-sans m-0">
           Buscando...
         </p>
       )}
 
       {/* Empty state */}
       {!loading && query.trim() && results.length === 0 && (
-        <p className="text-xs text-muted-foreground font-sans m-0">
+        <p className="text-xs text-quaternary font-sans m-0">
           No se encontraron skills para &quot;{query}&quot;.
         </p>
       )}
@@ -87,19 +87,19 @@ export function DiscoveryPanel({ initialQuery = '', onSelect }: DiscoveryPanelPr
             <div
               key={skill.slug}
               onClick={() => onSelect(skill)}
-              className="px-3 py-2.5 rounded-lg border border-border bg-surface-elevated cursor-pointer flex flex-col gap-1 hover:border-accent transition-colors"
+              className="px-3 py-2.5 rounded-lg border border-secondary bg-tertiary cursor-pointer flex flex-col gap-1 hover:border-accent transition-colors"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-foreground font-sans">
+                <span className="text-sm font-semibold text-primary font-sans">
                   {skill.displayName}
                 </span>
                 <span className={cx(
                   'text-[10px] px-1.5 py-0.5 rounded font-sans whitespace-nowrap',
                   skill.source === 'skills_sh'
-                    ? 'bg-accent text-white'
+                    ? 'bg-brand-50 text-white'
                     : skill.source === 'clawhub'
                     ? 'bg-[#6366f1] text-white'
-                    : 'bg-border text-muted-foreground'
+                    : 'bg-border text-quaternary'
                 )}>
                   {skill.source === 'skills_sh'
                     ? 'skills.sh'
@@ -108,10 +108,10 @@ export function DiscoveryPanel({ initialQuery = '', onSelect }: DiscoveryPanelPr
                     : 'GitHub'}
                 </span>
               </div>
-              <span className="text-xs text-muted-foreground font-sans">
+              <span className="text-xs text-quaternary font-sans">
                 {skill.summary ?? 'Sin descripcion'}
               </span>
-              <span className="text-[11px] text-muted-foreground font-sans">
+              <span className="text-[11px] text-quaternary font-sans">
                 {skill.version ? `v${skill.version}` : 'v1.0.0'} · {skill.slug}
               </span>
             </div>

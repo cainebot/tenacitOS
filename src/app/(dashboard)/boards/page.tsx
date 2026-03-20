@@ -26,7 +26,7 @@ export default function BoardsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-primary m-0">
+          <h1 className="font-display text-2xl font-bold text-primary m-0">
             Boards
           </h1>
           {!loading && !error && (
@@ -43,7 +43,7 @@ export default function BoardsPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-surface border border-border rounded-lg p-5 h-[120px] opacity-50 animate-pulse"
+              className="bg-secondary border border-secondary rounded-lg p-5 h-[120px] opacity-50 animate-pulse"
             />
           ))}
         </div>
@@ -51,14 +51,14 @@ export default function BoardsPage() {
 
       {/* Error state */}
       {error && (
-        <div className="bg-surface border border-border rounded-lg p-6 text-secondary font-body">
+        <div className="bg-secondary border border-secondary rounded-lg p-6 text-secondary font-body">
           Error loading boards: {error}
         </div>
       )}
 
       {/* Empty state */}
       {!loading && !error && boards.length === 0 && (
-        <div className="bg-surface border border-border rounded-lg px-6 py-12 text-center text-secondary font-body">
+        <div className="bg-secondary border border-secondary rounded-lg px-6 py-12 text-center text-secondary font-body">
           No boards found. Create a board to get started.
         </div>
       )}
@@ -74,13 +74,13 @@ export default function BoardsPage() {
             >
               <div
                 className={cx(
-                  'bg-surface border border-border rounded-lg p-5 cursor-pointer',
+                  'bg-secondary border border-secondary rounded-lg p-5 cursor-pointer',
                   'transition-[border-color,box-shadow] duration-150 ease-[ease]',
                   'hover:border-accent hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]',
                 )}
               >
                 {/* Board name */}
-                <h2 className="font-heading text-base font-semibold text-primary mb-2 mt-0">
+                <h2 className="font-display text-base font-semibold text-primary mb-2 mt-0">
                   {board.name}
                 </h2>
 
@@ -94,7 +94,7 @@ export default function BoardsPage() {
                 {/* Meta row */}
                 <div className="flex items-center gap-2 mt-auto">
                   {board.card_type_filter && (
-                    <span className="font-body text-[11px] text-secondary bg-surface-elevated border border-border rounded px-1.5 py-0.5 capitalize">
+                    <span className="font-body text-[11px] text-secondary bg-tertiary border border-secondary rounded px-1.5 py-0.5 capitalize">
                       {board.card_type_filter}
                     </span>
                   )}

@@ -65,7 +65,7 @@ export function CardHierarchy({
     alignItems: 'center',
     gap: '4px',
     cursor: 'pointer',
-    color: 'var(--text-tertiary-600)',
+    color: "var(--text-tertiary-600)",
     fontFamily: 'var(--font-inter), system-ui, sans-serif',
     fontSize: '12px',
     textDecoration: 'none',
@@ -84,14 +84,14 @@ export function CardHierarchy({
     marginBottom: '12px',
     padding: '8px 10px',
     background: 'var(--bg-secondary)',
-    border: '1px solid var(--border-primary)',
+    border: "1px solid var(--border-primary)",
     borderRadius: '6px',
   }
 
   const labelStyle: React.CSSProperties = {
     fontFamily: 'var(--font-inter), system-ui, sans-serif',
     fontSize: '11px',
-    color: 'var(--text-quaternary-500)',
+    color: "var(--text-quaternary-500)",
     fontWeight: 600,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.04em',
@@ -108,7 +108,7 @@ export function CardHierarchy({
             {breadcrumb.map((entry, idx) => (
               <span key={entry.card_id} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 {idx > 0 && (
-                  <span style={{ color: 'var(--text-quaternary-500)', fontSize: '11px' }}>›</span>
+                  <span style={{ color: "var(--text-quaternary-500)", fontSize: '11px' }}>›</span>
                 )}
                 <button
                   style={linkStyle}

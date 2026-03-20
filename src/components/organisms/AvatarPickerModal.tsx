@@ -42,7 +42,7 @@ const sectionLabel: React.CSSProperties = {
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.8px',
-  color: 'var(--text-quaternary-500)',
+  color: "var(--text-quaternary-500)",
   marginBottom: '8px',
 }
 
@@ -157,7 +157,7 @@ export function AvatarPickerModal({
 
   // ---- Divider ----
   const Divider = () => (
-    <div style={{ borderTop: '1px solid var(--border-primary)', margin: '12px 0' }} />
+    <div style={{ borderTop: "1px solid var(--border-primary)", margin: '12px 0' }} />
   )
 
   return (
@@ -182,9 +182,9 @@ export function AvatarPickerModal({
           transform: 'translate(-50%, -50%)',
           width: '400px',
           maxHeight: '80vh',
-          background: 'var(--surface-elevated, #242424)',
+          background: 'var(--bg-tertiary)',
           borderRadius: '12px',
-          border: '1px solid var(--border-primary)',
+          border: "1px solid var(--border-primary)",
           boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
           zIndex: 201,
           display: 'flex',
@@ -199,16 +199,16 @@ export function AvatarPickerModal({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '16px 20px',
-            borderBottom: '1px solid var(--border-primary)',
+            borderBottom: "1px solid var(--border-primary)",
           }}
         >
-          <span style={{ fontFamily: 'var(--font-sora), system-ui, sans-serif', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary-900)' }}>
+          <span style={{ fontFamily: 'var(--font-sora), system-ui, sans-serif', fontSize: '14px', fontWeight: 700, color: "var(--text-primary-900)" }}>
             Choose Avatar
           </span>
           <button
             type="button"
             onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-quaternary-500)', padding: '4px' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: "var(--text-quaternary-500)", padding: '4px' }}
           >
             <X size={16} />
           </button>
@@ -238,7 +238,7 @@ export function AvatarPickerModal({
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-primary)', padding: '0 20px' }}>
+        <div style={{ display: 'flex', borderBottom: "1px solid var(--border-primary)", padding: '0 20px' }}>
           {([
             { id: 'emoji' as const, label: 'Emoji', icon: '😀' },
             { id: 'photo' as const, label: 'Photo', icon: null },
@@ -349,11 +349,11 @@ export function AvatarPickerModal({
                   />
                 ) : (
                   <>
-                    <Upload size={24} style={{ color: 'var(--text-quaternary-500)' }} />
-                    <span style={{ fontSize: '12px', color: 'var(--text-quaternary-500)', fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+                    <Upload size={24} style={{ color: "var(--text-quaternary-500)" }} />
+                    <span style={{ fontSize: '12px', color: "var(--text-quaternary-500)", fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
                       Drag & drop or click to upload
                     </span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-quaternary-500)' }}>Max 2MB</span>
+                    <span style={{ fontSize: '10px', color: "var(--text-quaternary-500)" }}>Max 2MB</span>
                   </>
                 )}
               </div>
@@ -395,7 +395,7 @@ export function AvatarPickerModal({
             justifyContent: 'flex-end',
             gap: '8px',
             padding: '12px 20px',
-            borderTop: '1px solid var(--border-primary)',
+            borderTop: "1px solid var(--border-primary)",
           }}
         >
           <button
@@ -404,9 +404,9 @@ export function AvatarPickerModal({
             style={{
               padding: '8px 16px',
               borderRadius: '6px',
-              border: '1px solid var(--border-primary)',
+              border: "1px solid var(--border-primary)",
               background: 'none',
-              color: 'var(--text-tertiary-600)',
+              color: "var(--text-tertiary-600)",
               fontSize: '12px',
               fontFamily: 'var(--font-inter), system-ui, sans-serif',
               cursor: 'pointer',

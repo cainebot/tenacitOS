@@ -31,7 +31,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="p-4 md:p-8 flex items-center justify-center min-h-screen bg-background">
+      <div className="p-4 md:p-8 flex items-center justify-center min-h-screen bg-primary">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           <span className="text-secondary">Loading analytics...</span>
@@ -42,8 +42,8 @@ export default function AnalyticsPage() {
 
   if (!data) {
     return (
-      <div className="p-4 md:p-8 bg-background">
-        <p className="text-error">Failed to load analytics data</p>
+      <div className="p-4 md:p-8 bg-primary">
+        <p className="text-error-600">Failed to load analytics data</p>
       </div>
     );
   }
@@ -55,9 +55,9 @@ export default function AnalyticsPage() {
   )?.date || "-";
 
   return (
-    <div className={cx("p-4 md:p-8 bg-background min-h-screen")}>
+    <div className={cx("p-4 md:p-8 bg-primary min-h-screen")}>
       <div className="mb-4 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary font-heading">
+        <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary font-display">
           📊 Analytics
         </h1>
         <p className="text-sm md:text-base text-secondary">
@@ -67,25 +67,25 @@ export default function AnalyticsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
-        <div className="rounded-xl p-3 md:p-4 bg-card border border-border">
+        <div className="rounded-xl p-3 md:p-4 bg-secondary border border-secondary">
           <p className="text-xs md:text-sm mb-1 text-secondary">Total This Week</p>
           <p className="text-xl md:text-2xl font-bold text-primary">
             {totalThisWeek}
           </p>
         </div>
-        <div className="rounded-xl p-3 md:p-4 bg-card border border-border">
+        <div className="rounded-xl p-3 md:p-4 bg-secondary border border-secondary">
           <p className="text-xs md:text-sm mb-1 text-secondary">Most Active Day</p>
-          <p className="text-xl md:text-2xl font-bold text-accent">
+          <p className="text-xl md:text-2xl font-bold text-brand-600">
             {mostActiveDay}
           </p>
         </div>
-        <div className="rounded-xl p-3 md:p-4 bg-card border border-border">
+        <div className="rounded-xl p-3 md:p-4 bg-secondary border border-secondary">
           <p className="text-xs md:text-sm mb-1 text-secondary">Top Activity Type</p>
           <p className="text-xl md:text-2xl font-bold capitalize text-info">
             {data.byType[0]?.type || "-"}
           </p>
         </div>
-        <div className="rounded-xl p-3 md:p-4 bg-card border border-border">
+        <div className="rounded-xl p-3 md:p-4 bg-secondary border border-secondary">
           <p className="text-xs md:text-sm mb-1 text-secondary">Success Rate</p>
           <p className="text-xl md:text-2xl font-bold text-success">
             {data.successRate.toFixed(0)}%
@@ -96,10 +96,10 @@ export default function AnalyticsPage() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Activity Over Time */}
-        <div className="rounded-xl p-4 md:p-6 bg-card border border-border">
+        <div className="rounded-xl p-4 md:p-6 bg-secondary border border-secondary">
           <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-            <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-accent" />
-            <h2 className="text-lg md:text-xl font-bold text-primary font-heading">
+            <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-brand-600" />
+            <h2 className="text-lg md:text-xl font-bold text-primary font-display">
               Activity Over Time
             </h2>
           </div>
@@ -107,10 +107,10 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Activity by Type */}
-        <div className="rounded-xl p-4 md:p-6 bg-card border border-border">
+        <div className="rounded-xl p-4 md:p-6 bg-secondary border border-secondary">
           <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-            <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-accent" />
-            <h2 className="text-lg md:text-xl font-bold text-primary font-heading">
+            <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-brand-600" />
+            <h2 className="text-lg md:text-xl font-bold text-primary font-display">
               Activity by Type
             </h2>
           </div>
@@ -118,10 +118,10 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Hourly Heatmap */}
-        <div className="rounded-xl p-4 md:p-6 bg-card border border-border">
+        <div className="rounded-xl p-4 md:p-6 bg-secondary border border-secondary">
           <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-            <Clock className="w-4 h-4 md:w-5 md:h-5 text-accent" />
-            <h2 className="text-lg md:text-xl font-bold text-primary font-heading">
+            <Clock className="w-4 h-4 md:w-5 md:h-5 text-brand-600" />
+            <h2 className="text-lg md:text-xl font-bold text-primary font-display">
               Activity by Hour
             </h2>
           </div>
@@ -129,10 +129,10 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Success Rate Gauge */}
-        <div className="rounded-xl p-4 md:p-6 bg-card border border-border">
+        <div className="rounded-xl p-4 md:p-6 bg-secondary border border-secondary">
           <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-            <Target className="w-4 h-4 md:w-5 md:h-5 text-accent" />
-            <h2 className="text-lg md:text-xl font-bold text-primary font-heading">
+            <Target className="w-4 h-4 md:w-5 md:h-5 text-brand-600" />
+            <h2 className="text-lg md:text-xl font-bold text-primary font-display">
               Success Rate
             </h2>
           </div>

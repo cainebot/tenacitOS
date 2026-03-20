@@ -54,20 +54,20 @@ function statusPillClasses(status: string): { bg: string; color: string } {
     case 'queued':
       return { bg: 'bg-info/15', color: 'text-info' }
     default:
-      return { bg: 'bg-error/15', color: 'text-error' }
+      return { bg: 'bg-error/15', color: 'text-error-600' }
   }
 }
 
 function badgeClasses(badge?: string): { bg: string; color: string } {
   switch (badge) {
     case 'LEAD':
-      return { bg: 'bg-error/10', color: 'text-error' }
+      return { bg: 'bg-error/10', color: 'text-error-600' }
     case 'SPC':
       return { bg: 'bg-warning/10', color: 'text-warning' }
     case 'INT':
       return { bg: 'bg-info/10', color: 'text-info' }
     default:
-      return { bg: 'bg-muted/10', color: 'text-muted' }
+      return { bg: 'bg-muted/10', color: 'text-quaternary' }
   }
 }
 
@@ -212,19 +212,19 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
 
   return (
     <div
-      className="fixed right-0 top-0 bottom-0 w-[380px] bg-surface-elevated border-l border-border z-[49] translate-x-0 transition-transform duration-200 ease-out shadow-[-4px_0_24px_rgba(0,0,0,0.2)] overflow-y-auto flex flex-col"
+      className="fixed right-0 top-0 bottom-0 w-[380px] bg-tertiary border-l border-secondary z-[49] translate-x-0 transition-transform duration-200 ease-out shadow-[-4px_0_24px_rgba(0,0,0,0.2)] overflow-y-auto flex flex-col"
       role="complementary"
       aria-label={`Agent profile: ${agent.name}`}
     >
 
       {/* AGENT PROFILE header bar */}
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between flex-shrink-0">
-        <span className="text-[11px] font-bold tracking-[0.08em] text-muted font-heading">
+      <div className="px-4 py-3 border-b border-secondary flex items-center justify-between flex-shrink-0">
+        <span className="text-[11px] font-bold tracking-[0.08em] text-quaternary font-display">
           AGENT PROFILE
         </span>
         <button
           onClick={onClose}
-          className="w-7 h-7 flex items-center justify-center bg-transparent border-0 cursor-pointer text-muted rounded hover:text-primary transition-colors"
+          className="w-7 h-7 flex items-center justify-center bg-transparent border-0 cursor-pointer text-quaternary rounded hover:text-primary transition-colors"
           aria-label="Close panel"
         >
           <X size={16} />
@@ -232,9 +232,9 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
       </div>
 
       {/* Profile: horizontal layout — avatar left, info right */}
-      <div className="p-4 flex items-start gap-3.5 border-b border-border">
+      <div className="p-4 flex items-start gap-3.5 border-b border-secondary">
         {/* Avatar */}
-        <span className="w-12 h-12 rounded-full bg-surface text-secondary flex items-center justify-center text-2xl flex-shrink-0">
+        <span className="w-12 h-12 rounded-full bg-secondary text-secondary flex items-center justify-center text-2xl flex-shrink-0">
           {agent.emoji || agent.name.charAt(0).toUpperCase()}
         </span>
 
@@ -242,7 +242,7 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
         <div className="flex-1 min-w-0">
           {/* Name + attention count */}
           <div className="flex items-center gap-2">
-            <div className="text-base font-bold text-primary font-heading leading-tight">
+            <div className="text-base font-bold text-primary font-display leading-tight">
               {agent.name}
             </div>
             {attentionCount > 0 && (
@@ -281,7 +281,7 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
       </div>
 
       {/* Tabs: Details | Timeline | Messages — right after profile */}
-      <div className="flex border-b border-border px-4 flex-shrink-0">
+      <div className="flex border-b border-secondary px-4 flex-shrink-0">
         {([
           { id: 'details' as TabId, label: 'Details', icon: AlertTriangle },
           { id: 'timeline' as TabId, label: 'Timeline', icon: Clock },
@@ -293,12 +293,12 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-1 py-2.5 px-1 bg-transparent border-0 cursor-pointer text-[11px] transition-colors ${isActive ? 'font-semibold text-primary border-b-2 border-accent' : 'font-medium text-muted border-b-2 border-transparent'}`}
+              className={`flex-1 flex items-center justify-center gap-1 py-2.5 px-1 bg-transparent border-0 cursor-pointer text-[11px] transition-colors ${isActive ? 'font-semibold text-primary border-b-2 border-accent' : 'font-medium text-quaternary border-b-2 border-transparent'}`}
             >
               <Icon size={13} />
               {tab.label}
               {tab.id === 'messages' && unreadCount > 0 && (
-                <span className="w-4 h-4 rounded-full bg-accent text-white text-[9px] font-bold inline-flex items-center justify-center ml-1">
+                <span className="w-4 h-4 rounded-full bg-brand-50 text-white text-[9px] font-bold inline-flex items-center justify-center ml-1">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -314,9 +314,9 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
         {activeTab === 'details' && (
           <>
             {/* STATUS REASON */}
-            <div className="p-4 border-b border-border">
-              <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted mb-2">STATUS REASON</div>
-              <div className="border-l-[3px] border-border pl-3 text-xs text-secondary leading-relaxed italic">
+            <div className="p-4 border-b border-secondary">
+              <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-quaternary mb-2">STATUS REASON</div>
+              <div className="border-l-[3px] border-secondary pl-3 text-xs text-secondary leading-relaxed italic">
                 {agent.status === 'working' || agent.status === 'thinking' || agent.status === 'executing_tool'
                   ? 'Agent is currently working on assigned tasks.'
                   : agent.status === 'idle'
@@ -328,8 +328,8 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
             </div>
 
             {/* ABOUT */}
-            <div className="p-4 border-b border-border">
-              <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted mb-2">ABOUT</div>
+            <div className="p-4 border-b border-secondary">
+              <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-quaternary mb-2">ABOUT</div>
               {isEditingDesc && (
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-warning mb-1.5" />
               )}
@@ -346,32 +346,32 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
               ) : (
                 <div
                   onClick={() => setIsEditingDesc(true)}
-                  className={`text-[13px] leading-relaxed cursor-text min-h-6 ${descDraft ? 'text-secondary' : 'text-muted italic'}`}
+                  className={`text-[13px] leading-relaxed cursor-text min-h-6 ${descDraft ? 'text-secondary' : 'text-quaternary italic'}`}
                 >
                   {descDraft || 'No description.'}
                 </div>
               )}
               {descError && (
-                <div className="mt-1.5 text-xs text-error">{descError}</div>
+                <div className="mt-1.5 text-xs text-error-600">{descError}</div>
               )}
             </div>
 
             {/* SKILLS */}
             <div className="p-4">
-              <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted mb-2">SKILLS</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-quaternary mb-2">SKILLS</div>
               {agent.skills && agent.skills.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                   {agent.skills.map((skill) => (
                     <span
                       key={skill}
-                      className="text-[11px] font-medium bg-surface text-secondary border border-border rounded px-2 py-0.5"
+                      className="text-[11px] font-medium bg-secondary text-secondary border border-secondary rounded px-2 py-0.5"
                     >
                       {skill}
                     </span>
                   ))}
                 </div>
               ) : (
-                <div className="text-[10px] text-muted italic">No skills defined.</div>
+                <div className="text-[10px] text-quaternary italic">No skills defined.</div>
               )}
             </div>
           </>
@@ -382,13 +382,13 @@ export function AgentSidePanel({ agent, boardId, onClose }: AgentSidePanelProps)
           <div>
             <div className="p-4">
               {activities.length === 0 ? (
-                <div className="text-[11px] text-muted italic">No recent activity.</div>
+                <div className="text-[11px] text-quaternary italic">No recent activity.</div>
               ) : (
                 <div className="flex flex-col gap-2">
                   {activities.map((item, i) => (
                     <div key={i} className="flex justify-between gap-2">
                       <span className="text-[11px] text-secondary leading-snug">{item.action}</span>
-                      <span className="text-[10px] text-muted flex-shrink-0">{relativeTime(item.created_at)}</span>
+                      <span className="text-[10px] text-quaternary flex-shrink-0">{relativeTime(item.created_at)}</span>
                     </div>
                   ))}
                 </div>

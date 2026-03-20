@@ -79,7 +79,7 @@ export function InlineCardCreate({
         marginTop: '4px',
         padding: '6px 8px',
         background: 'var(--bg-secondary)',
-        border: '1px solid var(--accent, #6366f1)',
+        border: '1px solid var(--brand-600)',
         borderRadius: '6px',
         display: 'flex',
         flexDirection: 'column',
@@ -100,7 +100,7 @@ export function InlineCardCreate({
           outline: 'none',
           fontFamily: 'var(--font-inter), system-ui, sans-serif',
           fontSize: '13px',
-          color: 'var(--text-primary-900)',
+          color: "var(--text-primary-900)",
           width: '100%',
           padding: '2px 0',
         }}
@@ -128,7 +128,7 @@ export function InlineCardCreate({
           style={{
             fontFamily: 'var(--font-inter), system-ui, sans-serif',
             fontSize: '11px',
-            color: 'var(--text-tertiary-600)',
+            color: "var(--text-tertiary-600)",
             opacity: 0.6,
           }}
         >

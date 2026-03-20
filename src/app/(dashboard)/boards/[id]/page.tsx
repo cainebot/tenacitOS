@@ -28,12 +28,12 @@ function KanbanSkeleton() {
       {[1, 2, 3].map((col) => (
         <div key={col} className="w-[280px] shrink-0">
           {/* Column header skeleton */}
-          <div className="h-[38px] bg-surface border border-border rounded-[6px] mb-2 opacity-50" />
+          <div className="h-[38px] bg-secondary border border-secondary rounded-[6px] mb-2 opacity-50" />
           {/* Card skeletons */}
           {[1, 2, 3, 4].map((card) => (
             <div
               key={card}
-              className="bg-surface border border-border rounded-[6px] mb-2 opacity-40"
+              className="bg-secondary border border-secondary rounded-[6px] mb-2 opacity-40"
               style={{ height: `${48 + card * 8}px` }}
             />
           ))}
@@ -343,8 +343,8 @@ function BoardPageInner() {
           <button
             onClick={() => setShowBoardDropdown(!showBoardDropdown)}
             className={cx(
-              'flex items-center gap-1.5 font-heading text-[15px] font-semibold text-primary',
-              'bg-transparent border border-border rounded-[6px] px-3 py-1.5 cursor-pointer',
+              'flex items-center gap-1.5 font-display text-[15px] font-semibold text-primary',
+              'bg-transparent border border-secondary rounded-[6px] px-3 py-1.5 cursor-pointer',
               'transition-colors duration-150',
               'hover:border-accent'
             )}
@@ -353,7 +353,7 @@ function BoardPageInner() {
             <ChevronDown
               size={14}
               className={cx(
-                'text-muted transition-transform duration-150',
+                'text-quaternary transition-transform duration-150',
                 showBoardDropdown ? 'rotate-180' : 'rotate-0'
               )}
             />
@@ -366,7 +366,7 @@ function BoardPageInner() {
                 className="fixed inset-0 z-[99]"
                 onClick={() => { setShowBoardDropdown(false); setCreatingBoard(false); setNewBoardName('') }}
               />
-              <div className="absolute top-full left-0 mt-1 min-w-[220px] bg-surface-elevated border border-border rounded-[6px] shadow-[0_4px_16px_rgba(0,0,0,0.25)] z-[100] overflow-hidden">
+              <div className="absolute top-full left-0 mt-1 min-w-[220px] bg-tertiary border border-secondary rounded-[6px] shadow-[0_4px_16px_rgba(0,0,0,0.25)] z-[100] overflow-hidden">
                 {/* Board list */}
                 <div className="max-h-60 overflow-y-auto">
                   {allBoards.map((b) => {
@@ -381,7 +381,7 @@ function BoardPageInner() {
                         className={cx(
                           'flex items-center gap-2 w-full px-3 py-2 border-none cursor-pointer font-body text-[13px] text-left transition-colors duration-100',
                           isActive
-                            ? 'bg-accent/10 font-semibold text-accent'
+                            ? 'bg-brand-50/10 font-semibold text-brand-600'
                             : 'bg-transparent font-normal text-primary hover:bg-white/[0.04]'
                         )}
                       >
@@ -393,7 +393,7 @@ function BoardPageInner() {
                 </div>
 
                 {/* Separator + Create board */}
-                <div className="border-t border-border">
+                <div className="border-t border-secondary">
                   {creatingBoard ? (
                     <div className="px-3 py-2 flex gap-1.5">
                       <input
@@ -428,7 +428,7 @@ function BoardPageInner() {
                         }}
                         placeholder="Board name..."
                         autoFocus
-                        className="flex-1 font-body text-xs bg-surface border border-border rounded px-2 py-1 text-primary outline-none min-w-0"
+                        className="flex-1 font-body text-xs bg-secondary border border-secondary rounded px-2 py-1 text-primary outline-none min-w-0"
                       />
                       <button
                         onClick={async () => {
@@ -455,8 +455,8 @@ function BoardPageInner() {
                         className={cx(
                           'font-body text-[11px] font-semibold border-none rounded px-2.5 py-1 shrink-0',
                           newBoardName.trim()
-                            ? 'bg-accent text-white cursor-pointer'
-                            : 'bg-surface text-muted cursor-not-allowed'
+                            ? 'bg-brand-50 text-white cursor-pointer'
+                            : 'bg-secondary text-quaternary cursor-not-allowed'
                         )}
                       >
                         Create
@@ -468,7 +468,7 @@ function BoardPageInner() {
                         setCreatingBoard(true)
                         setTimeout(() => newBoardInputRef.current?.focus(), 50)
                       }}
-                      className="flex items-center gap-1.5 w-full px-3 py-2 bg-transparent border-none cursor-pointer font-body text-[13px] text-accent text-left transition-colors duration-100 hover:bg-accent/[0.08]"
+                      className="flex items-center gap-1.5 w-full px-3 py-2 bg-transparent border-none cursor-pointer font-body text-[13px] text-brand-600 text-left transition-colors duration-100 hover:bg-brand-50/[0.08]"
                     >
                       <span className="text-sm font-bold">+</span>
                       New board
@@ -486,7 +486,7 @@ function BoardPageInner() {
         <div className="flex items-center gap-2 px-6 pt-4 pb-2 max-h-14">
           {/* Board name + description */}
           <div className="flex-1 min-w-0">
-            <h1 className="font-heading text-[16px] font-bold text-primary m-0 leading-[1.2] overflow-hidden text-ellipsis whitespace-nowrap">
+            <h1 className="font-display text-[16px] font-bold text-primary m-0 leading-[1.2] overflow-hidden text-ellipsis whitespace-nowrap">
               {board.name}
             </h1>
             {board.description && (
@@ -499,7 +499,7 @@ function BoardPageInner() {
           <button
             onClick={() => setShowColumnManager(true)}
             title="Manage Columns"
-            className="flex items-center gap-[5px] font-body text-xs text-secondary bg-transparent border border-border rounded-[6px] px-2.5 py-1 cursor-pointer shrink-0 transition-colors duration-100 hover:bg-surface-alt hover:text-primary"
+            className="flex items-center gap-[5px] font-body text-xs text-secondary bg-transparent border border-secondary rounded-[6px] px-2.5 py-1 cursor-pointer shrink-0 transition-colors duration-100 hover:bg-secondary hover:text-primary"
           >
             {/* Settings icon */}
             <svg
@@ -521,28 +521,28 @@ function BoardPageInner() {
             <button
               onClick={() => setShowSMDropdown(!showSMDropdown)}
               title="Set Scrum Master"
-              className="flex items-center gap-[5px] font-body text-xs text-secondary bg-transparent border border-border rounded-[6px] px-2.5 py-1 cursor-pointer transition-colors duration-100 max-w-[200px] hover:bg-surface-alt hover:text-primary"
+              className="flex items-center gap-[5px] font-body text-xs text-secondary bg-transparent border border-secondary rounded-[6px] px-2.5 py-1 cursor-pointer transition-colors duration-100 max-w-[200px] hover:bg-secondary hover:text-primary"
             >
-              <span className="text-[10px] font-bold tracking-[0.5px] text-muted uppercase">
+              <span className="text-[10px] font-bold tracking-[0.5px] text-quaternary uppercase">
                 SCRUM MASTER
               </span>
               <span className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[100px]">
                 {scrumMasterAgentId
                   ? (agents.find((a) => a.agent_id === scrumMasterAgentId)?.name ?? 'Unknown')
-                  : <span className="text-muted italic">No Scrum Master assigned</span>
+                  : <span className="text-quaternary italic">No Scrum Master assigned</span>
                 }
               </span>
               <ChevronDown
                 size={12}
                 className={cx(
-                  'text-muted shrink-0 transition-transform duration-150',
+                  'text-quaternary shrink-0 transition-transform duration-150',
                   showSMDropdown ? 'rotate-180' : 'rotate-0'
                 )}
               />
             </button>
 
             {smError && (
-              <div className="absolute top-full left-0 mt-1 text-[11px] text-error bg-surface-elevated border border-border rounded px-2 py-1 whitespace-nowrap z-[101]">
+              <div className="absolute top-full left-0 mt-1 text-[11px] text-error-600 bg-tertiary border border-secondary rounded px-2 py-1 whitespace-nowrap z-[101]">
                 {smError}
               </div>
             )}
@@ -553,7 +553,7 @@ function BoardPageInner() {
                   className="fixed inset-0 z-[99]"
                   onClick={() => setShowSMDropdown(false)}
                 />
-                <div className="absolute top-full right-0 mt-1 min-w-[200px] bg-surface-elevated border border-border rounded-[6px] shadow-[0_4px_16px_rgba(0,0,0,0.25)] z-[100] overflow-hidden">
+                <div className="absolute top-full right-0 mt-1 min-w-[200px] bg-tertiary border border-secondary rounded-[6px] shadow-[0_4px_16px_rgba(0,0,0,0.25)] z-[100] overflow-hidden">
                   <div className="max-h-60 overflow-y-auto">
                     {agents.map((agent) => {
                       const isCurrent = agent.agent_id === scrumMasterAgentId
@@ -605,7 +605,7 @@ function BoardPageInner() {
 
       {/* Error state */}
       {error && !loading && (
-        <div className="bg-surface border border-border rounded-lg p-6 text-secondary font-body">
+        <div className="bg-secondary border border-secondary rounded-lg p-6 text-secondary font-body">
           Error loading board: {error}
         </div>
       )}

@@ -95,7 +95,7 @@ export function BoardKanban({
       <div className="flex justify-end items-center mb-2 px-6 gap-2">
         <button
           onClick={() => setShowCsvImport(true)}
-          className="font-body text-xs bg-transparent border border-border rounded-md text-secondary px-3 py-1 cursor-pointer flex items-center gap-[5px] hover:text-primary"
+          className="font-body text-xs bg-transparent border border-secondary rounded-md text-secondary px-3 py-1 cursor-pointer flex items-center gap-[5px] hover:text-primary"
         >
           &#8679; Import CSV
         </button>

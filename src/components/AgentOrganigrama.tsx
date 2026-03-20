@@ -37,7 +37,7 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
 
   if (agents.length === 0) {
     return (
-      <div className="text-center py-12 text-muted">
+      <div className="text-center py-12 text-quaternary">
         No agents configured
       </div>
     );
@@ -163,7 +163,7 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
         width={svgW}
         height={svgH}
         viewBox={`0 0 ${svgW} ${svgH}`}
-        className="font-heading block mx-auto max-w-full"
+        className="font-display block mx-auto max-w-full"
       >
         {/* Edges */}
         {edges.map(({ from, to }, i) => {
@@ -181,7 +181,7 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
               d={`M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`}
               fill="none"
               stroke="currentColor"
-              className={isHovered ? "text-accent" : "text-border"}
+              className={isHovered ? "text-brand-600" : "text-border"}
               strokeWidth={isHovered ? 2 : 1.5}
               opacity={isHovered ? 1 : 0.5}
               strokeDasharray={isHovered ? "none" : "4,4"}
@@ -258,7 +258,7 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
                 x={x + 42}
                 y={y + pos.height / 2 + 8}
                 fill="currentColor"
-                className="text-muted"
+                className="text-quaternary"
                 fontSize={9}
               >
                 {agent.model.split("/").pop()?.slice(0, 18) || ""}
@@ -270,14 +270,14 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
                 cy={y + 10}
                 r={4}
                 fill="currentColor"
-                className={isOnline ? "text-success" : "text-muted"}
+                className={isOnline ? "text-success" : "text-quaternary"}
               />
 
               {/* Sessions badge (if active) */}
               {agent.activeSessions > 0 && (
                 <g>
-                  <circle cx={x + pos.width - 10} cy={y + pos.height - 10} r={8} fill="rgba(255,59,48,0.15)" stroke="currentColor" className="text-accent" strokeWidth={1} />
-                  <text x={x + pos.width - 10} y={y + pos.height - 7} fontSize={8} fill="currentColor" className="text-accent" textAnchor="middle" fontWeight={700}>
+                  <circle cx={x + pos.width - 10} cy={y + pos.height - 10} r={8} fill="rgba(255,59,48,0.15)" stroke="currentColor" className="text-brand-600" strokeWidth={1} />
+                  <text x={x + pos.width - 10} y={y + pos.height - 7} fontSize={8} fill="currentColor" className="text-brand-600" textAnchor="middle" fontWeight={700}>
                     {agent.activeSessions}
                   </text>
                 </g>
@@ -288,9 +288,9 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
       </svg>
 
       {/* Legend */}
-      <div className="flex gap-6 justify-center mt-4 text-xs text-muted">
+      <div className="flex gap-6 justify-center mt-4 text-xs text-quaternary">
         <span>● Online</span>
-        <span className="text-muted">● Offline</span>
+        <span className="text-quaternary">● Offline</span>
         <span>--- allows communication</span>
       </div>
     </div>

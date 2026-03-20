@@ -119,23 +119,23 @@ export default function TerminalPage() {
       <div className="px-6 pt-5 pb-3 shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[1.75rem] font-bold mb-0.5 text-[var(--text-primary-900)] font-[family-name:var(--font-display)]">
+            <h1 className="text-[1.75rem] font-bold mb-0.5 text-primary font-[family-name:var(--font-display)]">
               Browser Terminal
             </h1>
-            <p className="text-[0.8rem] text-[var(--text-quaternary-500)]">
+            <p className="text-[0.8rem] text-quaternary">
               Read-only commands only (ls, cat, df, ps, git status, etc.)
             </p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={copyAll}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.8rem] bg-[var(--bg-secondary)] border border-[var(--border-primary)] cursor-pointer text-[var(--text-quaternary-500)]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.8rem] bg-secondary border border-primary cursor-pointer text-quaternary"
             >
               <Copy className="w-3.5 h-3.5" /> Copy
             </button>
             <button
               onClick={clearHistory}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.8rem] bg-[var(--bg-secondary)] border border-[var(--border-primary)] cursor-pointer text-[var(--text-quaternary-500)]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.8rem] bg-secondary border border-primary cursor-pointer text-quaternary"
             >
               <Trash2 className="w-3.5 h-3.5" /> Clear
             </button>
@@ -151,7 +151,7 @@ export default function TerminalPage() {
               key={cmd}
               onClick={() => runCommand(cmd)}
               disabled={loading}
-              className="px-2.5 py-1 rounded-md text-[0.72rem] font-mono bg-[var(--bg-tertiary)] text-[var(--text-secondary-700)] border border-[var(--border-primary)] cursor-pointer disabled:opacity-50"
+              className="px-2.5 py-1 rounded-md text-[0.72rem] font-mono bg-tertiary text-secondary border border-primary cursor-pointer disabled:opacity-50"
             >
               {cmd.length > 30 ? cmd.slice(0, 28) + "…" : cmd}
             </button>

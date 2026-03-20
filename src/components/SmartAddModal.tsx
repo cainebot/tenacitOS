@@ -359,7 +359,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                 )}
 
                 {/* Assistant message bubble */}
-                <div className="max-w-[85%] px-3 py-2 rounded-[12px_12px_12px_2px] bg-surface-elevated text-[13px] font-sans text-muted-foreground leading-[1.4]">
+                <div className="max-w-[85%] px-3 py-2 rounded-[12px_12px_12px_2px] bg-tertiary text-[13px] font-sans text-quaternary leading-[1.4]">
                   {getReviewMessage(state.draft)}
                 </div>
               </div>
@@ -429,7 +429,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
               placeholder="Paste a GitHub URL, command, or describe the skill you need..."
               rows={1}
               className={cx(
-                'w-full resize-none border-0 outline-none bg-transparent text-foreground font-sans text-sm leading-[1.5] px-1 py-2 min-h-[44px] max-h-[200px]',
+                'w-full resize-none border-0 outline-none bg-transparent text-primary font-sans text-sm leading-[1.5] px-1 py-2 min-h-[44px] max-h-[200px]',
                 isInputDisabled && 'opacity-50',
               )}
               style={{ height: 'auto' }}
@@ -443,7 +443,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                   trigger={
                     <button
                       type="button"
-                      className="w-8 h-8 flex items-center justify-center rounded-full border border-border bg-transparent text-muted-foreground cursor-pointer p-0 transition-[background-color,color] duration-150 hover:bg-surface-elevated hover:text-foreground"
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-secondary bg-transparent text-quaternary cursor-pointer p-0 transition-[background-color,color] duration-150 hover:bg-tertiary hover:text-primary"
                     >
                       <Plus size={18} />
                     </button>
@@ -454,25 +454,25 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                   <button
                     type="button"
                     onClick={() => { fileInputRef.current?.click(); }}
-                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-md border-0 bg-transparent text-foreground font-sans text-[13px] cursor-pointer text-left hover:bg-muted"
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-md border-0 bg-transparent text-primary font-sans text-[13px] cursor-pointer text-left hover:bg-secondary"
                   >
-                    <Upload size={14} className="text-muted-foreground" />
+                    <Upload size={14} className="text-quaternary" />
                     Upload file
                   </button>
                   <button
                     type="button"
                     onClick={() => { setInputValue('https://github.com/'); setTimeout(() => textareaRef.current?.focus(), 0); }}
-                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-md border-0 bg-transparent text-foreground font-sans text-[13px] cursor-pointer text-left hover:bg-muted"
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-md border-0 bg-transparent text-primary font-sans text-[13px] cursor-pointer text-left hover:bg-secondary"
                   >
-                    <Link size={14} className="text-muted-foreground" />
+                    <Link size={14} className="text-quaternary" />
                     Paste URL
                   </button>
                   <button
                     type="button"
                     onClick={() => { setInputValue('npx skills add '); setTimeout(() => textareaRef.current?.focus(), 0); }}
-                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-md border-0 bg-transparent text-foreground font-sans text-[13px] cursor-pointer text-left hover:bg-muted"
+                    className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-md border-0 bg-transparent text-primary font-sans text-[13px] cursor-pointer text-left hover:bg-secondary"
                   >
-                    <Terminal size={14} className="text-muted-foreground" />
+                    <Terminal size={14} className="text-quaternary" />
                     Paste command
                   </button>
                 </Popover>
@@ -487,7 +487,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                   'w-8 h-8 flex items-center justify-center rounded-full border-0 p-0 transition-[background-color,color] duration-150',
                   hasInput && !isInputDisabled
                     ? 'bg-foreground text-background cursor-pointer'
-                    : 'bg-surface-elevated text-muted-foreground cursor-default',
+                    : 'bg-tertiary text-quaternary cursor-default',
                 )}
               >
                 <ArrowUp size={18} />
@@ -519,12 +519,12 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                       </span>
                     )}
                     {isDetecting && 'draft' in state && (
-                      <p className="text-[13px] font-sans text-muted-foreground m-0 leading-[1.5]">
+                      <p className="text-[13px] font-sans text-quaternary m-0 leading-[1.5]">
                         {getDetectingText(state.draft)}
                       </p>
                     )}
                     {isReviewMode && 'draft' in state && (
-                      <p className="text-[13px] font-sans text-muted-foreground m-0 leading-[1.5]">
+                      <p className="text-[13px] font-sans text-quaternary m-0 leading-[1.5]">
                         {getReviewMessage(state.draft)}
                       </p>
                     )}
@@ -539,7 +539,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                       <button
                         type="button"
                         onClick={() => { setInlineError(null); if (lastInput) handleDetect(lastInput); }}
-                        className="bg-transparent border-0 cursor-pointer text-accent p-0 text-[13px] font-sans underline"
+                        className="bg-transparent border-0 cursor-pointer text-brand-600 p-0 text-[13px] font-sans underline"
                       >
                         Reintentar
                       </button>

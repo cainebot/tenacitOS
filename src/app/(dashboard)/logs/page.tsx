@@ -108,19 +108,19 @@ export default function LogsPage() {
     : lines;
 
   return (
-    <div className="flex flex-col h-full gap-0 bg-[var(--bg-primary)]">
+    <div className="flex flex-col h-full gap-0 bg-primary">
       {/* Header */}
       <div className="px-6 pt-6 pb-4">
-        <h1 className="font-[family-name:var(--font-display)] text-[1.75rem] font-bold text-[var(--text-primary-900)] mb-1">
+        <h1 className="font-[family-name:var(--font-display)] text-[1.75rem] font-bold text-primary mb-1">
           Log Viewer
         </h1>
-        <p className="text-[var(--text-secondary-700)] text-sm">
+        <p className="text-secondary text-sm">
           Real-time log streaming from services
         </p>
       </div>
 
       {/* Controls */}
-      <div className="flex flex-wrap gap-3 items-center px-6 py-3 border-b border-[var(--border-primary)] bg-[var(--bg-secondary)]">
+      <div className="flex flex-wrap gap-3 items-center px-6 py-3 border-b border-primary bg-secondary">
         {/* Service selector */}
         <div className="flex gap-1.5 flex-wrap">
           {SERVICES.map((svc) => (
@@ -130,8 +130,8 @@ export default function LogsPage() {
               className={[
                 "px-3.5 py-1.5 rounded-full text-[0.8rem] font-medium border cursor-pointer",
                 selectedService.name === svc.name
-                  ? "bg-[var(--brand-600)]/15 text-[var(--brand-600)] border-[var(--brand-600)]/40"
-                  : "bg-[var(--bg-tertiary)] text-[var(--text-secondary-700)] border-[var(--border-primary)]",
+                  ? "bg-brand-600/15 text-brand-600 border-brand-600/40"
+                  : "bg-tertiary text-secondary border-primary",
               ].join(" ")}
             >
               {svc.label}
@@ -145,7 +145,7 @@ export default function LogsPage() {
             placeholder="Filter logs..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg text-[var(--text-primary-900)] text-[0.8rem] outline-none w-48"
+            className="px-3 py-1.5 bg-tertiary border border-primary rounded-lg text-primary text-[0.8rem] outline-none w-48"
           />
 
           {/* Auto-scroll toggle */}
@@ -155,8 +155,8 @@ export default function LogsPage() {
             className={[
               "px-2.5 py-1.5 rounded-lg text-xs border cursor-pointer",
               autoScroll
-                ? "bg-[var(--success-600)]/10 text-[var(--success-600)] border-[var(--success-600)]/30"
-                : "bg-[var(--bg-tertiary)] text-[var(--text-quaternary-500)] border-[var(--border-primary)]",
+                ? "bg-success-600/10 text-success-600 border-success-600/30"
+                : "bg-tertiary text-quaternary border-primary",
             ].join(" ")}
           >
             ↓ Auto
@@ -166,7 +166,7 @@ export default function LogsPage() {
           <button
             onClick={handleClear}
             title="Clear"
-            className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-primary)] cursor-pointer text-[var(--text-quaternary-500)]"
+            className="px-2.5 py-1.5 rounded-lg bg-tertiary border border-primary cursor-pointer text-quaternary"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -175,7 +175,7 @@ export default function LogsPage() {
           <button
             onClick={handleDownload}
             title="Download logs"
-            className="px-2.5 py-1.5 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-primary)] cursor-pointer text-[var(--text-quaternary-500)]"
+            className="px-2.5 py-1.5 rounded-lg bg-tertiary border border-primary cursor-pointer text-quaternary"
           >
             <Download className="w-3.5 h-3.5" />
           </button>
@@ -186,8 +186,8 @@ export default function LogsPage() {
             className={[
               "flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer font-semibold text-sm",
               streaming
-                ? "bg-[var(--error-600)]/15 text-[var(--error-600)] border-[var(--error-600)]/30"
-                : "bg-[var(--success-600)]/15 text-[var(--success-600)] border-[var(--success-600)]/30",
+                ? "bg-error-600/15 text-error-600 border-error-600/30"
+                : "bg-success-600/15 text-success-600 border-success-600/30",
             ].join(" ")}
           >
             {streaming ? (

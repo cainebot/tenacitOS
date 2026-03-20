@@ -58,7 +58,7 @@ function badgeColors(badge?: string): { bg: string; color: string } {
     case 'INT':
       return { bg: 'rgba(10,132,255,0.12)', color: '#0A84FF' }
     default:
-      return { bg: 'rgba(82,82,82,0.12)', color: 'var(--text-quaternary-500)' }
+      return { bg: 'rgba(82,82,82,0.12)', color: "var(--text-quaternary-500)" }
   }
 }
 
@@ -140,7 +140,7 @@ export function AgentListPanel() {
         top: 0,
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: 'var(--bg-secondary)',
+        backgroundColor: "var(--bg-secondary)",
         borderRight: '1px solid var(--border-primary)',
         transition: 'width 0.2s ease, min-width 0.2s ease',
         overflow: 'hidden',
@@ -161,7 +161,7 @@ export function AgentListPanel() {
               fontFamily: 'var(--font-sora), system-ui, sans-serif',
               fontSize: '11px',
               fontWeight: 700,
-              color: 'var(--text-quaternary-500)',
+              color: "var(--text-quaternary-500)",
               letterSpacing: '0.08em',
             }}
           >
@@ -172,7 +172,7 @@ export function AgentListPanel() {
               fontFamily: 'var(--font-inter), system-ui, sans-serif',
               fontSize: '11px',
               fontWeight: 500,
-              color: 'var(--text-quaternary-500)',
+              color: "var(--text-quaternary-500)",
               background: 'rgba(82,82,82,0.15)',
               borderRadius: '9999px',
               padding: '1px 7px',
@@ -190,7 +190,7 @@ export function AgentListPanel() {
             justifyContent: 'center',
           }}
         >
-          <Users size={16} style={{ color: 'var(--text-quaternary-500)' }} />
+          <Users size={16} style={{ color: "var(--text-quaternary-500)" }} />
         </div>
       )}
 
@@ -212,7 +212,7 @@ export function AgentListPanel() {
             transition: 'background 0.1s',
           }}
           onMouseEnter={(e) => {
-            if (selectedAgentId !== null) e.currentTarget.style.background = 'var(--surface-hover, #2E2E2E)'
+            if (selectedAgentId !== null) e.currentTarget.style.background = 'var(--bg-tertiary)'
           }}
           onMouseLeave={(e) => {
             if (selectedAgentId !== null) e.currentTarget.style.background = 'none'
@@ -224,14 +224,14 @@ export function AgentListPanel() {
               width: '32px',
               height: '32px',
               borderRadius: '50%',
-              background: 'var(--surface-elevated, #242424)',
+              background: 'var(--bg-tertiary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <Users size={16} style={{ color: 'var(--text-tertiary-600)' }} />
+            <Users size={16} style={{ color: "var(--text-tertiary-600)" }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
@@ -239,7 +239,7 @@ export function AgentListPanel() {
                 fontFamily: 'var(--font-inter), system-ui, sans-serif',
                 fontSize: '13px',
                 fontWeight: 600,
-                color: 'var(--text-primary-900)',
+                color: "var(--text-primary-900)",
               }}
             >
               All Agents
@@ -249,7 +249,7 @@ export function AgentListPanel() {
                 fontFamily: 'var(--font-inter), system-ui, sans-serif',
                 fontSize: '10px',
                 fontWeight: 500,
-                color: 'var(--text-quaternary-500)',
+                color: "var(--text-quaternary-500)",
                 marginTop: '1px',
               }}
             >
@@ -297,7 +297,7 @@ export function AgentListPanel() {
                 textAlign: 'left',
               }}
               onMouseEnter={(e) => {
-                if (!isSelected) e.currentTarget.style.background = 'var(--surface-hover, #2E2E2E)'
+                if (!isSelected) e.currentTarget.style.background = 'var(--bg-tertiary)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = isSelected ? 'rgba(255,59,48,0.06)' : 'none'
@@ -309,7 +309,7 @@ export function AgentListPanel() {
                   width: collapsed ? '28px' : '32px',
                   height: collapsed ? '28px' : '32px',
                   borderRadius: '50%',
-                  background: 'var(--surface-elevated, #242424)',
+                  background: 'var(--bg-tertiary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -378,7 +378,7 @@ export function AgentListPanel() {
                       fontFamily: 'var(--font-inter), system-ui, sans-serif',
                       fontSize: '10px',
                       fontWeight: 500,
-                      color: 'var(--text-quaternary-500)',
+                      color: "var(--text-quaternary-500)",
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
@@ -433,7 +433,7 @@ export function AgentListPanel() {
       </div>
 
       {/* Collapse toggle */}
-      <div style={{ borderTop: '1px solid var(--border-primary)', padding: '4px 6px' }}>
+      <div style={{ borderTop: "1px solid var(--border-primary)", padding: '4px 6px' }}>
         <button
           onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? 'Expand agents' : 'Collapse agents'}
@@ -447,14 +447,14 @@ export function AgentListPanel() {
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            color: 'var(--text-quaternary-500)',
+            color: "var(--text-quaternary-500)",
             fontSize: '12px',
             fontFamily: 'var(--font-inter), system-ui, sans-serif',
             borderRadius: '6px',
             transition: 'background 0.1s, color 0.1s',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--surface-hover, #2E2E2E)'
+            e.currentTarget.style.background = 'var(--bg-tertiary)'
             e.currentTarget.style.color = 'var(--text-primary-900)'
           }}
           onMouseLeave={(e) => {

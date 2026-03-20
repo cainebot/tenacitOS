@@ -61,22 +61,22 @@ const typeIcons: Record<string, React.ComponentType<{ className?: string; style?
 
 // Tailwind classes for each activity type (bg, text, border)
 const typeClasses: Record<string, { bg: string; text: string; border: string }> = {
-  file:     { bg: "bg-[var(--blue-700)]/10",   text: "text-[var(--blue-700)]",    border: "border-[var(--blue-700)]/30" },
-  search:   { bg: "bg-[var(--warning-600)]/10", text: "text-[var(--warning-600)]", border: "border-[var(--warning-600)]/30" },
-  message:  { bg: "bg-[var(--success-600)]/10", text: "text-[var(--success-600)]", border: "border-[var(--success-600)]/30" },
+  file:     { bg: "bg-blue-700/10",   text: "text-blue-700",    border: "border-blue-700/30" },
+  search:   { bg: "bg-warning-600/10", text: "text-warning-600", border: "border-warning-600/30" },
+  message:  { bg: "bg-success-600/10", text: "text-success-600", border: "border-success-600/30" },
   command:  { bg: "bg-[#BF5AF2]/10",            text: "text-[#BF5AF2]",            border: "border-[#BF5AF2]/30" },
   cron:     { bg: "bg-[#FF375F]/10",            text: "text-[#FF375F]",            border: "border-[#FF375F]/30" },
-  security: { bg: "bg-[var(--error-600)]/10",   text: "text-[var(--error-600)]",   border: "border-[var(--error-600)]/30" },
+  security: { bg: "bg-error-600/10",   text: "text-error-600",   border: "border-error-600/30" },
   build:    { bg: "bg-[#FF9F0A]/10",            text: "text-[#FF9F0A]",            border: "border-[#FF9F0A]/30" },
-  task:     { bg: "bg-[var(--brand-600)]/10",   text: "text-[var(--brand-600)]",   border: "border-[var(--brand-600)]/30" },
-  memory:   { bg: "bg-[var(--blue-700)]/10",    text: "text-[var(--blue-700)]",    border: "border-[var(--blue-700)]/30" },
-  default:  { bg: "bg-[var(--bg-secondary)]",   text: "text-[var(--text-secondary-700)]", border: "border-[var(--border-primary)]" },
+  task:     { bg: "bg-brand-600/10",   text: "text-brand-600",   border: "border-brand-600/30" },
+  memory:   { bg: "bg-blue-700/10",    text: "text-blue-700",    border: "border-blue-700/30" },
+  default:  { bg: "bg-secondary",   text: "text-secondary", border: "border-primary" },
 };
 
 const statusClasses: Record<string, { text: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {
-  success: { icon: CheckCircle, text: "text-[var(--success-600)]", bg: "bg-[var(--success-600)]/10" },
-  error:   { icon: XCircle,     text: "text-[var(--error-600)]",   bg: "bg-[var(--error-600)]/10" },
-  pending: { icon: Clock,       text: "text-[var(--warning-600)]", bg: "bg-[var(--warning-600)]/10" },
+  success: { icon: CheckCircle, text: "text-success-600", bg: "bg-success-600/10" },
+  error:   { icon: XCircle,     text: "text-error-600",   bg: "bg-error-600/10" },
+  pending: { icon: Clock,       text: "text-warning-600", bg: "bg-warning-600/10" },
 };
 
 const allTypes = ["file", "search", "message", "command", "security", "build", "task", "cron", "memory"];
@@ -231,7 +231,7 @@ export default function ActivityPage() {
     return (
       <div className="p-8">
         <div className="flex items-center justify-center py-12">
-          <RefreshCw className="w-8 h-8 animate-spin text-[var(--brand-600)]" />
+          <RefreshCw className="w-8 h-8 animate-spin text-brand-600" />
         </div>
       </div>
     );
@@ -241,15 +241,15 @@ export default function ActivityPage() {
     <div className="p-4 md:p-8">
       <div className="mb-4 md:mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 text-[var(--text-primary-900)] font-[family-name:var(--font-display)]">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary font-[family-name:var(--font-display)]">
             Activity Log
           </h1>
-          <p className="text-[var(--text-secondary-700)]">Complete history of agent actions</p>
+          <p className="text-secondary">Complete history of agent actions</p>
         </div>
         <a
           href="/api/activities?format=csv&limit=10000"
           download={`activities-${new Date().toISOString().split('T')[0]}.csv`}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-secondary-700)] border border-[var(--border-primary)] no-underline text-sm cursor-pointer mt-1"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-secondary border border-primary no-underline text-sm cursor-pointer mt-1"
         >
           <Download className="w-4 h-4" />
           Export CSV
@@ -262,10 +262,10 @@ export default function ActivityPage() {
       </div>
 
       {/* Date Range Picker */}
-      <div className="p-3 md:p-4 mb-4 md:mb-6 rounded-xl bg-[var(--bg-secondary)]">
+      <div className="p-3 md:p-4 mb-4 md:mb-6 rounded-xl bg-secondary">
         <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
-          <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[var(--text-secondary-700)]" />
-          <span className="text-xs md:text-sm text-[var(--text-secondary-700)]">Date Range</span>
+          <Calendar className="w-4 h-4 md:w-5 md:h-5 text-secondary" />
+          <span className="text-xs md:text-sm text-secondary">Date Range</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 md:gap-3">
@@ -276,15 +276,15 @@ export default function ActivityPage() {
               className={[
                 "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
                 activePreset === index
-                  ? "bg-[var(--brand-600)]/20 text-[var(--brand-600)] border border-[var(--brand-600)]/30"
-                  : "bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] border border-transparent",
+                  ? "bg-brand-600/20 text-brand-600 border border-brand-600/30"
+                  : "bg-quaternary text-secondary border border-transparent",
               ].join(" ")}
             >
               {preset.label}
             </button>
           ))}
 
-          <div className="w-px h-8 bg-[var(--border-primary)] mx-2" />
+          <div className="w-px h-8 bg-gray-300 mx-2" />
 
           <div className="flex items-center gap-2">
             <input
@@ -294,9 +294,9 @@ export default function ActivityPage() {
                 setStartDate(e.target.value);
                 setActivePreset(null);
               }}
-              className="bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] px-3 py-2 rounded-lg border border-[var(--border-primary)] text-sm outline-none"
+              className="bg-quaternary text-secondary px-3 py-2 rounded-lg border border-primary text-sm outline-none"
             />
-            <span className="text-[var(--text-quaternary-500)]">to</span>
+            <span className="text-quaternary">to</span>
             <input
               type="date"
               value={endDate}
@@ -304,21 +304,21 @@ export default function ActivityPage() {
                 setEndDate(e.target.value);
                 setActivePreset(null);
               }}
-              className="bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] px-3 py-2 rounded-lg border border-[var(--border-primary)] text-sm outline-none"
+              className="bg-quaternary text-secondary px-3 py-2 rounded-lg border border-primary text-sm outline-none"
             />
           </div>
         </div>
       </div>
 
       {/* Type Filter Chips */}
-      <div className="p-3 md:p-4 mb-4 md:mb-6 rounded-xl bg-[var(--bg-secondary)]">
+      <div className="p-3 md:p-4 mb-4 md:mb-6 rounded-xl bg-secondary">
         <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
-          <Filter className="w-5 h-5 text-[var(--text-secondary-700)]" />
-          <span className="text-sm text-[var(--text-secondary-700)]">Filter by Type</span>
+          <Filter className="w-5 h-5 text-secondary" />
+          <span className="text-sm text-secondary">Filter by Type</span>
           {selectedTypes.size > 0 && (
             <button
               onClick={clearTypeFilters}
-              className="text-xs text-[var(--brand-600)] ml-auto bg-transparent border-none cursor-pointer"
+              className="text-xs text-brand-600 ml-auto bg-transparent border-none cursor-pointer"
             >
               Clear all
             </button>
@@ -339,7 +339,7 @@ export default function ActivityPage() {
                   "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer border",
                   isSelected
                     ? `${colors.bg} ${colors.text} ${colors.border}`
-                    : "bg-[var(--bg-quaternary)] text-[var(--text-quaternary-500)] border-[var(--border-primary)]",
+                    : "bg-quaternary text-quaternary border-primary",
                 ].join(" ")}
               >
                 <TypeIcon className="w-4 h-4" />
@@ -355,7 +355,7 @@ export default function ActivityPage() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] px-3 py-2 rounded-lg border border-[var(--border-primary)] outline-none cursor-pointer"
+          className="bg-quaternary text-secondary px-3 py-2 rounded-lg border border-primary outline-none cursor-pointer"
         >
           <option value="all">All Statuses</option>
           <option value="success">Success</option>
@@ -365,21 +365,21 @@ export default function ActivityPage() {
 
         <button
           onClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
-          className="flex items-center gap-2 bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] px-3 py-2 rounded-lg border border-[var(--border-primary)] cursor-pointer transition-colors"
+          className="flex items-center gap-2 bg-quaternary text-secondary px-3 py-2 rounded-lg border border-primary cursor-pointer transition-colors"
         >
           <ArrowUpDown className="w-4 h-4" />
           <span>{sort === "newest" ? "Newest first" : "Oldest first"}</span>
         </button>
 
-        <div className="text-xs md:text-sm w-full md:w-auto md:ml-auto mt-2 md:mt-0 text-[var(--text-quaternary-500)]">
+        <div className="text-xs md:text-sm w-full md:w-auto md:ml-auto mt-2 md:mt-0 text-quaternary">
           Showing {activities.length} of {total} activities
         </div>
       </div>
 
       {/* Activity List */}
-      <div className="rounded-xl overflow-hidden bg-[var(--bg-secondary)]">
+      <div className="rounded-xl overflow-hidden bg-secondary">
         {activities.length === 0 && (
-          <div className="text-center py-12 text-[var(--text-secondary-700)]">
+          <div className="text-center py-12 text-secondary">
             <Zap className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No activities found</p>
           </div>
@@ -396,7 +396,7 @@ export default function ActivityPage() {
               key={activity.id}
               className={[
                 "flex items-start gap-4 p-6 transition-colors",
-                index !== activities.length - 1 ? "border-b border-[var(--border-primary)]" : "",
+                index !== activities.length - 1 ? "border-b border-primary" : "",
               ].join(" ")}
             >
               <div className={`p-3 rounded-lg ${colors.bg}`}>
@@ -413,18 +413,18 @@ export default function ActivityPage() {
                     {activity.status}
                   </span>
                 </div>
-                <RichDescription text={activity.description} className="text-[var(--text-secondary-700)] mb-2" />
+                <RichDescription text={activity.description} className="text-secondary mb-2" />
 
                 {/* Duration and Tokens */}
                 <div className="flex items-center gap-4 text-sm">
                   {activity.duration_ms !== null && (
-                    <span className="flex items-center gap-1 text-[var(--text-quaternary-500)]">
+                    <span className="flex items-center gap-1 text-quaternary">
                       <Timer className="w-3.5 h-3.5" />
                       {formatDuration(activity.duration_ms)}
                     </span>
                   )}
                   {activity.tokens_used !== null && (
-                    <span className="flex items-center gap-1 text-[var(--text-quaternary-500)]">
+                    <span className="flex items-center gap-1 text-quaternary">
                       <Coins className="w-3.5 h-3.5" />
                       {formatTokens(activity.tokens_used)} tokens
                     </span>
@@ -433,18 +433,18 @@ export default function ActivityPage() {
 
                 {activity.metadata && Object.keys(activity.metadata).length > 0 && (
                   <details className="mt-3">
-                    <summary className="text-xs text-[var(--text-quaternary-500)] cursor-pointer flex items-center gap-1">
+                    <summary className="text-xs text-quaternary cursor-pointer flex items-center gap-1">
                       <ChevronDown className="w-3 h-3" />
                       View metadata
                     </summary>
-                    <pre className="mt-2 text-xs text-[var(--text-quaternary-500)] bg-[var(--bg-quaternary)] p-3 rounded-lg overflow-x-auto">
+                    <pre className="mt-2 text-xs text-quaternary bg-quaternary p-3 rounded-lg overflow-x-auto">
                       {JSON.stringify(activity.metadata, null, 2)}
                     </pre>
                   </details>
                 )}
               </div>
 
-              <div className="text-right text-sm text-[var(--text-quaternary-500)] whitespace-nowrap">
+              <div className="text-right text-sm text-quaternary whitespace-nowrap">
                 <div>{format(new Date(activity.timestamp), "MMM d, yyyy")}</div>
                 <div className="opacity-70">{format(new Date(activity.timestamp), "HH:mm:ss")}</div>
               </div>
@@ -460,7 +460,7 @@ export default function ActivityPage() {
             onClick={handleLoadMore}
             disabled={loadingMore}
             className={[
-              "flex items-center gap-2 bg-[var(--bg-quaternary)] text-[var(--text-secondary-700)] px-6 py-3 rounded-lg font-medium border-none transition-colors",
+              "flex items-center gap-2 bg-quaternary text-secondary px-6 py-3 rounded-lg font-medium border-none transition-colors",
               loadingMore ? "cursor-not-allowed opacity-50" : "cursor-pointer",
             ].join(" ")}
           >
@@ -481,7 +481,7 @@ export default function ActivityPage() {
 
       {/* End of list indicator */}
       {!hasMore && activities.length > 0 && (
-        <div className="text-center mt-6 text-[var(--text-quaternary-500)] text-sm">
+        <div className="text-center mt-6 text-quaternary text-sm">
           — End of activity log —
         </div>
       )}

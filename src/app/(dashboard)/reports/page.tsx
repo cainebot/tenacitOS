@@ -88,21 +88,21 @@ export default function ReportsPage() {
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 md:p-4 bg-[var(--bg-secondary)] border-b border-[var(--border-primary)]">
+      <div className="flex items-center justify-between p-3 md:p-4 bg-secondary border-b border-primary">
         <div className="flex items-center gap-2 md:gap-3">
-          <FileBarChart className="w-5 h-5 md:w-6 md:h-6 text-[var(--brand-600)]" />
+          <FileBarChart className="w-5 h-5 md:w-6 md:h-6 text-brand-600" />
           <div>
-            <h1 className="text-lg md:text-xl font-bold text-[var(--text-primary-900)] font-[family-name:var(--font-display)]">
+            <h1 className="text-lg md:text-xl font-bold text-primary font-[family-name:var(--font-display)]">
               Reports
             </h1>
-            <p className="text-xs md:text-sm hidden sm:block text-[var(--text-secondary-700)]">
+            <p className="text-xs md:text-sm hidden sm:block text-secondary">
               Analysis reports and insights
             </p>
           </div>
         </div>
         <button
           onClick={loadReports}
-          className="p-2 rounded-lg transition-colors hover:opacity-80 text-[var(--text-secondary-700)]"
+          className="p-2 rounded-lg transition-colors hover:opacity-80 text-secondary"
           title="Refresh reports"
         >
           <RefreshCw className="w-5 h-5" />
@@ -113,16 +113,16 @@ export default function ReportsPage() {
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
         {/* Report list */}
         <div
-          className="w-full md:w-80 lg:w-96 overflow-y-auto flex-shrink-0 bg-[var(--bg-secondary)] border-r border-[var(--border-primary)] border-b border-b-[var(--border-primary)]"
+          className="w-full md:w-80 lg:w-96 overflow-y-auto flex-shrink-0 bg-secondary border-r border-primary border-b border-b-[var(--border-primary)]"
         >
-          <div className="p-3 border-b border-[var(--border-primary)]">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-secondary-700)]">
+          <div className="p-3 border-b border-primary">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
               {isLoading ? "Loading..." : `${reports.length} Reports`}
             </h2>
           </div>
 
           {!isLoading && reports.length === 0 && (
-            <div className="p-6 text-center text-[var(--text-quaternary-500)]">
+            <div className="p-6 text-center text-quaternary">
               <FileBarChart className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>No reports found</p>
               <p className="text-xs mt-1">
@@ -163,7 +163,7 @@ export default function ReportsPage() {
                     />
                     <div className="min-w-0 flex-1">
                       <p
-                        className="font-medium text-sm truncate text-[var(--text-primary-900)]"
+                        className="font-medium text-sm truncate text-primary"
                       >
                         {report.title}
                       </p>
@@ -201,17 +201,17 @@ export default function ReportsPage() {
         </div>
 
         {/* Preview panel */}
-        <div className="flex-1 min-w-0 min-h-0 bg-[var(--bg-primary)]">
+        <div className="flex-1 min-w-0 min-h-0 bg-primary">
           {selectedPath ? (
             isLoadingContent ? (
-              <div className="flex items-center justify-center h-full text-[var(--text-secondary-700)]">
+              <div className="flex items-center justify-center h-full text-secondary">
                 Loading report...
               </div>
             ) : (
               <MarkdownPreview content={content} />
             )
           ) : (
-            <div className="flex items-center justify-center h-full text-[var(--text-quaternary-500)]">
+            <div className="flex items-center justify-center h-full text-quaternary">
               <div className="text-center">
                 <FileBarChart className="w-16 h-16 mx-auto mb-4 opacity-30" />
                 <p className="text-lg">Select a report to preview</p>

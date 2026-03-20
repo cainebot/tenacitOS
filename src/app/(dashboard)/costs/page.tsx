@@ -66,7 +66,7 @@ export default function CostsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <DollarSign className="w-16 h-16 mx-auto mb-4 text-muted" />
+          <DollarSign className="w-16 h-16 mx-auto mb-4 text-quaternary" />
           <p className="text-secondary">Failed to load cost data</p>
         </div>
       </div>
@@ -74,7 +74,7 @@ export default function CostsPage() {
   }
 
   const budgetPercent = (costData.thisMonth / costData.budget) * 100;
-  const budgetTextClass = budgetPercent < 60 ? "text-success" : budgetPercent < 85 ? "text-warning" : "text-error";
+  const budgetTextClass = budgetPercent < 60 ? "text-success" : budgetPercent < 85 ? "text-warning" : "text-error-600";
   const budgetBgClass = budgetPercent < 60 ? "bg-success" : budgetPercent < 85 ? "bg-warning" : "bg-error";
   const todayChange = ((costData.today - costData.yesterday) / costData.yesterday) * 100;
   const monthChange = ((costData.thisMonth - costData.lastMonth) / costData.lastMonth) * 100;
@@ -85,7 +85,7 @@ export default function CostsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1
-            className="text-3xl font-bold mb-2 font-heading text-primary"
+            className="text-3xl font-bold mb-2 font-display text-primary"
           >
             Costs & Analytics
           </h1>
@@ -95,14 +95,14 @@ export default function CostsPage() {
         </div>
 
         {/* Timeframe selector */}
-        <div className={cx("flex gap-2 p-1 rounded-lg bg-card border border-border")}>
+        <div className={cx("flex gap-2 p-1 rounded-lg bg-secondary border border-secondary")}>
           {(["7d", "30d", "90d"] as const).map((tf) => (
             <button
               key={tf}
               onClick={() => setTimeframe(tf)}
               className={cx(
                 "px-4 py-2 rounded-md text-sm font-medium transition-all",
-                timeframe === tf ? "bg-accent text-white" : "bg-transparent text-secondary"
+                timeframe === tf ? "bg-brand-50 text-white" : "bg-transparent text-secondary"
               )}
             >
               {tf === "7d" ? "7 days" : tf === "30d" ? "30 days" : "90 days"}
@@ -114,18 +114,18 @@ export default function CostsPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Today */}
-        <div className="p-6 rounded-xl bg-card border border-border">
+        <div className="p-6 rounded-xl bg-secondary border border-secondary">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-secondary">Today</span>
             {todayChange !== 0 && (
               <div className="flex items-center gap-1">
                 {todayChange > 0 ? (
-                  <TrendingUp className="w-3 h-3 text-error" />
+                  <TrendingUp className="w-3 h-3 text-error-600" />
                 ) : (
                   <TrendingDown className="w-3 h-3 text-success" />
                 )}
                 <span
-                  className={cx("text-xs font-medium", todayChange > 0 ? "text-error" : "text-success")}
+                  className={cx("text-xs font-medium", todayChange > 0 ? "text-error-600" : "text-success")}
                 >
                   {Math.abs(todayChange).toFixed(1)}%
                 </span>
@@ -135,24 +135,24 @@ export default function CostsPage() {
           <div className="text-3xl font-bold text-primary">
             ${costData.today.toFixed(2)}
           </div>
-          <p className="text-xs mt-1 text-muted">
+          <p className="text-xs mt-1 text-quaternary">
             vs ${costData.yesterday.toFixed(2)} yesterday
           </p>
         </div>
 
         {/* This Month */}
-        <div className="p-6 rounded-xl bg-card border border-border">
+        <div className="p-6 rounded-xl bg-secondary border border-secondary">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-secondary">This Month</span>
             {monthChange !== 0 && (
               <div className="flex items-center gap-1">
                 {monthChange > 0 ? (
-                  <TrendingUp className="w-3 h-3 text-error" />
+                  <TrendingUp className="w-3 h-3 text-error-600" />
                 ) : (
                   <TrendingDown className="w-3 h-3 text-success" />
                 )}
                 <span
-                  className={cx("text-xs font-medium", monthChange > 0 ? "text-error" : "text-success")}
+                  className={cx("text-xs font-medium", monthChange > 0 ? "text-error-600" : "text-success")}
                 >
                   {Math.abs(monthChange).toFixed(1)}%
                 </span>
@@ -162,42 +162,42 @@ export default function CostsPage() {
           <div className="text-3xl font-bold text-primary">
             ${costData.thisMonth.toFixed(2)}
           </div>
-          <p className="text-xs mt-1 text-muted">
+          <p className="text-xs mt-1 text-quaternary">
             vs ${costData.lastMonth.toFixed(2)} last month
           </p>
         </div>
 
         {/* Projected */}
-        <div className="p-6 rounded-xl bg-card border border-border">
+        <div className="p-6 rounded-xl bg-secondary border border-secondary">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-secondary">Projected (EOM)</span>
           </div>
           <div className="text-3xl font-bold text-warning">
             ${costData.projected.toFixed(2)}
           </div>
-          <p className="text-xs mt-1 text-muted">
+          <p className="text-xs mt-1 text-quaternary">
             Based on current pace
           </p>
         </div>
 
         {/* Budget */}
-        <div className="p-6 rounded-xl bg-card border border-border">
+        <div className="p-6 rounded-xl bg-secondary border border-secondary">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-secondary">Budget</span>
             {budgetPercent > 80 && (
-              <AlertTriangle className="w-4 h-4 text-error" />
+              <AlertTriangle className="w-4 h-4 text-error-600" />
             )}
           </div>
           <div className={cx("text-3xl font-bold", budgetTextClass)}>
             {budgetPercent.toFixed(0)}%
           </div>
-          <div className="mt-2 h-2 rounded-full overflow-hidden bg-card-elevated">
+          <div className="mt-2 h-2 rounded-full overflow-hidden bg-tertiary">
             <div
               className={cx("h-full transition-all duration-500", budgetBgClass)}
               style={{ width: `${Math.min(budgetPercent, 100)}%` }}
             />
           </div>
-          <p className="text-xs mt-1 text-muted">
+          <p className="text-xs mt-1 text-quaternary">
             ${costData.thisMonth.toFixed(2)} / ${costData.budget.toFixed(2)}
           </p>
         </div>
@@ -206,7 +206,7 @@ export default function CostsPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Daily Trend */}
-        <div className="p-6 rounded-xl bg-card border border-border">
+        <div className="p-6 rounded-xl bg-secondary border border-secondary">
           <h3 className="text-lg font-semibold mb-4 text-primary">
             Daily Cost Trend
           </h3>
@@ -229,7 +229,7 @@ export default function CostsPage() {
         </div>
 
         {/* Cost by Agent */}
-        <div className="p-6 rounded-xl bg-card border border-border">
+        <div className="p-6 rounded-xl bg-secondary border border-secondary">
           <h3 className="text-lg font-semibold mb-4 text-primary">
             Cost by Agent
           </h3>
@@ -251,7 +251,7 @@ export default function CostsPage() {
         </div>
 
         {/* Cost by Model */}
-        <div className="p-6 rounded-xl bg-card border border-border">
+        <div className="p-6 rounded-xl bg-secondary border border-secondary">
           <h3 className="text-lg font-semibold mb-4 text-primary">
             Cost by Model
           </h3>
@@ -282,7 +282,7 @@ export default function CostsPage() {
         </div>
 
         {/* Token Usage */}
-        <div className="p-6 rounded-xl bg-card border border-border">
+        <div className="p-6 rounded-xl bg-secondary border border-secondary">
           <h3 className="text-lg font-semibold mb-4 text-primary">
             Token Usage (Daily)
           </h3>
@@ -307,14 +307,14 @@ export default function CostsPage() {
       </div>
 
       {/* Model Pricing Table */}
-      <div className="p-6 rounded-xl bg-card border border-border">
+      <div className="p-6 rounded-xl bg-secondary border border-secondary">
         <h3 className="text-lg font-semibold mb-4 text-primary">
           Model Pricing (per 1M tokens)
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border">
+              <tr className="border-b border-secondary">
                 <th className="text-left py-3 px-4 text-sm font-medium text-secondary">Model</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-secondary">Input</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-secondary">Output</th>
@@ -324,7 +324,7 @@ export default function CostsPage() {
             </thead>
             <tbody>
               {Object.entries(MODEL_PRICES).map(([model, prices]) => (
-                <tr key={model} className="border-b border-border">
+                <tr key={model} className="border-b border-secondary">
                   <td className="py-3 px-4">
                     <span className="font-medium text-primary">{model}</span>
                   </td>
@@ -340,14 +340,14 @@ export default function CostsPage() {
       </div>
 
       {/* Detailed table by agent */}
-      <div className="p-6 rounded-xl bg-card border border-border">
+      <div className="p-6 rounded-xl bg-secondary border border-secondary">
         <h3 className="text-lg font-semibold mb-4 text-primary">
           Detailed Breakdown by Agent
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border">
+              <tr className="border-b border-secondary">
                 <th className="text-left py-3 px-4 text-sm font-medium text-secondary">Agent</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-secondary">Tokens</th>
                 <th className="text-right py-3 px-4 text-sm font-medium text-secondary">Cost</th>
@@ -358,7 +358,7 @@ export default function CostsPage() {
               {costData.byAgent.map((agent) => {
                 const percent = (agent.cost / costData.thisMonth) * 100;
                 return (
-                  <tr key={agent.agent} className="border-b border-border">
+                  <tr key={agent.agent} className="border-b border-secondary">
                     <td className="py-3 px-4">
                       <span className="font-medium text-primary">{agent.agent}</span>
                     </td>

@@ -167,7 +167,7 @@ export function NotificationDropdown() {
           transition: "all 0.2s ease",
         }}
         onMouseEnter={(e) => {
-          if (!isOpen) e.currentTarget.style.backgroundColor = "var(--surface-hover, rgba(255,255,255,0.05))";
+          if (!isOpen) e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
         }}
         onMouseLeave={(e) => {
           if (!isOpen) e.currentTarget.style.backgroundColor = "transparent";
@@ -359,7 +359,7 @@ export function NotificationDropdown() {
                   }}
                   onMouseEnter={(e) => {
                     if (notification.link) {
-                      e.currentTarget.style.backgroundColor = "var(--surface-hover, rgba(255,255,255,0.03))";
+                      e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
                     }
                   }}
                   onMouseLeave={(e) => {

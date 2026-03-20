@@ -28,8 +28,8 @@ const MIN_WIDTH = 360
 const MAX_WIDTH = 800
 
 const stateCategoryColors: Record<string, string> = {
-  'to-do': 'text-muted',
-  'in_progress': 'text-accent',
+  'to-do': 'text-quaternary',
+  'in_progress': 'text-brand-600',
   'done': 'text-success',
 }
 
@@ -223,7 +223,7 @@ export function CardDetailPanel({
         const colors = cardTypeBadgeColors[card.card_type] ?? { bg: '#6b7280', text: '#fff' }
         return (
           <div key="card_type" className="flex flex-row items-center gap-2 py-1">
-            <span className="font-body text-xs text-muted w-[120px] shrink-0">
+            <span className="font-body text-xs text-quaternary w-[120px] shrink-0">
               Type
             </span>
             <span
@@ -319,7 +319,7 @@ export function CardDetailPanel({
 
   const panelClasses = cx(
     'fixed right-0 top-12 bottom-8 flex flex-col z-50',
-    'bg-surface-elevated border-l border-border overflow-hidden',
+    'bg-tertiary border-l border-secondary overflow-hidden',
     'shadow-[-4px_0_24px_rgba(0,0,0,0.2)]',
     'transition-transform duration-200 ease-out',
     visible ? 'translate-x-0' : 'translate-x-full'
@@ -328,7 +328,7 @@ export function CardDetailPanel({
   if (loading) {
     return (
       <div className={panelClasses} style={{ width: `${width}px` }}>
-        <div className="p-5 text-muted font-body text-[13px]">
+        <div className="p-5 text-quaternary font-body text-[13px]">
           Loading...
         </div>
       </div>
@@ -338,7 +338,7 @@ export function CardDetailPanel({
   if (error || !card) {
     return (
       <div className={panelClasses} style={{ width: `${width}px` }}>
-        <div className="p-5 text-muted font-body text-[13px]">
+        <div className="p-5 text-quaternary font-body text-[13px]">
           {error ?? 'Card not found'}
         </div>
       </div>
@@ -360,7 +360,7 @@ export function CardDetailPanel({
       {/* Panel */}
       <div className={panelClasses} style={{ width: `${width}px` }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-secondary shrink-0">
           <button
             onClick={onClose}
             className="bg-transparent border-0 cursor-pointer text-secondary flex items-center p-1 rounded"
@@ -378,7 +378,7 @@ export function CardDetailPanel({
             </button>
 
             {showOverflow && (
-              <div className="absolute right-0 top-7 bg-surface-elevated border border-border rounded-md shadow-[0_4px_16px_rgba(0,0,0,0.2)] min-w-[160px] z-[100]">
+              <div className="absolute right-0 top-7 bg-tertiary border border-secondary rounded-md shadow-[0_4px_16px_rgba(0,0,0,0.2)] min-w-[160px] z-[100]">
                 <button
                   onClick={() => {
                     setShowOverflow(false)
@@ -434,13 +434,13 @@ export function CardDetailPanel({
                     <span key={bc.card_id} className="inline-flex items-center gap-1">
                       <button
                         onClick={() => onNavigateToCard?.(bc.card_id)}
-                        className="font-body text-xs font-semibold text-accent tracking-wide cursor-pointer bg-transparent border-0 p-0 no-underline"
+                        className="font-body text-xs font-semibold text-brand-600 tracking-wide cursor-pointer bg-transparent border-0 p-0 no-underline"
                         title={bc.title}
                       >
                         {parentCode || bc.card_type.toUpperCase()}
                       </button>
                       <span style={badgeStyle(bc.card_type)}>{bc.card_type}</span>
-                      <span className="text-muted text-[10px] mx-[2px]">/</span>
+                      <span className="text-quaternary text-[10px] mx-[2px]">/</span>
                     </span>
                   )
                 })}
@@ -482,14 +482,14 @@ export function CardDetailPanel({
           <div className="mb-4">
             {workflowStates.length > 0 ? (
               <div className="flex items-center gap-2">
-                <span className="font-body text-xs text-muted">
+                <span className="font-body text-xs text-quaternary">
                   State
                 </span>
                 <select
                   value={card.state_id}
                   onChange={(e) => moveCard(e.target.value)}
                   className={cx(
-                    'font-body text-xs font-medium bg-surface border border-border rounded-md px-2 py-[3px] cursor-pointer outline-none',
+                    'font-body text-xs font-medium bg-secondary border border-secondary rounded-md px-2 py-[3px] cursor-pointer outline-none',
                     currentState ? (stateCategoryColors[currentState.category] ?? 'text-primary') : 'text-primary'
                   )}
                 >
@@ -503,7 +503,7 @@ export function CardDetailPanel({
             ) : currentState ? (
               <span
                 className={cx(
-                  'inline-block bg-surface border border-border rounded-md px-[10px] py-[3px] text-xs font-medium font-body',
+                  'inline-block bg-secondary border border-secondary rounded-md px-[10px] py-[3px] text-xs font-medium font-body',
                   stateCategoryColors[currentState.category] ?? 'text-primary'
                 )}
               >
@@ -527,14 +527,14 @@ export function CardDetailPanel({
           {/* Unified fields section */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-body text-[11px] font-semibold text-muted uppercase tracking-[0.05em]">
+              <span className="font-body text-[11px] font-semibold text-quaternary uppercase tracking-[0.05em]">
                 Fields
               </span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setShowFieldManager(true)}
                   title="Manage custom field definitions"
-                  className="bg-transparent border border-border rounded cursor-pointer text-muted flex items-center px-[6px] py-[2px] gap-[3px] text-[11px] font-body"
+                  className="bg-transparent border border-secondary rounded cursor-pointer text-quaternary flex items-center px-[6px] py-[2px] gap-[3px] text-[11px] font-body"
                 >
                   Manage Fields
                 </button>
@@ -544,8 +544,8 @@ export function CardDetailPanel({
                   className={cx(
                     'rounded cursor-pointer flex items-center px-1 py-[2px] gap-[3px] text-[11px] font-body',
                     reorderMode
-                      ? 'bg-accent border-0 text-white'
-                      : 'bg-transparent border border-border text-muted'
+                      ? 'bg-brand-50 border-0 text-white'
+                      : 'bg-transparent border border-secondary text-quaternary'
                   )}
                 >
                   <Settings size={12} />
@@ -565,7 +565,7 @@ export function CardDetailPanel({
 
           {/* Description */}
           <div className="mb-4">
-            <div className="font-body text-[11px] font-semibold text-muted uppercase tracking-[0.05em] mb-2">
+            <div className="font-body text-[11px] font-semibold text-quaternary uppercase tracking-[0.05em] mb-2">
               Description
             </div>
             <CardRichTextEditor
@@ -584,8 +584,8 @@ export function CardDetailPanel({
 
           {/* Activity Timeline */}
           <div className="mt-4">
-            <div className="border-t border-border mb-3" />
-            <div className="font-body text-[11px] font-semibold text-muted uppercase tracking-[0.05em] mb-[10px]">
+            <div className="border-t border-secondary mb-3" />
+            <div className="font-body text-[11px] font-semibold text-quaternary uppercase tracking-[0.05em] mb-[10px]">
               Activity
             </div>
             <CardActivityTimeline

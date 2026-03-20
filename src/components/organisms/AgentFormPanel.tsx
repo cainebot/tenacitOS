@@ -25,7 +25,7 @@ function nodeStatusColor(status: string): string {
     case 'degraded':
       return 'text-warning'
     default:
-      return 'text-error'
+      return 'text-error-600'
   }
 }
 
@@ -331,10 +331,10 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
   // ---- API key shown after create ----
   if (showApiKey) {
     return (
-      <div className="fixed right-0 top-0 bottom-0 w-[420px] bg-surface-elevated border-l border-border z-50 shadow-[-4px_0_24px_rgba(0,0,0,0.2)] flex flex-col">
+      <div className="fixed right-0 top-0 bottom-0 w-[420px] bg-tertiary border-l border-secondary z-50 shadow-[-4px_0_24px_rgba(0,0,0,0.2)] flex flex-col">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-border flex items-center justify-between flex-shrink-0">
-          <span className="text-[11px] font-bold tracking-[0.08em] text-muted font-heading">
+        <div className="px-4 py-3 border-b border-secondary flex items-center justify-between flex-shrink-0">
+          <span className="text-[11px] font-bold tracking-[0.08em] text-quaternary font-display">
             AGENT CREATED
           </span>
           <button
@@ -342,7 +342,7 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
               onSaved?.()
               onClose()
             }}
-            className="w-7 h-7 flex items-center justify-center bg-transparent border-0 cursor-pointer text-muted rounded hover:text-primary transition-colors"
+            className="w-7 h-7 flex items-center justify-center bg-transparent border-0 cursor-pointer text-quaternary rounded hover:text-primary transition-colors"
             aria-label="Cerrar panel"
           >
             <X size={16} />
@@ -362,10 +362,10 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
             <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-warning mb-1.5">
               API KEY (copy now — shown once)
             </div>
-            <div className="px-3.5 py-3 bg-surface border border-border rounded-md text-xs font-mono text-primary break-all leading-relaxed select-all">
+            <div className="px-3.5 py-3 bg-secondary border border-secondary rounded-md text-xs font-mono text-primary break-all leading-relaxed select-all">
               {showApiKey}
             </div>
-            <div className="mt-1.5 text-[11px] text-muted">
+            <div className="mt-1.5 text-[11px] text-quaternary">
               Store this key safely. It will not be shown again.
             </div>
           </div>
@@ -375,7 +375,7 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
               onSaved?.()
               onClose()
             }}
-            className="mt-auto bg-accent text-white border-0 rounded-lg px-4 py-2.5 text-sm font-semibold cursor-pointer w-full"
+            className="mt-auto bg-brand-50 text-white border-0 rounded-lg px-4 py-2.5 text-sm font-semibold cursor-pointer w-full"
           >
             Close
           </button>
@@ -389,18 +389,18 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
   return (
     <>
       <div
-        className="fixed right-0 top-0 bottom-0 w-[420px] bg-surface-elevated border-l border-border z-50 shadow-[-4px_0_24px_rgba(0,0,0,0.2)] flex flex-col"
+        className="fixed right-0 top-0 bottom-0 w-[420px] bg-tertiary border-l border-secondary z-50 shadow-[-4px_0_24px_rgba(0,0,0,0.2)] flex flex-col"
         role="complementary"
         aria-label={mode === 'create' ? 'Crear agente' : 'Editar agente'}
       >
         {/* Header */}
-        <div className="px-4 py-3 border-b border-border flex items-center justify-between flex-shrink-0">
-          <span className="text-[11px] font-bold tracking-[0.08em] text-muted font-heading">
+        <div className="px-4 py-3 border-b border-secondary flex items-center justify-between flex-shrink-0">
+          <span className="text-[11px] font-bold tracking-[0.08em] text-quaternary font-display">
             {mode === 'create' ? 'CREATE AGENT' : 'EDIT AGENT'}
           </span>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center bg-transparent border-0 cursor-pointer text-muted rounded hover:text-primary transition-colors"
+            className="w-7 h-7 flex items-center justify-center bg-transparent border-0 cursor-pointer text-quaternary rounded hover:text-primary transition-colors"
             aria-label="Cerrar panel"
           >
             <X size={16} />
@@ -415,7 +415,7 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
             <button
               type="button"
               onClick={() => setShowAvatarPicker(true)}
-              className="w-16 h-16 rounded-full border-2 border-border cursor-pointer flex items-center justify-center overflow-hidden p-0 flex-shrink-0 hover:border-dashed hover:border-accent transition-colors"
+              className="w-16 h-16 rounded-full border-2 border-secondary cursor-pointer flex items-center justify-center overflow-hidden p-0 flex-shrink-0 hover:border-dashed hover:border-accent transition-colors"
               style={{ background: avatarDisplay ? undefined : avatarBgColor, backgroundColor: avatarDisplay ? undefined : undefined }}
               aria-label="Choose avatar"
             >
@@ -430,22 +430,22 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
                 <span className="text-[28px] leading-none">{avatarFallback}</span>
               )}
             </button>
-            <span className="text-[10px] text-muted">Click to upload profile image</span>
+            <span className="text-[10px] text-quaternary">Click to upload profile image</span>
           </div>
 
           {/* Agent ID (create only) */}
           {mode === 'create' && (
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted mb-1.5">Agent ID</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-quaternary mb-1.5">Agent ID</div>
               <input
                 type="text"
                 value={agentId}
                 onChange={(e) => setAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                 placeholder="e.g. nova, ragatha-2"
-                className={`w-full bg-surface border rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border focus:border-accent ${agentId && !agentIdValid ? 'border-error' : 'border-border'}`}
+                className={`w-full bg-secondary border rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border focus:border-accent ${agentId && !agentIdValid ? 'border-error' : 'border-secondary'}`}
               />
               {agentId && !agentIdValid && (
-                <div className="mt-1 text-[11px] text-error">
+                <div className="mt-1 text-[11px] text-error-600">
                   Only lowercase letters, numbers, and hyphens. No spaces.
                 </div>
               )}
@@ -454,21 +454,21 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
 
           {/* Name */}
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted mb-1.5">Name</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-quaternary mb-1.5">Name</div>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Nova"
-              className="w-full bg-surface border border-border rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border focus:border-accent"
+              className="w-full bg-secondary border border-secondary rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border focus:border-accent"
             />
           </div>
 
           {/* Workspace / Node */}
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted mb-1.5">Workspace (Node)</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-quaternary mb-1.5">Workspace (Node)</div>
             {nodesLoading ? (
-              <div className="text-xs text-muted flex items-center gap-1.5">
+              <div className="text-xs text-quaternary flex items-center gap-1.5">
                 <Loader2 size={12} className="animate-spin" />
                 Loading nodes...
               </div>
@@ -478,7 +478,7 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
                   value={nodeId}
                   onChange={(e) => setNodeId(e.target.value)}
                   disabled={mode === 'edit'}
-                  className={`w-full bg-surface border border-border rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border appearance-none focus:border-accent ${mode === 'edit' ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                  className={`w-full bg-secondary border border-secondary rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border appearance-none focus:border-accent ${mode === 'edit' ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
                     backgroundRepeat: 'no-repeat',
@@ -520,11 +520,11 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
 
           {/* Department */}
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted mb-1.5">Department</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-quaternary mb-1.5">Department</div>
             <select
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value)}
-              className="w-full bg-surface border border-border rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border cursor-pointer appearance-none focus:border-accent"
+              className="w-full bg-secondary border border-secondary rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border cursor-pointer appearance-none focus:border-accent"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
                 backgroundRepeat: 'no-repeat',
@@ -543,11 +543,11 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
 
           {/* Role */}
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted mb-1.5">Role</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-quaternary mb-1.5">Role</div>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as AgentRole)}
-              className="w-full bg-surface border border-border rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border cursor-pointer appearance-none focus:border-accent"
+              className="w-full bg-secondary border border-secondary rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border cursor-pointer appearance-none focus:border-accent"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
                 backgroundRepeat: 'no-repeat',
@@ -563,18 +563,18 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
 
           {/* Skills tag input */}
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted mb-1.5">Skills</div>
-            <div className="bg-surface border border-border rounded-md p-2 flex flex-wrap gap-1 min-h-[42px]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.8px] text-quaternary mb-1.5">Skills</div>
+            <div className="bg-secondary border border-secondary rounded-md p-2 flex flex-wrap gap-1 min-h-[42px]">
               {skills.map((skill) => (
                 <span
                   key={skill}
-                  className="inline-flex items-center gap-1 text-[11px] font-medium bg-surface-elevated text-secondary border border-border rounded px-1.5 py-0.5"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium bg-tertiary text-secondary border border-secondary rounded px-1.5 py-0.5"
                 >
                   {skill}
                   <button
                     type="button"
                     onClick={() => removeSkill(skill)}
-                    className="bg-transparent border-0 cursor-pointer text-muted p-0 flex items-center leading-none hover:text-error transition-colors"
+                    className="bg-transparent border-0 cursor-pointer text-quaternary p-0 flex items-center leading-none hover:text-error-600 transition-colors"
                     aria-label={`Remove skill ${skill}`}
                   >
                     <X size={10} />
@@ -591,7 +591,7 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
                 className="bg-transparent border-0 outline-none text-[11px] text-primary min-w-[120px] flex-1"
               />
             </div>
-            <div className="mt-1 text-[10px] text-muted">
+            <div className="mt-1 text-[10px] text-quaternary">
               Press Enter or comma to add a skill
             </div>
           </div>
@@ -599,7 +599,7 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
           {/* About / Soul */}
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-[0.8px] text-muted">About / Soul Description</span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.8px] text-quaternary">About / Soul Description</span>
               {mode === 'edit' && agent?.soul_dirty && (
                 <span className="text-[9px] font-bold bg-warning/15 text-warning rounded px-1.5 py-px uppercase tracking-[0.5px] whitespace-nowrap">
                   Needs sync
@@ -611,13 +611,13 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
               onChange={(e) => setAbout(e.target.value)}
               placeholder="Describe this agent's personality and purpose..."
               rows={5}
-              className="w-full bg-surface border border-border rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border resize-vertical leading-relaxed focus:border-accent"
+              className="w-full bg-secondary border border-secondary rounded-md px-3 py-2 text-[13px] text-primary outline-none box-border resize-vertical leading-relaxed focus:border-accent"
             />
           </div>
 
           {/* Error message */}
           {error && (
-            <div className="px-3 py-2.5 bg-error/10 border border-error/30 rounded-md text-xs text-error flex items-center gap-2">
+            <div className="px-3 py-2.5 bg-error/10 border border-error/30 rounded-md text-xs text-error-600 flex items-center gap-2">
               <AlertTriangle size={14} className="flex-shrink-0" />
               {error}
             </div>
@@ -628,13 +628,13 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
         </div>
 
         {/* Sticky action buttons */}
-        <div className="px-4 py-3 border-t border-border bg-surface-elevated flex flex-col gap-2 flex-shrink-0">
+        <div className="px-4 py-3 border-t border-secondary bg-tertiary flex flex-col gap-2 flex-shrink-0">
           {mode === 'create' ? (
             <button
               type="button"
               onClick={handleCreate}
               disabled={!canSubmit}
-              className={`${canSubmit ? 'bg-accent text-white cursor-pointer' : 'bg-surface text-muted cursor-not-allowed'} border-0 rounded-lg px-4 py-2.5 text-[13px] font-semibold w-full flex items-center justify-center gap-1.5`}
+              className={`${canSubmit ? 'bg-brand-50 text-white cursor-pointer' : 'bg-secondary text-quaternary cursor-not-allowed'} border-0 rounded-lg px-4 py-2.5 text-[13px] font-semibold w-full flex items-center justify-center gap-1.5`}
             >
               {saving ? (
                 <>
@@ -654,7 +654,7 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
                 type="button"
                 onClick={handleEdit}
                 disabled={!canSubmit}
-                className={`${canSubmit ? 'bg-accent text-white cursor-pointer' : 'bg-surface text-muted cursor-not-allowed'} border-0 rounded-lg px-4 py-2.5 text-[13px] font-semibold w-full flex items-center justify-center gap-1.5`}
+                className={`${canSubmit ? 'bg-brand-50 text-white cursor-pointer' : 'bg-secondary text-quaternary cursor-not-allowed'} border-0 rounded-lg px-4 py-2.5 text-[13px] font-semibold w-full flex items-center justify-center gap-1.5`}
               >
                 {saving ? (
                   <>
@@ -669,7 +669,7 @@ export function AgentFormPanel({ mode, agent, onClose, onSaved }: AgentFormPanel
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={deleting}
-                className="bg-transparent text-error border-0 rounded-lg px-4 py-1.5 text-xs font-semibold cursor-pointer w-full hover:bg-error/10 transition-colors"
+                className="bg-transparent text-error-600 border-0 rounded-lg px-4 py-1.5 text-xs font-semibold cursor-pointer w-full hover:bg-error/10 transition-colors"
               >
                 Delete Agent
               </button>

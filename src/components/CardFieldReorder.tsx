@@ -90,7 +90,7 @@ export function CardFieldReorder({ fields, onReorder, children, editMode }: Fiel
                   left: 0,
                   right: 0,
                   height: '2px',
-                  background: 'var(--accent, #6366f1)',
+                  background: 'var(--brand-600)',
                   borderRadius: '1px',
                   zIndex: 10,
                   pointerEvents: 'none',
@@ -105,7 +105,7 @@ export function CardFieldReorder({ fields, onReorder, children, editMode }: Fiel
                   display: 'flex',
                   alignItems: 'center',
                   paddingTop: '5px',
-                  color: 'var(--text-quaternary-500)',
+                  color: "var(--text-quaternary-500)",
                   cursor: 'grab',
                   flexShrink: 0,
                   userSelect: 'none',
@@ -131,7 +131,7 @@ export function CardFieldReorder({ fields, onReorder, children, editMode }: Fiel
           onDrop={(e) => handleDrop(e, fields.length)}
           style={{
             height: '2px',
-            background: 'var(--accent, #6366f1)',
+            background: 'var(--brand-600)',
             borderRadius: '1px',
             margin: '2px 0',
           }}

@@ -49,7 +49,7 @@ const typeConfig: Record<string, {
   build: { icon: Hammer, color: 'var(--oc-type-build)', bgColor: 'var(--oc-type-build-bg)' },
   cron: { icon: Timer, color: 'var(--oc-type-cron)', bgColor: 'var(--oc-type-cron-bg)' },
   memory: { icon: Brain, color: 'var(--blue-500)', bgColor: 'var(--info-bg)' },
-  default: { icon: Zap, color: 'var(--text-tertiary-600)', bgColor: 'var(--bg-tertiary)' },
+  default: { icon: Zap, color: "var(--text-tertiary-600)", bgColor: 'var(--bg-tertiary)' },
 };
 
 const statusConfig: Record<string, { 
@@ -83,7 +83,7 @@ export function ActivityFeed({ limit = 10 }: ActivityFeedProps) {
           <div 
             key={i} 
             className="h-16 mx-4 my-2 rounded-lg"
-            style={{ backgroundColor: 'var(--bg-tertiary)' }}
+            style={{ backgroundColor: "var(--bg-tertiary)" }}
           />
         ))}
       </div>
@@ -92,7 +92,7 @@ export function ActivityFeed({ limit = 10 }: ActivityFeedProps) {
 
   if (activities.length === 0) {
     return (
-      <div className="text-center py-12" style={{ color: 'var(--text-tertiary-600)' }}>
+      <div className="text-center py-12" style={{ color: "var(--text-tertiary-600)" }}>
         <Zap className="w-12 h-12 mx-auto mb-4 opacity-50" />
         <p>No activities logged yet</p>
       </div>
@@ -163,14 +163,14 @@ export function ActivityFeed({ limit = 10 }: ActivityFeedProps) {
               <RichDescription 
                 text={activity.description}
                 className="text-xs md:text-sm"
-                style={{ color: 'var(--text-primary-900)' }}
+                style={{ color: "var(--text-primary-900)" }}
               />
             </div>
 
             {/* Time */}
             <time 
               className="text-[10px] md:text-xs whitespace-nowrap flex-shrink-0"
-              style={{ color: 'var(--text-quaternary-500)' }}
+              style={{ color: "var(--text-quaternary-500)" }}
             >
               {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: false })}
             </time>

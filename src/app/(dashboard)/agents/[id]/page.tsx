@@ -35,8 +35,8 @@ interface AgentProfile extends AgentRow {
 const STATUS_COLORS: Record<AgentStatus, string> = {
   idle: 'text-success',
   working: 'text-warning',
-  error: 'text-error',
-  offline: 'text-muted',
+  error: 'text-error-600',
+  offline: 'text-quaternary',
   thinking: 'text-info',
   queued: 'text-warning',
   executing_tool: 'text-warning',
@@ -51,7 +51,7 @@ const BADGE_STYLES: Record<AgentBadge, { bg: string; color: string }> = {
 const TASK_STATUS_COLORS: Record<string, string> = {
   pending: 'bg-warning',
   claimed: 'bg-info',
-  in_progress: 'bg-accent',
+  in_progress: 'bg-brand-50',
   completed: 'bg-success',
   failed: 'bg-error',
 }
@@ -288,7 +288,7 @@ export default function AgentProfilePage() {
     return (
       <div className="p-8">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-pulse text-lg text-muted">
+          <div className="animate-pulse text-lg text-quaternary">
             Loading agent profile...
           </div>
         </div>
@@ -301,17 +301,17 @@ export default function AgentProfilePage() {
       <div className="p-8">
         <button
           onClick={() => router.push('/agents')}
-          className="flex items-center gap-2 mb-6 text-sm text-muted bg-transparent border-0 cursor-pointer"
+          className="flex items-center gap-2 mb-6 text-sm text-quaternary bg-transparent border-0 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Agents
         </button>
-        <div className="text-error">{error || 'Agent not found'}</div>
+        <div className="text-error-600">{error || 'Agent not found'}</div>
       </div>
     )
   }
 
-  const statusColorClass = STATUS_COLORS[agent.status] || 'text-muted'
+  const statusColorClass = STATUS_COLORS[agent.status] || 'text-quaternary'
   const badgeStyle = agent.badge ? BADGE_STYLES[agent.badge] : null
   const deptColor = agent.departments?.color ?? '#6366f1'
 
@@ -321,7 +321,7 @@ export default function AgentProfilePage() {
       <div className="mb-6">
         <button
           onClick={() => router.push('/agents')}
-          className="flex items-center gap-2 mb-4 text-sm text-muted transition-opacity hover:opacity-70 bg-transparent border-0 cursor-pointer"
+          className="flex items-center gap-2 mb-4 text-sm text-quaternary transition-opacity hover:opacity-70 bg-transparent border-0 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Agents
@@ -329,7 +329,7 @@ export default function AgentProfilePage() {
 
         {/* Agent header card */}
         <div
-          className="rounded-xl p-5 bg-card border border-border"
+          className="rounded-xl p-5 bg-secondary border border-secondary"
           style={{
             background: `linear-gradient(135deg, ${deptColor}12, transparent)`,
           }}
@@ -350,7 +350,7 @@ export default function AgentProfilePage() {
               {/* Info */}
               <div>
                 <h1
-                  className="text-2xl font-bold mb-1 font-heading text-primary"
+                  className="text-2xl font-bold mb-1 font-display text-primary"
                   style={{ letterSpacing: '-1px' }}
                 >
                   {agent.name}
@@ -389,7 +389,7 @@ export default function AgentProfilePage() {
 
                   {/* Role */}
                   {agent.role && (
-                    <span className="text-xs capitalize text-muted">
+                    <span className="text-xs capitalize text-quaternary">
                       {agent.role}
                     </span>
                   )}
@@ -401,7 +401,7 @@ export default function AgentProfilePage() {
             {!editMode && (
               <button
                 onClick={enterEditMode}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-background border border-border text-secondary cursor-pointer"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-primary border border-secondary text-secondary cursor-pointer"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit Profile
@@ -412,14 +412,14 @@ export default function AgentProfilePage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-accent border-0 text-white cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-brand-50 border-0 text-white cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : 'Save'}
                 </button>
                 <button
                   onClick={cancelEdit}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-background border border-border text-secondary cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-primary border border-secondary text-secondary cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                   Cancel
@@ -429,7 +429,7 @@ export default function AgentProfilePage() {
           </div>
 
           {saveError && (
-            <div className="mt-3 text-sm px-3 py-2 rounded-lg bg-error/10 text-error">
+            <div className="mt-3 text-sm px-3 py-2 rounded-lg bg-error/10 text-error-600">
               {saveError}
             </div>
           )}
@@ -446,10 +446,10 @@ export default function AgentProfilePage() {
               onChange={(e) => setEditForm((f) => ({ ...f, about: e.target.value }))}
               placeholder="Describe this agent's purpose and personality..."
               rows={4}
-              className="w-full px-3 py-2 rounded-lg text-sm resize-none bg-background border border-border text-primary outline-none"
+              className="w-full px-3 py-2 rounded-lg text-sm resize-none bg-primary border border-secondary text-primary outline-none"
             />
           ) : (
-            <p className={`text-sm ${agent.about ? 'text-secondary' : 'text-muted italic'}`}>
+            <p className={`text-sm ${agent.about ? 'text-secondary' : 'text-quaternary italic'}`}>
               {agent.about ?? 'No about information.'}
             </p>
           )}
@@ -463,14 +463,14 @@ export default function AgentProfilePage() {
                 const statusConfig: Record<string, { icon: typeof CheckCircle; color: string; bg: string }> = {
                   installed: { icon: CheckCircle, color: 'text-success', bg: 'bg-success/10' },
                   pending: { icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
-                  failed: { icon: AlertCircle, color: 'text-error', bg: 'bg-error/10' },
+                  failed: { icon: AlertCircle, color: 'text-error-600', bg: 'bg-error/10' },
                 }
                 const cfg = statusConfig[as.status] ?? statusConfig.pending
                 const StatusIcon = cfg.icon
                 return (
                   <div
                     key={as.id}
-                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-surface-elevated border border-border"
+                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-tertiary border border-secondary"
                   >
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: '16px' }}>{as.skills?.icon ?? '🔧'}</span>
@@ -478,7 +478,7 @@ export default function AgentProfilePage() {
                         {as.skills?.name ?? 'Unknown'}
                       </span>
                       {as.skill_versions && (
-                        <span className="text-xs text-muted font-mono">
+                        <span className="text-xs text-quaternary font-mono">
                           v{as.skill_versions.version}
                         </span>
                       )}
@@ -494,7 +494,7 @@ export default function AgentProfilePage() {
                         <button
                           type="button"
                           onClick={() => removeAgentSkill(as.skill_id)}
-                          className="text-error bg-transparent border-0 cursor-pointer p-0.5"
+                          className="text-error-600 bg-transparent border-0 cursor-pointer p-0.5"
                           title="Remove skill"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -506,7 +506,7 @@ export default function AgentProfilePage() {
               })}
             </div>
           ) : (
-            <p className="text-sm italic text-muted">No skills assigned.</p>
+            <p className="text-sm italic text-quaternary">No skills assigned.</p>
           )}
 
           {/* Assign skill button */}
@@ -516,7 +516,7 @@ export default function AgentProfilePage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-secondary">Select a skill to assign:</span>
-                    <button type="button" onClick={() => setShowSkillPicker(false)} className="text-muted bg-transparent border-0 cursor-pointer">
+                    <button type="button" onClick={() => setShowSkillPicker(false)} className="text-quaternary bg-transparent border-0 cursor-pointer">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -527,22 +527,22 @@ export default function AgentProfilePage() {
                         key={s.id}
                         type="button"
                         onClick={() => assignSkill(s.id)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm bg-background border border-border text-primary cursor-pointer"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm bg-primary border border-secondary text-primary cursor-pointer"
                       >
                         <span>{s.icon}</span>
                         <span className="font-medium">{s.name}</span>
-                        <span className="text-xs ml-auto text-muted">{s.description?.slice(0, 40)}</span>
+                        <span className="text-xs ml-auto text-quaternary">{s.description?.slice(0, 40)}</span>
                       </button>
                     ))}
                   {skillCatalog.filter(s => !agentSkills.some(as => as.skill_id === s.id)).length === 0 && (
-                    <p className="text-xs italic text-muted">All available skills are already assigned.</p>
+                    <p className="text-xs italic text-quaternary">All available skills are already assigned.</p>
                   )}
                 </div>
               ) : (
                 <button
                   type="button"
                   onClick={() => setShowSkillPicker(true)}
-                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-accent text-white border-0 cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-brand-50 text-white border-0 cursor-pointer"
                 >
                   <Plus className="w-3 h-3" /> Assign Skill
                 </button>
@@ -559,7 +559,7 @@ export default function AgentProfilePage() {
               <select
                 value={editForm.department_id}
                 onChange={(e) => setEditForm((f) => ({ ...f, department_id: e.target.value }))}
-                className="w-full px-3 py-2 rounded-lg text-sm bg-background border border-border text-primary outline-none"
+                className="w-full px-3 py-2 rounded-lg text-sm bg-primary border border-secondary text-primary outline-none"
               >
                 <option value="">No department</option>
                 {departments.map((dept) => (
@@ -585,13 +585,13 @@ export default function AgentProfilePage() {
                       </span>
                     </div>
                     {agent.departments.objective && (
-                      <p className="text-xs mt-2 text-muted">
+                      <p className="text-xs mt-2 text-quaternary">
                         {agent.departments.objective}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm italic text-muted">Not assigned to a department.</p>
+                  <p className="text-sm italic text-quaternary">Not assigned to a department.</p>
                 )}
               </>
             )}
@@ -603,7 +603,7 @@ export default function AgentProfilePage() {
               <select
                 value={editForm.role}
                 onChange={(e) => handleRoleChange(e.target.value as AgentRole)}
-                className="w-full px-3 py-2 rounded-lg text-sm bg-background border border-border text-primary outline-none"
+                className="w-full px-3 py-2 rounded-lg text-sm bg-primary border border-secondary text-primary outline-none"
               >
                 <option value="lead">Lead</option>
                 <option value="specialist">Specialist</option>
@@ -624,7 +624,7 @@ export default function AgentProfilePage() {
                   </span>
                 )}
                 {!agent.role && !agent.badge && (
-                  <p className="text-sm italic text-muted">No role assigned.</p>
+                  <p className="text-sm italic text-quaternary">No role assigned.</p>
                 )}
               </div>
             )}
@@ -638,7 +638,7 @@ export default function AgentProfilePage() {
               {agent.current_task_id}
             </p>
           ) : (
-            <p className="text-sm italic text-muted">No active task.</p>
+            <p className="text-sm italic text-quaternary">No active task.</p>
           )}
         </Section>
 
@@ -649,10 +649,10 @@ export default function AgentProfilePage() {
               value={editForm.soul_config}
               onChange={(e) => setEditForm((f) => ({ ...f, soul_config: e.target.value }))}
               rows={8}
-              className="w-full px-3 py-2 rounded-lg text-sm font-mono resize-vertical bg-background border border-border text-primary outline-none"
+              className="w-full px-3 py-2 rounded-lg text-sm font-mono resize-vertical bg-primary border border-secondary text-primary outline-none"
               spellCheck={false}
             />
-            <p className="text-xs mt-1 text-muted">
+            <p className="text-xs mt-1 text-quaternary">
               Changing soul_config will set soul_dirty = true in the database, triggering soul-sync.
             </p>
           </Section>
@@ -679,11 +679,11 @@ export default function AgentProfilePage() {
                       {task.status}
                     </span>
                     {task.type && (
-                      <span className="text-xs flex-shrink-0 text-muted">
+                      <span className="text-xs flex-shrink-0 text-quaternary">
                         {task.type}
                       </span>
                     )}
-                    <span className="text-xs flex-shrink-0 text-muted">
+                    <span className="text-xs flex-shrink-0 text-quaternary">
                       {formatRelativeTime(task.updated_at)}
                     </span>
                   </div>
@@ -691,7 +691,7 @@ export default function AgentProfilePage() {
               })}
             </div>
           ) : (
-            <p className="text-sm italic text-muted">No task history.</p>
+            <p className="text-sm italic text-quaternary">No task history.</p>
           )}
         </Section>
       </div>
@@ -710,10 +710,10 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl p-5 bg-card border border-border">
-      <div className="flex items-center gap-2 mb-3 border-b border-border pb-2.5">
-        <span className="text-muted">{icon}</span>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+    <div className="rounded-xl p-5 bg-secondary border border-secondary">
+      <div className="flex items-center gap-2 mb-3 border-b border-secondary pb-2.5">
+        <span className="text-quaternary">{icon}</span>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-quaternary">
           {title}
         </h2>
       </div>

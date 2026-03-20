@@ -91,7 +91,7 @@ export function KanbanColumn({
           background: column.only_humans
             ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.08), rgba(251, 191, 36, 0.04))'
             : 'var(--bg-secondary)',
-          border: '1px solid var(--border-primary)',
+          border: "1px solid var(--border-primary)",
           borderLeft: column.only_humans
             ? '3px solid rgba(251, 191, 36, 0.5)'
             : '1px solid var(--border-primary)',
@@ -104,7 +104,7 @@ export function KanbanColumn({
               fontFamily: 'var(--font-sora), system-ui, sans-serif',
               fontSize: '13px',
               fontWeight: 600,
-              color: 'var(--text-primary-900)',
+              color: "var(--text-primary-900)",
             }}
           >
             {column.name}
@@ -132,9 +132,9 @@ export function KanbanColumn({
               fontFamily: 'var(--font-inter), system-ui, sans-serif',
               fontSize: '11px',
               fontWeight: 600,
-              color: 'var(--text-tertiary-600)',
-              background: 'var(--surface-alt, rgba(255,255,255,0.06))',
-              border: '1px solid var(--border-primary)',
+              color: "var(--text-tertiary-600)",
+              background: 'var(--bg-secondary)',
+              border: "1px solid var(--border-primary)",
               borderRadius: '10px',
               padding: '1px 6px',
               minWidth: '20px',
@@ -151,7 +151,7 @@ export function KanbanColumn({
           title="Add card"
           style={{
             background: showInlineCreate
-              ? 'var(--surface-alt, rgba(255,255,255,0.08))'
+              ? 'var(--bg-secondary)'
               : 'none',
             border: 'none',
             cursor: 'pointer',
@@ -166,12 +166,12 @@ export function KanbanColumn({
           }}
           onMouseEnter={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.background =
-              'var(--surface-alt, rgba(255,255,255,0.08))'
+              'var(--bg-secondary)'
             ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary-900)'
           }}
           onMouseLeave={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.background = showInlineCreate
-              ? 'var(--surface-alt, rgba(255,255,255,0.08))'
+              ? 'var(--bg-secondary)'
               : 'none'
             ;(e.currentTarget as HTMLButtonElement).style.color = showInlineCreate
               ? 'var(--text-primary-900)'
@@ -195,7 +195,7 @@ export function KanbanColumn({
           gap: '8px',
           padding: '4px',
           borderRadius: '6px',
-          border: isDragOver ? '2px dashed var(--accent, #6366f1)' : '2px dashed transparent',
+          border: isDragOver ? '2px dashed var(--brand-600)' : '2px dashed transparent',
           background: isDragOver ? 'rgba(99,102,241,0.04)' : 'transparent',
           transition: 'border-color 0.15s ease, background 0.15s ease',
           minHeight: '80px',
@@ -221,7 +221,7 @@ export function KanbanColumn({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--text-tertiary-600)',
+              color: "var(--text-tertiary-600)",
               fontFamily: 'var(--font-inter), system-ui, sans-serif',
               fontSize: '12px',
               opacity: 0.5,

@@ -177,7 +177,7 @@ export function CardChildTasks({
     fontFamily: 'var(--font-inter), system-ui, sans-serif',
     fontSize: '11px',
     fontWeight: 600,
-    color: 'var(--text-quaternary-500)',
+    color: "var(--text-quaternary-500)",
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   }
@@ -218,11 +218,11 @@ export function CardChildTasks({
               alignItems: 'center',
               gap: '3px',
               background: 'none',
-              border: '1px solid var(--border-primary)',
+              border: "1px solid var(--border-primary)",
               borderRadius: '4px',
               padding: '2px 6px',
               cursor: 'pointer',
-              color: 'var(--text-tertiary-600)',
+              color: "var(--text-tertiary-600)",
               fontFamily: 'var(--font-inter), system-ui, sans-serif',
               fontSize: '11px',
             }}
@@ -258,7 +258,7 @@ export function CardChildTasks({
                       width: '100%',
                       fontFamily: 'var(--font-inter), system-ui, sans-serif',
                       fontSize: '12px',
-                      color: 'var(--text-tertiary-600)',
+                      color: "var(--text-tertiary-600)",
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary-900)' }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary-600)' }}
@@ -278,7 +278,7 @@ export function CardChildTasks({
                       {child.card_type}
                     </span>
                     {code && (
-                      <span style={{ fontSize: '10px', color: 'var(--accent, #6366f1)', fontWeight: 600, flexShrink: 0 }}>
+                      <span style={{ fontSize: '10px', color: 'var(--brand-600)', fontWeight: 600, flexShrink: 0 }}>
                         {code}
                       </span>
                     )}
@@ -293,7 +293,7 @@ export function CardChildTasks({
 
           {/* No children message (only when input is closed) */}
           {children.length === 0 && !showInput && (
-            <p style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif', fontSize: '12px', color: 'var(--text-quaternary-500)', margin: 0, padding: '4px 0' }}>
+            <p style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif', fontSize: '12px', color: "var(--text-quaternary-500)", margin: 0, padding: '4px 0' }}>
               No child tasks
             </p>
           )}
@@ -303,7 +303,7 @@ export function CardChildTasks({
             <div
               style={{
                 background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-primary)',
+                border: "1px solid var(--border-primary)",
                 borderRadius: '6px',
                 padding: '8px 10px',
               }}
@@ -316,11 +316,11 @@ export function CardChildTasks({
                   style={{
                     fontFamily: 'var(--font-inter), system-ui, sans-serif',
                     fontSize: '11px',
-                    background: 'var(--surface-elevated, var(--bg-secondary))',
-                    border: '1px solid var(--border-primary)',
+                    background: 'var(--bg-tertiary)',
+                    border: "1px solid var(--border-primary)",
                     borderRadius: '4px',
                     padding: '4px 6px',
-                    color: 'var(--text-primary-900)',
+                    color: "var(--text-primary-900)",
                     cursor: 'pointer',
                     outline: 'none',
                     width: '82px',
@@ -345,18 +345,18 @@ export function CardChildTasks({
                     flex: 1,
                     fontFamily: 'var(--font-inter), system-ui, sans-serif',
                     fontSize: '12px',
-                    background: 'var(--surface-elevated, var(--bg-secondary))',
-                    border: '1px solid var(--border-primary)',
+                    background: 'var(--bg-tertiary)',
+                    border: "1px solid var(--border-primary)",
                     borderRadius: '4px',
                     padding: '4px 8px',
-                    color: 'var(--text-primary-900)',
+                    color: "var(--text-primary-900)",
                     outline: 'none',
                     minWidth: 0,
                   }}
                 />
                 <button
                   onClick={closeInput}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-quaternary-500)', padding: '2px', flexShrink: 0 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: "var(--text-quaternary-500)", padding: '2px', flexShrink: 0 }}
                 >
                   <X size={14} />
                 </button>
@@ -376,7 +376,7 @@ export function CardChildTasks({
                 >
                   {/* Existing cards matching search */}
                   {searching && (
-                    <div style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif', fontSize: '11px', color: 'var(--text-quaternary-500)', padding: '4px 6px' }}>
+                    <div style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif', fontSize: '11px', color: "var(--text-quaternary-500)", padding: '4px 6px' }}>
                       Searching...
                     </div>
                   )}
@@ -401,7 +401,7 @@ export function CardChildTasks({
                           width: '100%',
                           fontFamily: 'var(--font-inter), system-ui, sans-serif',
                           fontSize: '12px',
-                          color: 'var(--text-tertiary-600)',
+                          color: "var(--text-tertiary-600)",
                           opacity: linking === r.card_id ? 0.5 : 1,
                         }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
@@ -422,7 +422,7 @@ export function CardChildTasks({
                           {r.card_type}
                         </span>
                         {code && (
-                          <span style={{ fontSize: '10px', color: 'var(--text-quaternary-500)', fontWeight: 600, flexShrink: 0 }}>
+                          <span style={{ fontSize: '10px', color: "var(--text-quaternary-500)", fontWeight: 600, flexShrink: 0 }}>
                             {code}
                           </span>
                         )}
@@ -435,7 +435,7 @@ export function CardChildTasks({
 
                   {/* Separator if there are results */}
                   {!searching && searchResults.length > 0 && (
-                    <div style={{ borderTop: '1px solid var(--border-primary)', margin: '4px 0' }} />
+                    <div style={{ borderTop: "1px solid var(--border-primary)", margin: '4px 0' }} />
                   )}
 
                   {/* Always show "Create" option at bottom */}
@@ -455,7 +455,7 @@ export function CardChildTasks({
                       width: '100%',
                       fontFamily: 'var(--font-inter), system-ui, sans-serif',
                       fontSize: '12px',
-                      color: 'var(--accent, #6366f1)',
+                      color: 'var(--brand-600)',
                       opacity: creating ? 0.5 : 1,
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.08)' }}

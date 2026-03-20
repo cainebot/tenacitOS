@@ -67,13 +67,13 @@ function NodeCard({ node, agentNames }: NodeCardProps) {
   const color = statusColor(node.status)
 
   return (
-    <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl p-5 flex flex-col gap-4">
+    <div className="bg-secondary border border-primary rounded-xl p-5 flex flex-col gap-4">
       {/* Header: node ID + status badge */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <Server size={18} color='var(--text-primary-900)' className="shrink-0" />
           <span
-            className="text-[15px] font-bold text-[var(--text-primary-900)] overflow-hidden text-ellipsis whitespace-nowrap"
+            className="text-[15px] font-bold text-primary overflow-hidden text-ellipsis whitespace-nowrap"
             title={node.node_id}
           >
             {node.node_id}
@@ -92,7 +92,7 @@ function NodeCard({ node, agentNames }: NodeCardProps) {
       </div>
 
       {/* Tailscale IP */}
-      <p className="m-0 text-[12px] text-[var(--text-secondary-700)]">
+      <p className="m-0 text-[12px] text-secondary">
         {node.tailscale_ip}:{node.gateway_port}
       </p>
 
@@ -101,13 +101,13 @@ function NodeCard({ node, agentNames }: NodeCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <HardDrive size={13} color='var(--text-secondary-700)' />
-            <span className="text-[12px] text-[var(--text-secondary-700)]">RAM</span>
+            <span className="text-[12px] text-secondary">RAM</span>
           </div>
-          <span className="text-[12px] text-[var(--text-primary-900)]">
+          <span className="text-[12px] text-primary">
             {node.ram_usage_mb} MB / {node.ram_total_mb} MB ({ramPercent}%)
           </span>
         </div>
-        <div className="w-full h-[6px] bg-[var(--border-primary)] rounded-[3px] overflow-hidden">
+        <div className="w-full h-[6px] bg-gray-300 rounded-[3px] overflow-hidden">
           <div
             style={{
               width: `${ramPercent}%`,
@@ -124,13 +124,13 @@ function NodeCard({ node, agentNames }: NodeCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Cpu size={13} color='var(--text-secondary-700)' />
-            <span className="text-[12px] text-[var(--text-secondary-700)]">CPU</span>
+            <span className="text-[12px] text-secondary">CPU</span>
           </div>
-          <span className="text-[12px] text-[var(--text-primary-900)]">
+          <span className="text-[12px] text-primary">
             {cpuPercent}%
           </span>
         </div>
-        <div className="w-full h-[6px] bg-[var(--border-primary)] rounded-[3px] overflow-hidden">
+        <div className="w-full h-[6px] bg-gray-300 rounded-[3px] overflow-hidden">
           <div
             style={{
               width: `${cpuPercent}%`,
@@ -146,7 +146,7 @@ function NodeCard({ node, agentNames }: NodeCardProps) {
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-1.5">
           <Users size={13} color='var(--text-secondary-700)' />
-          <span className="text-[12px] text-[var(--text-secondary-700)]">
+          <span className="text-[12px] text-secondary">
             {node.agent_count} agent{node.agent_count !== 1 ? 's' : ''}
           </span>
         </div>
@@ -155,7 +155,7 @@ function NodeCard({ node, agentNames }: NodeCardProps) {
             {agentNames.map((name) => (
               <span
                 key={name}
-                className="text-[11px] px-2 py-0.5 bg-[var(--border-primary)] rounded text-[var(--text-primary-900)]"
+                className="text-[11px] px-2 py-0.5 bg-gray-300 rounded text-primary"
               >
                 {name}
               </span>
@@ -167,7 +167,7 @@ function NodeCard({ node, agentNames }: NodeCardProps) {
       {/* Last heartbeat */}
       <div className="flex items-center gap-1.5">
         <Clock size={13} color='var(--text-secondary-700)' />
-        <span className="text-[12px] text-[var(--text-secondary-700)]">
+        <span className="text-[12px] text-secondary">
           Last heartbeat: {relativeTime(node.last_heartbeat)}
         </span>
       </div>
@@ -186,11 +186,11 @@ interface SummaryStatProps {
 
 function SummaryStat({ label, value }: SummaryStatProps) {
   return (
-    <div className="flex flex-col items-center gap-1 px-5 py-3 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[10px] min-w-[80px]">
-      <span className="text-[22px] font-bold text-[var(--text-primary-900)]">
+    <div className="flex flex-col items-center gap-1 px-5 py-3 bg-secondary border border-primary rounded-[10px] min-w-[80px]">
+      <span className="text-[22px] font-bold text-primary">
         {value}
       </span>
-      <span className="text-[11px] text-[var(--text-secondary-700)] uppercase tracking-[0.06em]">
+      <span className="text-[11px] text-secondary uppercase tracking-[0.06em]">
         {label}
       </span>
     </div>
@@ -213,7 +213,7 @@ export default function NodesPage() {
     <div className="max-w-[1400px]">
       {/* Disconnection banner */}
       {isDisconnected && (
-        <div className="mb-5 px-4 py-[10px] bg-[var(--warning-600)]/10 border border-[var(--warning-600)] rounded-lg flex items-center gap-2 text-[var(--warning-600)] text-[13px]">
+        <div className="mb-5 px-4 py-[10px] bg-warning-600/10 border border-warning-600 rounded-lg flex items-center gap-2 text-warning-600 text-[13px]">
           <WifiOff size={16} />
           Connection lost — showing stale data. Attempting to reconnect…
         </div>
@@ -221,11 +221,11 @@ export default function NodesPage() {
 
       {/* Page header */}
       <div className="mb-7 flex items-center gap-3">
-        <h1 className="m-0 text-[26px] font-bold text-[var(--text-primary-900)]">
+        <h1 className="m-0 text-[26px] font-bold text-primary">
           Workspaces
         </h1>
         {!nodesLoading && (
-          <span className="text-[13px] px-[10px] py-[3px] bg-[var(--border-primary)] rounded-full text-[var(--text-secondary-700)]">
+          <span className="text-[13px] px-[10px] py-[3px] bg-gray-300 rounded-full text-secondary">
             {nodes.length} registered
           </span>
         )}
@@ -253,7 +253,7 @@ export default function NodesPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-[220px] bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl animate-pulse"
+              className="h-[220px] bg-secondary border border-primary rounded-xl animate-pulse"
             />
           ))}
         </div>
@@ -261,11 +261,11 @@ export default function NodesPage() {
 
       {/* Empty state */}
       {!nodesLoading && nodes.length === 0 && (
-        <div className="text-center px-6 py-16 text-[var(--text-secondary-700)]">
+        <div className="text-center px-6 py-16 text-secondary">
           <Server size={48} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
           <p className="m-0 mb-2 text-base font-semibold">No nodes registered yet</p>
           <p className="m-0 text-[13px]">
-            Run <code className="px-1.5 py-0.5 bg-[var(--border-primary)] rounded">register-node.sh</code> on a machine to get started.
+            Run <code className="px-1.5 py-0.5 bg-gray-300 rounded">register-node.sh</code> on a machine to get started.
           </p>
         </div>
       )}

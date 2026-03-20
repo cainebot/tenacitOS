@@ -157,7 +157,7 @@ function CheckboxOption({
   onToggle: (value: string) => void
 }) {
   return (
-    <label className="flex items-center gap-2 py-[5px] px-3 cursor-pointer font-body text-[13px] text-primary hover:bg-surface-alt">
+    <label className="flex items-center gap-2 py-[5px] px-3 cursor-pointer font-body text-[13px] text-primary hover:bg-secondary">
       <input
         type="checkbox"
         checked={checked}
@@ -249,7 +249,7 @@ function FilterDropdown({
   return (
     <div
       ref={ref}
-      className="absolute top-[calc(100%+4px)] left-0 z-[100] bg-surface border border-border rounded-lg min-w-[220px] max-h-[420px] overflow-y-auto shadow-[0_6px_20px_rgba(0,0,0,0.35)]"
+      className="absolute top-[calc(100%+4px)] left-0 z-[100] bg-secondary border border-secondary rounded-lg min-w-[220px] max-h-[420px] overflow-y-auto shadow-[0_6px_20px_rgba(0,0,0,0.35)]"
     >
       {/* Type section */}
       <SectionHeader label="Type" />
@@ -386,7 +386,7 @@ function ActiveFilterChip({
   onClear: () => void
 }) {
   return (
-    <div className="inline-flex items-center gap-1 py-0.5 pl-[10px] pr-2 rounded-full bg-accent text-white font-body text-[11px] whitespace-nowrap shrink-0">
+    <div className="inline-flex items-center gap-1 py-0.5 pl-[10px] pr-2 rounded-full bg-brand-50 text-white font-body text-[11px] whitespace-nowrap shrink-0">
       {label}
       <button
         onClick={onClear}
@@ -624,9 +624,9 @@ export function BoardFilterBar({
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex items-center gap-1.5 px-1 bg-transparent border-b border-border mb-2 shrink-0 min-h-[40px] flex-wrap gap-y-1">
+    <div className="flex items-center gap-1.5 px-1 bg-transparent border-b border-secondary mb-2 shrink-0 min-h-[40px] flex-wrap gap-y-1">
       {/* Search input */}
-      <div className="flex items-center gap-1.5 bg-surface border border-border rounded-md px-2 py-[3px] shrink-0">
+      <div className="flex items-center gap-1.5 bg-secondary border border-secondary rounded-md px-2 py-[3px] shrink-0">
         <svg
           width="13"
           height="13"
@@ -653,10 +653,10 @@ export function BoardFilterBar({
         <button
           onClick={() => setShowFilterDropdown((v) => !v)}
           className={cx(
-            'flex items-center gap-[5px] px-[10px] py-1 rounded-md font-body text-xs cursor-pointer border border-border transition-[background,color] duration-100 ease-in whitespace-nowrap',
+            'flex items-center gap-[5px] px-[10px] py-1 rounded-md font-body text-xs cursor-pointer border border-secondary transition-[background,color] duration-100 ease-in whitespace-nowrap',
             isActive
-              ? 'bg-accent text-white'
-              : 'bg-surface text-secondary hover:bg-surface-alt hover:text-primary'
+              ? 'bg-brand-50 text-white'
+              : 'bg-secondary text-secondary hover:bg-secondary hover:text-primary'
           )}
         >
           {/* Funnel icon */}
@@ -698,7 +698,7 @@ export function BoardFilterBar({
       {isActive && (
         <button
           onClick={clearFilters}
-          className="font-body text-[11px] bg-transparent border border-border rounded px-[7px] py-0.5 text-secondary cursor-pointer shrink-0"
+          className="font-body text-[11px] bg-transparent border border-secondary rounded px-[7px] py-0.5 text-secondary cursor-pointer shrink-0"
         >
           Clear all
         </button>
@@ -711,7 +711,7 @@ export function BoardFilterBar({
       {isActive && !showSaveInput && (
         <button
           onClick={() => setShowSaveInput(true)}
-          className="font-body text-xs bg-transparent border border-border rounded-md text-secondary px-[10px] py-[3px] cursor-pointer shrink-0"
+          className="font-body text-xs bg-transparent border border-secondary rounded-md text-secondary px-[10px] py-[3px] cursor-pointer shrink-0"
         >
           Save filter
         </button>
@@ -733,11 +733,11 @@ export function BoardFilterBar({
             }}
             placeholder="Filter name..."
             autoFocus
-            className="font-body text-xs bg-surface border border-accent rounded text-primary px-2 py-[3px] w-[120px] outline-none"
+            className="font-body text-xs bg-secondary border border-accent rounded text-primary px-2 py-[3px] w-[120px] outline-none"
           />
           <button
             onClick={() => void handleSaveFilter()}
-            className="font-body text-xs bg-accent border-none rounded text-white px-2 py-[3px] cursor-pointer"
+            className="font-body text-xs bg-brand-50 border-none rounded text-white px-2 py-[3px] cursor-pointer"
           >
             Save
           </button>
@@ -746,7 +746,7 @@ export function BoardFilterBar({
               setShowSaveInput(false)
               setSaveFilterName('')
             }}
-            className="font-body text-xs bg-transparent border border-border rounded text-secondary px-2 py-[3px] cursor-pointer"
+            className="font-body text-xs bg-transparent border border-secondary rounded text-secondary px-2 py-[3px] cursor-pointer"
           >
             Cancel
           </button>
@@ -758,20 +758,20 @@ export function BoardFilterBar({
         <div ref={savedFiltersRef} className="relative shrink-0">
           <button
             onClick={() => setShowSavedFiltersDropdown((v) => !v)}
-            className="font-body text-xs bg-transparent border border-border rounded-md text-secondary px-[10px] py-[3px] cursor-pointer"
+            className="font-body text-xs bg-transparent border border-secondary rounded-md text-secondary px-[10px] py-[3px] cursor-pointer"
           >
             Saved ({savedFilters.length})
           </button>
           {showSavedFiltersDropdown && (
-            <div className="absolute top-[calc(100%+4px)] right-0 z-50 bg-surface border border-border rounded-md min-w-[180px] shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+            <div className="absolute top-[calc(100%+4px)] right-0 z-50 bg-secondary border border-secondary rounded-md min-w-[180px] shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
               {savedFilters.map((sf) => (
                 <div
                   key={sf.filter_id}
-                  className="flex items-center justify-between px-3 py-[7px] border-b border-border"
+                  className="flex items-center justify-between px-3 py-[7px] border-b border-secondary"
                 >
                   <span
                     onClick={() => handleLoadFilter(sf)}
-                    className="font-body text-[13px] text-primary cursor-pointer flex-1 hover:text-accent"
+                    className="font-body text-[13px] text-primary cursor-pointer flex-1 hover:text-brand-600"
                   >
                     {sf.name}
                   </span>

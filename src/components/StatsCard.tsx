@@ -24,14 +24,14 @@ export function StatsCard({
     <div 
       className="rounded-xl p-4 md:p-6"
       style={{
-        backgroundColor: 'var(--bg-secondary)',
-        border: '1px solid var(--border-primary)',
+        backgroundColor: "var(--bg-secondary)",
+        border: "1px solid var(--border-primary)",
       }}
     >
       <div className="flex items-center justify-between mb-1.5 md:mb-2">
         <span 
           className="text-xs md:text-sm font-medium"
-          style={{ color: 'var(--text-tertiary-600)' }}
+          style={{ color: "var(--text-tertiary-600)" }}
         >
           {title}
         </span>
@@ -45,7 +45,7 @@ export function StatsCard({
           className="text-2xl md:text-3xl font-bold tracking-tight"
           style={{ 
             fontFamily: 'var(--font-sora), system-ui, sans-serif',
-            color: 'var(--text-primary-900)',
+            color: "var(--text-primary-900)",
             letterSpacing: '-1.5px'
           }}
         >

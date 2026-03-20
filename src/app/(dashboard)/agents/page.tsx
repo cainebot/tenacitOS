@@ -25,8 +25,8 @@ import type { AgentRow, AgentStatus } from '@/types/supabase'
 const STATUS_COLORS: Record<AgentStatus, string> = {
   idle: 'text-success',
   working: 'text-warning',
-  error: 'text-error',
-  offline: 'text-muted',
+  error: 'text-error-600',
+  offline: 'text-quaternary',
   thinking: 'text-info',
   queued: 'text-warning',
   executing_tool: 'text-warning',
@@ -78,7 +78,7 @@ export default function AgentsPage() {
     return (
       <div className="p-8">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-pulse text-lg text-muted">
+          <div className="animate-pulse text-lg text-quaternary">
             Loading agents...
           </div>
         </div>
@@ -94,7 +94,7 @@ export default function AgentsPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1
-            className="text-3xl font-bold mb-2 font-heading text-primary"
+            className="text-3xl font-bold mb-2 font-display text-primary"
             style={{ letterSpacing: '-1.5px' }}
           >
             <Users className="inline-block w-8 h-8 mr-2 mb-1" />
@@ -106,7 +106,7 @@ export default function AgentsPage() {
         </div>
         <button
           onClick={() => { setFormMode('create'); setEditAgent(null) }}
-          className="bg-accent text-white rounded-lg px-4 py-2 text-xs font-semibold flex items-center gap-1.5 flex-shrink-0 cursor-pointer border-none"
+          className="bg-brand-50 text-white rounded-lg px-4 py-2 text-xs font-semibold flex items-center gap-1.5 flex-shrink-0 cursor-pointer border-none"
         >
           <Plus size={16} />
           New Agent
@@ -114,7 +114,7 @@ export default function AgentsPage() {
       </div>
 
       {/* Tab switcher */}
-      <div className="flex gap-2 mb-6 border-b border-border">
+      <div className="flex gap-2 mb-6 border-b border-secondary">
         {[
           { id: 'cards' as const, label: 'Agent Cards', icon: LayoutGrid },
           { id: 'organigrama' as const, label: 'Organigrama', icon: GitBranch },
@@ -125,7 +125,7 @@ export default function AgentsPage() {
             className={[
               'flex items-center gap-2 px-4 py-2 font-medium transition-all bg-transparent border-none cursor-pointer pb-2 border-b-2',
               activeTab === id
-                ? 'text-accent border-accent'
+                ? 'text-brand-600 border-accent'
                 : 'text-secondary border-transparent',
             ].join(' ')}
           >
@@ -137,10 +137,10 @@ export default function AgentsPage() {
 
       {/* Organigrama View */}
       {activeTab === 'organigrama' && (
-        <div className="rounded-xl bg-card border border-border">
-          <div className="px-5 py-4 border-b border-border">
+        <div className="rounded-xl bg-secondary border border-secondary">
+          <div className="px-5 py-4 border-b border-secondary">
             <h2 className="font-semibold text-primary">Agent Hierarchy</h2>
-            <p className="text-sm text-muted">Visualization of agent communication allowances</p>
+            <p className="text-sm text-quaternary">Visualization of agent communication allowances</p>
           </div>
           <AgentOrganigrama agents={orgAgents} />
         </div>
@@ -148,26 +148,26 @@ export default function AgentsPage() {
 
       {/* Agents Grid */}
       {activeTab === 'cards' && agents.length === 0 && !loading && (
-        <div className="text-center py-12 text-muted text-sm">
+        <div className="text-center py-12 text-quaternary text-sm">
           No agents configured. Click &ldquo;New Agent&rdquo; to create one.
         </div>
       )}
       {activeTab === 'cards' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {agents.map((agent) => {
-            const statusColor = STATUS_COLORS[agent.status] || 'text-muted'
+            const statusColor = STATUS_COLORS[agent.status] || 'text-quaternary'
             const department = getDepartment(agent.department_id)
             const agentColor = department?.color ?? '#6366f1'
 
             return (
               <div
                 key={agent.agent_id}
-                className="rounded-xl overflow-hidden transition-all hover:scale-[1.01] bg-card border border-border cursor-pointer"
+                className="rounded-xl overflow-hidden transition-all hover:scale-[1.01] bg-secondary border border-secondary cursor-pointer"
                 onClick={() => { setFormMode('edit'); setEditAgent(agent) }}
               >
                 {/* Header with status */}
                 <div
-                  className="px-5 py-4 flex items-center justify-between border-b border-border"
+                  className="px-5 py-4 flex items-center justify-between border-b border-secondary"
                   style={{
                     background: `linear-gradient(135deg, ${agentColor}15, transparent)`,
                   }}
@@ -183,7 +183,7 @@ export default function AgentsPage() {
                       {agent.emoji}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold font-heading text-primary">
+                      <h3 className="text-lg font-bold font-display text-primary">
                         {agent.name}
                       </h3>
                       <div className="flex items-center gap-2 mt-1">
@@ -236,7 +236,7 @@ export default function AgentsPage() {
                     <div className="flex items-start gap-3">
                       <Bot className="w-4 h-4 mt-0.5" style={{ color: agentColor }} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium mb-1 text-muted">
+                        <div className="text-xs font-medium mb-1 text-quaternary">
                           Model
                         </div>
                         <div className="text-sm font-mono truncate text-primary">
@@ -251,7 +251,7 @@ export default function AgentsPage() {
                     <div className="flex items-start gap-3">
                       <HardDrive className="w-4 h-4 mt-0.5" style={{ color: agentColor }} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium mb-1 text-muted">
+                        <div className="text-xs font-medium mb-1 text-quaternary">
                           Workspace
                         </div>
                         <div
@@ -289,7 +289,7 @@ export default function AgentsPage() {
                         {agent.skills.map((skill) => (
                           <span
                             key={skill}
-                            className="text-xs px-2 py-0.5 rounded-full text-secondary border border-border"
+                            className="text-xs px-2 py-0.5 rounded-full text-secondary border border-secondary"
                             style={{
                               backgroundColor: `${agentColor}15`,
                             }}
@@ -302,10 +302,10 @@ export default function AgentsPage() {
                   )}
 
                   {/* Last Activity */}
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <div className="flex items-center justify-between pt-2 border-t border-secondary">
                     <div className="flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-muted" />
-                      <span className="text-xs text-muted">
+                      <Activity className="w-4 h-4 text-quaternary" />
+                      <span className="text-xs text-quaternary">
                         Last activity: {formatLastActivity(agent.last_activity)}
                       </span>
                     </div>

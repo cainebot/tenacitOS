@@ -39,21 +39,21 @@ export function CardRichTextEditor({ value, onChange, placeholder }: RichTextEdi
   const btnStyle = (active?: boolean): React.CSSProperties => ({
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     width: 28, height: 28, borderRadius: 4, border: 'none', cursor: 'pointer',
-    background: active ? 'var(--accent, #FF3B30)' : 'transparent',
+    background: active ? 'var(--brand-600)' : 'transparent',
     color: active ? '#fff' : 'var(--text-tertiary-600)',
     fontSize: 12, fontWeight: 600, flexShrink: 0,
   })
 
   return (
     <div style={{
-      border: `1px solid ${isFocused ? 'var(--accent, #FF3B30)' : 'var(--border-primary)'}`,
+      border: `1px solid ${isFocused ? 'var(--brand-600)' : 'var(--border-primary)'}`,
       borderRadius: 6, overflow: 'hidden', transition: 'border-color 0.15s',
       background: 'var(--bg-secondary)',
     }}>
       {/* Toolbar */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: 2, padding: '4px 6px',
-        borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-secondary)',
+        borderBottom: "1px solid var(--border-primary)", background: 'var(--bg-secondary)',
         opacity: isFocused ? 1 : 0.6, transition: 'opacity 0.15s',
       }}>
         <button type="button" title="Bold" style={btnStyle()} onMouseDown={(e) => { e.preventDefault(); exec('bold') }}>B</button>
@@ -79,7 +79,7 @@ export function CardRichTextEditor({ value, onChange, placeholder }: RichTextEdi
         style={{
           minHeight: 120, padding: '8px 12px', outline: 'none',
           fontFamily: 'var(--font-inter), system-ui, sans-serif', fontSize: 13, lineHeight: 1.6,
-          color: 'var(--text-primary-900)', wordBreak: 'break-word',
+          color: "var(--text-primary-900)", wordBreak: 'break-word',
         }}
       />
 

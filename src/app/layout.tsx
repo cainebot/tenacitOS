@@ -44,7 +44,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{__html:`if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")`}} />
       </head>
       <body
-        className={`${inter.variable} ${sora.variable} ${jetbrainsMono.variable} font-sans bg-[var(--bg-primary)] text-[var(--text-primary-900)] font-[family-name:var(--font-text)]`}
+        className={`${inter.variable} ${sora.variable} ${jetbrainsMono.variable} font-sans bg-primary text-primary font-[family-name:var(--font-text)]`}
       >
         <Providers>
           {children}

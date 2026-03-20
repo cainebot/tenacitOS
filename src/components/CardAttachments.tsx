@@ -147,7 +147,7 @@ export function CardAttachments({ cardId, attachments, onAttachmentAdded }: Card
     fontFamily: 'var(--font-inter), system-ui, sans-serif',
     fontSize: '11px',
     fontWeight: 600,
-    color: 'var(--text-quaternary-500)',
+    color: "var(--text-quaternary-500)",
     textTransform: 'uppercase' as const,
     letterSpacing: '0.05em',
     display: 'flex',
@@ -160,21 +160,21 @@ export function CardAttachments({ cardId, attachments, onAttachmentAdded }: Card
     alignItems: 'center',
     gap: '4px',
     background: 'none',
-    border: '1px solid var(--border-primary)',
+    border: "1px solid var(--border-primary)",
     borderRadius: '4px',
     padding: '3px 8px',
     cursor: 'pointer',
-    color: 'var(--text-tertiary-600)',
+    color: "var(--text-tertiary-600)",
     fontFamily: 'var(--font-inter), system-ui, sans-serif',
     fontSize: '12px',
   }
 
   const dropZoneStyle: React.CSSProperties = {
-    border: `2px dashed ${dragOver ? 'var(--accent, #6366f1)' : 'var(--border-primary)'}`,
+    border: `2px dashed ${dragOver ? 'var(--brand-600)' : 'var(--border-primary)'}`,
     borderRadius: '6px',
     padding: '16px',
     textAlign: 'center',
-    color: 'var(--text-quaternary-500)',
+    color: "var(--text-quaternary-500)",
     fontFamily: 'var(--font-inter), system-ui, sans-serif',
     fontSize: '12px',
     transition: 'border-color 0.15s, background 0.15s',
@@ -192,11 +192,11 @@ export function CardAttachments({ cardId, attachments, onAttachmentAdded }: Card
             <span
               style={{
                 background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-primary)',
+                border: "1px solid var(--border-primary)",
                 borderRadius: '10px',
                 padding: '0 6px',
                 fontSize: '10px',
-                color: 'var(--text-tertiary-600)',
+                color: "var(--text-tertiary-600)",
               }}
             >
               {attachments.length}
@@ -253,7 +253,7 @@ export function CardAttachments({ cardId, attachments, onAttachmentAdded }: Card
                   gap: '8px',
                   padding: '6px 8px',
                   background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-primary)',
+                  border: "1px solid var(--border-primary)",
                   borderRadius: '6px',
                 }}
               >
@@ -269,7 +269,7 @@ export function CardAttachments({ cardId, attachments, onAttachmentAdded }: Card
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'var(--text-quaternary-500)',
+                    color: "var(--text-quaternary-500)",
                   }}
                 >
                   {isImage && signedUrl ? (
@@ -293,7 +293,7 @@ export function CardAttachments({ cardId, attachments, onAttachmentAdded }: Card
                     style={{
                       fontFamily: 'var(--font-inter), system-ui, sans-serif',
                       fontSize: '12px',
-                      color: 'var(--text-primary-900)',
+                      color: "var(--text-primary-900)",
                       textDecoration: 'none',
                       display: 'block',
                       overflow: 'hidden',
@@ -307,7 +307,7 @@ export function CardAttachments({ cardId, attachments, onAttachmentAdded }: Card
                     style={{
                       fontFamily: 'var(--font-inter), system-ui, sans-serif',
                       fontSize: '11px',
-                      color: 'var(--text-quaternary-500)',
+                      color: "var(--text-quaternary-500)",
                     }}
                   >
                     {formatBytes(att.size_bytes)}
@@ -333,7 +333,7 @@ export function CardAttachments({ cardId, attachments, onAttachmentAdded }: Card
                         background: 'none',
                         border: 'none',
                         borderRadius: '4px',
-                        color: 'var(--text-quaternary-500)',
+                        color: "var(--text-quaternary-500)",
                         cursor: 'pointer',
                         textDecoration: 'none',
                       }}
@@ -353,7 +353,7 @@ export function CardAttachments({ cardId, attachments, onAttachmentAdded }: Card
                       background: 'none',
                       border: 'none',
                       borderRadius: '4px',
-                      color: 'var(--text-quaternary-500)',
+                      color: "var(--text-quaternary-500)",
                       cursor: 'pointer',
                     }}
                   >

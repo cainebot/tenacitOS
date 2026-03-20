@@ -91,17 +91,17 @@ export default function GitPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2 font-[family-name:var(--font-display)] text-[var(--text-primary-900)]">
+          <h1 className="text-3xl font-bold mb-2 font-[family-name:var(--font-display)] text-primary">
             Git Dashboard
           </h1>
-          <p className="text-sm text-[var(--text-secondary-700)]">
+          <p className="text-sm text-secondary">
             {repos.length} repositories · {dirtyRepos.length} with changes
           </p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-secondary-700)] border border-[var(--border-primary)] cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-secondary border border-primary cursor-pointer"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
           Refresh
@@ -110,10 +110,10 @@ export default function GitPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-[200px]">
-          <Loader2 className="w-8 h-8 animate-spin text-[var(--brand-600)]" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
         </div>
       ) : repos.length === 0 ? (
-        <div className="text-center p-12 text-[var(--text-quaternary-500)]">
+        <div className="text-center p-12 text-quaternary">
           <FolderGit2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p>No git repos found in workspace</p>
         </div>
@@ -123,40 +123,40 @@ export default function GitPage() {
           {[...dirtyRepos, ...cleanRepos].map((repo) => (
             <div
               key={repo.path}
-              className="rounded-xl overflow-hidden bg-[var(--bg-secondary)]"
+              className="rounded-xl overflow-hidden bg-secondary"
               style={{
                 border: `1px solid ${repo.isDirty ? "rgba(251,191,36,0.3)" : "var(--border-primary)"}`,
               }}
             >
               {/* Repo header */}
               <div
-                className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border-primary)]"
+                className="flex items-center gap-3 px-5 py-4 border-b border-primary"
               >
-                <div className="p-2 rounded-lg bg-[var(--bg-tertiary)]">
-                  <FolderGit2 className={`w-5 h-5 ${repo.isDirty ? "text-[#fbbf24]" : "text-[var(--success-600)]"}`} />
+                <div className="p-2 rounded-lg bg-tertiary">
+                  <FolderGit2 className={`w-5 h-5 ${repo.isDirty ? "text-[#fbbf24]" : "text-success-600"}`} />
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold font-mono text-[var(--text-primary-900)]">
+                    <h3 className="font-bold font-mono text-primary">
                       {repo.name}
                     </h3>
-                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[var(--bg-tertiary)] text-[var(--text-secondary-700)]">
+                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-tertiary text-secondary">
                       <GitBranch className="w-3 h-3" />
                       {repo.branch}
                     </div>
                     {repo.ahead > 0 && (
-                      <span className="flex items-center gap-0.5 text-xs text-[var(--success-600)]">
+                      <span className="flex items-center gap-0.5 text-xs text-success-600">
                         <ArrowUp className="w-3 h-3" /> {repo.ahead} ahead
                       </span>
                     )}
                     {repo.behind > 0 && (
-                      <span className="flex items-center gap-0.5 text-xs text-[var(--warning-600)]">
+                      <span className="flex items-center gap-0.5 text-xs text-warning-600">
                         <ArrowDown className="w-3 h-3" /> {repo.behind} behind
                       </span>
                     )}
                     {!repo.isDirty && (
-                      <span className="flex items-center gap-1 text-xs text-[var(--success-600)]">
+                      <span className="flex items-center gap-1 text-xs text-success-600">
                         <CheckCircle className="w-3 h-3" /> clean
                       </span>
                     )}
@@ -167,9 +167,9 @@ export default function GitPage() {
                     )}
                   </div>
                   {repo.lastCommit && (
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-[var(--text-quaternary-500)]">
+                    <div className="flex items-center gap-1.5 mt-1 text-xs text-quaternary">
                       <GitCommit className="w-3 h-3" />
-                      <code className="text-[var(--brand-600)]">{repo.lastCommit.hash}</code>
+                      <code className="text-brand-600">{repo.lastCommit.hash}</code>
                       <span>{repo.lastCommit.message.slice(0, 60)}{repo.lastCommit.message.length > 60 ? "…" : ""}</span>
                       <span>·</span>
                       <span>{repo.lastCommit.date}</span>
@@ -189,7 +189,7 @@ export default function GitPage() {
                       key={action}
                       onClick={() => runAction(repo, action)}
                       disabled={actionLoading[`${repo.name}-${action}`]}
-                      className="px-2.5 py-1 rounded-md text-xs font-mono bg-[var(--bg-tertiary)] text-[var(--text-secondary-700)] border border-[var(--border-primary)] cursor-pointer"
+                      className="px-2.5 py-1 rounded-md text-xs font-mono bg-tertiary text-secondary border border-primary cursor-pointer"
                     >
                       {actionLoading[`${repo.name}-${action}`] ? "…" : label}
                     </button>
@@ -202,14 +202,14 @@ export default function GitPage() {
                 <div className="px-5 py-3 grid grid-cols-3 gap-4 bg-[#fbbf24]/[0.04]">
                   {repo.staged.length > 0 && (
                     <div>
-                      <div className="text-xs font-semibold mb-1 text-[var(--success-600)]">
+                      <div className="text-xs font-semibold mb-1 text-success-600">
                         Staged ({repo.staged.length})
                       </div>
                       <div className="space-y-0.5">
                         {repo.staged.slice(0, 5).map((f) => (
-                          <div key={f} className="text-xs font-mono truncate text-[var(--text-secondary-700)]">{f}</div>
+                          <div key={f} className="text-xs font-mono truncate text-secondary">{f}</div>
                         ))}
-                        {repo.staged.length > 5 && <div className="text-xs text-[var(--text-quaternary-500)]">+{repo.staged.length - 5} more</div>}
+                        {repo.staged.length > 5 && <div className="text-xs text-quaternary">+{repo.staged.length - 5} more</div>}
                       </div>
                     </div>
                   )}
@@ -220,22 +220,22 @@ export default function GitPage() {
                       </div>
                       <div className="space-y-0.5">
                         {repo.unstaged.slice(0, 5).map((f) => (
-                          <div key={f} className="text-xs font-mono truncate text-[var(--text-secondary-700)]">{f}</div>
+                          <div key={f} className="text-xs font-mono truncate text-secondary">{f}</div>
                         ))}
-                        {repo.unstaged.length > 5 && <div className="text-xs text-[var(--text-quaternary-500)]">+{repo.unstaged.length - 5} more</div>}
+                        {repo.unstaged.length > 5 && <div className="text-xs text-quaternary">+{repo.unstaged.length - 5} more</div>}
                       </div>
                     </div>
                   )}
                   {repo.untracked.length > 0 && (
                     <div>
-                      <div className="text-xs font-semibold mb-1 text-[var(--text-quaternary-500)]">
+                      <div className="text-xs font-semibold mb-1 text-quaternary">
                         Untracked ({repo.untracked.length})
                       </div>
                       <div className="space-y-0.5">
                         {repo.untracked.slice(0, 5).map((f) => (
-                          <div key={f} className="text-xs font-mono truncate text-[var(--text-secondary-700)]">{f}</div>
+                          <div key={f} className="text-xs font-mono truncate text-secondary">{f}</div>
                         ))}
-                        {repo.untracked.length > 5 && <div className="text-xs text-[var(--text-quaternary-500)]">+{repo.untracked.length - 5} more</div>}
+                        {repo.untracked.length > 5 && <div className="text-xs text-quaternary">+{repo.untracked.length - 5} more</div>}
                       </div>
                     </div>
                   )}
@@ -257,7 +257,7 @@ export default function GitPage() {
               className="flex items-center gap-3 px-4 py-3.5 shrink-0"
               style={{ borderBottom: "1px solid #30363d" }}
             >
-              <Terminal className="w-4 h-4 text-[var(--brand-600)]" />
+              <Terminal className="w-4 h-4 text-brand-600" />
               <span className="font-mono text-sm flex-1" style={{ color: "#c9d1d9" }}>
                 {outputModal.title}
               </span>
@@ -272,7 +272,7 @@ export default function GitPage() {
             <div className="flex-1 overflow-auto p-4">
               {outputModal.loading ? (
                 <div className="flex items-center justify-center h-full">
-                  <Loader2 className="w-6 h-6 animate-spin text-[var(--brand-600)]" />
+                  <Loader2 className="w-6 h-6 animate-spin text-brand-600" />
                 </div>
               ) : (
                 <pre className="font-mono text-[0.8rem] whitespace-pre-wrap leading-relaxed" style={{ color: "#c9d1d9" }}>

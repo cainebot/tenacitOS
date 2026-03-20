@@ -157,7 +157,7 @@ export function DashboardSidebar() {
     <aside
       className={cx(
         "sticky top-0 h-screen flex flex-col",
-        "bg-[var(--bg-secondary)] border-r border-[var(--border-primary)]",
+        "bg-secondary border-r border-primary",
         "transition-[width,min-width] duration-200 ease-in-out overflow-hidden",
         collapsed ? "w-14 min-w-14" : "w-60 min-w-60"
       )}
@@ -166,12 +166,12 @@ export function DashboardSidebar() {
       {!collapsed && <BrandMark />}
       {collapsed && (
         <div className="flex h-12 items-center justify-center">
-          <span className="text-lg font-bold text-[var(--brand-600)] font-display">DC</span>
+          <span className="text-lg font-bold text-brand-600 font-display">DC</span>
         </div>
       )}
 
       {/* Divider */}
-      <div className={cx("h-px bg-[var(--border-primary)]", collapsed ? "mx-2" : "mx-3")} />
+      <div className={cx("h-px bg-gray-300", collapsed ? "mx-2" : "mx-3")} />
 
       {/* Scrollable navigation sections */}
       <nav
@@ -184,7 +184,7 @@ export function DashboardSidebar() {
           <div key={section.label}>
             {/* Section label — hidden when collapsed */}
             {!collapsed && (
-              <div className="text-[10px] font-semibold tracking-[0.08em] text-[var(--text-quaternary-500)] pl-2 pb-1.5 font-display">
+              <div className="text-[10px] font-semibold tracking-[0.08em] text-quaternary pl-2 pb-1.5 font-display">
                 {section.label}
               </div>
             )}
@@ -212,7 +212,7 @@ export function DashboardSidebar() {
       </nav>
 
       {/* Fixed bottom — Office, Settings */}
-      <div className={cx("border-t border-[var(--border-primary)]", collapsed ? "px-1.5 pt-2 pb-1" : "px-3 pt-2 pb-1")}>
+      <div className={cx("border-t border-primary", collapsed ? "px-1.5 pt-2 pb-1" : "px-3 pt-2 pb-1")}>
         <div className="flex flex-col gap-0.5">
           {BOTTOM_NAV.map((item) => {
             const Icon = item.icon;
@@ -233,13 +233,13 @@ export function DashboardSidebar() {
       </div>
 
       {/* Collapse toggle button */}
-      <div className="border-t border-[var(--border-primary)] p-1 px-1.5">
+      <div className="border-t border-primary p-1 px-1.5">
         <button
           onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className={cx(
-            "flex items-center gap-2 w-full rounded-md text-xs text-[var(--text-quaternary-500)] font-[family-name:var(--font-text)] cursor-pointer bg-transparent border-none",
-            "hover:bg-[var(--bg-quaternary)] hover:text-[var(--text-primary-900)] transition-colors",
+            "flex items-center gap-2 w-full rounded-md text-xs text-quaternary font-[family-name:var(--font-text)] cursor-pointer bg-transparent border-none",
+            "hover:bg-quaternary hover:text-primary transition-colors",
             collapsed ? "justify-center py-2" : "justify-start py-2 px-2"
           )}
         >
@@ -250,7 +250,7 @@ export function DashboardSidebar() {
 
       {/* Fixed bottom — Node status strip */}
       {!collapsed && (
-        <div className="px-3 py-3 border-t border-[var(--border-primary)]">
+        <div className="px-3 py-3 border-t border-primary">
           <NodeStatusStrip />
         </div>
       )}

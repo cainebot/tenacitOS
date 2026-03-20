@@ -83,12 +83,12 @@ export default function NewBoardGroupPage() {
   return (
     <div className="-m-6">
       {/* Sticky header */}
-      <div className="sticky top-0 z-30 border-b border-border bg-surface">
+      <div className="sticky top-0 z-30 border-b border-secondary bg-secondary">
         <div className="px-4 pt-2 pb-4 md:px-8 md:pt-3 md:pb-5">
-          <h1 className="text-2xl font-semibold tracking-tight text-primary font-heading">
+          <h1 className="text-2xl font-semibold tracking-tight text-primary font-display">
             Create board group
           </h1>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-quaternary">
             Groups help agents discover related work across boards.
           </p>
         </div>
@@ -96,11 +96,11 @@ export default function NewBoardGroupPage() {
 
       <div className="px-4 py-6 md:px-8 max-w-2xl">
         <form onSubmit={e => void handleSubmit(e)} className="space-y-6">
-          <div className="rounded-2xl p-6 space-y-6 border border-border bg-card">
+          <div className="rounded-2xl p-6 space-y-6 border border-secondary bg-secondary">
             {/* Name */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-primary">
-                Group name <span className="text-accent">*</span>
+                Group name <span className="text-brand-600">*</span>
               </label>
               <input
                 type="text"
@@ -108,7 +108,7 @@ export default function NewBoardGroupPage() {
                 onChange={e => setName(e.target.value)}
                 placeholder="e.g. Release hardening"
                 disabled={saving}
-                className="w-full px-3 py-2 rounded-lg text-sm bg-background border border-border text-primary outline-none"
+                className="w-full px-3 py-2 rounded-lg text-sm bg-primary border border-secondary text-primary outline-none"
               />
             </div>
 
@@ -123,15 +123,15 @@ export default function NewBoardGroupPage() {
                 placeholder="What ties these boards together? What should agents coordinate on?"
                 disabled={saving}
                 rows={4}
-                className="w-full px-3 py-2 rounded-lg text-sm resize-none bg-background border border-border text-primary outline-none"
+                className="w-full px-3 py-2 rounded-lg text-sm resize-none bg-primary border border-secondary text-primary outline-none"
               />
             </div>
 
             {/* Board assignment */}
-            <div className="space-y-2 pt-2 border-t border-border">
+            <div className="space-y-2 pt-2 border-t border-secondary">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-primary">Boards</label>
-                <span className="text-xs text-muted">{selectedBoardIds.size} selected</span>
+                <span className="text-xs text-quaternary">{selectedBoardIds.size} selected</span>
               </div>
               <input
                 type="text"
@@ -139,15 +139,15 @@ export default function NewBoardGroupPage() {
                 onChange={e => setBoardSearch(e.target.value)}
                 placeholder="Search boards…"
                 disabled={saving}
-                className="w-full px-3 py-2 rounded-lg text-sm bg-background border border-border text-primary outline-none"
+                className="w-full px-3 py-2 rounded-lg text-sm bg-primary border border-secondary text-primary outline-none"
               />
-              <div className="max-h-56 overflow-auto rounded-xl border border-border bg-surface">
+              <div className="max-h-56 overflow-auto rounded-xl border border-secondary bg-secondary">
                 {boardsLoading ? (
-                  <div className="flex items-center gap-2 px-4 py-4 text-sm text-muted">
+                  <div className="flex items-center gap-2 px-4 py-4 text-sm text-quaternary">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading boards…
                   </div>
                 ) : filteredBoards.length === 0 ? (
-                  <div className="px-4 py-4 text-sm text-muted">No boards found.</div>
+                  <div className="px-4 py-4 text-sm text-quaternary">No boards found.</div>
                 ) : (
                   <ul className="divide-y divide-border">
                     {filteredBoards.map(board => (
@@ -163,7 +163,7 @@ export default function NewBoardGroupPage() {
                           <div className="min-w-0">
                             <p className="text-sm font-medium truncate text-primary">{board.name}</p>
                             {board.description && (
-                              <p className="text-xs mt-0.5 truncate text-muted">{board.description}</p>
+                              <p className="text-xs mt-0.5 truncate text-quaternary">{board.description}</p>
                             )}
                           </div>
                         </label>
@@ -172,12 +172,12 @@ export default function NewBoardGroupPage() {
                   </ul>
                 )}
               </div>
-              <p className="text-xs text-muted">
+              <p className="text-xs text-quaternary">
                 Optional. You can change board membership later in group edit.
               </p>
             </div>
 
-            {error && <p className="text-sm text-accent">{error}</p>}
+            {error && <p className="text-sm text-brand-600">{error}</p>}
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-2">
@@ -185,21 +185,21 @@ export default function NewBoardGroupPage() {
                 type="button"
                 onClick={() => router.push('/board-groups')}
                 disabled={saving}
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-70 text-muted bg-transparent border border-border"
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-70 text-quaternary bg-transparent border border-secondary"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving || !name.trim()}
-                className="px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-50 bg-accent text-white"
+                className="px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-50 bg-brand-50 text-white"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {saving ? 'Creating…' : 'Create group'}
               </button>
             </div>
 
-            <p className="text-xs text-muted border-t border-border pt-4">
+            <p className="text-xs text-quaternary border-t border-secondary pt-4">
               Want to assign boards later? Update each board in{' '}
               <Link href="/boards" className="underline hover:opacity-80 text-primary">Boards</Link>{' '}
               and pick this group.

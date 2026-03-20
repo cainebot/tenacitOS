@@ -63,7 +63,7 @@ export function KanbanCard({ card, onDragStart, onCardClick, isNew = false }: Ka
       onClick={() => onCardClick(card.card_id)}
       style={{
         background: 'var(--bg-secondary)',
-        border: '1px solid var(--border-primary)',
+        border: "1px solid var(--border-primary)",
         borderLeft: `3px solid ${PRIORITY_LEFT_BORDER[card.priority]}`,
         borderRadius: 'var(--radius-md, 8px)',
         padding: '10px 12px',
@@ -97,7 +97,7 @@ export function KanbanCard({ card, onDragStart, onCardClick, isNew = false }: Ka
             fontFamily: 'var(--font-inter), system-ui, sans-serif',
             fontSize: '10px',
             fontWeight: 700,
-            color: 'var(--text-quaternary-500)',
+            color: "var(--text-quaternary-500)",
           }}>
             {card.code}
           </span>
@@ -109,7 +109,7 @@ export function KanbanCard({ card, onDragStart, onCardClick, isNew = false }: Ka
         fontFamily: 'var(--font-inter), system-ui, sans-serif',
         fontSize: '13px',
         fontWeight: 500,
-        color: 'var(--text-primary-900)',
+        color: "var(--text-primary-900)",
         margin: '0 0 6px 0',
         display: '-webkit-box',
         WebkitLineClamp: 2,
@@ -130,9 +130,9 @@ export function KanbanCard({ card, onDragStart, onCardClick, isNew = false }: Ka
               fontWeight: 700,
               textTransform: 'uppercase' as const,
               letterSpacing: '0.4px',
-              color: 'var(--text-tertiary-600)',
+              color: "var(--text-tertiary-600)",
               background: 'rgba(82,82,82,0.12)',
-              border: '1px solid var(--border-primary)',
+              border: "1px solid var(--border-primary)",
               borderRadius: '4px',
               padding: '2px 6px',
               maxWidth: '80px',
@@ -144,7 +144,7 @@ export function KanbanCard({ card, onDragStart, onCardClick, isNew = false }: Ka
             </span>
           ))}
           {card.labels.length > MAX_VISIBLE_LABELS && (
-            <span style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif', fontSize: '10px', color: 'var(--text-tertiary-600)' }}>
+            <span style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif', fontSize: '10px', color: "var(--text-tertiary-600)" }}>
               +{card.labels.length - MAX_VISIBLE_LABELS}
             </span>
           )}
@@ -162,13 +162,13 @@ export function KanbanCard({ card, onDragStart, onCardClick, isNew = false }: Ka
                 height: '16px',
                 borderRadius: '50%',
                 background: 'var(--bg-tertiary)',
-                border: '1px solid var(--border-primary)',
+                border: "1px solid var(--border-primary)",
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <span style={{ fontSize: '8px', fontWeight: 700, color: 'var(--text-tertiary-600)' }}>
+                <span style={{ fontSize: '8px', fontWeight: 700, color: "var(--text-tertiary-600)" }}>
                   {card.assigned_agent_id.charAt(0).toUpperCase()}
                 </span>
               </div>

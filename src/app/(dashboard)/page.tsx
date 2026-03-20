@@ -70,13 +70,13 @@ export default function DashboardPage() {
           className="text-2xl md:text-3xl font-bold mb-1"
           style={{ 
             fontFamily: 'var(--font-sora), system-ui, sans-serif',
-            color: 'var(--text-primary-900)',
+            color: "var(--text-primary-900)",
             letterSpacing: '-1.5px'
           }}
         >
           🦞 Mission Control
         </h1>
-        <p style={{ color: 'var(--text-tertiary-600)', fontSize: '14px' }}>
+        <p style={{ color: "var(--text-tertiary-600)", fontSize: '14px' }}>
           Overview of Tenacitas agent activity
         </p>
       </div>
@@ -121,13 +121,13 @@ export default function DashboardPage() {
       <div 
         className="mb-6 rounded-xl overflow-hidden"
         style={{
-          backgroundColor: 'var(--bg-secondary)',
-          border: '1px solid var(--border-primary)',
+          backgroundColor: "var(--bg-secondary)",
+          border: "1px solid var(--border-primary)",
         }}
       >
         <div 
           className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid var(--border-primary)' }}
+          style={{ borderBottom: "1px solid var(--border-primary)" }}
         >
           <div className="flex items-center gap-3">
             <div className="accent-line" />
@@ -135,7 +135,7 @@ export default function DashboardPage() {
               className="text-base font-semibold"
               style={{ 
                 fontFamily: 'var(--font-sora), system-ui, sans-serif',
-                color: 'var(--text-primary-900)'
+                color: "var(--text-primary-900)"
               }}
             >
               <Users className="inline-block w-5 h-5 mr-2 mb-1" />
@@ -148,7 +148,7 @@ export default function DashboardPage() {
               className="text-sm font-medium px-3 py-1.5 rounded-lg transition-all"
               style={{ 
                 backgroundColor: 'var(--brand-600)',
-                color: 'var(--text-primary-900)',
+                color: "var(--text-primary-900)",
               }}
             >
               <Gamepad2 className="inline-block w-4 h-4 mr-1 mb-0.5" />
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                 key={agent.id}
                 className="p-3 rounded-lg transition-all hover:scale-105"
                 style={{
-                  backgroundColor: 'var(--bg-tertiary)',
+                  backgroundColor: "var(--bg-tertiary)",
                   border: `2px solid ${agent.color}`,
                   cursor: 'pointer',
                 }}
@@ -189,14 +189,14 @@ export default function DashboardPage() {
                   className="text-sm font-bold mb-1"
                   style={{ 
                     fontFamily: 'var(--font-sora), system-ui, sans-serif',
-                    color: 'var(--text-primary-900)',
+                    color: "var(--text-primary-900)",
                   }}
                 >
                   {agent.name}
                 </div>
                 <div 
                   className="text-xs truncate mb-1"
-                  style={{ color: 'var(--text-quaternary-500)' }}
+                  style={{ color: "var(--text-quaternary-500)" }}
                   title={agent.model}
                 >
                   <Bot className="inline-block w-3 h-3 mr-1" />
@@ -223,13 +223,13 @@ export default function DashboardPage() {
         <div 
           className="lg:col-span-2 rounded-xl overflow-hidden"
           style={{
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-primary)',
+            backgroundColor: "var(--bg-secondary)",
+            border: "1px solid var(--border-primary)",
           }}
         >
           <div 
             className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: '1px solid var(--border-primary)' }}
+            style={{ borderBottom: "1px solid var(--border-primary)" }}
           >
             <div className="flex items-center gap-3">
               <div className="accent-line" />
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                 className="text-base font-semibold"
                 style={{ 
                   fontFamily: 'var(--font-sora), system-ui, sans-serif',
-                  color: 'var(--text-primary-900)'
+                  color: "var(--text-primary-900)"
                 }}
               >
                 Recent Activity
@@ -260,13 +260,13 @@ export default function DashboardPage() {
         <div 
           className="rounded-xl overflow-hidden"
           style={{
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-primary)',
+            backgroundColor: "var(--bg-secondary)",
+            border: "1px solid var(--border-primary)",
           }}
         >
           <div 
             className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: '1px solid var(--border-primary)' }}
+            style={{ borderBottom: "1px solid var(--border-primary)" }}
           >
             <div className="flex items-center gap-3">
               <div className="accent-line" />
@@ -274,7 +274,7 @@ export default function DashboardPage() {
                 className="text-base font-semibold"
                 style={{ 
                   fontFamily: 'var(--font-sora), system-ui, sans-serif',
-                  color: 'var(--text-primary-900)'
+                  color: "var(--text-primary-900)"
                 }}
               >
                 Quick Links
@@ -294,11 +294,11 @@ export default function DashboardPage() {
                 key={href}
                 href={href}
                 className="p-3 rounded-lg transition-all hover:scale-[1.02]"
-                style={{ backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}
+                style={{ backgroundColor: "var(--bg-tertiary)", border: "1px solid var(--border-primary)" }}
               >
                 <div className="flex items-center gap-2">
                   <Icon className="w-4 h-4" style={{ color }} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary-900)' }}>{label}</span>
+                  <span className="text-sm font-medium" style={{ color: "var(--text-primary-900)" }}>{label}</span>
                 </div>
               </Link>
             ))}

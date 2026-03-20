@@ -44,7 +44,7 @@ export function renderMentionText(text: string): React.ReactNode[] {
           key: key++,
           style: {
             background: 'rgba(99, 102, 241, 0.15)',
-            color: 'var(--accent, #6366f1)',
+            color: 'var(--brand-600)',
             borderRadius: '3px',
             padding: '0 2px',
             fontWeight: 500,

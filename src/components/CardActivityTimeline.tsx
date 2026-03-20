@@ -264,8 +264,8 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
             cursor: !commentText.trim() || submitting ? 'not-allowed' : 'pointer',
             background:
               commentText.trim() && !submitting
-                ? 'var(--accent, #6366f1)'
-                : 'var(--surface, #1e1e2e)',
+                ? 'var(--brand-600)'
+                : 'var(--bg-secondary)',
             color:
               commentText.trim() && !submitting ? '#fff' : 'var(--text-quaternary-500)',
             transition: 'background 0.15s, color 0.15s',
@@ -280,7 +280,7 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
         style={{
           fontFamily: 'var(--font-inter), system-ui, sans-serif',
           fontSize: '10px',
-          color: 'var(--text-quaternary-500)',
+          color: "var(--text-quaternary-500)",
           marginTop: '4px',
         }}
       >
@@ -296,7 +296,7 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
           style={{
             fontFamily: 'var(--font-inter), system-ui, sans-serif',
             fontSize: '12px',
-            color: 'var(--text-quaternary-500)',
+            color: "var(--text-quaternary-500)",
             margin: 0,
             padding: '8px 0',
           }}
@@ -315,7 +315,7 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
           style={{
             fontFamily: 'var(--font-inter), system-ui, sans-serif',
             fontSize: '12px',
-            color: 'var(--text-quaternary-500)',
+            color: "var(--text-quaternary-500)",
             margin: 0,
             padding: '8px 0',
           }}
@@ -346,7 +346,7 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingLeft: '20px' }}>
             {entries.map((entry, idx) => {
               const isComment = entry.kind === 'comment'
-              const dotColor = isComment ? 'var(--accent, #6366f1)' : 'var(--text-muted, #9ca3af)'
+              const dotColor = isComment ? 'var(--brand-600)' : 'var(--text-quaternary, #9ca3af)'
 
               if (isComment) {
                 const comment = entry.data as CardCommentRow
@@ -362,7 +362,7 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
                         height: '7px',
                         borderRadius: '50%',
                         background: dotColor,
-                        border: '1px solid var(--surface-elevated, var(--bg-secondary))',
+                        border: '1px solid var(--bg-tertiary)',
                       }}
                     />
                     <div>
@@ -370,7 +370,7 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
                         style={{
                           fontFamily: 'var(--font-inter), system-ui, sans-serif',
                           fontSize: '12px',
-                          color: 'var(--text-tertiary-600)',
+                          color: "var(--text-tertiary-600)",
                           fontWeight: 500,
                         }}
                       >
@@ -380,7 +380,7 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
                         style={{
                           fontFamily: 'var(--font-inter), system-ui, sans-serif',
                           fontSize: '12px',
-                          color: 'var(--text-quaternary-500)',
+                          color: "var(--text-quaternary-500)",
                         }}
                       >
                         {': '}
@@ -389,7 +389,7 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
                         style={{
                           fontFamily: 'var(--font-inter), system-ui, sans-serif',
                           fontSize: '12px',
-                          color: 'var(--text-primary-900)',
+                          color: "var(--text-primary-900)",
                         }}
                       >
                         {renderMentionText(comment.text)}
@@ -399,7 +399,7 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
                       style={{
                         fontFamily: 'var(--font-inter), system-ui, sans-serif',
                         fontSize: '11px',
-                        color: 'var(--text-quaternary-500)',
+                        color: "var(--text-quaternary-500)",
                         marginTop: '2px',
                       }}
                     >
@@ -421,14 +421,14 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
                         height: '6px',
                         borderRadius: '50%',
                         background: dotColor,
-                        border: '1px solid var(--surface-elevated, var(--bg-secondary))',
+                        border: '1px solid var(--bg-tertiary)',
                       }}
                     />
                     <div
                       style={{
                         fontFamily: 'var(--font-inter), system-ui, sans-serif',
                         fontSize: '12px',
-                        color: 'var(--text-tertiary-600)',
+                        color: "var(--text-tertiary-600)",
                       }}
                     >
                       {renderActivityText(activity, stateMap)}
@@ -437,7 +437,7 @@ export function CardActivityTimeline({ cardId, comments, workflowId }: CardActiv
                       style={{
                         fontFamily: 'var(--font-inter), system-ui, sans-serif',
                         fontSize: '11px',
-                        color: 'var(--text-quaternary-500)',
+                        color: "var(--text-quaternary-500)",
                         marginTop: '2px',
                       }}
                     >
