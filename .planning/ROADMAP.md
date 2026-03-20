@@ -16,7 +16,7 @@ Migrate all medium-complexity (Wave B) and high-complexity (Wave C) pages in the
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Wave B Pages** - Migrate skills, costs, system, and analytics pages to UUI tokens
+- [x] **Phase 1: Wave B Pages** - Migrate skills, costs, system, and analytics pages to UUI tokens (completed 2026-03-20)
 - [ ] **Phase 2: Wave C Boards** - Migrate boards listing, board detail, and all board sub-components
 - [ ] **Phase 3: Wave C Agents + Office** - Migrate agents, board-groups, and office React chrome
 - [ ] **Phase 4: Animation Migration + Final Verification** - Replace motion imports in SmartAddModal and verify zero legacy tokens across all files
@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. The costs page chart containers use UUI tokens for layout and chrome — Recharts component internals remain as-is (allowlisted)
   3. The system page renders with no var(--*) inline styles and all interactive controls use @openclaw/ui components
   4. The analytics page chart wrappers use UUI tokens for layout — chart component internals remain as-is (allowlisted)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 01-01-PLAN.md — Migrate skills and analytics pages to UUI tokens
 - [ ] 01-02-PLAN.md — Migrate costs and system pages to UUI tokens
@@ -79,7 +79,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Wave B Pages | 1/2 | In Progress|  |
+| 1. Wave B Pages | 2/2 | Complete   | 2026-03-20 |
 | 2. Wave C Boards | 0/TBD | Not started | - |
 | 3. Wave C Agents + Office | 0/TBD | Not started | - |
 | 4. Animation Migration + Final Verification | 0/TBD | Not started | - |

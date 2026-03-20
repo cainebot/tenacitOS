@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-20T17:49:49.087Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-20T17:52:33Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 01 (Wave B Pages) — EXECUTING
-Plan: 1 of 2
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -46,7 +46,8 @@ Plan: 1 of 2
 - Trend: —
 
 *Updated after each plan completion*
-| Phase 01 P01 | 148 | 2 tasks | 2 files |
+| Phase 01 P01 | 148s | 2 tasks | 2 files |
+| Phase 01 P02 | 348s | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -59,6 +60,8 @@ Plan: 1 of 2
 - Allowlist: Office2D canvas, Recharts internals, Monaco internals — only React chrome migrates
 - [Phase 01]: StatusBadge uses colorClass/bgClass strings instead of inline style config — keeps token map in JS while rendering via Tailwind
 - [Phase 01]: SkillCard hover state uses Tailwind hover: modifier instead of JS onMouseEnter/onMouseLeave handlers
+- [Phase 01-02]: Dynamic color ternaries (budgetColor, cpuColor, ramColor, diskColor) converted to Tailwind class ternaries to eliminate all var(-- references outside Recharts allowlist
+- [Phase 01-02]: Logs modal terminal palette (#0d1117, #c9d1d9, #8b949e) preserved as non-token hardcoded colors — deliberate terminal aesthetic
 
 ### Pending Todos
 
@@ -71,6 +74,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T17:49:49.084Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-03-20T17:52:33Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None

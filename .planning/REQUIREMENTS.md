@@ -10,8 +10,8 @@ Requirements for M7 milestone. Each maps to roadmap phases.
 ### Wave B — Medium Pages
 
 - [x] **WAVB-01**: Skills page uses only UUI tokens and @openclaw/ui components — zero var(--*) inline styles
-- [ ] **WAVB-02**: Costs page uses only UUI tokens — chart containers migrated, Recharts internals allowlisted
-- [ ] **WAVB-03**: System page uses only UUI tokens and @openclaw/ui components — zero var(--*) inline styles
+- [x] **WAVB-02**: Costs page uses only UUI tokens — chart containers migrated, Recharts internals allowlisted
+- [x] **WAVB-03**: System page uses only UUI tokens and @openclaw/ui components — zero var(--*) inline styles
 - [x] **WAVB-04**: Analytics page uses only UUI tokens — chart wrapper containers migrated, chart component internals allowlisted
 
 ### Wave C — Complex Pages
@@ -53,8 +53,8 @@ Requirements for M7 milestone. Each maps to roadmap phases.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | WAVB-01 | Phase 1 | Complete |
-| WAVB-02 | Phase 1 | Pending |
-| WAVB-03 | Phase 1 | Pending |
+| WAVB-02 | Phase 1 | Complete |
+| WAVB-03 | Phase 1 | Complete |
 | WAVB-04 | Phase 1 | Complete |
 | WAVC-01 | Phase 2 | Pending |
 | WAVC-02 | Phase 2 | Pending |
