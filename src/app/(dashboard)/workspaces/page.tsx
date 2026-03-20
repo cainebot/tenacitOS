@@ -12,21 +12,21 @@ function getRamPercent(node: NodeRow): number {
 }
 
 function getRamBarColor(percent: number): string {
-  if (percent > 85) return 'var(--error, #FF453A)'
-  if (percent > 70) return 'var(--warning, #FFD60A)'
-  return 'var(--success, #32D74B)'
+  if (percent > 85) return 'var(--error-600)'
+  if (percent > 70) return 'var(--warning-600)'
+  return 'var(--success-600)'
 }
 
 function getCpuBarColor(percent: number): string {
-  if (percent > 90) return 'var(--error, #FF453A)'
-  if (percent > 70) return 'var(--warning, #FFD60A)'
-  return 'var(--success, #32D74B)'
+  if (percent > 90) return 'var(--error-600)'
+  if (percent > 70) return 'var(--warning-600)'
+  return 'var(--success-600)'
 }
 
 function statusColor(status: NodeStatus): string {
-  if (status === 'online') return 'var(--success, #32D74B)'
-  if (status === 'degraded') return 'var(--warning, #FFD60A)'
-  return 'var(--error, #FF453A)'
+  if (status === 'online') return 'var(--success-600)'
+  if (status === 'degraded') return 'var(--warning-600)'
+  return 'var(--error-600)'
 }
 
 function statusLabel(status: NodeStatus): string {
@@ -67,30 +67,13 @@ function NodeCard({ node, agentNames }: NodeCardProps) {
   const color = statusColor(node.status)
 
   return (
-    <div
-      style={{
-        background: 'var(--card, rgba(255,255,255,0.04))',
-        border: '1px solid var(--border, rgba(255,255,255,0.1))',
-        borderRadius: '12px',
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-      }}
-    >
+    <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl p-5 flex flex-col gap-4">
       {/* Header: node ID + status badge */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-          <Server size={18} color='var(--text-primary, #ffffff)' style={{ flexShrink: 0 }} />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Server size={18} color='var(--text-primary-900)' className="shrink-0" />
           <span
-            style={{
-              fontSize: '15px',
-              fontWeight: 700,
-              color: 'var(--text-primary, #ffffff)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
+            className="text-[15px] font-bold text-[var(--text-primary-900)] overflow-hidden text-ellipsis whitespace-nowrap"
             title={node.node_id}
           >
             {node.node_id}
@@ -98,110 +81,81 @@ function NodeCard({ node, agentNames }: NodeCardProps) {
         </div>
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-            padding: '3px 10px',
-            borderRadius: '999px',
             background: `${color}22`,
             border: `1px solid ${color}55`,
-            flexShrink: 0,
           }}
+          className="flex items-center gap-[5px] px-[10px] py-[3px] rounded-full shrink-0"
         >
           <StatusIcon status={node.status} />
-          <span style={{ fontSize: '12px', fontWeight: 600, color }}>{statusLabel(node.status)}</span>
+          <span style={{ color }} className="text-[12px] font-semibold">{statusLabel(node.status)}</span>
         </div>
       </div>
 
       {/* Tailscale IP */}
-      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary, rgba(255,255,255,0.4))' }}>
+      <p className="m-0 text-[12px] text-[var(--text-secondary-700)]">
         {node.tailscale_ip}:{node.gateway_port}
       </p>
 
       {/* RAM usage */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <HardDrive size={13} color='var(--text-secondary, rgba(255,255,255,0.5))' />
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary, rgba(255,255,255,0.5))' }}>RAM</span>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <HardDrive size={13} color='var(--text-secondary-700)' />
+            <span className="text-[12px] text-[var(--text-secondary-700)]">RAM</span>
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--text-primary, #ffffff)' }}>
+          <span className="text-[12px] text-[var(--text-primary-900)]">
             {node.ram_usage_mb} MB / {node.ram_total_mb} MB ({ramPercent}%)
           </span>
         </div>
-        <div
-          style={{
-            width: '100%',
-            height: '6px',
-            background: 'var(--border, rgba(255,255,255,0.1))',
-            borderRadius: '3px',
-            overflow: 'hidden',
-          }}
-        >
+        <div className="w-full h-[6px] bg-[var(--border-primary)] rounded-[3px] overflow-hidden">
           <div
             style={{
               width: `${ramPercent}%`,
-              height: '100%',
               background: barColor,
-              borderRadius: '3px',
               transition: 'width 0.4s ease',
             }}
+            className="h-full rounded-[3px]"
           />
         </div>
       </div>
 
       {/* CPU usage */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Cpu size={13} color='var(--text-secondary, rgba(255,255,255,0.5))' />
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary, rgba(255,255,255,0.5))' }}>CPU</span>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Cpu size={13} color='var(--text-secondary-700)' />
+            <span className="text-[12px] text-[var(--text-secondary-700)]">CPU</span>
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--text-primary, #ffffff)' }}>
+          <span className="text-[12px] text-[var(--text-primary-900)]">
             {cpuPercent}%
           </span>
         </div>
-        <div
-          style={{
-            width: '100%',
-            height: '6px',
-            background: 'var(--border, rgba(255,255,255,0.1))',
-            borderRadius: '3px',
-            overflow: 'hidden',
-          }}
-        >
+        <div className="w-full h-[6px] bg-[var(--border-primary)] rounded-[3px] overflow-hidden">
           <div
             style={{
               width: `${cpuPercent}%`,
-              height: '100%',
               background: cpuBarColor,
-              borderRadius: '3px',
               transition: 'width 0.4s ease',
             }}
+            className="h-full rounded-[3px]"
           />
         </div>
       </div>
 
       {/* Agents */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Users size={13} color='var(--text-secondary, rgba(255,255,255,0.5))' />
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary, rgba(255,255,255,0.5))' }}>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <Users size={13} color='var(--text-secondary-700)' />
+          <span className="text-[12px] text-[var(--text-secondary-700)]">
             {node.agent_count} agent{node.agent_count !== 1 ? 's' : ''}
           </span>
         </div>
         {agentNames.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+          <div className="flex flex-wrap gap-1">
             {agentNames.map((name) => (
               <span
                 key={name}
-                style={{
-                  fontSize: '11px',
-                  padding: '2px 8px',
-                  background: 'var(--border, rgba(255,255,255,0.08))',
-                  borderRadius: '4px',
-                  color: 'var(--text-primary, rgba(255,255,255,0.8))',
-                }}
+                className="text-[11px] px-2 py-0.5 bg-[var(--border-primary)] rounded text-[var(--text-primary-900)]"
               >
                 {name}
               </span>
@@ -211,9 +165,9 @@ function NodeCard({ node, agentNames }: NodeCardProps) {
       </div>
 
       {/* Last heartbeat */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <Clock size={13} color='var(--text-secondary, rgba(255,255,255,0.5))' />
-        <span style={{ fontSize: '12px', color: 'var(--text-secondary, rgba(255,255,255,0.4))' }}>
+      <div className="flex items-center gap-1.5">
+        <Clock size={13} color='var(--text-secondary-700)' />
+        <span className="text-[12px] text-[var(--text-secondary-700)]">
           Last heartbeat: {relativeTime(node.last_heartbeat)}
         </span>
       </div>
@@ -232,23 +186,11 @@ interface SummaryStatProps {
 
 function SummaryStat({ label, value }: SummaryStatProps) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '4px',
-        padding: '12px 20px',
-        background: 'var(--card, rgba(255,255,255,0.04))',
-        border: '1px solid var(--border, rgba(255,255,255,0.1))',
-        borderRadius: '10px',
-        minWidth: '80px',
-      }}
-    >
-      <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary, #ffffff)' }}>
+    <div className="flex flex-col items-center gap-1 px-5 py-3 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[10px] min-w-[80px]">
+      <span className="text-[22px] font-bold text-[var(--text-primary-900)]">
         {value}
       </span>
-      <span style={{ fontSize: '11px', color: 'var(--text-secondary, rgba(255,255,255,0.4))', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <span className="text-[11px] text-[var(--text-secondary-700)] uppercase tracking-[0.06em]">
         {label}
       </span>
     </div>
@@ -268,50 +210,22 @@ export default function NodesPage() {
   const totalAgents = nodes.reduce((sum, n) => sum + (n.agent_count ?? 0), 0)
 
   return (
-    <div style={{ maxWidth: '1400px' }}>
+    <div className="max-w-[1400px]">
       {/* Disconnection banner */}
       {isDisconnected && (
-        <div
-          style={{
-            marginBottom: '20px',
-            padding: '10px 16px',
-            background: 'rgba(255, 214, 10, 0.1)',
-            border: '1px solid var(--warning, #FFD60A)',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: 'var(--warning, #FFD60A)',
-            fontSize: '13px',
-          }}
-        >
+        <div className="mb-5 px-4 py-[10px] bg-[var(--warning-600)]/10 border border-[var(--warning-600)] rounded-lg flex items-center gap-2 text-[var(--warning-600)] text-[13px]">
           <WifiOff size={16} />
           Connection lost — showing stale data. Attempting to reconnect…
         </div>
       )}
 
       {/* Page header */}
-      <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <h1
-          style={{
-            margin: 0,
-            fontSize: '26px',
-            fontWeight: 700,
-            color: 'var(--text-primary, #ffffff)',
-          }}
-        >
+      <div className="mb-7 flex items-center gap-3">
+        <h1 className="m-0 text-[26px] font-bold text-[var(--text-primary-900)]">
           Workspaces
         </h1>
         {!nodesLoading && (
-          <span
-            style={{
-              fontSize: '13px',
-              padding: '3px 10px',
-              background: 'var(--border, rgba(255,255,255,0.08))',
-              borderRadius: '999px',
-              color: 'var(--text-secondary, rgba(255,255,255,0.5))',
-            }}
-          >
+          <span className="text-[13px] px-[10px] py-[3px] bg-[var(--border-primary)] rounded-full text-[var(--text-secondary-700)]">
             {nodes.length} registered
           </span>
         )}
@@ -319,14 +233,7 @@ export default function NodesPage() {
 
       {/* Aggregate summary strip */}
       {!nodesLoading && nodes.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '12px',
-            marginBottom: '24px',
-          }}
-        >
+        <div className="flex flex-wrap gap-3 mb-6">
           <SummaryStat label="Nodes" value={totalNodes} />
           <SummaryStat label="Online" value={onlineNodes} />
           <SummaryStat label="Agents" value={totalAgents} />
@@ -346,13 +253,7 @@ export default function NodesPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              style={{
-                height: '220px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid var(--border, rgba(255,255,255,0.1))',
-                borderRadius: '12px',
-                animation: 'pulse 1.5s ease-in-out infinite',
-              }}
+              className="h-[220px] bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl animate-pulse"
             />
           ))}
         </div>
@@ -360,17 +261,11 @@ export default function NodesPage() {
 
       {/* Empty state */}
       {!nodesLoading && nodes.length === 0 && (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '64px 24px',
-            color: 'var(--text-secondary, rgba(255,255,255,0.4))',
-          }}
-        >
+        <div className="text-center px-6 py-16 text-[var(--text-secondary-700)]">
           <Server size={48} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
-          <p style={{ margin: '0 0 8px', fontSize: '16px', fontWeight: 600 }}>No nodes registered yet</p>
-          <p style={{ margin: 0, fontSize: '13px' }}>
-            Run <code style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px' }}>register-node.sh</code> on a machine to get started.
+          <p className="m-0 mb-2 text-base font-semibold">No nodes registered yet</p>
+          <p className="m-0 text-[13px]">
+            Run <code className="px-1.5 py-0.5 bg-[var(--border-primary)] rounded">register-node.sh</code> on a machine to get started.
           </p>
         </div>
       )}
