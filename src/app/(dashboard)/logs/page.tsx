@@ -108,7 +108,7 @@ export default function LogsPage() {
     : lines;
 
   return (
-    <div className="flex flex-col h-full gap-0">
+    <div className="flex flex-col h-full gap-0 bg-[var(--bg-primary)]">
       {/* Header */}
       <div className="px-6 pt-6 pb-4">
         <h1 className="font-[family-name:var(--font-display)] text-[1.75rem] font-bold text-[var(--text-primary-900)] mb-1">
