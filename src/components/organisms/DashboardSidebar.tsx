@@ -24,7 +24,7 @@ import {
 
 import { BrandMark } from "@/components/atoms/BrandMark";
 import NodeStatusStrip from "@/components/NodeStatusStrip";
-import { cn } from "@/lib/cn";
+import { cx } from "@openclaw/ui";
 
 interface NavItem {
   label: string;
@@ -218,7 +218,7 @@ export function DashboardSidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={cn("nav-item", active && "active")}
+                    className={cx("nav-item", active && "active")}
                     title={collapsed ? item.label : undefined}
                     style={collapsed ? {
                       display: 'flex',
@@ -247,7 +247,7 @@ export function DashboardSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={cn("nav-item", active && "active")}
+                className={cx("nav-item", active && "active")}
                 title={collapsed ? item.label : undefined}
                 style={collapsed ? {
                   display: 'flex',

@@ -1,38 +1,15 @@
 'use client'
 
-import { cva } from 'class-variance-authority'
-import { cn } from '@/lib/cn'
+import { cx } from '@openclaw/ui'
 import type { Priority } from '@/types/workflow'
 import { useState } from 'react'
 
-// CVA handles structural/layout classes; rgba colors applied via inline style
-const priorityBadge = cva(
-  [
-    'inline-flex',
-    'items-center',
-    'rounded-full',
-    'font-bold',
-    'uppercase',
-    'select-none',
-  ],
-  {
-    variants: {
-      priority: {
-        critica: [],
-        alta: [],
-        media: [],
-        baja: [],
-      },
-      size: {
-        sm: ['text-[10px]', 'px-2', 'py-1', 'leading-none', 'tracking-[0.8px]'],
-        md: ['text-[12px]', 'px-2', 'py-1', 'leading-none', 'tracking-[0.8px]'],
-      },
-    },
-    defaultVariants: {
-      size: 'sm',
-    },
-  }
-)
+const BASE_CLASSES = 'inline-flex items-center rounded-full font-bold uppercase select-none'
+
+const SIZE_CLASSES: Record<string, string> = {
+  sm: 'text-[10px] px-2 py-1 leading-none tracking-[0.8px]',
+  md: 'text-[12px] px-2 py-1 leading-none tracking-[0.8px]',
+}
 
 const PRIORITY_COLORS: Record<Priority, { bg: string; color: string }> = {
   critica: { bg: 'rgba(239, 68, 68, 0.12)', color: '#ef4444' },
@@ -102,7 +79,7 @@ export function PriorityBadge({
 
   return (
     <span
-      className={cn(priorityBadge({ priority, size }), className)}
+      className={cx(BASE_CLASSES, SIZE_CLASSES[size], className)}
       style={{
         background: bg,
         color: color,

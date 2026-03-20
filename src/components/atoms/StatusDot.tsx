@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/cn";
+import { cx } from "@openclaw/ui";
 
 const AGENT_STATUS_COLORS: Record<string, string> = {
   working: 'var(--positive)',
@@ -39,7 +39,7 @@ export function StatusDot({ status, variant = 'agent', className }: StatusDotPro
 
   return (
     <span
-      className={cn("inline-block rounded-full shrink-0", className)}
+      className={cx("inline-block rounded-full shrink-0", className)}
       style={{
         width: size,
         height: size,

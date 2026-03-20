@@ -5,7 +5,7 @@ import { Building2, Plus, Edit2, Trash2, Users, X, Check, Search, LayoutGrid, Sh
 import { useRealtimeDepartments } from '@/hooks/useRealtimeDepartments'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import type { DepartmentRow } from '@/types/supabase'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@openclaw/ui'
 
 // Map icon name strings from DB to actual lucide-react components
 const ICON_MAP: Record<string, ComponentType<LucideProps>> = {
@@ -336,7 +336,7 @@ export default function OrganizationPage() {
                 >
                   Organization
                 </h1>
-                <Badge variant="outline" className="flex items-center gap-2">
+                <Badge variant="gray" className="flex items-center gap-2">
                   <Building2 className="h-3.5 w-3.5" />
                   The Digital Circus
                 </Badge>

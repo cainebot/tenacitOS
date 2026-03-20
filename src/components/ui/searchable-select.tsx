@@ -1,9 +1,9 @@
 "use client";
 
+import { cx } from "@openclaw/ui";
 import DropdownSelect, {
   type DropdownSelectOption,
 } from "@/components/ui/dropdown-select";
-import { cn } from "@/lib/cn";
 
 export type SearchableSelectOption = DropdownSelectOption;
 
@@ -27,7 +27,7 @@ const baseTriggerClassName =
 const baseContentClassName =
   "rounded-xl border border-[var(--border)] bg-[var(--surface)]";
 const baseItemClassName =
-  "px-4 py-3 text-sm text-[var(--text-primary)] transition-colors data-[selected=true]:bg-[var(--surface-hover)] data-[selected=true]:font-semibold hover:bg-[var(--surface-hover)]";
+  "px-4 py-3 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-hover)] focused:bg-[var(--surface-hover)] selected:font-semibold";
 
 export default function SearchableSelect({
   value,
@@ -51,9 +51,9 @@ export default function SearchableSelect({
       placeholder={placeholder}
       ariaLabel={ariaLabel}
       disabled={disabled}
-      triggerClassName={cn(baseTriggerClassName, triggerClassName)}
-      contentClassName={cn(baseContentClassName, contentClassName)}
-      itemClassName={cn(baseItemClassName, itemClassName)}
+      triggerClassName={cx(baseTriggerClassName, triggerClassName)}
+      contentClassName={cx(baseContentClassName, contentClassName)}
+      itemClassName={cx(baseItemClassName, itemClassName)}
       searchEnabled={searchEnabled}
       searchPlaceholder={searchPlaceholder}
       emptyMessage={emptyMessage}
