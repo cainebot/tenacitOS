@@ -70,14 +70,13 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
         <div>
-          <h1 
-            className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 flex items-center gap-2 md:gap-3"
-            style={{ color: "var(--text-primary)", fontFamily: "var(--font-heading)" }}
+          <h1
+            className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 flex items-center gap-2 md:gap-3 text-[var(--text-primary-900)] font-[family-name:var(--font-display)]"
           >
-            <Settings className="w-6 h-6 md:w-8 md:h-8" style={{ color: "var(--accent)" }} />
+            <Settings className="w-6 h-6 md:w-8 md:h-8 text-[var(--brand-600)]" />
             Settings
           </h1>
-          <p className="text-sm md:text-base" style={{ color: "var(--text-secondary)" }}>
+          <p className="text-sm md:text-base text-[var(--text-secondary-700)]">
             System status, integrations, and configuration
           </p>
         </div>
@@ -85,12 +84,7 @@ export default function SettingsPage() {
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 w-full sm:w-auto"
-          style={{ 
-            backgroundColor: "var(--card)", 
-            color: "var(--text-secondary)",
-            border: "1px solid var(--border)"
-          }}
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 w-full sm:w-auto bg-[var(--bg-secondary)] text-[var(--text-secondary-700)] border border-[var(--border-primary)]"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
@@ -99,7 +93,7 @@ export default function SettingsPage() {
 
       {/* Last Refresh Time */}
       {lastRefresh && (
-        <div className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
+        <div className="text-sm mb-6 text-[var(--text-quaternary-500)]">
           Last updated: {lastRefresh.toLocaleTimeString()}
         </div>
       )}
@@ -123,14 +117,10 @@ export default function SettingsPage() {
       </div>
 
       {/* Footer Info */}
-      <div 
-        className="mt-6 md:mt-8 p-3 md:p-4 rounded-xl"
-        style={{ 
-          backgroundColor: "rgba(26, 26, 26, 0.5)", 
-          border: "1px solid var(--border)" 
-        }}
+      <div
+        className="mt-6 md:mt-8 p-3 md:p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-primary)]"
       >
-        <div className="flex items-center justify-between text-sm" style={{ color: "var(--text-muted)" }}>
+        <div className="flex items-center justify-between text-sm text-[var(--text-quaternary-500)]">
           <span>Mission Control v1.0.0</span>
           <span>OpenClaw Agent Dashboard</span>
         </div>
