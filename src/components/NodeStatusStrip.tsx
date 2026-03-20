@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRealtimeStatus } from '@/components/RealtimeProvider'
 import type { NodeRow, NodeStatus } from '@/types/supabase'
+import { cx } from '@openclaw/ui'
 
 // ---------- Notification types ----------
 
@@ -21,80 +22,51 @@ function getRamPercent(node: NodeRow): number {
 }
 
 function getRamBarColor(percent: number): string {
-  if (percent > 85) return 'var(--error, #FF453A)'
-  if (percent > 70) return 'var(--warning, #FFD60A)'
-  return 'var(--success, #32D74B)'
+  if (percent > 85) return 'bg-[var(--error-600)]'
+  if (percent > 70) return 'bg-[var(--warning-600)]'
+  return 'bg-[var(--success-600)]'
+}
+
+function statusDotColor(status: NodeStatus): string {
+  if (status === 'online') return 'bg-[var(--success-600)]'
+  if (status === 'degraded') return 'bg-[var(--warning-600)]'
+  return 'bg-[var(--error-600)]'
 }
 
 function StatusIcon({ status }: { status: NodeStatus }) {
   if (status === 'online') {
     return (
-      <span style={{ color: 'var(--success, #32D74B)', fontSize: '10px', fontWeight: 700 }}>
+      <span className="text-[10px] font-bold text-[var(--success-600)]">
         ✓
       </span>
     )
   }
   if (status === 'degraded') {
     return (
-      <span style={{ color: 'var(--warning, #FFD60A)', fontSize: '10px', fontWeight: 700 }}>
+      <span className="text-[10px] font-bold text-[var(--warning-600)]">
         ⚠
       </span>
     )
   }
   return (
-    <span style={{ color: 'var(--error, #FF453A)', fontSize: '10px', fontWeight: 700 }}>
+    <span className="text-[10px] font-bold text-[var(--error-600)]">
       ✕
     </span>
   )
 }
 
-function statusDotColor(status: NodeStatus): string {
-  if (status === 'online') return 'var(--success, #32D74B)'
-  if (status === 'degraded') return 'var(--warning, #FFD60A)'
-  return 'var(--error, #FF453A)'
-}
-
 function NodeCard({ node }: { node: NodeRow }) {
   const ramPercent = getRamPercent(node)
-  const barColor = getRamBarColor(ramPercent)
   const shortId = node.node_id.length > 12 ? node.node_id.slice(0, 12) + '…' : node.node_id
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-        padding: '6px 10px',
-        background: 'var(--card, rgba(255,255,255,0.05))',
-        border: '1px solid var(--border, rgba(255,255,255,0.1))',
-        borderRadius: '6px',
-        minWidth: '120px',
-        flexShrink: 0,
-      }}
-    >
+    <div className="flex flex-col gap-1 px-2.5 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md min-w-[120px] shrink-0">
       {/* Node ID + status */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span
-          style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: statusDotColor(node.status),
-            flexShrink: 0,
-            display: 'inline-block',
-          }}
-        />
+      <div className="flex items-center gap-1.5">
+        <span className={cx("inline-block w-2 h-2 rounded-full shrink-0", statusDotColor(node.status))} />
         <StatusIcon status={node.status} />
         <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 600,
-            color: 'var(--text-primary, #ffffff)',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+          className="text-[11px] font-semibold text-[var(--text-primary-900)] overflow-hidden text-ellipsis whitespace-nowrap"
           title={node.node_id}
         >
           {shortId}
@@ -102,40 +74,19 @@ function NodeCard({ node }: { node: NodeRow }) {
       </div>
 
       {/* RAM bar */}
-      <div
-        style={{
-          width: '100%',
-          height: '3px',
-          background: 'var(--border, rgba(255,255,255,0.15))',
-          borderRadius: '2px',
-          overflow: 'hidden',
-        }}
-      >
+      <div className="w-full h-[3px] bg-[var(--border-primary)] rounded-sm overflow-hidden">
         <div
-          style={{
-            width: `${ramPercent}%`,
-            height: '100%',
-            background: barColor,
-            borderRadius: '2px',
-            transition: 'width 0.4s ease',
-          }}
+          className={cx("h-full rounded-sm transition-[width] duration-[400ms] ease-in-out", getRamBarColor(ramPercent))}
+          style={{ width: `${ramPercent}%` }}
         />
       </div>
 
       {/* Agent count */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '10px', color: 'var(--text-secondary, rgba(255,255,255,0.5))' }}>
+      <div className="flex justify-between items-center">
+        <span className="text-[10px] text-[var(--text-secondary-700)]">
           {ramPercent}% RAM
         </span>
-        <span
-          style={{
-            fontSize: '10px',
-            background: 'var(--border, rgba(255,255,255,0.1))',
-            borderRadius: '4px',
-            padding: '1px 5px',
-            color: 'var(--text-primary, #ffffff)',
-          }}
-        >
+        <span className="text-[10px] bg-[var(--border-primary)] rounded px-1.5 py-px text-[var(--text-primary-900)]">
           {node.agent_count} agent{node.agent_count !== 1 ? 's' : ''}
         </span>
       </div>
@@ -145,46 +96,10 @@ function NodeCard({ node }: { node: NodeRow }) {
 
 function SkeletonCard() {
   return (
-    <div
-      style={{
-        padding: '6px 10px',
-        background: 'var(--card, rgba(255,255,255,0.05))',
-        border: '1px solid var(--border, rgba(255,255,255,0.1))',
-        borderRadius: '6px',
-        minWidth: '120px',
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px',
-      }}
-    >
-      <div
-        style={{
-          height: '12px',
-          width: '80%',
-          background: 'rgba(255,255,255,0.08)',
-          borderRadius: '3px',
-          animation: 'pulse 1.5s ease-in-out infinite',
-        }}
-      />
-      <div
-        style={{
-          height: '3px',
-          width: '100%',
-          background: 'rgba(255,255,255,0.08)',
-          borderRadius: '2px',
-          animation: 'pulse 1.5s ease-in-out infinite',
-        }}
-      />
-      <div
-        style={{
-          height: '10px',
-          width: '60%',
-          background: 'rgba(255,255,255,0.08)',
-          borderRadius: '3px',
-          animation: 'pulse 1.5s ease-in-out infinite',
-        }}
-      />
+    <div className="flex flex-col gap-1.5 px-2.5 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-md min-w-[120px] shrink-0">
+      <div className="h-3 w-4/5 bg-white/[0.08] rounded animate-pulse" />
+      <div className="h-[3px] w-full bg-white/[0.08] rounded-sm animate-pulse" />
+      <div className="h-2.5 w-3/5 bg-white/[0.08] rounded animate-pulse" />
     </div>
   )
 }
@@ -240,46 +155,23 @@ export default function NodeStatusStrip() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+    <div className="flex flex-col gap-1">
       {/* Disconnection banner */}
       {isDisconnected && (
-        <div
-          style={{
-            background: 'rgba(255, 214, 10, 0.15)',
-            border: '1px solid var(--warning, #FFD60A)',
-            borderRadius: '4px',
-            padding: '4px 10px',
-            fontSize: '11px',
-            color: 'var(--warning, #FFD60A)',
-            textAlign: 'center',
-          }}
-        >
+        <div className="bg-[var(--warning-600)]/15 border border-[var(--warning-600)] rounded px-2.5 py-1 text-[11px] text-[var(--warning-600)] text-center">
           Connection lost — data may be stale
         </div>
       )}
 
       {/* Node cards strip */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '8px',
-          overflowX: 'auto',
-          paddingBottom: '2px',
-        }}
-      >
+      <div className="flex gap-2 overflow-x-auto pb-0.5">
         {nodesLoading ? (
           <>
             <SkeletonCard />
             <SkeletonCard />
           </>
         ) : nodes.length === 0 ? (
-          <span
-            style={{
-              fontSize: '11px',
-              color: 'var(--text-secondary, rgba(255,255,255,0.4))',
-              padding: '6px 0',
-            }}
-          >
+          <span className="text-[11px] text-[var(--text-secondary-700)] py-1.5">
             No nodes registered
           </span>
         ) : (
@@ -289,43 +181,21 @@ export default function NodeStatusStrip() {
 
       {/* Node transition notifications */}
       {notifications.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+        <div className="flex flex-col gap-1 mt-1">
           {notifications.map((notif) => (
             <div
               key={notif.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '8px',
-                padding: '5px 10px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontWeight: 500,
-                background: notif.type === 'offline'
-                  ? 'rgba(255, 69, 58, 0.12)'
-                  : 'rgba(50, 215, 75, 0.12)',
-                border: `1px solid ${notif.type === 'offline' ? 'var(--error, #FF453A)' : 'var(--success, #32D74B)'}`,
-                color: notif.type === 'offline'
-                  ? 'var(--error, #FF453A)'
-                  : 'var(--success, #32D74B)',
-                animation: 'fadeIn 0.2s ease',
-              }}
+              className={cx(
+                "flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-[11px] font-medium animate-[fadeIn_0.2s_ease]",
+                notif.type === 'offline'
+                  ? "bg-[var(--error-600)]/[0.12] border border-[var(--error-600)] text-[var(--error-600)]"
+                  : "bg-[var(--success-600)]/[0.12] border border-[var(--success-600)] text-[var(--success-600)]"
+              )}
             >
               <span>{notif.message}</span>
               <button
                 onClick={() => dismissNotification(notif.id)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'inherit',
-                  fontSize: '12px',
-                  lineHeight: 1,
-                  padding: '0 2px',
-                  opacity: 0.7,
-                  flexShrink: 0,
-                }}
+                className="bg-transparent border-none cursor-pointer text-inherit text-xs leading-none px-0.5 opacity-70 shrink-0"
                 aria-label="Dismiss"
               >
                 &#x2715;
