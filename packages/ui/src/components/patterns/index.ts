@@ -11,3 +11,4 @@ export { Timeline, TimelineItem, type TimelineProps, type TimelineItemProps } fr
 export { TableActions, type TableActionsProps, type TableAction } from "./TableActions"
 export { PageHeader, type PageHeaderProps, type BreadcrumbItem } from "./PageHeader"
 export { OCEmptyState, type OCEmptyStateProps } from "./OCEmptyState"
+export { ConfirmActionDialog } from "./ConfirmActionDialog"
