@@ -30,7 +30,7 @@ const ACTIONS: QuickAction[] = [
     label: "Check Heartbeat",
     description: "Verify all services are up and the site is reachable",
     icon: Heart,
-    color: "var(--success)",
+    color: "var(--success-600)",
   },
   {
     id: "git-status",
@@ -51,7 +51,7 @@ const ACTIONS: QuickAction[] = [
     label: "Restart Gateway",
     description: "Restart the OpenClaw gateway service",
     icon: RotateCcw,
-    color: "var(--warning, #f59e0b)",
+    color: "var(--warning-600)",
     dangerous: true,
   },
   {
@@ -59,7 +59,7 @@ const ACTIONS: QuickAction[] = [
     label: "Clear Temp Files",
     description: "Remove temporary files and trim large PM2 logs",
     icon: Trash2,
-    color: "var(--error)",
+    color: "var(--error-600)",
     dangerous: true,
   },
   {
@@ -117,12 +117,11 @@ export default function ActionsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1
-          className="text-3xl font-bold mb-2"
-          style={{ fontFamily: "var(--font-heading)", color: "var(--text-primary)" }}
+          className="text-3xl font-bold mb-2 font-[family-name:var(--font-display)] text-[var(--text-primary-900)]"
         >
           Quick Actions Hub
         </h1>
-        <p style={{ color: "var(--text-secondary)" }}>
+        <p className="text-[var(--text-secondary-700)]">
           Run common maintenance and diagnostic tasks with one click
         </p>
       </div>
@@ -137,10 +136,9 @@ export default function ActionsPage() {
           return (
             <div
               key={action.id}
-              className="p-5 rounded-xl"
+              className="p-5 rounded-xl bg-[var(--bg-secondary)]"
               style={{
-                backgroundColor: "var(--card)",
-                border: `1px solid ${result ? (result.status === "success" ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)") : "var(--border)"}`,
+                border: `1px solid ${result ? (result.status === "success" ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)") : "var(--border-primary)"}`,
                 transition: "border-color 0.3s",
               }}
             >
@@ -153,10 +151,10 @@ export default function ActionsPage() {
                   <Icon className="w-5 h-5" style={{ color: action.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+                  <h3 className="font-semibold text-sm text-[var(--text-primary-900)]">
                     {action.label}
                   </h3>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  <p className="text-xs mt-0.5 text-[var(--text-quaternary-500)]">
                     {action.description}
                   </p>
                 </div>
@@ -168,7 +166,7 @@ export default function ActionsPage() {
                   className="flex items-center gap-2 mb-3 p-2 rounded-lg text-xs cursor-pointer"
                   style={{
                     backgroundColor: result.status === "success" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
-                    color: result.status === "success" ? "var(--success)" : "var(--error)",
+                    color: result.status === "success" ? "var(--success-600)" : "var(--error-600)",
                   }}
                   onClick={() => setSelectedResult(result)}
                 >
@@ -181,7 +179,7 @@ export default function ActionsPage() {
                     {result.status === "success" ? "Success" : "Failed"} · {result.duration_ms}ms
                   </span>
                   <Clock className="w-3 h-3 flex-shrink-0" />
-                  <span style={{ color: "var(--text-muted)" }}>
+                  <span className="text-[var(--text-quaternary-500)]">
                     {format(new Date(result.timestamp), "HH:mm")}
                   </span>
                 </div>
@@ -229,13 +227,13 @@ export default function ActionsPage() {
 
       {/* Recent Results */}
       {Object.keys(results).length > 0 && (
-        <div className="rounded-xl" style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}>
-          <div className="p-4 border-b" style={{ borderColor: "var(--border)" }}>
-            <h2 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+        <div className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-primary)]">
+          <div className="p-4 border-b border-[var(--border-primary)]">
+            <h2 className="text-sm font-semibold text-[var(--text-primary-900)]">
               Recent Results
             </h2>
           </div>
-          <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+          <div className="divide-y divide-[var(--border-primary)]">
             {Object.values(results)
               .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
               .map((result) => {
@@ -244,11 +242,8 @@ export default function ActionsPage() {
                 return (
                   <div
                     key={result.action}
-                    className="flex items-center gap-3 p-3 cursor-pointer transition-colors"
-                    style={{ borderBottom: "1px solid var(--border)" }}
+                    className="flex items-center gap-3 p-3 cursor-pointer transition-colors hover:bg-[var(--bg-tertiary)]"
                     onClick={() => setSelectedResult(result)}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--card-elevated)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                   >
                     <div style={{
                       width: "1.75rem", height: "1.75rem", borderRadius: "0.375rem",
@@ -259,24 +254,24 @@ export default function ActionsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                        <span className="text-sm font-medium text-[var(--text-primary-900)]">
                           {action?.label || result.action}
                         </span>
                         <span
                           className="px-1.5 py-0.5 rounded text-xs"
                           style={{
                             backgroundColor: result.status === "success" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
-                            color: result.status === "success" ? "var(--success)" : "var(--error)",
+                            color: result.status === "success" ? "var(--success-600)" : "var(--error-600)",
                           }}
                         >
                           {result.status}
                         </span>
                       </div>
-                      <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+                      <div className="text-xs text-[var(--text-quaternary-500)]">
                         {result.duration_ms}ms · {format(new Date(result.timestamp), "HH:mm:ss")}
                       </div>
                     </div>
-                    <Terminal className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
+                    <Terminal className="w-3.5 h-3.5 flex-shrink-0 text-[var(--text-quaternary-500)]" />
                   </div>
                 );
               })}
@@ -292,28 +287,23 @@ export default function ActionsPage() {
           display: "flex", alignItems: "center", justifyContent: "center",
           padding: "1rem",
         }}>
-          <div style={{
-            backgroundColor: "var(--card)",
-            borderRadius: "1rem", padding: "2rem",
-            maxWidth: "400px", width: "100%",
-            border: "1px solid var(--border)",
-          }}>
-            <h3 style={{ color: "var(--text-primary)", marginBottom: "0.75rem", fontWeight: 600 }}>
+          <div className="bg-[var(--bg-secondary)] rounded-2xl p-8 max-w-[400px] w-full border border-[var(--border-primary)]">
+            <h3 className="text-[var(--text-primary-900)] mb-3 font-semibold">
               ⚠️ Confirm: {confirmAction.label}
             </h3>
-            <p style={{ color: "var(--text-secondary)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+            <p className="text-[var(--text-secondary-700)] mb-6 text-[0.9rem]">
               This action may affect running services. Are you sure?
             </p>
-            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+            <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setConfirmAction(null)}
-                style={{ padding: "0.5rem 1rem", borderRadius: "0.5rem", background: "var(--card-elevated)", color: "var(--text-secondary)", border: "none", cursor: "pointer" }}
+                className="px-4 py-2 rounded-lg bg-[var(--bg-tertiary)] text-[var(--text-secondary-700)] border-none cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={() => executeAction(confirmAction)}
-                style={{ padding: "0.5rem 1rem", borderRadius: "0.5rem", background: "var(--error, #ef4444)", color: "#fff", border: "none", cursor: "pointer", fontWeight: 600 }}
+                className="px-4 py-2 rounded-lg bg-[var(--error-600)] text-white border-none cursor-pointer font-semibold"
               >
                 Run Anyway
               </button>
@@ -333,7 +323,7 @@ export default function ActionsPage() {
           <div style={{
             width: "95vw", maxWidth: "800px", height: "75vh",
             backgroundColor: "#0d1117",
-            borderRadius: "1rem", border: "1px solid var(--border)",
+            borderRadius: "1rem", border: "1px solid var(--border-primary)",
             display: "flex", flexDirection: "column",
             overflow: "hidden",
           }}>
@@ -343,7 +333,7 @@ export default function ActionsPage() {
               borderBottom: "1px solid #30363d",
               flexShrink: 0,
             }}>
-              <Terminal className="w-4 h-4" style={{ color: selectedResult.status === "success" ? "var(--success)" : "var(--error)" }} />
+              <Terminal className="w-4 h-4" style={{ color: selectedResult.status === "success" ? "var(--success-600)" : "var(--error-600)" }} />
               <span style={{ color: "#c9d1d9", fontFamily: "monospace", fontSize: "0.9rem", flex: 1 }}>
                 {ACTIONS.find((a) => a.id === selectedResult.action)?.label || selectedResult.action}
               </span>
