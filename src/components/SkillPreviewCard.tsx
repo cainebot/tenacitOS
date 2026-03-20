@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Badge, Button, Popover } from '@openclaw/ui';
 import type { SkillDraft } from '@/types/supabase';
 
 const EMOJI_OPTIONS = ['🔧','🛠️','⚙️','🧰','💻','🖥️','📦','🔌','🤖','🧠','📊','🔍','🚀','✨','🎯','📝','🔐','🌐','📁','⚡','🎨','🧪','📈','🔗','💡','🗂️','🏗️','📡','🧩','💬','🔔','🛡️','📋','🎮','🏷️','📐','🔥','💾','🗃️','🪝'];
@@ -28,11 +26,11 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
       case 'local':
         return <Badge variant="default">Local</Badge>;
       case 'github':
-        return <Badge variant="accent">GitHub</Badge>;
+        return <Badge variant="brand">GitHub</Badge>;
       case 'skills_sh':
         return <Badge variant="success">skills.sh</Badge>;
       default:
-        return <Badge variant="outline">Unknown</Badge>;
+        return <Badge variant="gray">Unknown</Badge>;
     }
   }
 
@@ -87,8 +85,10 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
       {/* Header row: icon + name + description */}
       <div style={{ display: 'flex', flexDirection: 'row', gap: '12px', alignItems: 'flex-start' }}>
         {/* Emoji picker */}
-        <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
-          <PopoverTrigger asChild>
+        <Popover
+          isOpen={emojiOpen}
+          onOpenChange={setEmojiOpen}
+          trigger={
             <button
               type="button"
               style={{
@@ -108,27 +108,26 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
             >
               {draft.icon ?? '🔧'}
             </button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-auto p-2">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '4px' }}>
-              {EMOJI_OPTIONS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => { onDraftChange({ ...draft, icon: emoji }); setEmojiOpen(false); }}
-                  style={{
-                    fontSize: '22px', padding: '6px', borderRadius: '6px', border: 'none',
-                    backgroundColor: draft.icon === emoji ? 'var(--surface-elevated)' : 'transparent',
-                    cursor: 'pointer', transition: 'background-color 100ms',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-elevated)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = draft.icon === emoji ? 'var(--surface-elevated)' : 'transparent'; }}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </PopoverContent>
+          }
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '4px' }}>
+            {EMOJI_OPTIONS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => { onDraftChange({ ...draft, icon: emoji }); setEmojiOpen(false); }}
+                style={{
+                  fontSize: '22px', padding: '6px', borderRadius: '6px', border: 'none',
+                  backgroundColor: draft.icon === emoji ? 'var(--surface-elevated)' : 'transparent',
+                  cursor: 'pointer', transition: 'background-color 100ms',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--surface-elevated)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = draft.icon === emoji ? 'var(--surface-elevated)' : 'transparent'; }}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
         </Popover>
 
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
@@ -206,11 +205,11 @@ function SkillPreviewCard({ draft, onDraftChange, onConfirm, onCancel, confirmin
       {onConfirm && (
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           {onCancel && (
-            <Button variant="outline" onClick={onCancel} disabled={confirming} className="h-12 px-6">
+            <Button variant="outline" onPress={onCancel} isDisabled={confirming} className="h-12 px-6">
               Cancelar
             </Button>
           )}
-          <Button variant="primary" onClick={onConfirm} disabled={confirming} className="h-12 px-6">
+          <Button variant="primary" onPress={onConfirm} isDisabled={confirming} className="h-12 px-6">
             {confirming ? 'Registrando...' : 'Confirm & Register'}
           </Button>
         </div>

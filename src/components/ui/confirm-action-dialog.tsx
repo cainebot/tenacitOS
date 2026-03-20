@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 
-import { Button, type ButtonProps } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Button,
+  type ButtonVariant,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  cx,
+} from "@openclaw/ui";
 
 type ConfirmActionDialogProps = {
   open: boolean;
@@ -21,7 +21,7 @@ type ConfirmActionDialogProps = {
   confirmLabel?: string;
   confirmingLabel?: string;
   cancelLabel?: string;
-  cancelVariant?: NonNullable<ButtonProps["variant"]>;
+  cancelVariant?: ButtonVariant;
   errorStyle?: "text" | "panel";
   ariaLabel?: string;
   /**
@@ -61,19 +61,21 @@ export function ConfirmActionDialog({
   const isDisabled = isConfirming || !nameMatchesRequired;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-label={ariaLabel}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
+    <Modal isOpen={open} onOpenChange={onOpenChange}>
+      <div aria-label={ariaLabel}>
+        <ModalHeader>{title}</ModalHeader>
+        <ModalBody>
+          <div>{description}</div>
+        </ModalBody>
         {nameConfirmationRequired && (
           <div className="mt-2">
             <input
               type="text"
               value={confirmNameValue}
               onChange={(e) => onConfirmNameChange?.(e.target.value)}
-              placeholder={confirmNamePlaceholder ?? `Type "${confirmName}" to confirm`}
+              placeholder={
+                confirmNamePlaceholder ?? `Type "${confirmName}" to confirm`
+              }
               className="flex h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               autoComplete="off"
             />
@@ -88,15 +90,15 @@ export function ConfirmActionDialog({
             </div>
           )
         ) : null}
-        <DialogFooter>
-          <Button variant={cancelVariant} onClick={() => onOpenChange(false)}>
+        <ModalFooter>
+          <Button variant={cancelVariant} onPress={() => onOpenChange(false)}>
             {cancelLabel}
           </Button>
-          <Button variant="danger" onClick={onConfirm} disabled={isDisabled}>
+          <Button variant="danger" onPress={onConfirm} isDisabled={isDisabled}>
             {isConfirming ? confirmingLabel : confirmLabel}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ModalFooter>
+      </div>
+    </Modal>
   );
 }

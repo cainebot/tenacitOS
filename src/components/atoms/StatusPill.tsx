@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/cn";
+import { cx } from "@openclaw/ui";
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
   working: 'badge-positive',
@@ -27,7 +27,7 @@ export function StatusPill({ status, className }: StatusPillProps) {
   const badgeClass = STATUS_BADGE_CLASS[status.toLowerCase()] ?? DEFAULT_BADGE_CLASS;
 
   return (
-    <span className={cn("badge", badgeClass, className)}>
+    <span className={cx("badge", badgeClass, className)}>
       {status}
     </span>
   );

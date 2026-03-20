@@ -2,9 +2,7 @@
 
 import { useState, useReducer, useRef, useEffect } from 'react';
 import { Plus, ArrowUp, Upload, Link, Terminal, X } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Badge } from '@/components/ui/badge';
+import { Modal, ModalBody, Badge, Popover } from '@openclaw/ui';
 
 import { detectInput } from '@/lib/input-detector';
 import { SkillPreviewCard } from '@/components/SkillPreviewCard';
@@ -117,15 +115,15 @@ function getReviewMessage(draft: SkillDraft): string {
 
 // --- Detection badge ---
 
-function getDetectionBadge(state: ModalState): { label: string; variant: 'default' | 'accent' | 'success' | 'outline' } | null {
+function getDetectionBadge(state: ModalState): { label: string; variant: 'default' | 'brand' | 'success' | 'gray' } | null {
   if (state.phase === 'idle') return null;
   if (!('draft' in state)) return null;
   const { draft } = state;
   switch (draft.type) {
-    case 'github_url': return { label: 'GitHub URL', variant: 'accent' };
+    case 'github_url': return { label: 'GitHub URL', variant: 'brand' };
     case 'command': return { label: 'npx command', variant: 'success' };
     case 'file': return { label: 'File upload', variant: 'default' };
-    case 'text': return { label: 'Text', variant: 'outline' };
+    case 'text': return { label: 'Text', variant: 'gray' };
     default: return null;
   }
 }
@@ -154,7 +152,7 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
   const [inputValue, setInputValue] = useState('');
   const [inlineError, setInlineError] = useState<string | null>(null);
   const [lastInput, setLastInput] = useState<string | null>(null);
-  const [popoverOpen, setPopoverOpen] = useState(false);
+
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -343,8 +341,8 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
   const sourceChip = isReviewMode && 'draft' in state ? getSourceChip(state.draft) : null;
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-xl p-0 flex flex-col">
+    <Modal isOpen onOpenChange={(open) => !open && onClose()} size="xl">
+      <ModalBody className="p-0 flex flex-col">
         <div ref={scrollRef} style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
 
           {/* ========== REVIEW SECTION (visible in preview/submitting) ========== */}
@@ -508,8 +506,8 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
             }}>
               {/* Left side: + button */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                  <PopoverTrigger asChild>
+                <Popover
+                  trigger={
                     <button
                       type="button"
                       style={{
@@ -533,54 +531,55 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
                     >
                       <Plus size={18} />
                     </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-48 p-1">
-                    <button
-                      type="button"
-                      onClick={() => { setPopoverOpen(false); fileInputRef.current?.click(); }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
-                        padding: '8px 10px', borderRadius: '6px', border: 'none',
-                        backgroundColor: 'transparent', color: 'var(--text-primary)',
-                        fontFamily: 'var(--font-body)', fontSize: '13px', cursor: 'pointer', textAlign: 'left' as const,
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-hover)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <Upload size={14} style={{ color: 'var(--text-muted)' }} />
-                      Upload file
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setPopoverOpen(false); setInputValue('https://github.com/'); setTimeout(() => textareaRef.current?.focus(), 0); }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
-                        padding: '8px 10px', borderRadius: '6px', border: 'none',
-                        backgroundColor: 'transparent', color: 'var(--text-primary)',
-                        fontFamily: 'var(--font-body)', fontSize: '13px', cursor: 'pointer', textAlign: 'left' as const,
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-hover)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <Link size={14} style={{ color: 'var(--text-muted)' }} />
-                      Paste URL
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setPopoverOpen(false); setInputValue('npx skills add '); setTimeout(() => textareaRef.current?.focus(), 0); }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
-                        padding: '8px 10px', borderRadius: '6px', border: 'none',
-                        backgroundColor: 'transparent', color: 'var(--text-primary)',
-                        fontFamily: 'var(--font-body)', fontSize: '13px', cursor: 'pointer', textAlign: 'left' as const,
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-hover)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                    >
-                      <Terminal size={14} style={{ color: 'var(--text-muted)' }} />
-                      Paste command
-                    </button>
-                  </PopoverContent>
+                  }
+                  placement="top start"
+                  className="w-48 p-1"
+                >
+                  <button
+                    type="button"
+                    onClick={() => { fileInputRef.current?.click(); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                      padding: '8px 10px', borderRadius: '6px', border: 'none',
+                      backgroundColor: 'transparent', color: 'var(--text-primary)',
+                      fontFamily: 'var(--font-body)', fontSize: '13px', cursor: 'pointer', textAlign: 'left' as const,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-hover)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <Upload size={14} style={{ color: 'var(--text-muted)' }} />
+                    Upload file
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setInputValue('https://github.com/'); setTimeout(() => textareaRef.current?.focus(), 0); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                      padding: '8px 10px', borderRadius: '6px', border: 'none',
+                      backgroundColor: 'transparent', color: 'var(--text-primary)',
+                      fontFamily: 'var(--font-body)', fontSize: '13px', cursor: 'pointer', textAlign: 'left' as const,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-hover)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <Link size={14} style={{ color: 'var(--text-muted)' }} />
+                    Paste URL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setInputValue('npx skills add '); setTimeout(() => textareaRef.current?.focus(), 0); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                      padding: '8px 10px', borderRadius: '6px', border: 'none',
+                      backgroundColor: 'transparent', color: 'var(--text-primary)',
+                      fontFamily: 'var(--font-body)', fontSize: '13px', cursor: 'pointer', textAlign: 'left' as const,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-hover)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <Terminal size={14} style={{ color: 'var(--text-muted)' }} />
+                    Paste command
+                  </button>
                 </Popover>
               </div>
 
@@ -721,8 +720,8 @@ function SmartAddModal({ onClose, onCreated, onToast, onManual }: SmartAddModalP
           />
 
         </div>
-      </DialogContent>
-    </Dialog>
+      </ModalBody>
+    </Modal>
   );
 }
 
