@@ -31,8 +31,8 @@ Requirements for M6: App Shell + Wave A migration.
 - [x] **WAVE-12**: sessions page uses UUI components and tokens exclusively
 - [x] **WAVE-13**: settings page uses UUI components and tokens exclusively
 - [x] **WAVE-14**: terminal page uses UUI components and tokens exclusively
-- [ ] **WAVE-15**: workflows page uses UUI components and tokens exclusively
-- [ ] **WAVE-16**: workspaces page uses UUI components and tokens exclusively
+- [x] **WAVE-15**: workflows page uses UUI components and tokens exclusively
+- [x] **WAVE-16**: workspaces page uses UUI components and tokens exclusively
 
 ### Verification
 
@@ -77,8 +77,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WAVE-12 | Phase 3 | Complete |
 | WAVE-13 | Phase 3 | Complete |
 | WAVE-14 | Phase 3 | Complete |
-| WAVE-15 | Phase 3 | Pending |
-| WAVE-16 | Phase 3 | Pending |
+| WAVE-15 | Phase 3 | Complete |
+| WAVE-16 | Phase 3 | Complete |
 | VRFY-01 | Phase 3 | Pending |
 | VRFY-02 | Phase 3 | Pending |
 | VRFY-03 | Phase 3 | Pending |
