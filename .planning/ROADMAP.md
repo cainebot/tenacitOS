@@ -57,7 +57,13 @@ Plans:
   2. grep for var(--) across all migrated files (shell + 16 pages) returns 0 matches
   3. next build succeeds with zero errors on the complete migrated codebase
   4. No imports from src/components/ui/ legacy path exist in any migrated file
-**Plans**: TBD
+**Plans:** 5 plans
+Plans:
+- [ ] 03-01-PLAN.md — Migrate organization + reports pages to UUI tokens
+- [ ] 03-02-PLAN.md — Migrate search + settings + terminal pages to UUI tokens
+- [ ] 03-03-PLAN.md — Migrate sessions page to UUI tokens (largest page)
+- [ ] 03-04-PLAN.md — Migrate workflows + workspaces pages to UUI tokens
+- [ ] 03-05-PLAN.md — Full verification sweep (legacy tokens, build, imports)
 
 ## Progress
 
@@ -68,4 +74,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. App Shell | 2/3 | In Progress|  |
 | 2. Wave A Batch 1 | 4/4 | Complete   | 2026-03-20 |
-| 3. Wave A Batch 2 + Verify | 0/TBD | Not started | - |
+| 3. Wave A Batch 2 + Verify | 0/5 | Not started | - |
