@@ -183,6 +183,19 @@ export interface SkillDraft {
   size_error?: boolean;          // true when file input exceeds 500KB cap
 }
 
+/**
+ * Normalized result from discovery search (ClawHub or GitHub tree fallback).
+ * Used by GET /api/skills/discover and DiscoveryPanel component.
+ */
+export interface DiscoveredSkill {
+  slug: string;          // e.g. "vercel-labs/find-skills"
+  displayName: string;
+  summary: string | null;
+  version: string | null;
+  updatedAt: number;     // Unix ms timestamp; 0 when unknown (GitHub tree fallback)
+  source: 'clawhub' | 'github_tree' | 'skills_sh';
+}
+
 // Helper type for Supabase Realtime postgres_changes events
 export type RealtimePayload<T> = {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';

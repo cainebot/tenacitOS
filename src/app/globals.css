@@ -453,5 +453,42 @@ code, pre, .font-mono {
   color: var(--warning);
 }
 
+/* Dark theme scrollbar — no white track */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* Keep textarea native controls in dark mode so scroll corner/resizer don't flash white */
+textarea {
+  resize: vertical;
+  color-scheme: dark;
+}
+textarea::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+textarea::-webkit-scrollbar-track,
+textarea::-webkit-scrollbar-corner {
+  background: var(--textarea-surface, transparent);
+}
+textarea::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 2px solid var(--textarea-surface, transparent);
+}
+textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+textarea::-webkit-resizer {
+  cursor: ns-resize;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cline x1='14' y1='4' x2='4' y2='14' stroke='%23666' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='14' y1='8' x2='8' y2='14' stroke='%23666' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='14' y1='12' x2='12' y2='14' stroke='%23666' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-position: 100% 100%;
+  background-repeat: no-repeat;
+  background-size: 10px 10px;
+  border: none;
+}
+
 /* Sidebar */
 .sidebar-width { width: 240px; min-width: 240px; }
