@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-wave-a-batch-1/02-03-PLAN.md
-last_updated: "2026-03-20T18:02:52.415Z"
+stopped_at: Completed 02-wave-a-batch-1-02-04-PLAN.md
+last_updated: "2026-03-20T18:03:56.749Z"
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 7
 ---
 
 # Project State
@@ -49,6 +49,8 @@ Plan: 2 of 4
 | Phase 01-app-shell P03 | 120s | 2 tasks | 2 files |
 | Phase 02-wave-a-batch-1 P02 | 2m | 2 tasks | 1 files |
 | Phase 02-wave-a-batch-1 P03 | 122s | 2 tasks | 2 files |
+| Phase 02-wave-a-batch-1 P01 | 165s | 2 tasks | 2 files |
+| Phase 02-wave-a-batch-1 P04 | 167s | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -66,6 +68,8 @@ Recent decisions affecting current work:
 - [Phase 02-wave-a-batch-1]: Activity page: static typeClasses/statusClasses record maps replace dynamic var(${colorVar}) style interpolation — enables pure Tailwind classes per type
 - [Phase 02-wave-a-batch-1]: Terminal modal fixed colors (#0d1117 GitHub dark palette) retained as inline style — intentional fixed UI colors, not legacy UUI tokens
 - [Phase 02-wave-a-batch-1]: Dynamic computed border colors (template literals) kept as inline style per plan allowlist
+- [Phase 02-wave-a-batch-1]: Terminal output modal retains #0d1117 dark terminal colors — intentional theming, not legacy tokens
+- [Phase 02-wave-a-batch-1]: Dynamic action.color in ACTIONS data drives color-mix() expressions — kept as inline style since not expressible as Tailwind class
 
 ### Pending Todos
 
@@ -77,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T18:02:52.413Z
-Stopped at: Completed 02-wave-a-batch-1/02-03-PLAN.md
+Last session: 2026-03-20T18:03:56.747Z
+Stopped at: Completed 02-wave-a-batch-1-02-04-PLAN.md
 Resume file: None

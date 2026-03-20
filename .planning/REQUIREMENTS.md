@@ -17,8 +17,8 @@ Requirements for M6: App Shell + Wave A migration.
 
 ### Wave A Pages
 
-- [ ] **WAVE-01**: about page uses UUI components and tokens exclusively
-- [ ] **WAVE-02**: actions page uses UUI components and tokens exclusively
+- [x] **WAVE-01**: about page uses UUI components and tokens exclusively
+- [x] **WAVE-02**: actions page uses UUI components and tokens exclusively
 - [x] **WAVE-03**: activity page uses UUI components and tokens exclusively
 - [x] **WAVE-04**: calendar page uses UUI components and tokens exclusively
 - [x] **WAVE-05**: files page uses UUI components and tokens exclusively (Monaco editor internals allowlisted)
@@ -63,8 +63,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHELL-03 | Phase 1 | Complete |
 | SHELL-04 | Phase 1 | Complete |
 | SHELL-05 | Phase 1 | Complete |
-| WAVE-01 | Phase 2 | Pending |
-| WAVE-02 | Phase 2 | Pending |
+| WAVE-01 | Phase 2 | Complete |
+| WAVE-02 | Phase 2 | Complete |
 | WAVE-03 | Phase 2 | Complete |
 | WAVE-04 | Phase 2 | Complete |
 | WAVE-05 | Phase 2 | Complete |
