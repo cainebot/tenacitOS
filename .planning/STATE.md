@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-app-shell-01-01-PLAN.md
-last_updated: "2026-03-20T17:47:39.116Z"
+stopped_at: Completed 01-app-shell-01-02-PLAN.md
+last_updated: "2026-03-20T17:51:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,25 +24,25 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 01 (App Shell) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 1
-- Average duration: 45s
-- Total execution time: 45s
+- Total plans completed: 2
+- Average duration: 2m 7s
+- Total execution time: 4m 15s
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-app-shell | 1 | 45s | 45s |
+| 01-app-shell | 2 | 4m 15s | 2m 7s |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01 (45s)
+- Last 5 plans: 01-01 (45s), 01-02 (3m 30s)
 - Trend: —
 
 *Updated after each plan completion*
@@ -58,6 +58,7 @@ Recent decisions affecting current work:
 - Wave A split into two batches of 8 to keep plan scope manageable
 - Monaco editor and Phaser canvas internals are allowlisted — do not touch their var(--) usage
 - [Phase 01-app-shell]: ThemeProvider wraps UUIRouterProvider; root layout stays server component with client providers isolated in providers.tsx
+- [Phase 01-app-shell plan 02]: Use Tailwind arbitrary value syntax [var(--token)] throughout — no raw style props; font-display class for headings
 
 ### Pending Todos
 
@@ -69,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T17:47:39.114Z
-Stopped at: Completed 01-app-shell-01-01-PLAN.md
+Last session: 2026-03-20T17:51:00.000Z
+Stopped at: Completed 01-app-shell-01-02-PLAN.md
 Resume file: None

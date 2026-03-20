@@ -26,7 +26,7 @@ Three-phase migration of the app shell and 16 simple dashboard pages from the Di
   3. Login page renders entirely with @openclaw/ui components; no legacy component imports remain
   4. DashboardSidebar renders navigation using the UUI AppNavigation pattern with no legacy sidebar code
   5. All header and global nav elements use UUI tokens and components exclusively
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
 - [ ] 01-01-PLAN.md — Providers wrapper + root/dashboard layout migration
 - [ ] 01-02-PLAN.md — Login page + BrandMark migration
@@ -61,6 +61,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. App Shell | 1/3 | In Progress|  |
+| 1. App Shell | 2/3 | In Progress|  |
 | 2. Wave A Batch 1 | 0/TBD | Not started | - |
 | 3. Wave A Batch 2 + Verify | 0/TBD | Not started | - |
