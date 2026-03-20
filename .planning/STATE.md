@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-03-20T18:34:05.537Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-20T18:34:18.320Z"
 progress:
   total_phases: 4
   completed_phases: 2
@@ -54,6 +54,7 @@ Plan: 4 of 4
 | Phase 02-wave-c-boards P04 | 248 | 1 tasks | 1 files |
 | Phase 03 P04 | 180 | 1 tasks | 1 files |
 | Phase 03 P03 | 161 | 2 tasks | 4 files |
+| Phase 03-wave-c-agents-+-office P01 | 192 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,8 @@ Plan: 4 of 4
 - [Phase 03]: CONNECTION_COLORS/TOAST_BORDER_COLORS maps store Tailwind class strings not hex values, applied via className in office/page.tsx
 - [Phase 03]: ConfirmActionDialog import fixed: @/components/ui/confirm-action-dialog -> @openclaw/ui (board-groups surface)
 - [Phase 03]: Error hex #ff3b30 -> bg-error/10 border-error/25 text-error; warning hex #f97316 -> bg-warning/10 text-warning border-warning/25
+- [Phase 03-wave-c-agents-+-office]: STATUS_COLORS map values changed from hex to Tailwind class strings, consumed via className={statusColor} not style={{ color }}
+- [Phase 03-wave-c-agents-+-office]: [Phase 03-01]: SVG elements use fill=currentColor/stroke=currentColor + token className — same pattern as Phase 02 boards SVG
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T18:33:53.903Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-03-20T18:34:18.318Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
