@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 
+import { Button, type ButtonVariant } from "../base";
 import {
-  Button,
-  type ButtonVariant,
   Modal,
   ModalBody,
   ModalFooter,
