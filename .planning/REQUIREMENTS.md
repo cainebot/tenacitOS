@@ -58,36 +58,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SHELL-01 | — | Pending |
-| SHELL-02 | — | Pending |
-| SHELL-03 | — | Pending |
-| SHELL-04 | — | Pending |
-| SHELL-05 | — | Pending |
-| WAVE-01 | — | Pending |
-| WAVE-02 | — | Pending |
-| WAVE-03 | — | Pending |
-| WAVE-04 | — | Pending |
-| WAVE-05 | — | Pending |
-| WAVE-06 | — | Pending |
-| WAVE-07 | — | Pending |
-| WAVE-08 | — | Pending |
-| WAVE-09 | — | Pending |
-| WAVE-10 | — | Pending |
-| WAVE-11 | — | Pending |
-| WAVE-12 | — | Pending |
-| WAVE-13 | — | Pending |
-| WAVE-14 | — | Pending |
-| WAVE-15 | — | Pending |
-| WAVE-16 | — | Pending |
-| VRFY-01 | — | Pending |
-| VRFY-02 | — | Pending |
-| VRFY-03 | — | Pending |
+| SHELL-01 | Phase 1 | Pending |
+| SHELL-02 | Phase 1 | Pending |
+| SHELL-03 | Phase 1 | Pending |
+| SHELL-04 | Phase 1 | Pending |
+| SHELL-05 | Phase 1 | Pending |
+| WAVE-01 | Phase 2 | Pending |
+| WAVE-02 | Phase 2 | Pending |
+| WAVE-03 | Phase 2 | Pending |
+| WAVE-04 | Phase 2 | Pending |
+| WAVE-05 | Phase 2 | Pending |
+| WAVE-06 | Phase 2 | Pending |
+| WAVE-07 | Phase 2 | Pending |
+| WAVE-08 | Phase 2 | Pending |
+| WAVE-09 | Phase 3 | Pending |
+| WAVE-10 | Phase 3 | Pending |
+| WAVE-11 | Phase 3 | Pending |
+| WAVE-12 | Phase 3 | Pending |
+| WAVE-13 | Phase 3 | Pending |
+| WAVE-14 | Phase 3 | Pending |
+| WAVE-15 | Phase 3 | Pending |
+| WAVE-16 | Phase 3 | Pending |
+| VRFY-01 | Phase 3 | Pending |
+| VRFY-02 | Phase 3 | Pending |
+| VRFY-03 | Phase 3 | Pending |
 
 **Coverage:**
 - v6 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24 ⚠️
+- Mapped to phases: 24
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-20*
-*Last updated: 2026-03-20 after initial definition*
+*Last updated: 2026-03-20 after roadmap creation*
