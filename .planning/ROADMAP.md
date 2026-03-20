@@ -17,7 +17,7 @@ Migrate all medium-complexity (Wave B) and high-complexity (Wave C) pages in the
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Wave B Pages** - Migrate skills, costs, system, and analytics pages to UUI tokens (completed 2026-03-20)
-- [ ] **Phase 2: Wave C Boards** - Migrate boards listing, board detail, and all board sub-components
+- [x] **Phase 2: Wave C Boards** - Migrate boards listing, board detail, and all board sub-components (completed 2026-03-20)
 - [ ] **Phase 3: Wave C Agents + Office** - Migrate agents, board-groups, and office React chrome
 - [ ] **Phase 4: Animation Migration + Final Verification** - Replace motion imports in SmartAddModal and verify zero legacy tokens across all files
 
@@ -46,7 +46,7 @@ Plans:
   2. The boards/[id] page and its inline `<style>` block for keyframes are replaced — no legacy CSS vars remain in the file
   3. BoardKanban, BoardFilterBar, CardDetailPanel, and ColumnManager each use only UUI tokens — all ConfirmActionDialog imports come from @openclaw/ui, not @/components/ui/
   4. Boards kanban drag-and-drop and card detail panel open/close function correctly after migration
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 Plans:
 - [ ] 02-01-PLAN.md — Migrate boards listing page to UUI tokens
 - [ ] 02-02-PLAN.md — Migrate BoardKanban and BoardFilterBar to UUI tokens
@@ -85,6 +85,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Wave B Pages | 2/2 | Complete    | 2026-03-20 |
-| 2. Wave C Boards | 3/4 | In Progress|  |
+| 2. Wave C Boards | 4/4 | Complete   | 2026-03-20 |
 | 3. Wave C Agents + Office | 0/TBD | Not started | - |
 | 4. Animation Migration + Final Verification | 0/TBD | Not started | - |
