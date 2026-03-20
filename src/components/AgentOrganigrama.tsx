@@ -37,7 +37,7 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
 
   if (agents.length === 0) {
     return (
-      <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)" }}>
+      <div className="text-center py-12 text-muted">
         No agents configured
       </div>
     );
@@ -163,7 +163,7 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
         width={svgW}
         height={svgH}
         viewBox={`0 0 ${svgW} ${svgH}`}
-        style={{ fontFamily: "var(--font-heading, sans-serif)", display: "block", margin: "0 auto", maxWidth: "100%" }}
+        className="font-heading block mx-auto max-w-full"
       >
         {/* Edges */}
         {edges.map(({ from, to }, i) => {
@@ -180,7 +180,8 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
               key={i}
               d={`M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`}
               fill="none"
-              stroke={isHovered ? "var(--accent)" : "var(--border)"}
+              stroke="currentColor"
+              className={isHovered ? "text-accent" : "text-border"}
               strokeWidth={isHovered ? 2 : 1.5}
               opacity={isHovered ? 1 : 0.5}
               strokeDasharray={isHovered ? "none" : "4,4"}
@@ -212,8 +213,9 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
                 height={pos.height}
                 rx={10}
                 ry={10}
-                fill={isHovered ? `${agent.color}22` : "var(--card)"}
-                stroke={isHovered ? agent.color : "var(--border)"}
+                fill={isHovered ? `${agent.color}22` : "currentColor"}
+                className={isHovered ? "" : "text-card"}
+                stroke={isHovered ? agent.color : "currentColor"}
                 strokeWidth={isHovered ? 2 : 1}
                 style={{ transition: "all 0.2s", filter: isHovered ? "drop-shadow(0 4px 12px rgba(0,0,0,0.5))" : "none" }}
               />
@@ -242,10 +244,11 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
               <text
                 x={x + 42}
                 y={y + pos.height / 2 - 6}
-                fill="var(--text-primary)"
+                fill="currentColor"
+                className="text-primary"
                 fontSize={12}
                 fontWeight={600}
-                fontFamily="var(--font-heading, sans-serif)"
+                fontFamily="inherit"
               >
                 {agent.name.length > 14 ? agent.name.slice(0, 13) + "…" : agent.name}
               </text>
@@ -254,7 +257,8 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
               <text
                 x={x + 42}
                 y={y + pos.height / 2 + 8}
-                fill="var(--text-muted)"
+                fill="currentColor"
+                className="text-muted"
                 fontSize={9}
               >
                 {agent.model.split("/").pop()?.slice(0, 18) || ""}
@@ -265,14 +269,15 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
                 cx={x + pos.width - 10}
                 cy={y + 10}
                 r={4}
-                fill={isOnline ? "#4ade80" : "#6b7280"}
+                fill="currentColor"
+                className={isOnline ? "text-success" : "text-muted"}
               />
 
               {/* Sessions badge (if active) */}
               {agent.activeSessions > 0 && (
                 <g>
-                  <circle cx={x + pos.width - 10} cy={y + pos.height - 10} r={8} fill="rgba(255,59,48,0.15)" stroke="var(--accent)" strokeWidth={1} />
-                  <text x={x + pos.width - 10} y={y + pos.height - 7} fontSize={8} fill="var(--accent)" textAnchor="middle" fontWeight={700}>
+                  <circle cx={x + pos.width - 10} cy={y + pos.height - 10} r={8} fill="rgba(255,59,48,0.15)" stroke="currentColor" className="text-accent" strokeWidth={1} />
+                  <text x={x + pos.width - 10} y={y + pos.height - 7} fontSize={8} fill="currentColor" className="text-accent" textAnchor="middle" fontWeight={700}>
                     {agent.activeSessions}
                   </text>
                 </g>
@@ -283,9 +288,9 @@ export function AgentOrganigrama({ agents }: AgentOrganigramaProps) {
       </svg>
 
       {/* Legend */}
-      <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center", marginTop: "1rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+      <div className="flex gap-6 justify-center mt-4 text-xs text-muted">
         <span>● Online</span>
-        <span style={{ color: "#6b7280" }}>● Offline</span>
+        <span className="text-muted">● Offline</span>
         <span>--- allows communication</span>
       </div>
     </div>
