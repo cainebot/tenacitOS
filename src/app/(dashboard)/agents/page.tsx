@@ -17,6 +17,7 @@ import { useState } from 'react'
 import { AgentOrganigrama } from '@/components/AgentOrganigrama'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import { useRealtimeDepartments } from '@/hooks/useRealtimeDepartments'
+import { cx } from '@openclaw/ui'
 import { StatusDot } from '@/components/atoms/StatusDot'
 import { AgentFormPanel } from '@/components/organisms/AgentFormPanel'
 import type { AgentRow, AgentStatus } from '@/types/supabase'
@@ -192,30 +193,18 @@ export default function AgentsPage() {
                         </span>
                         {agent.badge && (
                           <span
-                            className="text-xs font-bold px-1.5 py-0.5 rounded"
-                            style={{
-                              backgroundColor:
-                                agent.badge === 'LEAD'
-                                  ? '#f59e0b20'
-                                  : agent.badge === 'SPC'
-                                  ? '#3b82f620'
-                                  : '#22c55e20',
-                              color:
-                                agent.badge === 'LEAD'
-                                  ? '#f59e0b'
-                                  : agent.badge === 'SPC'
-                                  ? '#3b82f6'
-                                  : '#22c55e',
-                            }}
+                            className={cx(
+                              "text-xs font-bold px-1.5 py-0.5 rounded",
+                              agent.badge === 'LEAD' && "bg-warning/10 text-warning",
+                              agent.badge === 'SPC' && "bg-info/10 text-info",
+                              agent.badge !== 'LEAD' && agent.badge !== 'SPC' && "bg-success/10 text-success",
+                            )}
                           >
                             {agent.badge}
                           </span>
                         )}
                         {agent.soul_dirty === true && (
-                          <span
-                            className="text-warning text-[9px] font-semibold rounded px-1.5 py-px"
-                            style={{ background: 'rgba(255,214,10,0.15)' }}
-                          >
+                          <span className="text-warning text-[9px] font-semibold rounded px-1.5 py-px bg-warning/15">
                             Needs sync
                           </span>
                         )}
