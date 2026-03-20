@@ -20,7 +20,7 @@ Requirements for M7 milestone. Each maps to roadmap phases.
 - [x] **WAVC-02**: Board detail page (boards/[id]) and all sub-components (BoardKanban, BoardFilterBar, CardDetailPanel, ColumnManager) use only UUI tokens
 - [ ] **WAVC-03**: Agents listing page and AgentOrganigrama use only UUI tokens and components
 - [ ] **WAVC-04**: Agent detail page (agents/[id]) and AgentFormPanel use only UUI tokens and components
-- [ ] **WAVC-05**: Board-groups pages (listing, detail, edit, new) all use only UUI tokens and components
+- [x] **WAVC-05**: Board-groups pages (listing, detail, edit, new) all use only UUI tokens and components
 - [x] **WAVC-06**: Office page React chrome uses only UUI tokens — Phaser canvas internals allowlisted
 
 ### Animation Migration
@@ -60,7 +60,7 @@ Requirements for M7 milestone. Each maps to roadmap phases.
 | WAVC-02 | Phase 2 | Complete |
 | WAVC-03 | Phase 3 | Pending |
 | WAVC-04 | Phase 3 | Pending |
-| WAVC-05 | Phase 3 | Pending |
+| WAVC-05 | Phase 3 | Complete |
 | WAVC-06 | Phase 3 | Complete |
 | ANIM-01 | Phase 4 | Pending |
 | VERF-01 | Phase 4 | Pending |

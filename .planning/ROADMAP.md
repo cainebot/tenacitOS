@@ -63,7 +63,7 @@ Plans:
   3. All four board-groups pages (listing, detail, edit, new) use only UUI tokens and @openclaw/ui components
   4. The office page React chrome (layout, controls, sidebar) uses only UUI tokens — Phaser canvas internals remain allowlisted
   5. AgentSidePanel and AgentFormPanel imports for ConfirmActionDialog come from @openclaw/ui
-**Plans:** 1/4 plans executed
+**Plans:** 3/4 plans executed
 Plans:
 - [ ] 03-01-PLAN.md — Migrate agents listing page and AgentOrganigrama to UUI tokens
 - [ ] 03-02-PLAN.md — Migrate agent detail page, AgentFormPanel, and AgentSidePanel to UUI tokens
@@ -91,5 +91,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Wave B Pages | 2/2 | Complete    | 2026-03-20 |
 | 2. Wave C Boards | 4/4 | Complete    | 2026-03-20 |
-| 3. Wave C Agents + Office | 1/4 | In Progress|  |
+| 3. Wave C Agents + Office | 3/4 | In Progress|  |
 | 4. Animation Migration + Final Verification | 0/TBD | Not started | - |
