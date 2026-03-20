@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-20T18:06:26.159Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-20T18:08:50.485Z"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -49,6 +49,7 @@ Plan: 1 of 4
 | Phase 01 P01 | 148s | 2 tasks | 2 files |
 | Phase 01 P02 | 348s | 2 tasks | 2 files |
 | Phase 02 P01 | 64s | 1 tasks | 1 files |
+| Phase 02-wave-c-boards P02 | 179s | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Plan: 1 of 4
 - [Phase 01-02]: Logs modal terminal palette (#0d1117, #c9d1d9, #8b949e) preserved as non-token hardcoded colors — deliberate terminal aesthetic
 - [Phase 02]: Replaced onMouseEnter/onMouseLeave JS hover handlers with Tailwind hover: modifiers in boards/page.tsx
 - [Phase 02]: Used bg-surface-elevated for card_type_filter badge (var(--surface-alt) is not a UUI token)
+- [Phase 02-wave-c-boards]: BoardFilterBar Filter button uses cx() for isActive: bg-accent text-white vs bg-surface text-secondary hover:*
+- [Phase 02-wave-c-boards]: SVG stroke migrated to stroke=currentColor + text-secondary className to honor UUI tokens without inline var(--)
 
 ### Pending Todos
 
@@ -77,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T18:06:26.157Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-20T18:08:50.483Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

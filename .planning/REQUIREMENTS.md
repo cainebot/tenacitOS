@@ -17,7 +17,7 @@ Requirements for M7 milestone. Each maps to roadmap phases.
 ### Wave C — Complex Pages
 
 - [x] **WAVC-01**: Boards listing page uses only UUI tokens and components — zero var(--*) inline styles
-- [ ] **WAVC-02**: Board detail page (boards/[id]) and all sub-components (BoardKanban, BoardFilterBar, CardDetailPanel, ColumnManager) use only UUI tokens
+- [x] **WAVC-02**: Board detail page (boards/[id]) and all sub-components (BoardKanban, BoardFilterBar, CardDetailPanel, ColumnManager) use only UUI tokens
 - [ ] **WAVC-03**: Agents listing page and AgentOrganigrama use only UUI tokens and components
 - [ ] **WAVC-04**: Agent detail page (agents/[id]) and AgentFormPanel use only UUI tokens and components
 - [ ] **WAVC-05**: Board-groups pages (listing, detail, edit, new) all use only UUI tokens and components
@@ -57,7 +57,7 @@ Requirements for M7 milestone. Each maps to roadmap phases.
 | WAVB-03 | Phase 1 | Complete |
 | WAVB-04 | Phase 1 | Complete |
 | WAVC-01 | Phase 2 | Complete |
-| WAVC-02 | Phase 2 | Pending |
+| WAVC-02 | Phase 2 | Complete |
 | WAVC-03 | Phase 3 | Pending |
 | WAVC-04 | Phase 3 | Pending |
 | WAVC-05 | Phase 3 | Pending |
