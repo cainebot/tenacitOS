@@ -18,7 +18,7 @@ export default function DashboardLayout({
   return (
     <RealtimeProvider>
       <AgentFilterProvider>
-        <div className="flex h-screen" style={{ backgroundColor: 'var(--background)' }}>
+        <div className="flex h-screen bg-[var(--bg-primary)]">
           <DashboardSidebar />
           {isBoardDetailPage && <AgentListPanel />}
           <main className={`flex-1 overflow-auto ${isBoardDetailPage ? 'pt-4 px-0 pb-0' : 'p-6'}`}>
