@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, Pencil, Trash2, Loader2, AlertCircle, FolderOpen, LayoutDashboard } from 'lucide-react'
 import type { WorkflowRow, BoardRow } from '@/types/workflow'
-import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
+import { ConfirmActionDialog } from '@openclaw/ui'
 
 interface GroupWithBoards extends WorkflowRow {
   boards: BoardRow[]
@@ -59,23 +59,22 @@ export default function BoardGroupsPage() {
   return (
     <div className="-m-6">
       {/* Sticky header */}
-      <div className="sticky top-0 z-30" style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
+      <div className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="px-4 pt-2 pb-4 md:px-8 md:pt-3 md:pb-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
+                <h1 className="text-2xl font-semibold tracking-tight text-primary font-heading">
                   Board groups
                 </h1>
               </div>
-              <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+              <p className="mt-1 text-sm text-muted">
                 Group boards so agents can see related work. {groups.length} group{groups.length === 1 ? '' : 's'} total.
               </p>
             </div>
             <Link
               href="/board-groups/new"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80"
-              style={{ backgroundColor: 'var(--accent)', color: '#fff' }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-opacity hover:opacity-80 bg-accent text-white"
             >
               <Plus className="w-4 h-4" />
               Create group
@@ -87,14 +86,14 @@ export default function BoardGroupsPage() {
       {/* Body */}
       <div className="px-4 py-6 md:px-8">
         {loading && (
-          <div className="flex items-center justify-center py-24 gap-3" style={{ color: 'var(--text-muted)' }}>
+          <div className="flex items-center justify-center py-24 gap-3 text-muted">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span className="text-sm">Loading groups…</span>
           </div>
         )}
 
         {error && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm" style={{ backgroundColor: '#ff3b3015', border: '1px solid #ff3b3040', color: '#ff3b30' }}>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-error/10 border border-error/25 text-error">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
           </div>
@@ -102,15 +101,14 @@ export default function BoardGroupsPage() {
 
         {!loading && !error && groups.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-            <FolderOpen className="w-12 h-12 opacity-20" style={{ color: 'var(--text-muted)' }} />
+            <FolderOpen className="w-12 h-12 opacity-20 text-muted" />
             <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>No groups yet</p>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Create a board group to increase cross-board visibility for agents.</p>
+              <p className="text-sm font-medium text-primary">No groups yet</p>
+              <p className="text-sm mt-1 text-muted">Create a board group to increase cross-board visibility for agents.</p>
             </div>
             <Link
               href="/board-groups/new"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold mt-2 transition-opacity hover:opacity-80"
-              style={{ backgroundColor: 'var(--accent)', color: '#fff' }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold mt-2 transition-opacity hover:opacity-80 bg-accent text-white"
             >
               <Plus className="w-4 h-4" />
               Create your first group
@@ -119,23 +117,19 @@ export default function BoardGroupsPage() {
         )}
 
         {!loading && !error && groups.length > 0 && (
-          <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', backgroundColor: 'var(--card)' }}>
+          <div className="rounded-2xl overflow-hidden border border-border bg-card">
             {/* Table header */}
             <div
-              className="grid px-4 py-2 md:px-6"
-              style={{
-                gridTemplateColumns: '1fr 140px 80px',
-                borderBottom: '1px solid var(--border)',
-                backgroundColor: 'var(--surface)',
-              }}
+              className="grid px-4 py-2 md:px-6 border-b border-border bg-surface"
+              style={{ gridTemplateColumns: '1fr 140px 80px' }}
             >
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Group</span>
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Updated</span>
-              <span className="text-xs font-semibold uppercase tracking-wider text-right" style={{ color: 'var(--text-muted)' }}>Actions</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">Group</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">Updated</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-right text-muted">Actions</span>
             </div>
 
             {/* Rows */}
-            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+            <div className="divide-y divide-border">
               {groups.map(group => (
                 <div
                   key={group.workflow_id}
@@ -146,12 +140,11 @@ export default function BoardGroupsPage() {
                   <div className="min-w-0 pr-4">
                     <Link
                       href={`/board-groups/${group.workflow_id}`}
-                      className="text-sm font-medium hover:underline"
-                      style={{ color: 'var(--text-primary)' }}
+                      className="text-sm font-medium hover:underline text-primary"
                     >
                       {group.name}
                     </Link>
-                    <p className="mt-1 text-xs line-clamp-2" style={{ color: 'var(--text-muted)' }}>
+                    <p className="mt-1 text-xs line-clamp-2 text-muted">
                       {group.description ?? 'No description'}
                     </p>
                     {group.boards.length > 0 && (
@@ -160,15 +153,14 @@ export default function BoardGroupsPage() {
                           <Link
                             key={b.board_id}
                             href={`/boards/${b.board_id}`}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs hover:opacity-80 transition-opacity"
-                            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs hover:opacity-80 transition-opacity bg-surface border border-border text-muted"
                           >
                             <LayoutDashboard className="w-3 h-3" />
                             {b.name}
                           </Link>
                         ))}
                         {group.boards.length > 4 && (
-                          <span className="text-xs px-2 py-0.5 rounded-md" style={{ color: 'var(--text-muted)' }}>
+                          <span className="text-xs px-2 py-0.5 rounded-md text-muted">
                             +{group.boards.length - 4} more
                           </span>
                         )}
@@ -177,7 +169,7 @@ export default function BoardGroupsPage() {
                   </div>
 
                   {/* Updated date */}
-                  <div className="text-xs pt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  <div className="text-xs pt-0.5 text-muted">
                     {new Date(group.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </div>
 
@@ -185,16 +177,14 @@ export default function BoardGroupsPage() {
                   <div className="flex items-center justify-end gap-1">
                     <Link
                       href={`/board-groups/${group.workflow_id}/edit`}
-                      className="p-1.5 rounded-lg transition-colors hover:opacity-80"
-                      style={{ color: 'var(--text-muted)' }}
+                      className="p-1.5 rounded-lg transition-colors hover:opacity-80 text-muted"
                       title="Edit group"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </Link>
                     <button
                       onClick={() => setDeleteTarget(group)}
-                      className="p-1.5 rounded-lg transition-colors hover:opacity-80"
-                      style={{ color: 'var(--text-muted)' }}
+                      className="p-1.5 rounded-lg transition-colors hover:opacity-80 text-muted"
                       title="Delete group"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -205,7 +195,7 @@ export default function BoardGroupsPage() {
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 md:px-6 text-xs" style={{ borderTop: '1px solid var(--border)', color: 'var(--text-muted)', backgroundColor: 'var(--surface)' }}>
+            <div className="px-4 py-3 md:px-6 text-xs border-t border-border text-muted bg-surface">
               {groups.length} group{groups.length === 1 ? '' : 's'} · {totalBoards} board{totalBoards === 1 ? '' : 's'}
             </div>
           </div>
