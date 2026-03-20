@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type CSSProperties } from "react";
 import SmartAddModal from '@/components/SmartAddModal';
 import {
   Search,
@@ -122,7 +122,7 @@ function RegisterSkillModal({ onClose, onCreated }: { onClose: () => void; onCre
           )}
           <div>
             <label style={{ fontFamily: "var(--font-body)", fontSize: "11px", color: "var(--text-secondary)", marginBottom: "4px", display: "block" }}>Skill Content (Markdown)</label>
-            <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="# Skill instructions&#10;&#10;Paste your .md or .skill content here..." rows={10} style={{ width: "100%", padding: "10px", borderRadius: "6px", backgroundColor: "var(--surface-elevated)", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: "var(--font-mono)", fontSize: "12px", resize: "vertical" }} />
+            <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="# Skill instructions&#10;&#10;Paste your .md or .skill content here..." rows={10} style={{ "--textarea-surface": "var(--surface-elevated)", width: "100%", padding: "10px", borderRadius: "6px", backgroundColor: "var(--surface-elevated)", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: "var(--font-mono)", fontSize: "12px", resize: "vertical" } as CSSProperties} />
           </div>
           <button onClick={handleSubmit} disabled={!name.trim() || saving} style={{ padding: "12px 24px", borderRadius: "6px", backgroundColor: "var(--accent)", color: "white", border: "none", cursor: name.trim() && !saving ? "pointer" : "not-allowed", fontFamily: "var(--font-body)", fontSize: "13px", fontWeight: 600, opacity: name.trim() && !saving ? 1 : 0.5 }}>
             {saving ? "Registering..." : "Register Skill"}
