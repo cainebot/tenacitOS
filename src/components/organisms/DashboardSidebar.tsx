@@ -153,58 +153,38 @@ export function DashboardSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  const sidebarWidth = collapsed ? 56 : 240;
-
   return (
     <aside
-      style={{
-        width: `${sidebarWidth}px`,
-        minWidth: `${sidebarWidth}px`,
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: 'var(--surface)',
-        borderRight: '1px solid var(--border)',
-        transition: 'width 0.2s ease, min-width 0.2s ease',
-        overflow: 'hidden',
-      }}
+      className={cx(
+        "sticky top-0 h-screen flex flex-col",
+        "bg-[var(--bg-secondary)] border-r border-[var(--border-primary)]",
+        "transition-[width,min-width] duration-200 ease-in-out overflow-hidden",
+        collapsed ? "w-14 min-w-14" : "w-60 min-w-60"
+      )}
     >
       {/* Brand mark — fixed top */}
       {!collapsed && <BrandMark />}
       {collapsed && (
-        <div style={{ height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--accent)', fontFamily: 'var(--font-heading)' }}>DC</span>
+        <div className="flex h-12 items-center justify-center">
+          <span className="text-lg font-bold text-[var(--brand-600)] font-display">DC</span>
         </div>
       )}
 
       {/* Divider */}
-      <div style={{ height: '1px', backgroundColor: 'var(--border)', margin: collapsed ? '0 8px' : '0 12px' }} />
+      <div className={cx("h-px bg-[var(--border-primary)]", collapsed ? "mx-2" : "mx-3")} />
 
       {/* Scrollable navigation sections */}
       <nav
-        className="flex-1 flex flex-col gap-4 overflow-y-auto"
-        style={{
-          minHeight: 0,
-          padding: collapsed ? '12px 6px' : '16px 12px',
-        }}
+        className={cx(
+          "flex-1 flex flex-col gap-4 overflow-y-auto min-h-0",
+          collapsed ? "p-3 px-1.5" : "p-4 px-3"
+        )}
       >
         {NAV_SECTIONS.map((section) => (
           <div key={section.label}>
             {/* Section label — hidden when collapsed */}
             {!collapsed && (
-              <div
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  letterSpacing: '0.08em',
-                  color: 'var(--text-muted)',
-                  paddingLeft: '8px',
-                  paddingBottom: '6px',
-                  fontFamily: 'var(--font-heading)',
-                }}
-              >
+              <div className="text-[10px] font-semibold tracking-[0.08em] text-[var(--text-quaternary-500)] pl-2 pb-1.5 font-display">
                 {section.label}
               </div>
             )}
@@ -218,14 +198,8 @@ export function DashboardSidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={cx("nav-item", active && "active")}
+                    className={cx("nav-item", active && "active", collapsed && "flex items-center justify-center py-2")}
                     title={collapsed ? item.label : undefined}
-                    style={collapsed ? {
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '8px 0',
-                    } : undefined}
                   >
                     <Icon size={16} />
                     {!collapsed && <span>{item.label}</span>}
@@ -238,7 +212,7 @@ export function DashboardSidebar() {
       </nav>
 
       {/* Fixed bottom — Office, Settings */}
-      <div style={{ borderTop: '1px solid var(--border)', padding: collapsed ? '8px 6px 4px' : '8px 12px 4px' }}>
+      <div className={cx("border-t border-[var(--border-primary)]", collapsed ? "px-1.5 pt-2 pb-1" : "px-3 pt-2 pb-1")}>
         <div className="flex flex-col gap-0.5">
           {BOTTOM_NAV.map((item) => {
             const Icon = item.icon;
@@ -247,14 +221,8 @@ export function DashboardSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={cx("nav-item", active && "active")}
+                className={cx("nav-item", active && "active", collapsed && "flex items-center justify-center py-2")}
                 title={collapsed ? item.label : undefined}
-                style={collapsed ? {
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '8px 0',
-                } : undefined}
               >
                 <Icon size={16} />
                 {!collapsed && <span>{item.label}</span>}
@@ -265,34 +233,15 @@ export function DashboardSidebar() {
       </div>
 
       {/* Collapse toggle button */}
-      <div style={{ borderTop: '1px solid var(--border)', padding: '4px 6px' }}>
+      <div className="border-t border-[var(--border-primary)] p-1 px-1.5">
         <button
           onClick={() => setCollapsed(!collapsed)}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            gap: '8px',
-            width: '100%',
-            padding: collapsed ? '8px 0' : '8px 8px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--text-muted)',
-            fontSize: '12px',
-            fontFamily: 'var(--font-body)',
-            borderRadius: '6px',
-            transition: 'background 0.1s, color 0.1s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--surface-hover, #2E2E2E)';
-            e.currentTarget.style.color = 'var(--text-primary)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'none';
-            e.currentTarget.style.color = 'var(--text-muted)';
-          }}
+          className={cx(
+            "flex items-center gap-2 w-full rounded-md text-xs text-[var(--text-quaternary-500)] font-[family-name:var(--font-text)] cursor-pointer bg-transparent border-none",
+            "hover:bg-[var(--bg-quaternary)] hover:text-[var(--text-primary-900)] transition-colors",
+            collapsed ? "justify-center py-2" : "justify-start py-2 px-2"
+          )}
         >
           {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           {!collapsed && <span>Collapse</span>}
@@ -301,7 +250,7 @@ export function DashboardSidebar() {
 
       {/* Fixed bottom — Node status strip */}
       {!collapsed && (
-        <div className="px-3 py-3" style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="px-3 py-3 border-t border-[var(--border-primary)]">
           <NodeStatusStrip />
         </div>
       )}
