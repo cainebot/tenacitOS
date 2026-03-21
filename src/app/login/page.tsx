@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Terminal, Lock, AlertCircle } from "lucide-react";
+import { Button } from "@openclaw/ui";
 
 function LoginForm() {
   const [password, setPassword] = useState("");
@@ -44,13 +45,9 @@ function LoginForm() {
       {/* Header */}
       <div className="text-center mb-6 flex flex-col items-center gap-2">
         <div className="flex items-center gap-2.5">
-          <Terminal
-            className="w-7 h-7 text-brand-600"
-          />
+          <Terminal className="w-7 h-7 text-brand-600" />
           <span className="text-2xl">🦞</span>
-          <h1
-            className="text-xl font-bold font-display text-primary tracking-tight"
-          >
+          <h1 className="text-xl font-bold font-display text-primary tracking-tight">
             Mission Control
           </h1>
         </div>
@@ -62,14 +59,12 @@ function LoginForm() {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="relative">
-          <Lock
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-quaternary"
-          />
+          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-quaternary" />
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 rounded-lg text-sm bg-tertiary border border-primary text-primary focus:outline-none focus:ring-1 focus:ring-[var(--brand-600)]"
+            className="w-full pl-11 pr-4 py-3 rounded-lg text-sm bg-tertiary border border-primary text-primary placeholder:text-placeholder focus:outline-none focus:ring-1 focus:ring-brand-600"
             placeholder="Contraseña"
             required
           />
@@ -82,18 +77,19 @@ function LoginForm() {
           </div>
         )}
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
-          className="w-full font-semibold py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 bg-brand-600 text-white hover:bg-brand-700"
+          isDisabled={loading}
+          variant="primary"
+          className="w-full font-semibold py-2.5"
         >
           {loading ? "Verificando..." : "Entrar"}
-        </button>
+        </Button>
       </form>
 
       {/* Footer */}
       <p className="text-center text-xs mt-6 text-quaternary">
-        Tenacitas Agent Dashboard
+        OpenClaw — Agent Mission Control
       </p>
     </div>
   );
