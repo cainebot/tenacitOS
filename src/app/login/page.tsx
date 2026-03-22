@@ -119,7 +119,7 @@ export default function LoginPage() {
                             </div>
                             <div className="flex flex-col gap-4">
                                 <Button type="submit" size="lg" isLoading={isLoading} isDisabled={isLoading}>
-                                    Sign in
+                                    Log in
                                 </Button>
                                 <SocialButton social="google" theme="color">
                                     Sign in with Google
