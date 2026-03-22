@@ -1,36 +1,63 @@
 import type { Meta, StoryObj } from "@storybook/react"
-import { Badge } from "./badge"
+import React from "react"
+import {
+  ArrowRight,
+  ArrowUp,
+  Check,
+  Plus,
+  Star01,
+  Zap,
+} from "@untitledui/icons"
+import {
+  Badge,
+  BadgeWithDot,
+  BadgeWithIcon,
+  BadgeWithButton,
+  BadgeIcon,
+} from "./badge"
+
+const iconMap: Record<string, React.FC<{ className?: string }> | undefined> = {
+  None: undefined,
+  ArrowRight,
+  ArrowUp,
+  Check,
+  Plus,
+  Star01,
+  Zap,
+}
+const iconOptions = Object.keys(iconMap)
+
+const colorOptions = [
+  "gray",
+  "brand",
+  "error",
+  "warning",
+  "success",
+  "gray-blue",
+  "blue-light",
+  "blue",
+  "indigo",
+  "purple",
+  "pink",
+  "orange",
+] as const
+
+const typeOptions = ["pill-color", "color", "modern"] as const
+const sizeOptions = ["sm", "md", "lg"] as const
+
+// ---------------------------------------------------------------------------
+// Badge (plain text)
+// ---------------------------------------------------------------------------
 
 const meta = {
   title: "Base/Badge",
   component: Badge,
   tags: ["autodocs"],
   argTypes: {
-    color: {
-      control: "select",
-      options: [
-        "gray",
-        "brand",
-        "error",
-        "warning",
-        "success",
-        "gray-blue",
-        "blue-light",
-        "blue",
-        "indigo",
-        "purple",
-        "pink",
-        "orange",
-      ],
-    },
-    type: {
-      control: "select",
-      options: ["pill-color", "color", "modern"],
-    },
-    size: {
-      control: "select",
-      options: ["sm", "md", "lg"],
-    },
+    color: { control: "select", options: colorOptions },
+    type: { control: "select", options: typeOptions },
+    size: { control: "select", options: sizeOptions },
+    children: { name: "Badge text", control: "text" },
   },
 } satisfies Meta<typeof Badge>
 
@@ -79,6 +106,126 @@ export const Blue: Story = {
   },
 }
 
+// ---------------------------------------------------------------------------
+// BadgeWithDot
+// ---------------------------------------------------------------------------
+
+const dotMeta = {
+  title: "Base/Badge/With Dot",
+  component: BadgeWithDot,
+  tags: ["autodocs"],
+  argTypes: {
+    color: { control: "select", options: colorOptions },
+    type: { control: "select", options: typeOptions },
+    size: { control: "select", options: sizeOptions },
+    children: { name: "Badge text", control: "text" },
+  },
+} satisfies Meta<typeof BadgeWithDot>
+
+type DotStory = StoryObj<typeof dotMeta>
+
+export const Dot: DotStory = {
+  args: {
+    color: "success",
+    children: "Active",
+  },
+  render: (args) => <BadgeWithDot {...args} />,
+}
+
+// ---------------------------------------------------------------------------
+// BadgeWithIcon
+// ---------------------------------------------------------------------------
+
+const iconMeta = {
+  title: "Base/Badge/With Icon",
+  component: BadgeWithIcon,
+  tags: ["autodocs"],
+  argTypes: {
+    color: { control: "select", options: colorOptions },
+    type: { control: "select", options: typeOptions },
+    size: { control: "select", options: sizeOptions },
+    iconLeading: { control: "select", options: iconOptions, mapping: iconMap },
+    iconTrailing: { control: "select", options: iconOptions, mapping: iconMap },
+    children: { name: "Badge text", control: "text" },
+  },
+} satisfies Meta<typeof BadgeWithIcon>
+
+type IconStory = StoryObj<typeof iconMeta>
+
+export const IconLeading: IconStory = {
+  args: {
+    color: "brand",
+    iconLeading: ArrowUp,
+    children: "Badge",
+  },
+  render: (args) => <BadgeWithIcon {...args} />,
+}
+
+export const IconTrailing: IconStory = {
+  args: {
+    color: "brand",
+    iconTrailing: ArrowRight,
+    children: "Badge",
+  },
+  render: (args) => <BadgeWithIcon {...args} />,
+}
+
+// ---------------------------------------------------------------------------
+// BadgeWithButton (x-close)
+// ---------------------------------------------------------------------------
+
+const buttonMeta = {
+  title: "Base/Badge/With Button",
+  component: BadgeWithButton,
+  tags: ["autodocs"],
+  argTypes: {
+    color: { control: "select", options: colorOptions },
+    type: { control: "select", options: typeOptions },
+    size: { control: "select", options: sizeOptions },
+    children: { name: "Badge text", control: "text" },
+  },
+} satisfies Meta<typeof BadgeWithButton>
+
+type ButtonStory = StoryObj<typeof buttonMeta>
+
+export const XClose: ButtonStory = {
+  args: {
+    color: "brand",
+    children: "Dismiss",
+  },
+  render: (args) => <BadgeWithButton {...args} />,
+}
+
+// ---------------------------------------------------------------------------
+// BadgeIcon (icon only)
+// ---------------------------------------------------------------------------
+
+const iconOnlyMeta = {
+  title: "Base/Badge/Icon Only",
+  component: BadgeIcon,
+  tags: ["autodocs"],
+  argTypes: {
+    color: { control: "select", options: colorOptions },
+    type: { control: "select", options: typeOptions },
+    size: { control: "select", options: sizeOptions },
+    icon: { control: "select", options: iconOptions, mapping: iconMap },
+  },
+} satisfies Meta<typeof BadgeIcon>
+
+type IconOnlyStory = StoryObj<typeof iconOnlyMeta>
+
+export const IconOnly: IconOnlyStory = {
+  args: {
+    color: "brand",
+    icon: Plus,
+  },
+  render: (args) => <BadgeIcon {...args} />,
+}
+
+// ---------------------------------------------------------------------------
+// Showcase stories
+// ---------------------------------------------------------------------------
+
 export const AllVariants: Story = {
   args: { children: "All" },
   render: () => (
@@ -118,6 +265,38 @@ export const AllTypes: Story = {
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <span style={{ width: 80, fontSize: 12, color: "#888" }}>Modern</span>
         <Badge type="modern" color="gray">Gray</Badge>
+      </div>
+    </div>
+  ),
+}
+
+export const AllAddons: Story = {
+  args: { children: "All" },
+  render: () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ width: 100, fontSize: 12, color: "#888" }}>Plain</span>
+        <Badge color="brand">Label</Badge>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ width: 100, fontSize: 12, color: "#888" }}>Dot</span>
+        <BadgeWithDot color="success">Active</BadgeWithDot>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ width: 100, fontSize: 12, color: "#888" }}>Icon leading</span>
+        <BadgeWithIcon color="brand" iconLeading={ArrowUp}>Trending</BadgeWithIcon>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ width: 100, fontSize: 12, color: "#888" }}>Icon trailing</span>
+        <BadgeWithIcon color="brand" iconTrailing={ArrowRight}>Next</BadgeWithIcon>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ width: 100, fontSize: 12, color: "#888" }}>X close</span>
+        <BadgeWithButton color="brand">Dismiss</BadgeWithButton>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ width: 100, fontSize: 12, color: "#888" }}>Icon only</span>
+        <BadgeIcon color="brand" icon={Plus} />
       </div>
     </div>
   ),

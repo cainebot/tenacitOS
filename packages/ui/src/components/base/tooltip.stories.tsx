@@ -6,33 +6,43 @@ const meta: Meta<typeof Tooltip> = {
   title: "Base/Tooltip",
   component: Tooltip,
   tags: ["autodocs"],
+  argTypes: {
+    title: { control: "text" },
+    description: { control: "text" },
+    closeDelay: { control: "number" },
+    offset: { control: "number" },
+    crossOffset: { control: "number" },
+  },
+  args: {
+    title: "Tooltip text",
+    arrow: false,
+    delay: 300,
+    placement: "top",
+  },
+  render: (args) => (
+    <Tooltip {...args}>
+      <Button>Hover me</Button>
+    </Tooltip>
+  ),
 }
 
 export default meta
 type Story = StoryObj<typeof Tooltip>
 
-export const Default: Story = {
-  render: () => (
-    <Tooltip title="Tooltip text">
-      <Button>Hover me</Button>
-    </Tooltip>
-  ),
-}
+export const Default: Story = {}
 
 export const WithDescription: Story = {
-  render: () => (
-    <Tooltip title="Tooltip title" description="This is a longer description that provides more context.">
-      <Button>Hover me</Button>
-    </Tooltip>
-  ),
+  args: {
+    title: "Tooltip title",
+    description: "This is a longer description that provides more context.",
+  },
 }
 
 export const WithArrow: Story = {
-  render: () => (
-    <Tooltip title="With arrow" arrow>
-      <Button>Hover me</Button>
-    </Tooltip>
-  ),
+  args: {
+    title: "With arrow",
+    arrow: true,
+  },
 }
 
 export const Placements: Story = {

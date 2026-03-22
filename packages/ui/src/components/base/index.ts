@@ -29,3 +29,4 @@ export { RadioGroup, Radio, type RadioGroupProps, type RadioProps } from "./radi
 export { Toggle, ToggleBase, type ToggleProps } from "./toggle"
 export { Avatar, AvatarLabelGroup, type AvatarProps } from "./avatar"
 export { Dropdown } from "./dropdown"
+export { ProgressBar, ProgressBarBase, type ProgressBarProps, type ProgressIndicatorWithTextProps } from "./progress-bar"

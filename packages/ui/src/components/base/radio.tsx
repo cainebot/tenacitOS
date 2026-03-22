@@ -52,15 +52,17 @@ export function RadioGroup({
 }
 
 export interface RadioProps extends Omit<AriaRadioProps, "className" | "children"> {
+  label?: string
+  hint?: string
   children?: ReactNode
   className?: string
 }
 
-export function Radio({ children, className, ...props }: RadioProps) {
+export function Radio({ label, hint, children, className, ...props }: RadioProps) {
   return (
     <AriaRadio
       className={cx(
-        "group flex items-center gap-2 text-sm text-white cursor-pointer",
+        "group flex items-center gap-2 text-sm text-primary cursor-pointer",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         className
       )}
@@ -81,7 +83,14 @@ export function Radio({ children, className, ...props }: RadioProps) {
               <div className="w-2 h-2 rounded-full bg-brand-600" />
             )}
           </div>
-          {children}
+          {label ? (
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-primary">{label}</span>
+              {hint && <span className="text-xs text-tertiary">{hint}</span>}
+            </div>
+          ) : (
+            children
+          )}
         </>
       )}
     </AriaRadio>

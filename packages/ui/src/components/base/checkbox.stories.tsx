@@ -5,6 +5,11 @@ const meta: Meta<typeof Checkbox> = {
   title: "Base/Checkbox",
   component: Checkbox,
   tags: ["autodocs"],
+  argTypes: {
+    hint: { control: "text" },
+    label: { control: "text" },
+    ref: { table: { disable: true } },
+  },
 }
 
 export default meta

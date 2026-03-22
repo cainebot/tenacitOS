@@ -45,7 +45,7 @@ export function AppNavigation({
               <a
                 href={item.href}
                 className={cx(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
                   item.isActive
                     ? "bg-tertiary text-primary"

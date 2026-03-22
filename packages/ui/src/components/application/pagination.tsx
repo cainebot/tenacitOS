@@ -71,7 +71,7 @@ export function Pagination({
         isDisabled={currentPage <= 1}
         onPress={() => onPageChange(currentPage - 1)}
         className={cx(
-          "inline-flex h-8 w-8 items-center justify-center rounded-md text-sm transition-colors",
+          "inline-flex h-8 w-8 items-center justify-center rounded-sm text-sm transition-colors",
           "text-quaternary hover:bg-tertiary hover:text-primary",
           "disabled:opacity-30 disabled:cursor-not-allowed",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
@@ -106,7 +106,7 @@ export function Pagination({
             key={page}
             onPress={() => onPageChange(page)}
             className={cx(
-              "inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm transition-colors",
+              "inline-flex h-8 min-w-8 items-center justify-center rounded-sm px-2 text-sm transition-colors",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
               page === currentPage
                 ? "bg-brand-600 text-white"
@@ -124,7 +124,7 @@ export function Pagination({
         isDisabled={currentPage >= totalPages}
         onPress={() => onPageChange(currentPage + 1)}
         className={cx(
-          "inline-flex h-8 w-8 items-center justify-center rounded-md text-sm transition-colors",
+          "inline-flex h-8 w-8 items-center justify-center rounded-sm text-sm transition-colors",
           "text-quaternary hover:bg-tertiary hover:text-primary",
           "disabled:opacity-30 disabled:cursor-not-allowed",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"

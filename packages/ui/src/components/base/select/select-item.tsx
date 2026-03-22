@@ -44,7 +44,7 @@ export const SelectItem = ({ label, id, value, avatarUrl, supportingText, isDisa
             {(state) => (
                 <div
                     className={cx(
-                        "flex cursor-pointer items-center gap-2 rounded-md outline-hidden select-none",
+                        "flex cursor-pointer items-center gap-2 rounded-sm outline-hidden select-none",
                         state.isSelected && "bg-active",
                         state.isDisabled && "cursor-not-allowed",
                         state.isFocused && "bg-primary_hover",

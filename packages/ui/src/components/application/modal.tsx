@@ -61,7 +61,7 @@ export function Modal({
         >
           <Dialog
             className={cx(
-              "rounded-xl border border-secondary bg-secondary p-6 shadow-2xl outline-none",
+              "rounded-lg border border-secondary bg-secondary p-6 shadow-2xl outline-none",
               "text-primary",
               className
             )}

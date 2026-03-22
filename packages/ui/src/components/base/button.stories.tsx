@@ -69,6 +69,10 @@ const meta = {
     isDisabled: { control: "boolean" },
     showTextWhileLoading: { control: "boolean" },
     noTextPadding: { control: "boolean" },
+    children: {
+      name: "Button text",
+      control: "text",
+    },
     iconLeading: {
       control: "select",
       options: iconOptions,

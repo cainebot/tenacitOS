@@ -27,7 +27,7 @@ export function Popover({
       {trigger}
       <AriaPopover
         className={cx(
-          "rounded-xl border border-secondary bg-secondary shadow-2xl",
+          "rounded-lg border border-secondary bg-secondary shadow-2xl",
           "entering:animate-in entering:fade-in entering:zoom-in-95 entering:duration-200",
           "exiting:animate-out exiting:fade-out exiting:zoom-out-95 exiting:duration-150",
           className

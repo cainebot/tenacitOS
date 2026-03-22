@@ -51,7 +51,7 @@ const DropdownItem = ({ label, children, addon, icon: Icon, unstyled, ...props }
             {(state) => (
                 <div
                     className={cx(
-                        "relative flex items-center rounded-md px-2.5 py-2 outline-focus-ring transition duration-100 ease-linear",
+                        "relative flex items-center rounded-sm px-2.5 py-2 outline-focus-ring transition duration-100 ease-linear",
                         !state.isDisabled && "group-hover:bg-primary_hover",
                         state.isFocused && "bg-primary_hover",
                         state.isFocusVisible && "outline-2 -outline-offset-2",

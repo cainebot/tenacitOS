@@ -5,6 +5,9 @@ const meta: Meta<typeof Toggle> = {
   title: "Base/Toggle",
   component: Toggle,
   tags: ["autodocs"],
+  argTypes: {
+    hint: { control: "text" },
+  },
 }
 
 export default meta

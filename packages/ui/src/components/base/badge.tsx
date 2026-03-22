@@ -142,12 +142,12 @@ const typeConfigs = {
   },
   color: {
     common:
-      "size-max flex items-center whitespace-nowrap rounded-md ring-1 ring-inset",
+      "size-max flex items-center whitespace-nowrap rounded-sm ring-1 ring-inset",
     styles: filledColors,
   },
   modern: {
     common:
-      "size-max flex items-center whitespace-nowrap rounded-md ring-1 ring-inset shadow-xs",
+      "size-max flex items-center whitespace-nowrap rounded-sm ring-1 ring-inset shadow-xs",
     styles: {
       gray: {
         root: "bg-primary text-secondary ring-primary",
@@ -167,12 +167,12 @@ const withBadgeTypes = {
   },
   color: {
     common:
-      "size-max flex items-center whitespace-nowrap rounded-md ring-1 ring-inset",
+      "size-max flex items-center whitespace-nowrap rounded-sm ring-1 ring-inset",
     styles: filledColors,
   },
   modern: {
     common:
-      "size-max flex items-center whitespace-nowrap rounded-md ring-1 ring-inset bg-primary text-secondary ring-primary shadow-xs",
+      "size-max flex items-center whitespace-nowrap rounded-sm ring-1 ring-inset bg-primary text-secondary ring-primary shadow-xs",
     styles: addonOnlyColors,
   },
 }
@@ -189,7 +189,7 @@ const pillSizes = {
 const badgeSizes = {
   sm: "py-0.5 px-1.5 text-xs font-medium",
   md: "py-0.5 px-2 text-sm font-medium",
-  lg: "py-1 px-2.5 text-sm font-medium rounded-lg",
+  lg: "py-1 px-2.5 text-sm font-medium rounded-md",
 }
 
 const sizesByType = {
@@ -290,7 +290,7 @@ export function BadgeWithDot({
   const dotBadgeSizes = {
     sm: "gap-1 py-0.5 px-1.5 text-xs font-medium",
     md: "gap-1.5 py-0.5 px-2 text-sm font-medium",
-    lg: "gap-1.5 py-1 px-2.5 text-sm font-medium rounded-lg",
+    lg: "gap-1.5 py-1 px-2.5 text-sm font-medium rounded-md",
   }
   const sizes = {
     "pill-color": dotPillSizes,
@@ -309,10 +309,8 @@ export function BadgeWithDot({
     >
       <span
         className={cx(
-          "size-1.5 shrink-0 rounded-full",
-          colorStyle?.addon
-            ? colorStyle.addon.replace("text-", "bg-")
-            : "bg-current",
+          "size-1.5 shrink-0 rounded-full bg-current",
+          colorStyle?.addon,
         )}
       />
       {children}
@@ -377,9 +375,9 @@ export function BadgeWithIcon({
     },
     lg: {
       trailing:
-        "gap-1 py-1 pl-2.5 pr-2 text-sm font-medium rounded-lg",
+        "gap-1 py-1 pl-2.5 pr-2 text-sm font-medium rounded-md",
       leading:
-        "gap-1 py-1 pr-2.5 pl-2 text-sm font-medium rounded-lg",
+        "gap-1 py-1 pr-2.5 pl-2 text-sm font-medium rounded-md",
     },
   }
   const sizes = {
@@ -452,7 +450,7 @@ export function BadgeWithButton({
   const btnBadgeSizes = {
     sm: "gap-0.5 py-0.5 pl-1.5 pr-0.75 text-xs font-medium",
     md: "gap-0.5 py-0.5 pl-2 pr-1 text-sm font-medium",
-    lg: "gap-0.5 py-1 pl-2.5 pr-1.5 text-sm font-medium rounded-lg",
+    lg: "gap-0.5 py-1 pl-2.5 pr-1.5 text-sm font-medium rounded-md",
   }
   const sizes = {
     "pill-color": btnPillSizes,
@@ -516,7 +514,7 @@ export function BadgeIcon({
   const iconBadgeSizes = {
     sm: "p-1.25",
     md: "p-1.5",
-    lg: "p-2 rounded-lg",
+    lg: "p-2 rounded-md",
   }
   const sizes = {
     "pill-color": iconPillSizes,

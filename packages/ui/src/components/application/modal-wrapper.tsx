@@ -49,7 +49,7 @@ export function Modal({
           <Dialog>
             <div
               className={cx(
-                "rounded-xl border border-secondary bg-secondary text-primary shadow-2xl",
+                "rounded-lg border border-secondary bg-secondary text-primary shadow-2xl",
                 className
               )}
             >
