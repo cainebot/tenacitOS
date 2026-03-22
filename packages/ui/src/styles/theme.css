@@ -103,35 +103,50 @@
     --blue-950: #102a56;
 
     /* -----------------------------------------------------------------------
-       Background Tokens
+       Background Tokens (DARK mode — default)
        ----------------------------------------------------------------------- */
-    --bg-primary: var(--gray-25);
-    --bg-secondary: var(--gray-50);
-    --bg-tertiary: var(--gray-100);
-    --bg-quaternary: var(--gray-200);
+    --bg-primary: var(--gray-950);
+    --bg-secondary: var(--gray-900);
+    --bg-tertiary: var(--gray-800);
+    --bg-quaternary: var(--gray-700);
 
     /* -----------------------------------------------------------------------
-       Text Tokens
+       Text Tokens (DARK mode — light text on dark bg)
        ----------------------------------------------------------------------- */
-    --text-primary-900: var(--gray-900);
-    --text-secondary-700: var(--gray-700);
-    --text-tertiary-600: var(--gray-600);
+    --text-primary-900: var(--gray-50);
+    --text-secondary-700: var(--gray-300);
+    --text-tertiary-600: var(--gray-400);
     --text-quaternary-500: var(--gray-500);
-    --text-disabled: var(--gray-500);
+    --text-disabled: var(--gray-600);
 
     /* -----------------------------------------------------------------------
-       Border Tokens
+       Border Tokens (DARK mode — subtle borders)
        ----------------------------------------------------------------------- */
-    --border-primary: var(--gray-200);
-    --border-secondary: var(--gray-100);
-    --border-tertiary: var(--gray-50);
-    --border-disabled: var(--gray-200);
+    --border-primary: var(--gray-700);
+    --border-secondary: var(--gray-800);
+    --border-tertiary: var(--gray-900);
+    --border-disabled: var(--gray-700);
 
     /* Transitional — will be removed when all accent refs migrated to brand-600 */
     --accent: var(--brand-600);
 
     /* -----------------------------------------------------------------------
-       Shadows
+       Additional Dark Mode Tokens
+       ----------------------------------------------------------------------- */
+    --bg-active: var(--gray-800);
+    --bg-disabled: var(--gray-800);
+    --bg-disabled_subtle: var(--gray-900);
+    --bg-primary-solid: var(--gray-25);
+    --secondary_hover: var(--gray-200);
+    --tertiary_hover: var(--gray-300);
+    --quaternary_hover: var(--gray-400);
+    --placeholder: var(--gray-500);
+    --tooltip-supporting-text: var(--gray-300);
+    --disabled_subtle: var(--gray-700);
+    --fg-disabled_subtle: var(--gray-600);
+
+    /* -----------------------------------------------------------------------
+       Shadows (DARK mode — heavier shadows)
        ----------------------------------------------------------------------- */
     --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.40);
     --shadow-sm: 0px 1px 3px 0px rgba(0, 0, 0, 0.50), 0px 1px 2px -1px rgba(0, 0, 0, 0.50);
@@ -283,24 +298,37 @@
     --blue-900: #194185;
     --blue-950: #102a56;
 
-    /* Background tokens */
+    /* Background tokens (LIGHT mode) */
     --bg-primary: #FFFFFF;
     --bg-secondary: var(--gray-50);
     --bg-tertiary: var(--gray-100);
     --bg-quaternary: var(--gray-200);
 
-    /* Text tokens */
+    /* Text tokens (LIGHT mode — dark text on light bg) */
     --text-primary-900: var(--gray-900);
     --text-secondary-700: var(--gray-700);
     --text-tertiary-600: var(--gray-600);
     --text-quaternary-500: var(--gray-500);
     --text-disabled: var(--gray-500);
 
-    /* Border tokens */
+    /* Border tokens (LIGHT mode) */
     --border-primary: var(--gray-300);
     --border-secondary: var(--gray-200);
     --border-tertiary: var(--gray-100);
     --border-disabled: var(--gray-300);
+
+    /* Additional Light Mode Tokens */
+    --bg-active: var(--brand-50);
+    --bg-disabled: var(--gray-100);
+    --bg-disabled_subtle: var(--gray-50);
+    --bg-primary-solid: var(--gray-950);
+    --secondary_hover: var(--gray-800);
+    --tertiary_hover: var(--gray-700);
+    --quaternary_hover: var(--gray-600);
+    --placeholder: var(--gray-400);
+    --tooltip-supporting-text: var(--gray-300);
+    --disabled_subtle: var(--gray-300);
+    --fg-disabled_subtle: var(--gray-300);
 
     /* Shadows — lighter for light mode */
     --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.05);
@@ -411,15 +439,15 @@
   --color-bg-secondary: var(--bg-secondary);
   --color-bg-tertiary: var(--bg-tertiary);
   --color-bg-quaternary: var(--bg-quaternary);
-  --color-primary_alt: var(--gray-25);
+  --color-primary_alt: var(--bg-primary);
   --color-primary_hover: var(--bg-secondary);
-  --color-primary-solid: var(--gray-950);
-  --color-secondary_alt: var(--gray-200);
-  --color-secondary_hover: var(--text-secondary-700);
-  --color-tertiary_hover: var(--text-tertiary-600);
-  --color-active: var(--brand-50);
-  --color-disabled: var(--gray-100);
-  --color-disabled_subtle: var(--gray-200);
+  --color-primary-solid: var(--bg-primary-solid);
+  --color-secondary_alt: var(--bg-quaternary);
+  --color-secondary_hover: var(--secondary_hover);
+  --color-tertiary_hover: var(--tertiary_hover);
+  --color-active: var(--bg-active);
+  --color-disabled: var(--bg-disabled);
+  --color-disabled_subtle: var(--bg-disabled_subtle);
   --color-bg-brand-solid: var(--brand-600);
   --color-bg-brand-solid_hover: var(--brand-700);
   --color-brand-primary_alt: var(--brand-50);
@@ -440,9 +468,9 @@
   --color-fg-secondary: var(--text-secondary-700);
   --color-fg-tertiary: var(--text-tertiary-600);
   --color-fg-quaternary: var(--text-quaternary-500);
-  --color-fg-quaternary_hover: var(--gray-600);
+  --color-fg-quaternary_hover: var(--quaternary_hover);
   --color-fg-disabled: var(--text-disabled);
-  --color-fg-disabled_subtle: var(--gray-300);
+  --color-fg-disabled_subtle: var(--fg-disabled_subtle);
   --color-fg-white: #FFFFFF;
   --color-fg-brand-primary: var(--brand-600);
   --color-fg-brand-primary_alt: var(--brand-500);
@@ -467,19 +495,19 @@
   --color-focus-ring: var(--brand-500);
   --color-brand: var(--brand-600);
   --color-error_subtle: var(--error-300);
-  --color-disabled_subtle: var(--gray-300);
+  --color-disabled_subtle: var(--disabled_subtle);
 
   /* Ring tokens — see @theme block at bottom */
 
   /* -----------------------------------------------------------------------
      Semantic Text Tokens — for text-*_hover, text-brand-* compounds
      ----------------------------------------------------------------------- */
-  --color-placeholder: var(--gray-400);
+  --color-placeholder: var(--placeholder);
   --color-brand-secondary: var(--brand-500);
   --color-brand-secondary_hover: var(--brand-400);
   --color-brand-tertiary: var(--brand-300);
   --color-error-primary_hover: var(--error-500);
-  --color-tooltip-supporting-text: var(--gray-600);
+  --color-tooltip-supporting-text: var(--tooltip-supporting-text);
 
   /* -----------------------------------------------------------------------
      Utility Colors — Badge/FeaturedIcon light themes
@@ -648,8 +676,8 @@
   --background-color-secondary: var(--bg-secondary);
   --background-color-secondary_hover: var(--bg-tertiary);
   --background-color-tertiary: var(--bg-tertiary);
-  --background-color-active: var(--brand-50);
-  --background-color-disabled: var(--gray-100);
+  --background-color-active: var(--bg-active);
+  --background-color-disabled: var(--bg-disabled);
   --background-color-overlay: rgba(0, 0, 0, 0.70);
   --background-color-brand-solid: var(--brand-600);
   --background-color-brand-solid_hover: var(--brand-700);
@@ -661,12 +689,12 @@
   /* --- Text Color (text-*) --- */
   --text-color-primary: var(--text-primary-900);
   --text-color-secondary: var(--text-secondary-700);
-  --text-color-secondary_hover: var(--gray-800);
+  --text-color-secondary_hover: var(--secondary_hover);
   --text-color-tertiary: var(--text-tertiary-600);
-  --text-color-tertiary_hover: var(--gray-700);
+  --text-color-tertiary_hover: var(--tertiary_hover);
   --text-color-quaternary: var(--text-quaternary-500);
   --text-color-disabled: var(--text-disabled);
-  --text-color-placeholder: var(--gray-400);
+  --text-color-placeholder: var(--placeholder);
   --text-color-white: #FFFFFF;
   --text-color-brand-secondary: var(--brand-500);
   --text-color-brand-secondary_hover: var(--brand-400);
@@ -681,9 +709,9 @@
   --color-fg-secondary: var(--text-secondary-700);
   --color-fg-tertiary: var(--text-tertiary-600);
   --color-fg-quaternary: var(--text-quaternary-500);
-  --color-fg-quaternary_hover: var(--gray-600);
+  --color-fg-quaternary_hover: var(--quaternary_hover);
   --color-fg-disabled: var(--text-disabled);
-  --color-fg-disabled_subtle: var(--gray-300);
+  --color-fg-disabled_subtle: var(--fg-disabled_subtle);
   --color-fg-brand-primary: var(--brand-600);
   --color-fg-brand-secondary: var(--brand-500);
   --color-fg-brand-secondary_alt: var(--brand-400);
@@ -704,7 +732,7 @@
   --border-color-secondary: var(--border-secondary);
   --border-color-tertiary: var(--border-tertiary);
   --border-color-disabled: var(--border-disabled);
-  --border-color-disabled_subtle: var(--gray-300);
+  --border-color-disabled_subtle: var(--disabled_subtle);
   --border-color-brand: var(--brand-600);
   --border-color-error: var(--error-600);
   --border-color-error_subtle: var(--error-300);
@@ -716,7 +744,7 @@
   --ring-color-error: var(--error-600);
   --ring-color-error_subtle: var(--error-300);
   --ring-color-disabled: var(--border-disabled);
-  --ring-color-disabled_subtle: var(--gray-300);
+  --ring-color-disabled_subtle: var(--disabled_subtle);
   --ring-color-brand: var(--brand-600);
 
   /* --- Outline Color (outline-*) --- */
