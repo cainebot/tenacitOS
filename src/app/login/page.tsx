@@ -1,108 +1,116 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button, Input } from "@circos/ui";
-
-function LoginForm() {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        const from = searchParams.get("from") || "/";
-        router.push(from);
-        router.refresh();
-      } else {
-        setError("Incorrect password");
-      }
-    } catch {
-      setError("Connection error");
-    }
-
-    setLoading(false);
-  };
-
-  return (
-    <section className="flex min-h-screen flex-col items-center bg-primary px-4 py-12 md:px-8 md:pt-24">
-      <div className="mx-auto flex w-full flex-col gap-8 sm:max-w-90">
-        {/* Header */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          <h1 className="text-display-xs font-semibold text-primary md:text-display-sm">
-            Mission Control
-          </h1>
-          <p className="text-md text-tertiary">
-            Enter password to access
-          </p>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          <Input
-            type="password"
-            label="Password"
-            placeholder="Enter your password"
-            size="md"
-            isRequired
-            hideRequiredIndicator
-            name="password"
-            value={password}
-            onChange={setPassword}
-            isInvalid={!!error}
-            hint={error || undefined}
-          />
-
-          <Button
-            type="submit"
-            size="lg"
-            color="primary"
-            className="w-full"
-            isLoading={loading}
-            showTextWhileLoading
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </Button>
-        </form>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-quaternary">
-          CircOS -- Agent Mission Control
-        </p>
-      </div>
-    </section>
-  );
-}
+import { Tab, TabList, Tabs } from "@circos/ui";
+import { Button } from "@circos/ui";
+import { SocialButton } from "@circos/ui";
+import { Checkbox } from "@circos/ui";
+import { Form } from "@circos/ui";
+import { Input } from "@circos/ui";
+import { UntitledLogoMinimal } from "@circos/ui";
+import { BackgroundPattern } from "@circos/ui";
+import { createBrowserClient } from "@/lib/supabase";
 
 export default function LoginPage() {
-  return (
-    <Suspense
-      fallback={
-        <section className="flex min-h-screen flex-col items-center bg-primary px-4 py-12 md:px-8 md:pt-24">
-          <div className="mx-auto flex w-full flex-col gap-8 sm:max-w-90">
-            <div className="h-16 animate-pulse rounded bg-tertiary" />
-            <div className="h-20 animate-pulse rounded bg-tertiary" />
-            <div className="h-12 animate-pulse rounded bg-tertiary" />
-          </div>
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
+        const formData = new FormData(e.currentTarget);
+        const email = formData.get("email") as string;
+        const password = formData.get("password") as string;
+
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                setError(data.error ?? "Invalid credentials. Please try again.");
+                setIsLoading(false);
+                return;
+            }
+
+            // Persist Supabase session in the browser
+            const supabase = createBrowserClient();
+            await supabase.auth.setSession({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+            });
+
+            const redirectTo = searchParams.get("from") || "/";
+            router.push(redirectTo);
+        } catch {
+            setError("Connection failed. Please try again.");
+            setIsLoading(false);
+        }
+    }
+
+    return (
+        <section className="relative min-h-screen overflow-hidden bg-primary px-4 py-12 md:px-8 md:pt-24">
+            <div className="relative z-10 mx-auto flex w-full flex-col gap-8 sm:max-w-90">
+                <div className="flex flex-col items-center gap-6 text-center">
+                    <div className="relative">
+                        <BackgroundPattern pattern="grid" className="absolute top-1/2 left-1/2 z-0 hidden -translate-x-1/2 -translate-y-1/2 md:block" />
+                        <BackgroundPattern pattern="grid" size="md" className="absolute top-1/2 left-1/2 z-0 -translate-x-1/2 -translate-y-1/2 md:hidden" />
+                        <UntitledLogoMinimal className="relative z-10 size-12 max-md:hidden" />
+                        <UntitledLogoMinimal className="relative z-10 size-10 md:hidden" />
+                    </div>
+                    <div className="z-10 flex flex-col gap-2 md:gap-3">
+                        <h1 className="text-display-xs font-semibold text-primary md:text-display-sm">Log in to your account</h1>
+                        <p className="self-stretch p-0 text-md text-tertiary">Welcome back! Please enter your details.</p>
+                    </div>
+                    <Tabs defaultSelectedKey="login" className="z-10 w-full">
+                        <TabList type="button-minimal" fullWidth size="sm">
+                            <Tab id="signup">Sign up</Tab>
+                            <Tab id="login">Log in</Tab>
+                        </TabList>
+                    </Tabs>
+                </div>
+                <Form
+                    onSubmit={handleSubmit}
+                    className="z-10 flex flex-col gap-6"
+                >
+                    <div className="flex flex-col gap-5">
+                        <Input isRequired hideRequiredIndicator label="Email" type="email" name="email" placeholder="Enter your email" size="md" />
+                        <Input isRequired hideRequiredIndicator label="Password" type="password" name="password" size="md" placeholder="••••••••" />
+                    </div>
+                    {error && (
+                        <p className="text-sm text-error-primary">{error}</p>
+                    )}
+                    <div className="flex items-center">
+                        <Checkbox label="Remember for 30 days" name="remember" />
+                        <Button color="link-color" size="md" href="#" className="ml-auto">
+                            Forgot password
+                        </Button>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        <Button type="submit" size="lg" isLoading={isLoading} isDisabled={isLoading}>
+                            Sign in
+                        </Button>
+                        <SocialButton social="google" theme="color">
+                            Sign in with Google
+                        </SocialButton>
+                    </div>
+                </Form>
+                <div className="z-10 flex justify-center gap-1 text-center">
+                    <span className="text-sm text-tertiary">Don&apos;t have an account?</span>
+                    <Button color="link-color" size="md" href="#">
+                        Sign up
+                    </Button>
+                </div>
+            </div>
         </section>
-      }
-    >
-      <LoginForm />
-    </Suspense>
-  );
+    );
 }
