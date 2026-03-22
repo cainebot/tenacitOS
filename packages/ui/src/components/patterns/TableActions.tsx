@@ -1,21 +1,21 @@
 "use client"
 
 import { type ReactNode } from "react"
-import { Button, type ButtonVariant, type ButtonSize } from "../base/button"
+import { Button, type ButtonCommonProps } from "../base/button"
 import { cx } from "../../utils/cx"
 
 export interface TableAction {
   key: string
   label: string
   icon?: ReactNode
-  variant?: ButtonVariant
-  onPress?: () => void
+  color?: ButtonCommonProps["color"]
+  onClick?: () => void
   isDisabled?: boolean
 }
 
 export interface TableActionsProps {
   actions: TableAction[]
-  size?: ButtonSize
+  size?: ButtonCommonProps["size"]
   className?: string
 }
 
@@ -29,9 +29,9 @@ export function TableActions({
       {actions.map((action) => (
         <Button
           key={action.key}
-          variant={action.variant ?? "ghost"}
+          color={action.color ?? "tertiary"}
           size={size}
-          onPress={action.onPress}
+          onClick={action.onClick}
           isDisabled={action.isDisabled}
           iconLeading={action.icon}
         >

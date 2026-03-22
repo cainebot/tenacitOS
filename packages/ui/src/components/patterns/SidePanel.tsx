@@ -73,12 +73,12 @@ export function SidePanelForm({
       onOpenChange={onOpenChange}
       footer={
         <>
-          <Button variant="outline" onPress={handleCancel}>
+          <Button color="secondary" onClick={handleCancel}>
             {cancelLabel}
           </Button>
           <Button
-            variant="primary"
-            onPress={onSubmit}
+            color="primary"
+            onClick={onSubmit}
             isLoading={isSubmitting}
           >
             {submitLabel}

@@ -1,7 +1,7 @@
 "use client"
 
 import { type ReactNode } from "react"
-import { Badge, type BadgeVariant } from "../base/badge"
+import { Badge, type BadgeColor } from "../base/badge"
 import { cx } from "../../utils/cx"
 
 export type TrendDirection = "up" | "down" | "neutral"
@@ -16,7 +16,7 @@ export interface MetricCardProps {
   icon?: ReactNode
   badge?: {
     label: string
-    variant?: BadgeVariant
+    color?: BadgeColor
   }
   className?: string
 }
@@ -58,7 +58,7 @@ export function MetricCard({
           <span className="text-sm text-secondary">{label}</span>
         </div>
         {badge && (
-          <Badge variant={badge.variant ?? "default"} size="sm">
+          <Badge color={badge.color ?? "gray"} size="sm">
             {badge.label}
           </Badge>
         )}

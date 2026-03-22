@@ -1,5 +1,5 @@
 export { Modal, ModalHeader, ModalBody, ModalFooter } from "./modal"
-export type { ModalProps, ModalSize, ModalHeaderProps, ModalBodyProps, ModalFooterProps } from "./modal"
+export type { ModalProps, ModalSize } from "./modal"
 
 export { Tabs, TabList, Tab, TabPanel } from "./tabs"
 export type { TabsProps, TabListProps, TabProps, TabPanelProps } from "./tabs"

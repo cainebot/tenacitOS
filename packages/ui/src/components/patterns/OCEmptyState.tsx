@@ -32,15 +32,15 @@ export function OCEmptyState({
     actionLabel || secondaryActionLabel ? (
       <div className="flex items-center gap-3">
         {secondaryActionLabel && (
-          <Button variant="outline" size="sm" onPress={onSecondaryAction}>
+          <Button color="secondary" size="sm" onClick={onSecondaryAction}>
             {secondaryActionLabel}
           </Button>
         )}
         {actionLabel && (
           <Button
-            variant="primary"
+            color="primary"
             size="sm"
-            onPress={onAction}
+            onClick={onAction}
             iconLeading={actionIcon}
           >
             {actionLabel}

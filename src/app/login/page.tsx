@@ -80,7 +80,7 @@ function LoginForm() {
         <Button
           type="submit"
           isDisabled={loading}
-          variant="primary"
+          color="primary"
           className="w-full font-semibold py-2.5"
         >
           {loading ? "Verificando..." : "Entrar"}

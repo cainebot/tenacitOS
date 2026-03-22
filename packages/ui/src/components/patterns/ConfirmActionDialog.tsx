@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 
-import { Button, type ButtonVariant } from "../base";
+import { Button } from "../base";
 import {
   Modal,
   ModalBody,
   ModalFooter,
   ModalHeader,
 } from "../application";
+
 type ConfirmActionDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -18,7 +19,7 @@ type ConfirmActionDialogProps = {
   confirmLabel?: string;
   confirmingLabel?: string;
   cancelLabel?: string;
-  cancelVariant?: ButtonVariant;
+  cancelColor?: "secondary" | "tertiary";
   errorStyle?: "text" | "panel";
   ariaLabel?: string;
   confirmName?: string;
@@ -38,7 +39,7 @@ export function ConfirmActionDialog({
   confirmLabel = "Delete",
   confirmingLabel = "Deleting…",
   cancelLabel = "Cancel",
-  cancelVariant = "outline",
+  cancelColor = "secondary",
   errorStyle = "panel",
   ariaLabel,
   confirmName,
@@ -68,25 +69,25 @@ export function ConfirmActionDialog({
               placeholder={
                 confirmNamePlaceholder ?? `Type "${confirmName}" to confirm`
               }
-              className="flex h-11 w-full rounded-xl border border-border bg-surface-elevated px-4 text-sm text-primary placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="flex h-11 w-full rounded-xl border border-secondary bg-secondary px-4 text-sm text-primary placeholder:text-placeholder focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
               autoComplete="off"
             />
           </div>
         )}
         {errorMessage ? (
           errorStyle === "text" ? (
-            <p className="text-sm text-error">{errorMessage}</p>
+            <p className="text-sm text-error-primary">{errorMessage}</p>
           ) : (
-            <div className="rounded-lg border border-border bg-surface-elevated p-3 text-xs text-secondary">
+            <div className="rounded-lg border border-secondary bg-secondary p-3 text-xs text-secondary">
               {errorMessage}
             </div>
           )
         ) : null}
         <ModalFooter>
-          <Button variant={cancelVariant} onPress={() => onOpenChange(false)}>
+          <Button color={cancelColor} onClick={() => onOpenChange(false)}>
             {cancelLabel}
           </Button>
-          <Button variant="danger" onPress={onConfirm} isDisabled={isDisabled}>
+          <Button color="primary-destructive" onClick={onConfirm} isDisabled={isDisabled}>
             {isConfirming ? confirmingLabel : confirmLabel}
           </Button>
         </ModalFooter>

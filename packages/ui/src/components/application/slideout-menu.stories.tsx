@@ -24,7 +24,7 @@ export const Default: Story = {
     const [isOpen, setIsOpen] = useState(false)
     return (
       <>
-        <Button onPress={() => setIsOpen(true)}>Open Panel</Button>
+        <Button onClick={() => setIsOpen(true)}>Open Panel</Button>
         <SlideoutMenu
           {...args}
           title="Panel Title"
@@ -46,7 +46,7 @@ export const WithoutTitle: Story = {
     const [isOpen, setIsOpen] = useState(false)
     return (
       <>
-        <Button onPress={() => setIsOpen(true)}>Open Panel</Button>
+        <Button onClick={() => setIsOpen(true)}>Open Panel</Button>
         <SlideoutMenu isOpen={isOpen} onOpenChange={setIsOpen}>
           <h3 className="mb-4 text-lg font-semibold text-primary">
             Custom Header
@@ -65,7 +65,7 @@ export const LargeSize: Story = {
     const [isOpen, setIsOpen] = useState(false)
     return (
       <>
-        <Button onPress={() => setIsOpen(true)}>Open Large Panel</Button>
+        <Button onClick={() => setIsOpen(true)}>Open Large Panel</Button>
         <SlideoutMenu
           title="Large Panel"
           size="lg"

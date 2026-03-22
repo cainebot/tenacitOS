@@ -24,7 +24,7 @@ export interface ModalFormProps {
   cancelLabel?: string
   isSubmitting?: boolean
   isDismissable?: boolean
-  submitVariant?: "primary" | "danger"
+  submitColor?: "primary" | "primary-destructive"
   className?: string
 }
 
@@ -42,7 +42,7 @@ export function ModalForm({
   cancelLabel = "Cancel",
   isSubmitting = false,
   isDismissable = true,
-  submitVariant = "primary",
+  submitColor = "primary",
   className,
 }: ModalFormProps) {
   const handleCancel = () => {
@@ -69,12 +69,12 @@ export function ModalForm({
       <ModalBody>{children}</ModalBody>
 
       <ModalFooter>
-        <Button variant="outline" onPress={handleCancel}>
+        <Button color="secondary" onClick={handleCancel}>
           {cancelLabel}
         </Button>
         <Button
-          variant={submitVariant}
-          onPress={onSubmit}
+          color={submitColor}
+          onClick={onSubmit}
           isLoading={isSubmitting}
         >
           {submitLabel}

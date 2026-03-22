@@ -6,7 +6,7 @@ import {
   ModalOverlay,
   Modal as NativeModal,
   Dialog,
-} from "../../../../../src/components/application/modals/modal"
+} from "react-aria-components"
 import { cx } from "../../utils/cx"
 
 export type ModalSize = "sm" | "md" | "lg" | "xl"
