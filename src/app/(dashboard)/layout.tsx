@@ -20,8 +20,10 @@ import {
   cx,
   type NavItemDividerType,
   type NavItemType,
+  type FeaturedCardData,
 } from "@circos/ui";
 import { BotIcon } from "@/components/icons/bot-icon";
+import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
 
 // Full sidebar nav items
 const navItems: (NavItemType | NavItemDividerType)[] = [
@@ -64,6 +66,18 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { nodes } = useRealtimeNodes();
+
+  const nodeCards: FeaturedCardData[] = nodes.map((node) => {
+    const ramPct = node.ram_total_mb > 0
+      ? Math.round((node.ram_usage_mb / node.ram_total_mb) * 100)
+      : 0;
+    return {
+      title: node.node_id,
+      description: `${ramPct}% RAM · ${node.agent_count} Agent${node.agent_count === 1 ? "" : "s"}`,
+      progress: ramPct,
+    };
+  });
 
   return (
     <div className="flex h-screen flex-col bg-primary lg:flex-row">
@@ -74,7 +88,7 @@ export default function DashboardLayout({
           items={slimNavItems}
         />
       ) : (
-        <SidebarNavigationSectionDividers activeUrl={pathname} items={navItems} />
+        <SidebarNavigationSectionDividers activeUrl={pathname} items={navItems} featuredCards={nodeCards} />
       )}
 
       {/* Collapse / expand toggle — floats at the sidebar's right edge, desktop only */}
