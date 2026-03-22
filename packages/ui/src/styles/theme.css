@@ -242,11 +242,11 @@
     --radius-xs: 4px;
     --radius-sm: 6px;
     --radius-md: 8px;
-    --radius-lg: 12px;
-    --radius-xl: 16px;
-    --radius-2xl: 20px;
-    --radius-3xl: 24px;
-    --radius-4xl: 32px;
+    --radius-lg: 10px;
+    --radius-xl: 12px;
+    --radius-2xl: 16px;
+    --radius-3xl: 20px;
+    --radius-4xl: 24px;
     --radius-full: 9999px;
 
     /* -----------------------------------------------------------------------
@@ -286,6 +286,25 @@
     --spacing-72: 288px;
     --spacing-80: 320px;
     --spacing-96: 384px;
+
+    /* Semantic spacing aliases — UUI token spec (3. Spacing) */
+    --spacing-none: var(--spacing-0);
+    --spacing-xxs:  var(--spacing-0-5);
+    --spacing-xs:   var(--spacing-1);
+    --spacing-sm:   var(--spacing-1-5);
+    --spacing-md:   var(--spacing-2);
+    --spacing-lg:   var(--spacing-3);
+    --spacing-xl:   var(--spacing-4);
+    --spacing-2xl:  var(--spacing-5);
+    --spacing-3xl:  var(--spacing-6);
+    --spacing-4xl:  var(--spacing-8);
+    --spacing-5xl:  var(--spacing-10);
+    --spacing-6xl:  var(--spacing-12);
+    --spacing-7xl:  var(--spacing-16);
+    --spacing-8xl:  var(--spacing-20);
+    --spacing-9xl:  var(--spacing-24);
+    --spacing-10xl: var(--spacing-32);
+    --spacing-11xl: var(--spacing-40);
   }
 
   /* =========================================================================
@@ -592,7 +611,7 @@
   --color-bg-secondary: var(--bg-secondary);
   --color-bg-tertiary: var(--bg-tertiary);
   --color-bg-quaternary: var(--bg-quaternary);
-  --color-primary_alt: var(--bg-primary);
+  --color-primary_alt: var(--bg-secondary);
   --color-primary_hover: var(--bg-secondary);
   --color-primary-solid: var(--bg-primary-solid);
   --color-secondary_alt: var(--bg-quaternary);
@@ -807,11 +826,11 @@
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
-  --radius-3xl: 24px;
-  --radius-4xl: 32px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-4xl: 24px;
   --radius-full: 9999px;
 
   /* --- Shadow --- */
@@ -826,6 +845,7 @@
 
   /* --- Background Color (bg-*) --- */
   --background-color-primary: var(--bg-primary);
+  --background-color-primary_alt: var(--bg-secondary);
   --background-color-primary_hover: var(--bg-secondary);
   --background-color-secondary: var(--bg-secondary);
   --background-color-secondary_hover: var(--bg-tertiary);
@@ -868,6 +888,7 @@
   --color-fg-disabled: var(--text-disabled);
   --color-fg-disabled_subtle: var(--fg-disabled_subtle);
   --color-fg-brand-primary: var(--brand-600);
+  --color-fg-brand-primary_alt: var(--gray-300);
   --color-fg-brand-secondary: var(--brand-500);
   --color-fg-brand-secondary_alt: var(--brand-400);
   --color-fg-brand-secondary_hover: var(--brand-400);

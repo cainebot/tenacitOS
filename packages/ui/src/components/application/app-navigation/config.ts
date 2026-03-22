@@ -10,7 +10,7 @@ export type NavItemType = {
     /** Badge to display. */
     badge?: ReactNode;
     /** List of sub-items to display. */
-    items?: { label: string; href: string; icon?: FC<{ className?: string }>; badge?: ReactNode }[];
+    items?: { label: string; href: string; icon?: FC<{ className?: string }>; badge?: ReactNode; iconTrailing?: FC<{ className?: string }> }[];
     /** Whether this nav item is a divider. */
     divider?: boolean;
 };

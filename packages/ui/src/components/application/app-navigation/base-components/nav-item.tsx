@@ -30,11 +30,13 @@ interface NavItemBaseProps {
     truncate?: boolean;
     /** Handler for click events. */
     onClick?: MouseEventHandler;
+    /** Trailing icon component to display. */
+    iconTrailing?: FC<HTMLAttributes<HTMLOrSVGElement>>;
     /** Content to display. */
     children?: ReactNode;
 }
 
-export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, truncate = true, onClick }: NavItemBaseProps) => {
+export const NavItemBase = ({ current, type, badge, href, icon: Icon, iconTrailing: IconTrailing, children, truncate = true, onClick, open }: NavItemBaseProps) => {
     const iconElement = Icon && <Icon aria-hidden="true" className="mr-2 size-5 shrink-0 text-fg-quaternary transition-inherit-all" />;
 
     const badgeElement =
@@ -63,15 +65,15 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, 
 
     if (type === "collapsible") {
         return (
-            <summary className={cx("px-3 py-2", styles.root, current && styles.rootSelected)} onClick={onClick}>
+            <button type="button" className={cx("px-3 py-2 text-left", styles.root, current && styles.rootSelected)} onClick={onClick}>
                 {iconElement}
 
                 {labelElement}
 
                 {badgeElement}
 
-                <ChevronDown aria-hidden="true" className="ml-3 size-4 shrink-0 stroke-[2.5px] text-fg-quaternary in-open:-scale-y-100" />
-            </summary>
+                <ChevronDown aria-hidden="true" className={cx("ml-3 size-4 shrink-0 stroke-[2.5px] text-fg-quaternary transition-transform duration-200 ease-out", open && "-rotate-180")} />
+            </button>
         );
     }
 
@@ -88,6 +90,7 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, 
                 {labelElement}
                 {externalIcon}
                 {badgeElement}
+                {IconTrailing && <IconTrailing aria-hidden="true" className="ml-auto size-4 shrink-0 text-fg-quaternary" />}
             </AriaLink>
         );
     }

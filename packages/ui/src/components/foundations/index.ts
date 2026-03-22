@@ -6,3 +6,4 @@ export {
   type FeaturedIconColor,
 } from "./featured-icon"
 export { UntitledLogoMinimal } from "./logo/untitledui-logo-minimal"
+export { UntitledLogo } from "./logo/untitledui-logo"
