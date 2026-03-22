@@ -162,9 +162,8 @@ function CheckboxOption({
         isSelected={checked}
         onChange={() => onToggle(value)}
         className="font-body text-[13px] text-primary"
-      >
-        {label}
-      </Checkbox>
+        label={label}
+      />
     </div>
   )
 }

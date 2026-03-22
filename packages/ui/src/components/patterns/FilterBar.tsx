@@ -74,9 +74,7 @@ export function FilterBar({
             placeholder={filter.placeholder ?? `All ${filter.label}`}
           >
             {filter.options.map((opt) => (
-              <SelectItem key={opt.id} id={opt.id}>
-                {opt.label}
-              </SelectItem>
+              <SelectItem key={opt.id} id={opt.id} label={opt.label} />
             ))}
           </Select>
         </div>
@@ -87,9 +85,8 @@ export function FilterBar({
           <Toggle
             isSelected={toggle.isSelected}
             onChange={toggle.onChange}
-          >
-            {toggle.label}
-          </Toggle>
+            label={toggle.label}
+          />
         </div>
       ))}
 

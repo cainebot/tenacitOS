@@ -26,8 +26,8 @@ export const Create: Story = {
         <Input label="Name" placeholder="Job name" />
         <Input label="Schedule" placeholder="*/5 * * * *" />
         <Select label="Agent">
-          <SelectItem id="agent-1">Agent Alpha</SelectItem>
-          <SelectItem id="agent-2">Agent Beta</SelectItem>
+          <SelectItem id="agent-1" label="Agent Alpha" />
+          <SelectItem id="agent-2" label="Agent Beta" />
         </Select>
         <TextArea label="Description" placeholder="What does this job do?" />
       </div>

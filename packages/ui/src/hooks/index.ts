@@ -4,3 +4,4 @@ export {
   type UseClipboardOptions,
   type UseClipboardReturn,
 } from "./use-clipboard"
+export { useResizeObserver } from "./use-resize-observer"

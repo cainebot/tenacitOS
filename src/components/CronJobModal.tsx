@@ -178,7 +178,8 @@ export function CronJobModal({ isOpen, onClose, onSave, editingJob }: CronJobMod
             value={name}
             onChange={(v) => { setName(v); if (errors.name) setErrors((p) => ({ ...p, name: "" })); }}
             placeholder="e.g., Daily Backup"
-            errorMessage={errors.name}
+            isInvalid={!!errors.name}
+            hint={errors.name || undefined}
           />
 
           {/* Description */}

@@ -22,9 +22,9 @@ export const Default: Story = {
       <div className="flex flex-col gap-4">
         <Input label="Name" placeholder="Enter agent name" />
         <Select label="Type">
-          <SelectItem id="chat">Chat</SelectItem>
-          <SelectItem id="task">Task</SelectItem>
-          <SelectItem id="cron">Cron</SelectItem>
+          <SelectItem id="chat" label="Chat" />
+          <SelectItem id="task" label="Task" />
+          <SelectItem id="cron" label="Cron" />
         </Select>
         <Input label="Endpoint" placeholder="https://..." />
       </div>

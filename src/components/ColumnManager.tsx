@@ -162,9 +162,8 @@ function ColumnItem({
           isSelected={column.only_humans}
           onChange={(checked) => void onToggleHumans(column.column_id, checked)}
           className="font-body text-[11px] text-secondary whitespace-nowrap"
-        >
-          humans only
-        </Checkbox>
+          label="humans only"
+        />
       </div>
 
       {/* Delete button */}
@@ -562,15 +561,16 @@ export function ColumnManager({
                           isSelected={newStateIds.includes(s.state_id)}
                           onChange={() => toggleNewStateId(s.state_id)}
                           className="font-body text-[13px] text-primary"
-                        >
-                          <span className="flex items-center gap-2">
-                            <span
-                              style={{ background: s.color || '#6b7280' }}
-                              className="w-2 h-2 rounded-full shrink-0"
-                            />
-                            {s.name}
-                          </span>
-                        </Checkbox>
+                          label={
+                            <span className="flex items-center gap-2">
+                              <span
+                                style={{ background: s.color || '#6b7280' }}
+                                className="w-2 h-2 rounded-full shrink-0"
+                              />
+                              {s.name}
+                            </span>
+                          }
+                        />
                       </div>
                     ))
                   )}
