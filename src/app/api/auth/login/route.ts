@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { createServerClient } from "@/lib/supabase";
 
 // Simple in-memory rate limiter (per-IP, resets on server restart)
 // Sufficient for a personal dashboard — no external dependency needed
@@ -85,31 +86,46 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { password } = await request.json();
+  const { email, password } = await request.json();
 
-  if (password === process.env.ADMIN_PASSWORD) {
-    clearAttempts(ip); // Reset on success
-
-    const response = NextResponse.json({ success: true });
-
-    // Set auth cookie (7 days expiry)
-    // secure=true in production (HTTPS), false in dev (HTTP localhost)
-    response.cookies.set("mc_auth", process.env.AUTH_SECRET!, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: "/",
-    });
-
-    return response;
+  if (!email || !password) {
+    return NextResponse.json(
+      { success: false, error: "Email and password are required." },
+      { status: 400 }
+    );
   }
 
-  // Record failed attempt
-  recordFailure(ip);
+  // Authenticate via Supabase Auth
+  const supabase = createServerClient();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  return NextResponse.json(
-    { success: false, error: "Invalid password" },
-    { status: 401 }
-  );
+  if (error || !data.session) {
+    recordFailure(ip);
+    return NextResponse.json(
+      { success: false, error: error?.message ?? "Invalid credentials." },
+      { status: 401 }
+    );
+  }
+
+  // Success — clear rate limit, set mc_auth cookie (middleware gate), return session tokens
+  clearAttempts(ip);
+
+  const response = NextResponse.json({
+    success: true,
+    session: {
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    },
+  });
+
+  // Set mc_auth cookie as middleware gate (Supabase manages real auth; cookie is a fast edge check)
+  response.cookies.set("mc_auth", process.env.AUTH_SECRET!, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+    path: "/",
+  });
+
+  return response;
 }
