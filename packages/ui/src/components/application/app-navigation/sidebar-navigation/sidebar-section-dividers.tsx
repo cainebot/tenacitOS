@@ -10,14 +10,22 @@ import { NavList } from "../base-components/nav-list";
 import type { NavItemDividerType, NavItemType } from "../config";
 import { FeaturedCardProgressBar } from "../../featured-cards/featured-cards";
 
+export interface FeaturedCardData {
+    title: string;
+    description: string;
+    progress: number;
+}
+
 interface SidebarNavigationSectionDividersProps {
     /** URL of the currently active item. */
     activeUrl?: string;
     /** List of items to display. */
     items: (NavItemType | NavItemDividerType)[];
+    /** Live node cards to display in the sidebar footer. When omitted or empty, renders nothing. */
+    featuredCards?: FeaturedCardData[];
 }
 
-export const SidebarNavigationSectionDividers = ({ activeUrl, items }: SidebarNavigationSectionDividersProps) => {
+export const SidebarNavigationSectionDividers = ({ activeUrl, items, featuredCards }: SidebarNavigationSectionDividersProps) => {
     const MAIN_SIDEBAR_WIDTH = 292;
 
     const content = (
@@ -46,20 +54,16 @@ export const SidebarNavigationSectionDividers = ({ activeUrl, items }: SidebarNa
                     </NavItemBase>
                 </div>
                 <div className="-mx-2 px-2 lg:-mx-4 lg:px-4 flex gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <FeaturedCardProgressBar
-                        title="Circus-02"
-                        description="14% RAM · 4 Agents"
-                        progress={14}
-                        showButtons={false}
-                        className="w-[14.875rem] shrink-0"
-                    />
-                    <FeaturedCardProgressBar
-                        title="Circus-01"
-                        description="8% RAM · 5 Agents"
-                        progress={8}
-                        showButtons={false}
-                        className="w-[14.875rem] shrink-0"
-                    />
+                    {(featuredCards ?? []).map((card) => (
+                        <FeaturedCardProgressBar
+                            key={card.title}
+                            title={card.title}
+                            description={card.description}
+                            progress={card.progress}
+                            showButtons={false}
+                            className="w-[14.875rem] shrink-0"
+                        />
+                    ))}
                 </div>
                 <NavAccountCard />
             </div>

@@ -35,5 +35,6 @@ export { NavAccountCard, NavAccountMenu } from "./app-navigation/base-components
 export { MobileNavigationHeader } from "./app-navigation/base-components/mobile-header"
 export type { NavItemType, NavItemDividerType } from "./app-navigation/config"
 export { SidebarNavigationSectionDividers } from "./app-navigation/sidebar-navigation/sidebar-section-dividers"
+export type { FeaturedCardData } from "./app-navigation/sidebar-navigation/sidebar-section-dividers"
 export { FeaturedCardProgressBar, type FeaturedCardCommonProps } from "./featured-cards/featured-cards"
 export { SidebarNavigationSlim } from "./app-navigation/sidebar-navigation/sidebar-slim"
