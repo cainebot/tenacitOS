@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
 const PUBLIC_ROUTES = new Set(["/login"]);
 
 // API routes that are always public (auth endpoints + health check)
+// /api/auth/ covers login and logout; /api/health for uptime checks
 const PUBLIC_API_PREFIXES = ["/api/auth/", "/api/health"];
 
 function isBrowserAuthenticated(request: NextRequest): boolean {
