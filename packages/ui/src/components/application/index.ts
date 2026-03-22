@@ -27,3 +27,10 @@ export type { LoadingIndicatorProps, LoadingSize } from "./loading-indicator"
 
 export { AppNavigation } from "./app-navigation"
 export type { AppNavigationProps, NavItem } from "./app-navigation"
+
+export { NavList } from "./app-navigation/base-components/nav-list"
+export { NavItemBase } from "./app-navigation/base-components/nav-item"
+export { NavItemButton } from "./app-navigation/base-components/nav-item-button"
+export { NavAccountCard, NavAccountMenu } from "./app-navigation/base-components/nav-account-card"
+export { MobileNavigationHeader } from "./app-navigation/base-components/mobile-header"
+export type { NavItemType, NavItemDividerType } from "./app-navigation/config"
