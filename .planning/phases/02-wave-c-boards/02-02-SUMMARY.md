@@ -7,7 +7,7 @@ tags: [react, tailwind, uui, tokens, kanban, filter]
 # Dependency graph
 requires:
   - phase: 01-wave-b-pages
-    provides: proven token migration pattern with cx() from @openclaw/ui
+    provides: proven token migration pattern with cx() from @circos/ui
 provides:
   - BoardKanban.tsx migrated to UUI Tailwind tokens (zero var(--*))
   - BoardFilterBar.tsx migrated to UUI Tailwind tokens with cx() conditional styling
@@ -18,7 +18,7 @@ tech-stack:
   added: []
   patterns:
     - hover states via Tailwind hover: modifier instead of JS onMouseEnter/onMouseLeave
-    - cx() from @openclaw/ui for isActive state-driven class conditionals
+    - cx() from @circos/ui for isActive state-driven class conditionals
     - SVG stroke via stroke-current + text-{color} class for token-based stroke color
 
 key-files:
@@ -58,7 +58,7 @@ completed: 2026-03-20
 ## Accomplishments
 - BoardKanban.tsx: 4 style={{}} blocks removed, 5 var(--*) refs eliminated, hover: modifier replaces JS handlers
 - BoardFilterBar.tsx: 30+ style={{}} blocks removed, 57 var(--*) refs eliminated, cx() import added for filter button active state
-- Both files now import from @openclaw/ui and use exclusively UUI Tailwind utility classes
+- Both files now import from @circos/ui and use exclusively UUI Tailwind utility classes
 
 ## Task Commits
 
@@ -81,7 +81,7 @@ Each task was committed atomically:
 None — plan executed exactly as written.
 
 ## Issues Encountered
-- Pre-existing TypeScript errors in `CardDetailPanel.tsx` (unrelated file using ConfirmActionDialog from @openclaw/ui) — out of scope, not fixed, already logged in STATE.md blockers
+- Pre-existing TypeScript errors in `CardDetailPanel.tsx` (unrelated file using ConfirmActionDialog from @circos/ui) — out of scope, not fixed, already logged in STATE.md blockers
 
 ## Next Phase Readiness
 - BoardKanban and BoardFilterBar ready for consumption by boards/[id]/page.tsx

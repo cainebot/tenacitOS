@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Migrate 8 simple dashboard pages (about, actions, activity, calendar, files, git, logs, memory) from Digital Circus legacy tokens to 100% UUI semantic tokens. Each page: replace all var(--*) inline → Tailwind UUI tokens, replace all style={} → Tailwind utilities, replace any legacy components → @openclaw/ui.
+Migrate 8 simple dashboard pages (about, actions, activity, calendar, files, git, logs, memory) from Digital Circus legacy tokens to 100% UUI semantic tokens. Each page: replace all var(--*) inline → Tailwind UUI tokens, replace all style={} → Tailwind utilities, replace any legacy components → @circos/ui.
 
 </domain>
 
@@ -65,9 +65,9 @@ These should be mapped to closest UUI semantic equivalents:
 ## Existing Code Insights
 
 ### Reusable Assets
-- @openclaw/ui: Button, Badge, TextField, Select, Tabs, Modal, Table, EmptyState, LoadingIndicator
-- @openclaw/ui patterns: PageHeader, FilterBar, MetricCard, StatusBadge, TimelineItem, OCEmptyState
-- cx() from @openclaw/ui for class merging
+- @circos/ui: Button, Badge, TextField, Select, Tabs, Modal, Table, EmptyState, LoadingIndicator
+- @circos/ui patterns: PageHeader, FilterBar, MetricCard, StatusBadge, TimelineItem, OCEmptyState
+- cx() from @circos/ui for class merging
 
 ### Established Patterns (from Phase 1)
 - Tailwind utilities with UUI CSS custom properties: bg-[var(--bg-primary)]

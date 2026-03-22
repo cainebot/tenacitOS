@@ -5,3 +5,4 @@ export {
   type FeaturedIconSize,
   type FeaturedIconColor,
 } from "./featured-icon"
+export { UntitledLogoMinimal } from "./logo/untitledui-logo-minimal"

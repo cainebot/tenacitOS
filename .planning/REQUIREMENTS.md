@@ -1,4 +1,4 @@
-# Requirements: OpenClaw Control Panel — Post-Migration Deep Fix
+# Requirements: CircOS Control Panel — Post-Migration Deep Fix
 
 **Defined:** 2026-03-20
 **Core Value:** Every surface renders correctly with UUI semantic tokens, brand indigo, zero broken classes
@@ -75,8 +75,8 @@ Requirements for post-migration fix release. Each maps to roadmap phases.
 ### Raw Element Completeness (Optional Phase 7)
 
 - **RAWL-01**: Zero raw `<button>`, `<input>`, `<textarea>`, `<select>` outside Kanban
-- **RAWL-02**: All dashboard pages use @openclaw/ui components exclusively
-- **RAWL-03**: All organisms/ components use @openclaw/ui components
+- **RAWL-02**: All dashboard pages use @circos/ui components exclusively
+- **RAWL-03**: All organisms/ components use @circos/ui components
 
 ## Out of Scope
 

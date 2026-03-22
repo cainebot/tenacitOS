@@ -20,8 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@openclaw/ui": ["./packages/ui/src"],
-      "@openclaw/ui/*": ["./packages/ui/src/*"]
+      "@circos/ui": ["./packages/ui/src"],
+      "@circos/ui/*": ["./packages/ui/src/*"]
     }
   },
   "include": [

@@ -2,11 +2,12 @@
 @import "../../packages/ui/src/styles/theme.css";
 @import "../../packages/ui/src/styles/typography.css";
 @plugin "@tailwindcss/typography";
+@plugin "tailwindcss-react-aria-components";
 @source not "../../.planning";
 
 /* ==========================================================================
    OpenClaw — Global Styles (UUI-based)
-   All design tokens come from @openclaw/ui theme.css
+   All design tokens come from @circos/ui theme.css
    ========================================================================== */
 
 /* OpenClaw-specific activity type tokens (custom extension) */

@@ -43,7 +43,7 @@ metrics:
 **costs/page.tsx:**
 - Replaced all wrapper/container `style={{ color: "var(--*)" }}` occurrences with Tailwind UUI classes (`text-primary`, `text-secondary`, `text-muted`, `text-error`, `text-success`, `text-warning`, `bg-card`, `border-border`, etc.)
 - Converted `budgetColor` from a CSS variable ternary to `budgetTextClass`/`budgetBgClass` Tailwind class ternaries
-- Added `cx()` from `@openclaw/ui` for conditional class merging
+- Added `cx()` from `@circos/ui` for conditional class merging
 - 4 Recharts chart containers preserved exactly (LineChart, BarChart x2, PieChart) — all `stroke`, `fill`, `contentStyle` props untouched
 - `COLORS` array unchanged
 
@@ -72,7 +72,7 @@ metrics:
 **costs/page.tsx:**
 - `grep "var(--" costs/page.tsx` → 19 matches, ALL inside Recharts props (CartesianGrid, XAxis, YAxis, Tooltip contentStyle, Line, Bar) — zero on wrapper elements
 - `grep "cx(" costs/page.tsx` → 4 matches
-- `grep "from.*@openclaw/ui" costs/page.tsx` → import found
+- `grep "from.*@circos/ui" costs/page.tsx` → import found
 - `const COLORS =` → present, unchanged
 - Recharts imports present → yes
 - TypeScript errors → 0
@@ -81,7 +81,7 @@ metrics:
 - `grep -c "var(--" system/page.tsx` → 0
 - `grep -c "var(--info, #3b82f6)" system/page.tsx` → 0
 - `grep "cx(" system/page.tsx` → 20 matches
-- `grep "from.*@openclaw/ui" system/page.tsx` → import found
+- `grep "from.*@circos/ui" system/page.tsx` → import found
 - Remaining `style={{` → only width percentages (dynamic, not Tailwind-mappable) and terminal hardcoded colors
 - TypeScript errors → 0
 

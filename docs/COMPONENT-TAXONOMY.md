@@ -28,26 +28,26 @@
 
 | File | Uses CVA | Uses cn.ts | UUI Replacement | Breaking Changes |
 |------|---------|-----------|----------------|-----------------|
-| `button.tsx` | Yes | Yes | `Button` from @openclaw/ui | `variant` names change, `isDisabled`/`isLoading` props |
-| `badge.tsx` | Yes | Yes | `Badge` from @openclaw/ui | Variant names change |
+| `button.tsx` | Yes | Yes | `Button` from @circos/ui | `variant` names change, `isDisabled`/`isLoading` props |
+| `badge.tsx` | Yes | Yes | `Badge` from @circos/ui | Variant names change |
 | `card.tsx` | No | Yes | Restyle with UUI tokens | None — pure div |
-| `input.tsx` | No | Yes | `TextField` from @openclaw/ui | Wrapper API changes |
-| `textarea.tsx` | No | Yes | `TextArea` from @openclaw/ui | Wrapper API changes |
+| `input.tsx` | No | Yes | `TextField` from @circos/ui | Wrapper API changes |
+| `textarea.tsx` | No | Yes | `TextArea` from @circos/ui | Wrapper API changes |
 
 ### Tier 2: Radix Primitives (Radix → React Aria)
 
 | File | Radix Package | UUI Replacement | Breaking Changes |
 |------|--------------|----------------|-----------------|
-| `tooltip.tsx` | `@radix-ui/react-tooltip` | `Tooltip` from @openclaw/ui | Provider no longer needed |
-| `tabs.tsx` | `@radix-ui/react-tabs` | `Tabs` from @openclaw/ui | `value`→`selectedKey` |
-| `popover.tsx` | `@radix-ui/react-popover` | `Popover` from @openclaw/ui | Overlay/portal API changes |
+| `tooltip.tsx` | `@radix-ui/react-tooltip` | `Tooltip` from @circos/ui | Provider no longer needed |
+| `tabs.tsx` | `@radix-ui/react-tabs` | `Tabs` from @circos/ui | `value`→`selectedKey` |
+| `popover.tsx` | `@radix-ui/react-popover` | `Popover` from @circos/ui | Overlay/portal API changes |
 
 ### Tier 3: Radix with Breaking API Changes
 
 | File | Radix Package | UUI Replacement | Breaking Changes |
 |------|--------------|----------------|-----------------|
-| `select.tsx` | `@radix-ui/react-select` | `Select` from @openclaw/ui | `value`→`selectedKey`, `onValueChange`→`onSelectionChange` |
-| `dialog.tsx` | `@radix-ui/react-dialog` | `Modal`/`Dialog` from @openclaw/ui | Portal/overlay API, composition pattern |
+| `select.tsx` | `@radix-ui/react-select` | `Select` from @circos/ui | `value`→`selectedKey`, `onValueChange`→`onSelectionChange` |
+| `dialog.tsx` | `@radix-ui/react-dialog` | `Modal`/`Dialog` from @circos/ui | Portal/overlay API, composition pattern |
 | `command.tsx` | cmdk (not Radix) | UUI Combobox or restyle cmdk | Search/filter pattern changes |
 
 ### Tier 4: Composites (depend on other primitives)
@@ -65,8 +65,8 @@
 | File | Dependencies | UUI Strategy |
 |------|-------------|-------------|
 | `BrandMark.tsx` | Next.js Link | Restyle with UUI tokens (keep logo) |
-| `PriorityBadge.tsx` | CVA, useState | Badge variant from @openclaw/ui |
-| `StatusPill.tsx` | cn.ts | Badge (pill variant) from @openclaw/ui |
+| `PriorityBadge.tsx` | CVA, useState | Badge variant from @circos/ui |
+| `StatusPill.tsx` | cn.ts | Badge (pill variant) from @circos/ui |
 | `StatusDot.tsx` | cn.ts | DotIcon / custom styled div |
 | `AttentionBadge.tsx` | None (inline styles) | Badge (attention variant) |
 
@@ -74,7 +74,7 @@
 
 | File | Dependencies | UUI Strategy |
 |------|-------------|-------------|
-| `ContextBreadcrumbs.tsx` | useState, lucide-react | React Aria Breadcrumbs from @openclaw/ui |
+| `ContextBreadcrumbs.tsx` | useState, lucide-react | React Aria Breadcrumbs from @circos/ui |
 
 ## 4. Organisms — `src/components/organisms/`
 
@@ -218,10 +218,10 @@
 
 | From | To |
 |------|-----|
-| `cn()` from `@/lib/cn` | `cx()` from `@openclaw/ui` |
+| `cn()` from `@/lib/cn` | `cx()` from `@circos/ui` |
 | CVA `variants({})` | UUI component props (variant, size, etc.) |
 | `var(--accent)` etc. | Tailwind utility classes with UUI tokens |
-| `clsx()` | `cx()` from `@openclaw/ui` |
+| `clsx()` | `cx()` from `@circos/ui` |
 
 ### Dependencies to Remove (Phase 7)
 

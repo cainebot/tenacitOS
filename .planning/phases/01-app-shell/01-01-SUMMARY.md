@@ -33,7 +33,7 @@ metrics:
 
 ## What Was Built
 
-Created `src/app/providers.tsx` as a `"use client"` component combining `ThemeProvider` and `UUIRouterProvider` from `@openclaw/ui`. Migrated the root layout to wrap children in this `<Providers>` component and replaced legacy inline styles with UUI semantic token Tailwind classes. Migrated the dashboard layout to replace the inline `style={{ backgroundColor: 'var(--background)' }}` with `bg-[var(--bg-primary)]`.
+Created `src/app/providers.tsx` as a `"use client"` component combining `ThemeProvider` and `UUIRouterProvider` from `@circos/ui`. Migrated the root layout to wrap children in this `<Providers>` component and replaced legacy inline styles with UUI semantic token Tailwind classes. Migrated the dashboard layout to replace the inline `style={{ backgroundColor: 'var(--background)' }}` with `bg-[var(--bg-primary)]`.
 
 ## Tasks Completed
 

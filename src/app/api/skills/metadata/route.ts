@@ -20,7 +20,7 @@ interface MetadataResult {
 async function fetchWithToken(url: string, token?: string): Promise<Response> {
   const headers: Record<string, string> = {
     'Accept': 'application/vnd.github.v3+json',
-    'User-Agent': 'openclaw-office/1.0',
+    'User-Agent': 'circos/1.0',
   }
   if (token) {
     headers['Authorization'] = `Bearer ${token}`

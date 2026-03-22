@@ -19,9 +19,9 @@ All implementation choices are at Claude's discretion — pure infrastructure/mi
 - boards/[id]/page.tsx: ~900 lines, has inline `<style>` tag with @keyframes fadeIn and @keyframes pulse — replace with tailwindcss-animate classes (animate-in fade-in, animate-pulse)
 - BoardKanban.tsx: 8 var(--*) occurrences, moderate migration
 - BoardFilterBar.tsx: 30+ var(--*) occurrences, heavy migration
-- CardDetailPanel.tsx: 25+ var(--*) occurrences, imports ConfirmActionDialog from @/components/ui/confirm-action-dialog — update import to @openclaw/ui
+- CardDetailPanel.tsx: 25+ var(--*) occurrences, imports ConfirmActionDialog from @/components/ui/confirm-action-dialog — update import to @circos/ui
 - ColumnManager.tsx: 20+ var(--*) occurrences, extensive migration
-- ConfirmActionDialog: Already migrated internally to @openclaw/ui — just need to update import paths in consumers
+- ConfirmActionDialog: Already migrated internally to @circos/ui — just need to update import paths in consumers
 - Domain hooks (useBoardKanban, useCardDetail) already extracted — only visual migration needed
 
 </decisions>
@@ -30,9 +30,9 @@ All implementation choices are at Claude's discretion — pure infrastructure/mi
 ## Existing Code Insights
 
 ### Reusable Assets
-- @openclaw/ui components: Button, Badge, Modal, ModalBody, Select, TextField, Tabs, Tooltip, Popover, Combobox
-- @openclaw/ui patterns: SidePanel, FilterBar, DetailPanel, MetricCard, ModalForm, StatusBadge, PageHeader, OCEmptyState
-- cx() utility from @openclaw/ui
+- @circos/ui components: Button, Badge, Modal, ModalBody, Select, TextField, Tabs, Tooltip, Popover, Combobox
+- @circos/ui patterns: SidePanel, FilterBar, DetailPanel, MetricCard, ModalForm, StatusBadge, PageHeader, OCEmptyState
+- cx() utility from @circos/ui
 - tailwindcss-animate classes: animate-in, fade-in, animate-pulse (replacements for @keyframes)
 
 ### Established Patterns
@@ -43,7 +43,7 @@ All implementation choices are at Claude's discretion — pure infrastructure/mi
 - boards/page.tsx is self-contained — uses Link from next/link and types from @/types/workflow
 
 ### Integration Points
-- ConfirmActionDialog import path needs updating: @/components/ui/confirm-action-dialog → @openclaw/ui
+- ConfirmActionDialog import path needs updating: @/components/ui/confirm-action-dialog → @circos/ui
 - AgentSidePanel is imported by boards/[id] but will be migrated in Phase 3
 - BoardKanban, BoardFilterBar, CardDetailPanel, ColumnManager are all consumed by boards/[id]
 

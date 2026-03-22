@@ -18,14 +18,14 @@ const config: StorybookConfig = {
     config.resolve ??= {}
     config.resolve.alias ??= {}
 
-    // Resolve @/ alias used by upstream UUI shims
-    const controlPanelSrc = resolve(__dirname, "../../../src")
+    // Resolve @/ alias to packages/ui/src (used by UUI installed components)
+    const uiSrc = resolve(__dirname, "../src")
     if (!Array.isArray(config.resolve.alias)) {
       config.resolve.alias = Object.entries(config.resolve.alias as Record<string, string>).map(
         ([find, replacement]) => ({ find, replacement })
       )
     }
-    config.resolve.alias.push({ find: /^@\//, replacement: controlPanelSrc + "/" })
+    config.resolve.alias.push({ find: /^@\//, replacement: uiSrc + "/" })
 
     // Ensure Vite resolves node_modules from workspace root (for tailwindcss, etc.)
     const workspaceRoot = resolve(__dirname, "../../..")

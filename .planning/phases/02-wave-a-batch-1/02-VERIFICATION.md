@@ -26,7 +26,7 @@ warnings:
 
 # Phase 02: Wave A Batch 1 Verification Report
 
-**Phase Goal:** Eight simple pages (about, actions, activity, calendar, files, git, logs, memory) each use only @openclaw/ui components and UUI tokens
+**Phase Goal:** Eight simple pages (about, actions, activity, calendar, files, git, logs, memory) each use only @circos/ui components and UUI tokens
 **Verified:** 2026-03-20
 **Status:** gaps_found
 **Re-verification:** No — initial verification
@@ -71,14 +71,14 @@ warnings:
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| `about/page.tsx` | @openclaw/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-primary)`, `var(--text-primary-900)` confirmed in className |
-| `actions/page.tsx` | @openclaw/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-secondary)`, `var(--text-primary-900)` confirmed in className |
-| `activity/page.tsx` | @openclaw/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-primary)`, `var(--text-primary-900)` confirmed in className |
-| `calendar/page.tsx` | @openclaw/ui tokens | Tailwind arbitrary values | NOT_WIRED | `text-white` and `text-gray-400` found — not UUI tokens |
-| `files/page.tsx` | @openclaw/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-secondary)`, `var(--text-primary-900)` confirmed in className |
-| `git/page.tsx` | @openclaw/ui tokens | Tailwind arbitrary values | PARTIAL | UUI tokens confirmed in className but `var(--bg-secondary)` leaked into style={} on line 128 |
-| `logs/page.tsx` | @openclaw/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-primary)`, `var(--text-primary-900)` confirmed in className |
-| `memory/page.tsx` | @openclaw/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-secondary)`, `var(--text-primary-900)` confirmed in className |
+| `about/page.tsx` | @circos/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-primary)`, `var(--text-primary-900)` confirmed in className |
+| `actions/page.tsx` | @circos/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-secondary)`, `var(--text-primary-900)` confirmed in className |
+| `activity/page.tsx` | @circos/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-primary)`, `var(--text-primary-900)` confirmed in className |
+| `calendar/page.tsx` | @circos/ui tokens | Tailwind arbitrary values | NOT_WIRED | `text-white` and `text-gray-400` found — not UUI tokens |
+| `files/page.tsx` | @circos/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-secondary)`, `var(--text-primary-900)` confirmed in className |
+| `git/page.tsx` | @circos/ui tokens | Tailwind arbitrary values | PARTIAL | UUI tokens confirmed in className but `var(--bg-secondary)` leaked into style={} on line 128 |
+| `logs/page.tsx` | @circos/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-primary)`, `var(--text-primary-900)` confirmed in className |
+| `memory/page.tsx` | @circos/ui tokens | Tailwind arbitrary values | WIRED | `var(--bg-secondary)`, `var(--text-primary-900)` confirmed in className |
 
 ---
 
@@ -127,7 +127,7 @@ warnings:
 
 ### Gaps Summary
 
-**One clear blocker gap** exists: the calendar page (`calendar/page.tsx`) uses `text-white` and `text-gray-400` — vanilla Tailwind primitive color classes that are not part of the `@openclaw/ui` token system. This directly violates WAVE-04 which requires the calendar page to use UUI tokens exclusively.
+**One clear blocker gap** exists: the calendar page (`calendar/page.tsx`) uses `text-white` and `text-gray-400` — vanilla Tailwind primitive color classes that are not part of the `@circos/ui` token system. This directly violates WAVE-04 which requires the calendar page to use UUI tokens exclusively.
 
 The fix is trivial — two class replacements:
 - `text-white` → `text-[var(--text-primary-900)]`

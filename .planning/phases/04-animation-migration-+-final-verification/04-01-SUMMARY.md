@@ -32,7 +32,7 @@ key-decisions:
   - "Tasks 1 and 2 implemented in single atomic file write — both motion removal and var(--*) migration committed together in one commit"
   - "Loading dots retain animationDelay inline style (dynamic computed value) — not a var(--*) token, acceptable"
   - "border border-[#393939] retained for isReviewMode composer border — deliberate hardcoded dark border matching terminal aesthetic (same decision pattern as Phase 01-02 Logs modal)"
-  - "cx() added to @openclaw/ui import to handle conditional border classes on composer div"
+  - "cx() added to @circos/ui import to handle conditional border classes on composer div"
 
 patterns-established:
   - "animate-in fade-in duration-300: standard entry animation replacing motion.div opacity 0->1"
@@ -66,7 +66,7 @@ completed: 2026-03-20
 - Replaced 3 motion.span loading dots with `animate-pulse` + staggered `animationDelay` inline style
 - Migrated all ~39 `var(--*)` references to Tailwind UUI token classes (bg-foreground, text-muted-foreground, bg-surface-elevated, text-destructive, etc.)
 - Replaced all onMouseEnter/onMouseLeave JS hover handlers with `hover:bg-*` Tailwind modifiers
-- Added cx() to @openclaw/ui import for conditional border class composition
+- Added cx() to @circos/ui import for conditional border class composition
 
 ## Task Commits
 
@@ -84,7 +84,7 @@ Each task was committed atomically:
 - Tasks 1 and 2 were implemented in a single atomic file write — the motion removal and var(--*) migration were naturally co-located changes in the same JSX elements, making separate commits redundant. Both changes are in commit `835a8c8`.
 - Loading dot `animationDelay` retained as inline style — it's a dynamically computed value (`i * 150`ms), not a design token, so there is no Tailwind equivalent.
 - Composer border in isReviewMode uses `border-[#393939]` — consistent with Phase 01-02 Logs modal terminal palette decision (deliberate hardcoded dark border for terminal aesthetic).
-- `cx` added to the existing `@openclaw/ui` import to handle the three-way conditional border logic on the composer div.
+- `cx` added to the existing `@circos/ui` import to handle the three-way conditional border logic on the composer div.
 
 ## Deviations from Plan
 

@@ -1,8 +1,8 @@
-# OpenClaw Control Panel — UUI Migration (Terminal D)
+# CircOS Control Panel — UUI Migration (Terminal D)
 
 ## What This Is
 
-OpenClaw control-panel is a Next.js dashboard application for managing AI agents, boards, workflows, and system operations. Terminal D handles Phase 7 (Waves B+C) of the migration from the legacy "Digital Circus" design system to Untitled UI React PRO (@openclaw/ui).
+OpenClaw control-panel is a Next.js dashboard application for managing AI agents, boards, workflows, and system operations. Terminal D handles Phase 7 (Waves B+C) of the migration from the legacy "Digital Circus" design system to Untitled UI React PRO (@circos/ui).
 
 ## Core Value
 
@@ -17,7 +17,7 @@ Every page in Waves B+C must use exclusively UUI tokens and components — zero 
 - Wave C: Migrate boards/[id], agents, agents/[id], board-groups/*, office, SmartAddModal
 - Replace all var(--*) inline styles with Tailwind UUI tokens
 - Replace all style={} with CSS vars with Tailwind utilities
-- Replace all legacy components with @openclaw/ui + patterns
+- Replace all legacy components with @circos/ui + patterns
 - Replace motion.div/motion.span in SmartAddModal with tailwindcss-animate
 
 ## Requirements
@@ -25,7 +25,7 @@ Every page in Waves B+C must use exclusively UUI tokens and components — zero 
 ### Validated
 
 - ✓ UUI PRO foundation installed in packages/ui (Phase 1-2, Terminal A)
-- ✓ 14 legacy primitives swapped to @openclaw/ui (Phase 3, Terminal A)
+- ✓ 14 legacy primitives swapped to @circos/ui (Phase 3, Terminal A)
 - ✓ Domain hooks decoupled (useBoardKanban, useCardDetail, useAgentForm, etc.)
 - ✓ 10 compound patterns created in packages/ui (Phase 4, Terminal B)
 - ✓ Atoms/molecules migrated (PriorityBadge, StatusPill, etc.)
@@ -52,15 +52,15 @@ Every page in Waves B+C must use exclusively UUI tokens and components — zero 
 
 - Branch: uui/phase-6-waves-bc (from develop after SYNC-2)
 - Prior phases M1-M4 already merged to develop
-- @openclaw/ui package lives at packages/ui/ with base, application, foundations, and patterns components
+- @circos/ui package lives at packages/ui/ with base, application, foundations, and patterns components
 - Domain hooks already extracted: useBoardKanban, useCardDetail, useAgentForm, useChatPanel, useSidebarNav
 - Tasks T103-T116 from the migration spec define the work
 - Tailwind v4 with UUI tokens in packages/ui/src/styles/theme.css
-- cx() utility from @openclaw/ui replaces cn() from legacy
+- cx() utility from @circos/ui replaces cn() from legacy
 
 ## Constraints
 
-- **Design system**: Must use only @openclaw/ui components and UUI semantic tokens
+- **Design system**: Must use only @circos/ui components and UUI semantic tokens
 - **No legacy**: Zero var(--*) inline styles, zero style={} with CSS vars in migrated files
 - **Functional**: Boards kanban, agents CRUD, board-groups must work correctly after migration
 - **Build**: next build must succeed with zero errors

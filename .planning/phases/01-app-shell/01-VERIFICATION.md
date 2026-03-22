@@ -29,7 +29,7 @@ human_verification:
 
 | #   | Truth                                                                                     | Status     | Evidence                                                                                  |
 | --- | ----------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------- |
-| 1   | Every page is wrapped in ThemeProvider and UUIRouterProvider from @openclaw/ui            | VERIFIED   | providers.tsx imports both; layout.tsx wraps children in `<Providers>`                    |
+| 1   | Every page is wrapped in ThemeProvider and UUIRouterProvider from @circos/ui            | VERIFIED   | providers.tsx imports both; layout.tsx wraps children in `<Providers>`                    |
 | 2   | Dashboard layout renders with zero legacy var(--*) tokens                                 | VERIFIED   | (dashboard)/layout.tsx clean — uses `bg-[var(--bg-primary)]` only                        |
 | 3   | Root layout body uses UUI semantic tokens instead of inline legacy vars                   | VERIFIED   | Body uses `bg-[var(--bg-primary)] text-[var(--text-primary-900)] font-[family-name:var(--font-text)]` |
 | 4   | Login page renders with zero legacy tokens and zero inline styles                         | VERIFIED   | login/page.tsx: 0 `style={{`, all UUI tokens confirmed present                           |
@@ -45,13 +45,13 @@ human_verification:
 
 | Artifact                                            | Expected                                          | Status     | Details                                                                 |
 | --------------------------------------------------- | ------------------------------------------------- | ---------- | ----------------------------------------------------------------------- |
-| `src/app/providers.tsx`                             | Client wrapper: ThemeProvider + UUIRouterProvider | VERIFIED   | "use client", imports both from @openclaw/ui, exports Providers         |
+| `src/app/providers.tsx`                             | Client wrapper: ThemeProvider + UUIRouterProvider | VERIFIED   | "use client", imports both from @circos/ui, exports Providers         |
 | `src/app/layout.tsx`                                | Root layout wrapping children in Providers        | VERIFIED   | Server component (no "use client"), imports Providers, wraps children   |
 | `src/app/(dashboard)/layout.tsx`                    | Dashboard layout with UUI tokens                  | VERIFIED   | `bg-[var(--bg-primary)]` via Tailwind, zero inline styles               |
 | `src/app/login/page.tsx`                            | Login page with UUI tokens, min 30 lines          | VERIFIED   | 119 lines, full UUI token coverage, zero inline styles                  |
 | `src/components/atoms/BrandMark.tsx`                | Brand mark with UUI tokens, font-display          | VERIFIED   | `font-display` on both DC span and THE DIGITAL div                      |
-| `src/components/organisms/DashboardSidebar.tsx`     | Sidebar with UUI tokens, min 100 lines            | VERIFIED   | 259 lines, cx() from @openclaw/ui, all UUI tokens, zero inline styles   |
-| `src/components/NodeStatusStrip.tsx`                | Node status strip with UUI tokens, min 100 lines  | VERIFIED   | 209 lines, cx() from @openclaw/ui, all UUI tokens, 1 allowlisted style  |
+| `src/components/organisms/DashboardSidebar.tsx`     | Sidebar with UUI tokens, min 100 lines            | VERIFIED   | 259 lines, cx() from @circos/ui, all UUI tokens, zero inline styles   |
+| `src/components/NodeStatusStrip.tsx`                | Node status strip with UUI tokens, min 100 lines  | VERIFIED   | 209 lines, cx() from @circos/ui, all UUI tokens, 1 allowlisted style  |
 
 ---
 
@@ -59,7 +59,7 @@ human_verification:
 
 | From                                            | To                                          | Via                                              | Status   | Details                                                          |
 | ----------------------------------------------- | ------------------------------------------- | ------------------------------------------------ | -------- | ---------------------------------------------------------------- |
-| `src/app/providers.tsx`                         | `@openclaw/ui`                              | `import { ThemeProvider, UUIRouterProvider }`    | WIRED    | Line 3 confirmed                                                 |
+| `src/app/providers.tsx`                         | `@circos/ui`                              | `import { ThemeProvider, UUIRouterProvider }`    | WIRED    | Line 3 confirmed                                                 |
 | `src/app/layout.tsx`                            | `src/app/providers.tsx`                     | `<Providers>` wrapping children                  | WIRED    | Import on line 4, usage on line 49                               |
 | `src/components/organisms/DashboardSidebar.tsx` | `src/components/atoms/BrandMark.tsx`        | `import { BrandMark }` + `<BrandMark />`         | WIRED    | Import line 25, render line 166                                  |
 | `src/components/organisms/DashboardSidebar.tsx` | `src/components/NodeStatusStrip.tsx`        | `import NodeStatusStrip` + `<NodeStatusStrip />`  | WIRED    | Import line 26, render line 254 (inside sidebar footer)         |
@@ -71,7 +71,7 @@ human_verification:
 
 | Requirement | Source Plan(s)    | Description                                                                 | Status    | Evidence                                                              |
 | ----------- | ----------------- | --------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------- |
-| SHELL-01    | 01-01             | Root layout provides ThemeProvider + RouterProvider from @openclaw/ui       | SATISFIED | providers.tsx wraps both; layout.tsx imports and uses Providers       |
+| SHELL-01    | 01-01             | Root layout provides ThemeProvider + RouterProvider from @circos/ui       | SATISFIED | providers.tsx wraps both; layout.tsx imports and uses Providers       |
 | SHELL-02    | 01-01             | Dashboard layout uses UUI tokens exclusively (zero legacy var(--*))         | SATISFIED | (dashboard)/layout.tsx: `bg-[var(--bg-primary)]`, zero legacy tokens |
 | SHELL-03    | 01-02             | Login page uses UUI components and tokens exclusively                       | SATISFIED | login/page.tsx: zero inline styles, zero legacy tokens, full UUI token set |
 | SHELL-04    | 01-03             | DashboardSidebar consumes UUI AppNavigation pattern                         | SATISFIED | DashboardSidebar.tsx: cx() from UUI, UUI token classes, no inline styles |

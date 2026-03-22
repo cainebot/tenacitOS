@@ -58,7 +58,7 @@ Replaced all inline `style={{}}` attributes with Tailwind utility classes. Key c
 
 Converted all inline styles to Tailwind classes. Key changes:
 
-- Added `import { cx } from '@openclaw/ui'`
+- Added `import { cx } from '@circos/ui'`
 - `getRamBarColor()` now returns Tailwind class strings: `bg-[var(--error-600)]`, `bg-[var(--warning-600)]`, `bg-[var(--success-600)]`
 - `statusDotColor()` now returns Tailwind class strings consumed via `cx()`
 - `StatusIcon` uses `className` with UUI color tokens
@@ -73,7 +73,7 @@ Converted all inline styles to Tailwind classes. Key changes:
 - `grep -c "style={{" DashboardSidebar.tsx` = 0
 - `grep -c "style={{" NodeStatusStrip.tsx` = 1 (RAM bar width only)
 - No legacy `var(--surface)`, `var(--accent)`, `var(--font-heading)`, `var(--card)`, `var(--border,`, `var(--text-primary,` tokens in either file
-- Both files contain `import { cx } from "@openclaw/ui"`
+- Both files contain `import { cx } from "@circos/ui"`
 
 ## Deviations from Plan
 

@@ -1,4 +1,4 @@
-# @openclaw/ui — Design System Reference
+# @circos/ui — Design System Reference
 
 ## Overview
 OpenClaw's design system built on Untitled UI React PRO. Uses React Aria for accessibility, Tailwind CSS v4 for styling. Dark theme default.
@@ -27,7 +27,7 @@ packages/ui/src/
 
 ### Imports
 ```typescript
-import { Button, Badge, Modal, cx } from "@openclaw/ui"
+import { Button, Badge, Modal, cx } from "@circos/ui"
 ```
 
 ### Class Merging

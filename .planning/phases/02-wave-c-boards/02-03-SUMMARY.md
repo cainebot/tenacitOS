@@ -16,7 +16,7 @@ key_files:
     - src/components/CardDetailPanel.tsx
     - src/components/ColumnManager.tsx
 decisions:
-  - ConfirmActionDialog import path fixed from @/components/ui/ to @openclaw/ui
+  - ConfirmActionDialog import path fixed from @/components/ui/ to @circos/ui
   - Dynamic API colors (s.color) kept as inline style — not token-based, no Tailwind equivalent
   - onMouseEnter/onMouseLeave JS color mutations replaced with hover: Tailwind modifiers in ColumnManager
   - Title focus border-color handled via focus:border-accent Tailwind class instead of JS onFocus handler
@@ -42,8 +42,8 @@ metrics:
 
 - `grep -c "var(--" src/components/CardDetailPanel.tsx` → 0 ✓
 - `grep -c "var(--" src/components/ColumnManager.tsx` → 0 ✓
-- CardDetailPanel imports `{ cx, ConfirmActionDialog } from '@openclaw/ui'` ✓
-- ColumnManager imports `{ cx } from '@openclaw/ui'` ✓
+- CardDetailPanel imports `{ cx, ConfirmActionDialog } from '@circos/ui'` ✓
+- ColumnManager imports `{ cx } from '@circos/ui'` ✓
 - Old import `@/components/ui/confirm-action-dialog` removed ✓
 - cx() used for conditional class merging in both files ✓
 

@@ -2,8 +2,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@openclaw/ui": ["./src"],
-      "@openclaw/ui/*": ["./src/*"]
+      "@circos/ui": ["./src"],
+      "@circos/ui/*": ["./src/*"],
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],

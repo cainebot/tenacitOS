@@ -18,7 +18,7 @@ async function searchSkillsSh(query: string): Promise<DiscoveredSkill[] | null> 
   try {
     const url = `https://skills.sh/api/search?q=${encodeURIComponent(query)}&limit=10`
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'openclaw-office/1.0' },
+      headers: { 'User-Agent': 'circos/1.0' },
       next: { revalidate: 60 },
     })
     if (!res.ok) return null
@@ -57,7 +57,7 @@ async function searchClawHub(query: string): Promise<DiscoveredSkill[] | null> {
   try {
     const url = `${CLAWHUB_BASE}/api/v1/skills/?q=${encodeURIComponent(query)}&limit=12&nonSuspicious=true`
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'openclaw-office/1.0' },
+      headers: { 'User-Agent': 'circos/1.0' },
       next: { revalidate: 60 },
     })
     if (!res.ok) return null

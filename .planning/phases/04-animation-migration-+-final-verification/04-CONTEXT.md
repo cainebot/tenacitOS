@@ -15,7 +15,7 @@ Replace all motion.div, motion.span, and AnimatePresence in SmartAddModal.tsx wi
 
 ### Claude's Discretion
 All implementation choices are at Claude's discretion — infrastructure/migration phase. Key notes:
-- SmartAddModal.tsx already partially migrated — uses @openclaw/ui (Modal, ModalBody, Badge, Popover)
+- SmartAddModal.tsx already partially migrated — uses @circos/ui (Modal, ModalBody, Badge, Popover)
 - Still has heavy inline style={{}} with var(--*) tokens
 - motion imports from 'motion/react' (not framer-motion):
   - AnimatePresence wrapping review section
@@ -30,7 +30,7 @@ All implementation choices are at Claude's discretion — infrastructure/migrati
   - spring badge → animate-in zoom-in
   - loading dots pulse → animate-pulse
   - AnimatePresence exit animations → CSS transition + conditional rendering
-- SkillPreviewCard.tsx: 10+ var(--*), imports from @openclaw/ui already
+- SkillPreviewCard.tsx: 10+ var(--*), imports from @circos/ui already
 - DiscoveryPanel.tsx: 6 var(--*), no special imports
 
 </decisions>
@@ -40,8 +40,8 @@ All implementation choices are at Claude's discretion — infrastructure/migrati
 
 ### Reusable Assets
 - tailwindcss-animate classes available: animate-in, fade-in, slide-in-from-bottom-*, zoom-in, animate-pulse, duration-*, fill-mode-forwards
-- @openclaw/ui: Modal, ModalBody, Badge, Popover already imported by SmartAddModal
-- cx() from @openclaw/ui for conditional classes
+- @circos/ui: Modal, ModalBody, Badge, Popover already imported by SmartAddModal
+- cx() from @circos/ui for conditional classes
 
 ### Established Patterns
 - Phase 1-3 established token mapping (var(--*) → Tailwind classes)

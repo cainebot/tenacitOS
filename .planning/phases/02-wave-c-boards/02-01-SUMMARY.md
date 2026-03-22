@@ -27,14 +27,14 @@ metrics:
 
 # Phase 02 Plan 01: Boards Listing Page Migration Summary
 
-**One-liner:** Eliminated all 16 inline style={{}} objects and 28 var(--*) references from boards/page.tsx using Tailwind UUI utility classes and cx() from @openclaw/ui.
+**One-liner:** Eliminated all 16 inline style={{}} objects and 28 var(--*) references from boards/page.tsx using Tailwind UUI utility classes and cx() from @circos/ui.
 
 ## What Was Built
 
 Migrated `src/app/(dashboard)/boards/page.tsx` from 100% inline `style={{}}` with `var(--*)` CSS tokens to Tailwind UUI utility classes. The file is now consistent with the Phase 01 migration pattern established by skills/page.tsx.
 
 **Changes:**
-- Added `import { cx } from '@openclaw/ui'`
+- Added `import { cx } from '@circos/ui'`
 - Replaced all 16 `style={{}}` objects with Tailwind `className` attributes
 - Eliminated all 28 `var(--*)` token references
 - Converted `onMouseEnter`/`onMouseLeave` JS hover handlers to `hover:border-accent hover:shadow-[...]` Tailwind modifiers
@@ -46,7 +46,7 @@ Migrated `src/app/(dashboard)/boards/page.tsx` from 100% inline `style={{}}` wit
 ```
 var(-- count: 0          PASS
 cx( count:    1          PASS
-@openclaw/ui import:     FOUND
+@circos/ui import:     FOUND
 style={{ count: 0        PASS
 TypeScript errors: 0     PASS
 ```

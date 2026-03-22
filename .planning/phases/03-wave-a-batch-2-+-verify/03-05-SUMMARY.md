@@ -8,7 +8,7 @@ tags: [uui, tokens, migration, verification, next-build]
 # Dependency graph
 requires:
   - phase: 03-wave-a-batch-2-+-verify
-    provides: "01-04: migrated all 8 Wave A Batch 2 pages to @openclaw/ui tokens"
+    provides: "01-04: migrated all 8 Wave A Batch 2 pages to @circos/ui tokens"
   - phase: 02-wave-a-batch-1
     provides: "Migrated 8 Wave A Batch 1 pages"
   - phase: 01-app-shell
@@ -109,7 +109,7 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 
-- Full M6 migration complete: all 23 files (app shell + 16 dashboard pages) use @openclaw/ui tokens exclusively
+- Full M6 migration complete: all 23 files (app shell + 16 dashboard pages) use @circos/ui tokens exclusively
 - Build is clean with zero errors
 - No legacy imports remain
 - No blockers or concerns

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   try {
     const url = `${CLAWHUB_BASE}/api/v1/skills/${encodeURIComponent(slug)}/file?path=SKILL.md`
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'openclaw-office/1.0' },
+      headers: { 'User-Agent': 'circos/1.0' },
     })
 
     if (!res.ok) {

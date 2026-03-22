@@ -1,15 +1,15 @@
-# OpenClaw Control Panel
+# CircOS Control Panel
 
 ## Design System: Untitled UI React PRO
 
-This project uses **Untitled UI React PRO** as its design system, wrapped in `@openclaw/ui` (packages/ui/).
+This project uses **Untitled UI React PRO** as its design system, wrapped in `@circos/ui` (packages/ui/).
 
 ### OpenClaw Overrides
 - **Brand color**: `#444CE7` (brand-600) — UUI official indigo
 - **Fonts**: Sora (display), Inter (body), JetBrains Mono (code)
 - **Dark theme default** — light via `data-theme="light"`
-- **Import from**: `@openclaw/ui` (NOT from untitled-ui directly)
-- **Class merging**: `cx()` from `@openclaw/ui` (NOT `cn()`, `clsx()`, or raw template literals)
+- **Import from**: `@circos/ui` (NOT from untitled-ui directly)
+- **Class merging**: `cx()` from `@circos/ui` (NOT `cn()`, `clsx()`, or raw template literals)
 
 ---
 
@@ -191,7 +191,7 @@ MUST use semantic color classes. Never use raw gray/blue scales directly.
 ### Button
 
 ```typescript
-import { Button } from "@openclaw/ui";
+import { Button } from "@circos/ui";
 
 <Button size="md">Save</Button>
 <Button iconLeading={Check} color="primary">Save</Button>
@@ -204,7 +204,7 @@ Colors: `primary`, `secondary`, `tertiary`, `link-gray`, `link-color`, `primary-
 ### Input
 
 ```typescript
-import { Input } from "@openclaw/ui";
+import { Input } from "@circos/ui";
 
 <Input label="Email" placeholder="olivia@untitledui.com" />
 <Input icon={Mail01} label="Email" isRequired isInvalid hint="Please enter a valid email" />
@@ -213,7 +213,7 @@ import { Input } from "@openclaw/ui";
 ### Select
 
 ```typescript
-import { Select } from "@openclaw/ui";
+import { Select } from "@circos/ui";
 
 <Select label="Team member" placeholder="Select member" items={users}>
   {(item) => <Select.Item id={item.id} supportingText={item.email}>{item.name}</Select.Item>}
@@ -227,7 +227,7 @@ import { Select } from "@openclaw/ui";
 ### Badge
 
 ```typescript
-import { Badge, BadgeWithDot, BadgeWithIcon } from "@openclaw/ui";
+import { Badge, BadgeWithDot, BadgeWithIcon } from "@circos/ui";
 
 <Badge color="brand" size="md">New</Badge>
 <BadgeWithDot color="success" type="pill-color">Active</BadgeWithDot>
@@ -236,7 +236,7 @@ import { Badge, BadgeWithDot, BadgeWithIcon } from "@openclaw/ui";
 ### Avatar
 
 ```typescript
-import { Avatar, AvatarLabelGroup } from "@openclaw/ui";
+import { Avatar, AvatarLabelGroup } from "@circos/ui";
 
 <Avatar src="/avatar.jpg" alt="User" size="md" status="online" />
 <AvatarLabelGroup src="/avatar.jpg" title="Olivia Rhye" subtitle="olivia@email.com" size="md" />
@@ -245,7 +245,7 @@ import { Avatar, AvatarLabelGroup } from "@openclaw/ui";
 ### FeaturedIcon
 
 ```typescript
-import { FeaturedIcon } from "@openclaw/ui";
+import { FeaturedIcon } from "@circos/ui";
 
 <FeaturedIcon icon={CheckCircle} color="success" theme="light" size="lg" />
 ```

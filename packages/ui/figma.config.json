@@ -3,7 +3,7 @@
   "codeConnect": {
     "include": ["src/components/**/*.figma.tsx"],
     "importPaths": {
-      "@openclaw/ui": "packages/ui/src"
+      "@circos/ui": "packages/ui/src"
     }
   }
 }

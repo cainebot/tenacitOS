@@ -6,7 +6,7 @@
 
 ## What was done
 
-Replaced all hardcoded dark-theme values across ALL @openclaw/ui wrapper components with semantic tokens and @theme primitives.
+Replaced all hardcoded dark-theme values across ALL @circos/ui wrapper components with semantic tokens and @theme primitives.
 
 ### Base components (7 files)
 - **button.tsx**: Variant styles use brand-600/700/800, bg-secondary, text-primary, error-600/700/800

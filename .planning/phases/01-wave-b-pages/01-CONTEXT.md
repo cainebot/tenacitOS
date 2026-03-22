@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Migrate all four Wave B pages (skills, costs, system, analytics) from legacy Digital Circus inline styles to UUI tokens and @openclaw/ui components. Each page currently uses heavy var(--*) inline style={{}} patterns that must be replaced with Tailwind UUI utility classes. Recharts chart internals in costs and analytics are allowlisted — only React wrapper/container code migrates.
+Migrate all four Wave B pages (skills, costs, system, analytics) from legacy Digital Circus inline styles to UUI tokens and @circos/ui components. Each page currently uses heavy var(--*) inline style={{}} patterns that must be replaced with Tailwind UUI utility classes. Recharts chart internals in costs and analytics are allowlisted — only React wrapper/container code migrates.
 
 </domain>
 
@@ -19,8 +19,8 @@ All implementation choices are at Claude's discretion — pure infrastructure/mi
 - Replace all `style={{ backgroundColor: 'var(--surface)' }}` with `bg-surface`
 - Replace all `style={{ borderColor: 'var(--border)' }}` with `border-border`
 - Replace all `style={{ fontFamily: 'var(--font-heading)' }}` with `font-heading`
-- Use @openclaw/ui components (Button, Badge, Modal, Select, etc.) where legacy HTML elements with manual styling exist
-- Use cx() from @openclaw/ui instead of any remaining cn() calls
+- Use @circos/ui components (Button, Badge, Modal, Select, etc.) where legacy HTML elements with manual styling exist
+- Use cx() from @circos/ui instead of any remaining cn() calls
 - Recharts chart internals (fill, stroke colors) are allowlisted — only migrate the React container/wrapper elements
 
 </decisions>
@@ -29,9 +29,9 @@ All implementation choices are at Claude's discretion — pure infrastructure/mi
 ## Existing Code Insights
 
 ### Reusable Assets
-- @openclaw/ui exports: Button, Badge, Modal, ModalBody, Select, TextField, TextArea, Tabs, Tooltip, Popover, Combobox
-- @openclaw/ui patterns: SidePanel, FilterBar, DetailPanel, MetricCard, ModalForm, StatusBadge, PageHeader, OCEmptyState
-- cx() utility from @openclaw/ui for class merging
+- @circos/ui exports: Button, Badge, Modal, ModalBody, Select, TextField, TextArea, Tabs, Tooltip, Popover, Combobox
+- @circos/ui patterns: SidePanel, FilterBar, DetailPanel, MetricCard, ModalForm, StatusBadge, PageHeader, OCEmptyState
+- cx() utility from @circos/ui for class merging
 - UUI tokens available in Tailwind: text-primary, text-secondary, text-muted, bg-surface, bg-surface-elevated, border-border, etc.
 
 ### Established Patterns

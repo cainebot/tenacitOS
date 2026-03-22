@@ -57,7 +57,7 @@ Migrated two Wave B dashboard pages from legacy Digital Circus inline styles to 
 - skills/page.tsx: `grep -c "var(--"` → 0
 - analytics/page.tsx: `grep -c "var(--"` → 0
 - cx() used in both files: skills (11 uses), analytics (1 use)
-- @openclaw/ui imported in both files
+- @circos/ui imported in both files
 - All 4 inline sub-components preserved in skills/page.tsx
 - SmartAddModal import unchanged
 - All 4 chart imports + props unchanged in analytics/page.tsx

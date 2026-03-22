@@ -10,7 +10,7 @@ requires:
 
 provides:
   - Agent detail page (agents/[id]/page.tsx) with zero var(--*) and UUI semantic tokens
-  - AgentFormPanel with corrected ConfirmActionDialog import from @openclaw/ui
+  - AgentFormPanel with corrected ConfirmActionDialog import from @circos/ui
   - AgentSidePanel with zero var(--*) and UUI semantic tokens
 
 affects: [04-wave-c-office, any phase touching agent components]
@@ -49,7 +49,7 @@ completed: "2026-03-20"
 
 # Phase 03 Plan 02: Agent Surface UUI Token Migration Summary
 
-**Agent detail page, AgentFormPanel, and AgentSidePanel migrated from legacy var(--*) inline styles and hardcoded hex colors to UUI Tailwind tokens, with ConfirmActionDialog import corrected to @openclaw/ui**
+**Agent detail page, AgentFormPanel, and AgentSidePanel migrated from legacy var(--*) inline styles and hardcoded hex colors to UUI Tailwind tokens, with ConfirmActionDialog import corrected to @circos/ui**
 
 ## Performance
 
@@ -62,7 +62,7 @@ completed: "2026-03-20"
 ## Accomplishments
 
 - Eliminated all 55 `var(--*)` occurrences in `agents/[id]/page.tsx` including STATUS_COLORS, BADGE_STYLES, and TASK_STATUS_COLORS hex maps
-- Fixed ConfirmActionDialog import in `AgentFormPanel.tsx` from `@/components/ui/confirm-action-dialog` to `@openclaw/ui`
+- Fixed ConfirmActionDialog import in `AgentFormPanel.tsx` from `@/components/ui/confirm-action-dialog` to `@circos/ui`
 - Eliminated all 72 `var(--*)` occurrences in `AgentFormPanel.tsx`, converting CSSProperties style objects to Tailwind classNames
 - Eliminated all 48 `var(--*)` occurrences in `AgentSidePanel.tsx`, converting statusPillColors and badgeColors helper functions from hex returns to semantic token class pairs
 
@@ -78,7 +78,7 @@ Each task was committed atomically:
 ## Files Created/Modified
 
 - `src/app/(dashboard)/agents/[id]/page.tsx` — 55 var(--*) eliminated; STATUS_COLORS/BADGE_STYLES/TASK_STATUS_COLORS converted to UUI token class maps
-- `src/components/organisms/AgentFormPanel.tsx` — 72 var(--*) eliminated; ConfirmActionDialog import fixed to @openclaw/ui; CSSProperties objects replaced with Tailwind
+- `src/components/organisms/AgentFormPanel.tsx` — 72 var(--*) eliminated; ConfirmActionDialog import fixed to @circos/ui; CSSProperties objects replaced with Tailwind
 - `src/components/organisms/AgentSidePanel.tsx` — 48 var(--*) eliminated; statusPillColors/badgeColors converted to Tailwind token class pairs
 
 ## Decisions Made
@@ -100,7 +100,7 @@ None.
 
 - Agent surface (detail page + side panel + form panel) is fully migrated to UUI tokens
 - Office surface components are the remaining migration target (Phase 03 plans 03+)
-- ConfirmActionDialog import pattern (`@openclaw/ui`) established for remaining components
+- ConfirmActionDialog import pattern (`@circos/ui`) established for remaining components
 
 ---
 *Phase: 03-wave-c-agents-+-office*

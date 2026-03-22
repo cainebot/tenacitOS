@@ -49,7 +49,7 @@ Migrated all `var(--*)` inline styles in SkillPreviewCard.tsx and DiscoveryPanel
 - Emoji grid buttons: `hover:bg-surface-elevated` + `cx()` for selected state
 - Source URL link: `text-accent font-mono`
 - Content textarea: `font-mono bg-surface text-[#8B8B8B]` + `contentFocus` state for border via `cx()`
-- Added `cx` to `@openclaw/ui` import
+- Added `cx` to `@circos/ui` import
 
 ### DiscoveryPanel.tsx
 - Search input: `border-border bg-surface-elevated text-foreground font-sans`
@@ -57,7 +57,7 @@ Migrated all `var(--*)` inline styles in SkillPreviewCard.tsx and DiscoveryPanel
 - Result card: `hover:border-accent transition-colors` (replaces 2× JS handlers per card)
 - Source badge: `cx()` with `bg-accent text-white` / `bg-[#6366f1] text-white` / `bg-border text-muted-foreground`
 - Summary/version spans: `text-muted-foreground font-sans`
-- Added `cx` import from `@openclaw/ui`
+- Added `cx` import from `@circos/ui`
 
 ## Deviations from Plan
 

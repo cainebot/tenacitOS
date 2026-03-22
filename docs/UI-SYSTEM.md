@@ -6,7 +6,7 @@
 ## System Overview
 
 - **Design System:** Untitled UI React PRO (copy-paste, source-first)
-- **Package:** `@openclaw/ui` at `packages/ui/`
+- **Package:** `@circos/ui` at `packages/ui/`
 - **Theme:** Dark default, light available via `data-theme="light"`
 - **Brand:** `#FF3B30` (brand-600)
 - **Typography:** Sora (headings), Inter (body), JetBrains Mono (code)
@@ -17,7 +17,7 @@
 
 ## Governance Rules
 
-1. **All UI imports from `@openclaw/ui`** — No creating primitives outside the package.
+1. **All UI imports from `@circos/ui`** — No creating primitives outside the package.
 2. **No compatibility wrappers** — Components expose real UUI/React Aria API.
 3. **No inline styles** except allowlist (see below).
 4. **No magic numbers** — Only semantic tokens from `theme.css`.
@@ -40,7 +40,7 @@
 control-panel/                    ← workspace root
 ├── package.json                  ← workspaces: ["packages/*"]
 ├── packages/
-│   └── ui/                       ← @openclaw/ui
+│   └── ui/                       ← @circos/ui
 │       ├── package.json
 │       ├── tsconfig.json
 │       ├── CLAUDE.md             ← LLM docs for design system
@@ -80,19 +80,19 @@ control-panel/                    ← workspace root
 
 ```typescript
 // Components
-import { Button, Badge, Modal, Tabs, Select } from "@openclaw/ui"
+import { Button, Badge, Modal, Tabs, Select } from "@circos/ui"
 
 // Patterns
-import { SidePanel, FilterBar, PageHeader } from "@openclaw/ui"
+import { SidePanel, FilterBar, PageHeader } from "@circos/ui"
 
 // Utilities
-import { cx } from "@openclaw/ui"
+import { cx } from "@circos/ui"
 
 // Providers
-import { ThemeProvider, UUIRouterProvider } from "@openclaw/ui"
+import { ThemeProvider, UUIRouterProvider } from "@circos/ui"
 
 // Hooks
-import { useBreakpoint, useClipboard } from "@openclaw/ui"
+import { useBreakpoint, useClipboard } from "@circos/ui"
 ```
 
 ## Token System
@@ -134,7 +134,7 @@ Custom OpenClaw tokens (in `globals.css`):
 | `@radix-ui/react-tabs` | React Aria Tabs |
 | `@radix-ui/react-tooltip` | React Aria Tooltip |
 | `class-variance-authority` | UUI component prop variants |
-| `clsx` | `cx()` from @openclaw/ui |
+| `clsx` | `cx()` from @circos/ui |
 | `@tiptap/*` (5 packages) | Removed (no active imports) |
 | `motion` | CSS transitions / tailwindcss-animate |
 

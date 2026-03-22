@@ -1,4 +1,4 @@
-# Roadmap: OpenClaw Control Panel
+# Roadmap: CircOS Control Panel
 
 ## Milestones
 
@@ -11,13 +11,13 @@
 <summary>✅ v1.6 UUI Migration (Phases 1-4) — SHIPPED 2026-03-20</summary>
 
 ### Phase 1: Wave B Pages
-**Goal**: All four Wave B pages use exclusively UUI tokens and @openclaw/ui components with no var(--*) inline styles
+**Goal**: All four Wave B pages use exclusively UUI tokens and @circos/ui components with no var(--*) inline styles
 **Depends on**: Nothing (first phase)
 **Requirements**: WAVB-01, WAVB-02, WAVB-03, WAVB-04
 **Success Criteria** (what must be TRUE):
   1. The skills and skills/[id] pages render with no inline style={{}} using var(--*) CSS vars
   2. The costs page chart containers use UUI tokens for layout and chrome
-  3. The system page renders with no var(--*) inline styles and all interactive controls use @openclaw/ui components
+  3. The system page renders with no var(--*) inline styles and all interactive controls use @circos/ui components
   4. The analytics page chart wrappers use UUI tokens for layout
 **Plans**: 2/2 plans complete
 
@@ -30,7 +30,7 @@ Plans:
 **Depends on**: Phase 1
 **Requirements**: WAVC-01, WAVC-02
 **Success Criteria** (what must be TRUE):
-  1. The boards listing page renders with no var(--*) inline styles and all components are from @openclaw/ui
+  1. The boards listing page renders with no var(--*) inline styles and all components are from @circos/ui
   2. The boards/[id] page and its inline style block for keyframes are replaced
   3. BoardKanban, BoardFilterBar, CardDetailPanel, and ColumnManager each use only UUI tokens
   4. Boards kanban drag-and-drop and card detail panel open/close function correctly after migration
@@ -43,15 +43,15 @@ Plans:
 - [x] 02-04-PLAN.md — Migrate board detail page, replace keyframes, fix imports
 
 ### Phase 3: Wave C Agents + Office
-**Goal**: All agents pages, board-groups pages, and office React chrome use exclusively UUI tokens and @openclaw/ui components
+**Goal**: All agents pages, board-groups pages, and office React chrome use exclusively UUI tokens and @circos/ui components
 **Depends on**: Phase 2
 **Requirements**: WAVC-03, WAVC-04, WAVC-05, WAVC-06
 **Success Criteria** (what must be TRUE):
   1. The agents listing page and AgentOrganigrama render with no var(--*) inline styles
   2. The agents/[id] page and AgentFormPanel use only UUI tokens — agent CRUD works correctly
-  3. All four board-groups pages use only UUI tokens and @openclaw/ui components
+  3. All four board-groups pages use only UUI tokens and @circos/ui components
   4. The office page React chrome uses only UUI tokens — Phaser canvas internals remain allowlisted
-  5. AgentSidePanel and AgentFormPanel imports for ConfirmActionDialog come from @openclaw/ui
+  5. AgentSidePanel and AgentFormPanel imports for ConfirmActionDialog come from @circos/ui
 **Plans**: 4/4 plans complete
 
 Plans:
@@ -118,7 +118,7 @@ Plans:
 - [ ] 47-02: Add @theme primitives + @layer utilities semantic classes, update CLAUDE.md + button.tsx, gate check
 
 ### Phase 48: Wrapper Hardening
-**Goal**: All @openclaw/ui wrapper files use semantic utility classes exclusively — zero hardcoded dark-theme colors, zero raw scale references
+**Goal**: All @circos/ui wrapper files use semantic utility classes exclusively — zero hardcoded dark-theme colors, zero raw scale references
 **Depends on**: Phase 47
 **Requirements**: WRAP-01, WRAP-02, WRAP-03, WRAP-04, WRAP-05, WRAP-06, WRAP-07
 **Success Criteria** (what must be TRUE):

@@ -12,7 +12,7 @@ Currently supporting:
 
 If you discover a security vulnerability, please report it by:
 
-1. **Email**: security@openclaw.ai (or create a private security advisory on GitHub)
+1. **Email**: security@circos.ai (or create a private security advisory on GitHub)
 2. **Do NOT** open a public issue
 3. Include:
    - Description of the vulnerability

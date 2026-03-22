@@ -21,7 +21,7 @@ re_verification: false
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | organization page uses UUI components and tokens exclusively | VERIFIED | 460-line file uses `var(--bg-secondary)`, `var(--border-primary)`, `var(--text-primary-900)`, `var(--text-secondary-700)`, `var(--text-quaternary-500)`, `var(--brand-600)`, `var(--error-600)` throughout; `Badge` imported from `@openclaw/ui`; zero legacy tokens |
+| 1 | organization page uses UUI components and tokens exclusively | VERIFIED | 460-line file uses `var(--bg-secondary)`, `var(--border-primary)`, `var(--text-primary-900)`, `var(--text-secondary-700)`, `var(--text-quaternary-500)`, `var(--brand-600)`, `var(--error-600)` throughout; `Badge` imported from `@circos/ui`; zero legacy tokens |
 | 2 | reports page uses UUI components and tokens exclusively | VERIFIED | 225-line file uses `var(--bg-secondary)`, `var(--border-primary)`, `var(--brand-600)`, `var(--text-primary-900)`, `var(--text-secondary-700)`, `var(--text-quaternary-500)`, `var(--bg-tertiary)`, `var(--bg-primary)`; zero legacy tokens; `rgba(255,255,255,0.15)` is allowlisted conditional selected-state overlay |
 | 3 | search page uses UUI components and tokens exclusively | VERIFIED | 22-line page uses `var(--text-primary-900)`, `var(--text-secondary-700)`; delegates rendering to `GlobalSearch` component; zero legacy tokens |
 | 4 | sessions page uses UUI components and tokens exclusively | VERIFIED | 715-line file uses `var(--bg-secondary)`, `var(--bg-tertiary)`, `var(--bg-primary)`, `var(--border-primary)`, `var(--text-primary-900)`, `var(--text-secondary-700)`, `var(--text-quaternary-500)`, `var(--brand-600)`, `var(--error-600)`, `var(--warning-600)`, `var(--success-600)`; `color-mix()` expressions are allowlisted; hex colors `#a78bfa`, `#60a5fa`, `#4ade80` are semantic palette colors for session-type indicators, not legacy tokens |
@@ -41,7 +41,7 @@ re_verification: false
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `src/app/(dashboard)/organization/page.tsx` | Organization page using UUI tokens | VERIFIED | 460 lines, substantive CRUD UI, `Badge` from `@openclaw/ui`, zero legacy tokens |
+| `src/app/(dashboard)/organization/page.tsx` | Organization page using UUI tokens | VERIFIED | 460 lines, substantive CRUD UI, `Badge` from `@circos/ui`, zero legacy tokens |
 | `src/app/(dashboard)/reports/page.tsx` | Reports page using UUI tokens | VERIFIED | 225 lines, split-panel list + markdown preview, zero legacy tokens |
 | `src/app/(dashboard)/search/page.tsx` | Search page using UUI tokens | VERIFIED | 22 lines, delegates to `GlobalSearch`, correct UUI tokens on heading/subheading |
 | `src/app/(dashboard)/sessions/page.tsx` | Sessions page using UUI tokens | VERIFIED | 715 lines, full session browser with transcript detail panel, zero legacy tokens |
@@ -56,7 +56,7 @@ re_verification: false
 
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
-| `organization/page.tsx` | `@openclaw/ui` | `import { Badge }` | WIRED | Line 8 — `Badge` component actively rendered on line 303 |
+| `organization/page.tsx` | `@circos/ui` | `import { Badge }` | WIRED | Line 8 — `Badge` component actively rendered on line 303 |
 | `workspaces/page.tsx` | `@/components/RealtimeProvider` | `import { useRealtimeStatus }` | WIRED | Used on line 203 — nodes/agents data consumed in render |
 | `sessions/page.tsx` | `/api/sessions` | `fetch('/api/sessions')` line 479 | WIRED | Response consumed: `setSessions(data.sessions || [])` |
 | `terminal/page.tsx` | `/api/terminal` | `fetch('/api/terminal', { method: 'POST' })` line 60 | WIRED | Response consumed: `data.output`, `data.error`, `data.duration` |
@@ -68,7 +68,7 @@ re_verification: false
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|------------|-------------|--------|----------|
-| WAVE-09 | 03-01-PLAN | organization page uses UUI components and tokens exclusively | SATISFIED | File exists 460 lines, zero legacy tokens, `Badge` from `@openclaw/ui` |
+| WAVE-09 | 03-01-PLAN | organization page uses UUI components and tokens exclusively | SATISFIED | File exists 460 lines, zero legacy tokens, `Badge` from `@circos/ui` |
 | WAVE-10 | 03-02-PLAN | reports page uses UUI components and tokens exclusively | SATISFIED | File exists 225 lines, zero legacy tokens, UUI tokens throughout |
 | WAVE-11 | 03-02-PLAN | search page uses UUI components and tokens exclusively | SATISFIED | File exists 22 lines, zero legacy tokens, UUI tokens on headings |
 | WAVE-12 | 03-02-PLAN | sessions page uses UUI components and tokens exclusively | SATISFIED | File exists 715 lines, zero legacy tokens, UUI tokens throughout |

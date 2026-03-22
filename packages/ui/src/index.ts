@@ -1,4 +1,4 @@
-// @openclaw/ui — Untitled UI PRO Design System for OpenClaw
+// @circos/ui — Untitled UI PRO Design System for OpenClaw
 
 // Base Components
 export * from "./components/base"
@@ -8,6 +8,9 @@ export * from "./components/application"
 
 // Foundations
 export * from "./components/foundations"
+
+// Shared Assets
+export * from "./components/shared-assets"
 
 // Patterns
 export * from "./components/patterns"

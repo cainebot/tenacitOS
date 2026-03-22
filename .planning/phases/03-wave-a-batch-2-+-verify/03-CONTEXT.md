@@ -55,7 +55,7 @@ From Phase 2 gap: also replace hardcoded Tailwind color primitives like text-whi
 ## Existing Code Insights
 
 ### Reusable Assets
-Same as Phase 2 — all @openclaw/ui components and patterns available.
+Same as Phase 2 — all @circos/ui components and patterns available.
 
 ### Established Patterns (from Phase 1-2)
 - Tailwind utilities with UUI CSS custom properties

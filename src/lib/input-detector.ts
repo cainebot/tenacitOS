@@ -17,9 +17,9 @@ const GITHUB_URL_RE = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(
 
 /**
  * npx skills add command: npx skills add {owner}/{skill-name}
- * Also matches: `skills add`, `npx @openclaw/skills add`, etc.
+ * Also matches: `skills add`, `npx @circos/skills add`, etc.
  */
-const NPX_COMMAND_RE = /^(npx\s+)?(@openclaw\/)?skills\s+add\s+[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/i;
+const NPX_COMMAND_RE = /^(npx\s+)?(@circos\/)?skills\s+add\s+[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/i;
 
 /**
  * File input marker: caller passes file content prefixed with "__file__:{size}:{filename}\n{content}"
