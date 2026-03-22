@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { User01 } from "@untitledui/icons";
-import { cx } from "@/utils/cx";
+import { cx } from "@openclaw/ui";
 import { type AvatarProps } from "./avatar";
 import { AvatarOnlineIndicator, VerifiedTick } from "./base-components";
 

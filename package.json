@@ -2,7 +2,9 @@
   "name": "mission-control",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
@@ -11,9 +13,11 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+    "@react-stately/utils": "^3.11.0",
     "@supabase/supabase-js": "^2.99.1",
     "@tailwindcss/typography": "^0.5.19",
     "@types/better-sqlite3": "^7.6.13",
+    "@untitledui/icons": "^0.0.21",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.6.2",
     "cmdk": "^1.1.1",
@@ -23,6 +27,8 @@
     "openai": "^6.32.0",
     "phaser": "^3.90.0",
     "react": "19.2.3",
+    "react-aria": "^3.47.0",
+    "react-aria-components": "^1.16.0",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "recharts": "^2.15.4",

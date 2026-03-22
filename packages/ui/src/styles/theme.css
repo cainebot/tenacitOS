@@ -6,101 +6,101 @@
 @layer base {
   :root {
     /* -----------------------------------------------------------------------
-       Color Scale — Gray
+       Color Scale — Gray (dark mode) — UUI v7 official
        ----------------------------------------------------------------------- */
-    --gray-25: #0C111D;
-    --gray-50: #101828;
-    --gray-100: #1D2939;
-    --gray-200: #344054;
-    --gray-300: #475467;
-    --gray-400: #667085;
-    --gray-500: #98A2B3;
-    --gray-600: #D0D5DD;
-    --gray-700: #EAECF0;
-    --gray-800: #F2F4F7;
-    --gray-900: #F9FAFB;
-    --gray-950: #FCFCFD;
+    --gray-25: #fafafa;
+    --gray-50: #f7f7f7;
+    --gray-100: #f0f0f1;
+    --gray-200: #ececed;
+    --gray-300: #cecfd2;
+    --gray-400: #94979c;
+    --gray-500: #85888e;
+    --gray-600: #61656c;
+    --gray-700: #373a41;
+    --gray-800: #22262f;
+    --gray-900: #13161b;
+    --gray-950: #0c0e12;
 
     /* -----------------------------------------------------------------------
-       Color Scale — Brand (Indigo)
-       UUI official indigo palette · brand-600 = #444CE7
+       Color Scale — Brand (Indigo) — UUI v7 official
+       brand-600 = #444CE7
        ----------------------------------------------------------------------- */
-    --brand-25: #F5F8FF;
-    --brand-50: #EEF4FF;
-    --brand-100: #E0EAFF;
-    --brand-200: #C7D7FE;
-    --brand-300: #A4BCFD;
-    --brand-400: #8098F9;
-    --brand-500: #6172F3;
-    --brand-600: #444CE7;
-    --brand-700: #3538CD;
-    --brand-800: #2D31A6;
-    --brand-900: #2D3282;
-    --brand-950: #1F235B;
+    --brand-25: #f5f8ff;
+    --brand-50: #eef4ff;
+    --brand-100: #e0eaff;
+    --brand-200: #c7d7fe;
+    --brand-300: #a4bcfd;
+    --brand-400: #8098f9;
+    --brand-500: #6172f3;
+    --brand-600: #444ce7;
+    --brand-700: #3538cd;
+    --brand-800: #2d31a6;
+    --brand-900: #2d3282;
+    --brand-950: #1f235b;
 
     /* -----------------------------------------------------------------------
-       Color Scale — Success (Green)
+       Color Scale — Success — UUI v7 official
        ----------------------------------------------------------------------- */
-    --success-25: #071A0B;
-    --success-50: #0C2912;
-    --success-100: #12401C;
-    --success-200: #1B5E2A;
-    --success-300: #247D38;
-    --success-400: #2D9C46;
-    --success-500: #34B553;
-    --success-600: #3CCB5E;
-    --success-700: #6DDB85;
-    --success-800: #9EEBAB;
-    --success-900: #C8F5D1;
-    --success-950: #EDFCF0;
+    --success-25: #f6fef9;
+    --success-50: #ecfdf3;
+    --success-100: #dcfae6;
+    --success-200: #abefc6;
+    --success-300: #75e0a7;
+    --success-400: #47cd89;
+    --success-500: #17b26a;
+    --success-600: #079455;
+    --success-700: #067647;
+    --success-800: #085d3a;
+    --success-900: #074d31;
+    --success-950: #053321;
 
     /* -----------------------------------------------------------------------
-       Color Scale — Warning (Amber)
+       Color Scale — Warning — UUI v7 official
        ----------------------------------------------------------------------- */
-    --warning-25: #1A1305;
-    --warning-50: #2D2109;
-    --warning-100: #4A360F;
-    --warning-200: #6E5016;
-    --warning-300: #926B1D;
-    --warning-400: #C79225;
-    --warning-500: #E8AB2B;
-    --warning-600: #FFBA30;
-    --warning-700: #FFCC59;
-    --warning-800: #FFDD83;
-    --warning-900: #FFEDAE;
-    --warning-950: #FFF8E3;
+    --warning-25: #fffcf5;
+    --warning-50: #fffaeb;
+    --warning-100: #fef0c7;
+    --warning-200: #fedf89;
+    --warning-300: #fec84b;
+    --warning-400: #fdb022;
+    --warning-500: #f79009;
+    --warning-600: #dc6803;
+    --warning-700: #b54708;
+    --warning-800: #93370d;
+    --warning-900: #7a2e0e;
+    --warning-950: #4e1d09;
 
     /* -----------------------------------------------------------------------
-       Color Scale — Error (Red — independent from brand)
+       Color Scale — Error — UUI v7 official
        ----------------------------------------------------------------------- */
-    --error-25: #1A0605;
-    --error-50: #2D0B09;
-    --error-100: #4A120F;
-    --error-200: #6E1B16;
-    --error-300: #92241D;
-    --error-400: #C72F25;
-    --error-500: #E8352B;
-    --error-600: #FF3B30;
-    --error-700: #FF6259;
-    --error-800: #FF8A83;
-    --error-900: #FFB3AE;
-    --error-950: #FFE5E3;
+    --error-25: #fffbfa;
+    --error-50: #fef3f2;
+    --error-100: #fee4e2;
+    --error-200: #fecdca;
+    --error-300: #fda29b;
+    --error-400: #f97066;
+    --error-500: #f04438;
+    --error-600: #d92d20;
+    --error-700: #b42318;
+    --error-800: #912018;
+    --error-900: #7a271a;
+    --error-950: #55160c;
 
     /* -----------------------------------------------------------------------
-       Color Scale — Blue / Info
+       Color Scale — Blue — UUI v7 official
        ----------------------------------------------------------------------- */
-    --blue-25: #05101A;
-    --blue-50: #091B2D;
-    --blue-100: #0F2D4A;
-    --blue-200: #16436E;
-    --blue-300: #1D5A92;
-    --blue-400: #2578C7;
-    --blue-500: #2B8DE8;
-    --blue-600: #309FFF;
-    --blue-700: #59B5FF;
-    --blue-800: #83CAFF;
-    --blue-900: #AEDEFF;
-    --blue-950: #E3F3FF;
+    --blue-25: #f5faff;
+    --blue-50: #eff8ff;
+    --blue-100: #d1e9ff;
+    --blue-200: #b2ddff;
+    --blue-300: #84caff;
+    --blue-400: #53b1fd;
+    --blue-500: #2e90fa;
+    --blue-600: #1570ef;
+    --blue-700: #175cd3;
+    --blue-800: #1849a9;
+    --blue-900: #194185;
+    --blue-950: #102a56;
 
     /* -----------------------------------------------------------------------
        Background Tokens
@@ -199,89 +199,89 @@
      Light Theme Overrides
      ========================================================================= */
   [data-theme="light"] {
-    /* Gray — UUI official warm blue-gray */
-    --gray-25: #FCFCFD;
-    --gray-50: #F9FAFB;
-    --gray-100: #F2F4F7;
-    --gray-200: #EAECF0;
-    --gray-300: #D0D5DD;
-    --gray-400: #98A2B3;
-    --gray-500: #667085;
-    --gray-600: #475467;
-    --gray-700: #344054;
-    --gray-800: #1D2939;
-    --gray-900: #101828;
-    --gray-950: #0C111D;
+    /* Gray — UUI v7 official (light mode) */
+    --gray-25: #fdfdfd;
+    --gray-50: #fafafa;
+    --gray-100: #f5f5f5;
+    --gray-200: #e9eaeb;
+    --gray-300: #d5d7da;
+    --gray-400: #a4a7ae;
+    --gray-500: #717680;
+    --gray-600: #535862;
+    --gray-700: #414651;
+    --gray-800: #252b37;
+    --gray-900: #181d27;
+    --gray-950: #0a0d12;
 
-    /* Brand (Indigo) — same scale both modes */
-    --brand-25: #F5F8FF;
-    --brand-50: #EEF4FF;
-    --brand-100: #E0EAFF;
-    --brand-200: #C7D7FE;
-    --brand-300: #A4BCFD;
-    --brand-400: #8098F9;
-    --brand-500: #6172F3;
-    --brand-600: #444CE7;
-    --brand-700: #3538CD;
-    --brand-800: #2D31A6;
-    --brand-900: #2D3282;
-    --brand-950: #1F235B;
+    /* Brand (Indigo) — UUI v7 official */
+    --brand-25: #f5f8ff;
+    --brand-50: #eef4ff;
+    --brand-100: #e0eaff;
+    --brand-200: #c7d7fe;
+    --brand-300: #a4bcfd;
+    --brand-400: #8098f9;
+    --brand-500: #6172f3;
+    --brand-600: #444ce7;
+    --brand-700: #3538cd;
+    --brand-800: #2d31a6;
+    --brand-900: #2d3282;
+    --brand-950: #1f235b;
 
-    /* Success — adjusted for light backgrounds */
-    --success-25: #EDFCF0;
-    --success-50: #C8F5D1;
-    --success-100: #9EEBAB;
-    --success-200: #6DDB85;
-    --success-300: #3CCB5E;
-    --success-400: #34B553;
-    --success-500: #2D9C46;
-    --success-600: #3CCB5E;
-    --success-700: #247D38;
-    --success-800: #1B5E2A;
-    --success-900: #12401C;
-    --success-950: #0C2912;
+    /* Success — UUI v7 official */
+    --success-25: #f6fef9;
+    --success-50: #ecfdf3;
+    --success-100: #dcfae6;
+    --success-200: #abefc6;
+    --success-300: #75e0a7;
+    --success-400: #47cd89;
+    --success-500: #17b26a;
+    --success-600: #079455;
+    --success-700: #067647;
+    --success-800: #085d3a;
+    --success-900: #074d31;
+    --success-950: #053321;
 
-    /* Warning — adjusted for light backgrounds */
-    --warning-25: #FFF8E3;
-    --warning-50: #FFEDAE;
-    --warning-100: #FFDD83;
-    --warning-200: #FFCC59;
-    --warning-300: #FFBA30;
-    --warning-400: #E8AB2B;
-    --warning-500: #C79225;
-    --warning-600: #FFBA30;
-    --warning-700: #926B1D;
-    --warning-800: #6E5016;
-    --warning-900: #4A360F;
-    --warning-950: #2D2109;
+    /* Warning — UUI v7 official */
+    --warning-25: #fffcf5;
+    --warning-50: #fffaeb;
+    --warning-100: #fef0c7;
+    --warning-200: #fedf89;
+    --warning-300: #fec84b;
+    --warning-400: #fdb022;
+    --warning-500: #f79009;
+    --warning-600: #dc6803;
+    --warning-700: #b54708;
+    --warning-800: #93370d;
+    --warning-900: #7a2e0e;
+    --warning-950: #4e1d09;
 
-    /* Error — adjusted for light backgrounds */
-    --error-25: #FFF5F5;
-    --error-50: #FFE5E3;
-    --error-100: #FFB3AE;
-    --error-200: #FF8A83;
-    --error-300: #FF6259;
-    --error-400: #FF3B30;
-    --error-500: #E8352B;
-    --error-600: #FF3B30;
-    --error-700: #C72F25;
-    --error-800: #92241D;
-    --error-900: #6E1B16;
-    --error-950: #2D0B09;
+    /* Error — UUI v7 official */
+    --error-25: #fffbfa;
+    --error-50: #fef3f2;
+    --error-100: #fee4e2;
+    --error-200: #fecdca;
+    --error-300: #fda29b;
+    --error-400: #f97066;
+    --error-500: #f04438;
+    --error-600: #d92d20;
+    --error-700: #b42318;
+    --error-800: #912018;
+    --error-900: #7a271a;
+    --error-950: #55160c;
 
-    /* Blue — adjusted for light backgrounds */
-    --blue-25: #E3F3FF;
-    --blue-50: #AEDEFF;
-    --blue-100: #83CAFF;
-    --blue-200: #59B5FF;
-    --blue-300: #309FFF;
-    --blue-400: #2B8DE8;
-    --blue-500: #2578C7;
-    --blue-600: #309FFF;
-    --blue-700: #1D5A92;
-    --blue-800: #16436E;
-    --blue-900: #0F2D4A;
-    --blue-950: #091B2D;
+    /* Blue — UUI v7 official */
+    --blue-25: #f5faff;
+    --blue-50: #eff8ff;
+    --blue-100: #d1e9ff;
+    --blue-200: #b2ddff;
+    --blue-300: #84caff;
+    --blue-400: #53b1fd;
+    --blue-500: #2e90fa;
+    --blue-600: #1570ef;
+    --blue-700: #175cd3;
+    --blue-800: #1849a9;
+    --blue-900: #194185;
+    --blue-950: #102a56;
 
     /* Background tokens */
     --bg-primary: #FFFFFF;
@@ -469,6 +469,8 @@
   --color-error_subtle: var(--error-300);
   --color-disabled_subtle: var(--gray-300);
 
+  /* Ring tokens — see @theme block at bottom */
+
   /* -----------------------------------------------------------------------
      Semantic Text Tokens — for text-*_hover, text-brand-* compounds
      ----------------------------------------------------------------------- */
@@ -555,27 +557,25 @@
   --color-utility-gray-blue-500: #4E5BA6;
   --color-utility-gray-blue-700: #363F72;
 
-  /* -----------------------------------------------------------------------
-     Shadow Tokens
-     ----------------------------------------------------------------------- */
-  --shadow-xs-skeumorphic: var(--shadow-xs);
-  --shadow-skeumorphic: var(--shadow-sm);
+  /* Shadow Tokens — see @theme block at bottom for skeumorphic shadows */
 
   /* -----------------------------------------------------------------------
      Font Size Tokens — UUI Display Scale
-     Needed by UUI typography components (display-xs through display-2xl)
+     Tailwind v4 uses --text-* namespace for text-* utilities
+     e.g. --text-display-xs → text-display-xs
      ----------------------------------------------------------------------- */
-  --font-size-display-xs: 1.5rem;    /* 24px */
-  --font-size-display-sm: 1.875rem;  /* 30px */
-  --font-size-display-md: 2.25rem;   /* 36px */
-  --font-size-display-lg: 3rem;      /* 48px */
-  --font-size-display-xl: 3.75rem;   /* 60px */
-  --font-size-display-2xl: 4.5rem;   /* 72px */
-  --font-size-text-xs: 0.75rem;      /* 12px */
-  --font-size-text-sm: 0.875rem;     /* 14px */
-  --font-size-text-md: 1rem;         /* 16px */
-  --font-size-text-lg: 1.125rem;     /* 18px */
-  --font-size-text-xl: 1.25rem;      /* 20px */
+  --text-display-xs: 1.5rem;    /* 24px */
+  --text-display-sm: 1.875rem;  /* 30px */
+  --text-display-md: 2.25rem;   /* 36px */
+  --text-display-lg: 3rem;      /* 48px */
+  --text-display-xl: 3.75rem;   /* 60px */
+  --text-display-2xl: 4.5rem;   /* 72px */
+  /* Text scale — override Tailwind defaults to match UUI spec */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-md: 1rem;         /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
 
   /* -----------------------------------------------------------------------
      Animation Tokens — UUI Accordion & Collapsible
@@ -608,57 +608,119 @@
 }
 
 /* ==========================================================================
-   Semantic Utility Classes — UUI Official Names
-   Components consume THESE classes — never var(--bg-*) directly.
-   bg-primary ≠ text-primary (different underlying values), so we need
-   explicit utility classes rather than @theme --color-* registration.
+   NOTE: Semantic utility classes (bg-primary, text-secondary, etc.) are now
+   generated by the @theme block below via Tailwind v4's namespaced tokens.
+   Manual @layer utilities classes have been removed to avoid specificity
+   conflicts with hover:/disabled:/data-loading: variants.
    ========================================================================== */
 
-@layer utilities {
-  /* === Background (UUI official) === */
-  .bg-primary        { background-color: var(--bg-primary); }
-  .bg-primary_hover  { background-color: var(--bg-secondary); }
-  .bg-secondary      { background-color: var(--bg-secondary); }
-  .bg-secondary_hover { background-color: var(--bg-tertiary); }
-  .bg-tertiary       { background-color: var(--bg-tertiary); }
-  .bg-quaternary     { background-color: var(--bg-quaternary); }
-  .bg-active         { background-color: var(--brand-50); }
-  .bg-disabled       { background-color: var(--gray-100); }
-  .bg-overlay        { background-color: rgba(0, 0, 0, 0.70); }
-  .bg-brand-solid    { background-color: var(--brand-600); }
-  .bg-brand-solid_hover { background-color: var(--brand-700); }
-  .bg-error-solid    { background-color: var(--error-600); }
-  .bg-success-solid  { background-color: var(--success-600); }
+/* =========================================================================
+   Tailwind v4 @theme — register semantic tokens for utility class generation
+   Maps UUI v7 design tokens to Tailwind v4 namespaced variables.
+   ========================================================================= */
+@theme {
+  /* --- Radius --- */
+  --radius-none: 0px;
+  --radius-xxs: 2px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 32px;
+  --radius-full: 9999px;
 
-  /* === Text (UUI official) === */
-  .text-primary       { color: var(--text-primary-900); }
-  .text-secondary     { color: var(--text-secondary-700); }
-  .text-tertiary      { color: var(--text-tertiary-600); }
-  .text-quaternary    { color: var(--text-quaternary-500); }
-  .text-disabled      { color: var(--text-disabled); }
-  .text-placeholder   { color: var(--gray-400); }
-  .text-brand-primary { color: var(--brand-600); }
-  .text-brand-secondary { color: var(--brand-500); }
-  .text-error-primary { color: var(--error-600); }
-  .text-warning-primary { color: var(--warning-600); }
-  .text-success-primary { color: var(--success-600); }
+  /* --- Shadow --- */
+  --shadow-xs: 0px 1px 2px rgba(10, 13, 18, 0.05);
+  --shadow-sm: 0px 1px 3px rgba(10, 13, 18, 0.1), 0px 1px 2px -1px rgba(10, 13, 18, 0.1);
+  --shadow-skeumorphic: 0px 0px 0px 1px rgba(10, 13, 18, 0.18) inset, 0px -2px 0px 0px rgba(10, 13, 18, 0.05) inset;
+  --shadow-xs-skeumorphic: var(--shadow-skeumorphic), var(--shadow-xs);
 
-  /* === Border (UUI official) === */
-  .border-primary    { border-color: var(--border-primary); }
-  .border-secondary  { border-color: var(--border-secondary); }
-  .border-tertiary   { border-color: var(--border-tertiary); }
-  .border-disabled   { border-color: var(--border-disabled); }
-  .border-brand      { border-color: var(--brand-600); }
-  .border-error      { border-color: var(--error-600); }
+  /* --- Font Size (text-md needed by button) --- */
+  --text-md: 1rem;
+  --text-md--line-height: 1.5rem;
 
-  /* === Foreground/Icons (UUI official) === */
-  .fg-primary        { color: var(--text-primary-900); }
-  .fg-secondary      { color: var(--text-secondary-700); }
-  .fg-tertiary       { color: var(--text-tertiary-600); }
-  .fg-quaternary     { color: var(--text-quaternary-500); }
-  .fg-disabled       { color: var(--text-disabled); }
-  .fg-brand-primary  { color: var(--brand-600); }
-  .fg-error-primary  { color: var(--error-600); }
-  .fg-success-secondary { color: var(--success-500); }
-  .fg-white          { color: #FFFFFF; }
+  /* --- Background Color (bg-*) --- */
+  --background-color-primary: var(--bg-primary);
+  --background-color-primary_hover: var(--bg-secondary);
+  --background-color-secondary: var(--bg-secondary);
+  --background-color-secondary_hover: var(--bg-tertiary);
+  --background-color-tertiary: var(--bg-tertiary);
+  --background-color-active: var(--brand-50);
+  --background-color-disabled: var(--gray-100);
+  --background-color-overlay: rgba(0, 0, 0, 0.70);
+  --background-color-brand-solid: var(--brand-600);
+  --background-color-brand-solid_hover: var(--brand-700);
+  --background-color-error-primary: var(--error-50);
+  --background-color-error-solid: var(--error-600);
+  --background-color-error-solid_hover: var(--error-700);
+  --background-color-success-solid: var(--success-600);
+
+  /* --- Text Color (text-*) --- */
+  --text-color-primary: var(--text-primary-900);
+  --text-color-secondary: var(--text-secondary-700);
+  --text-color-secondary_hover: var(--gray-800);
+  --text-color-tertiary: var(--text-tertiary-600);
+  --text-color-tertiary_hover: var(--gray-700);
+  --text-color-quaternary: var(--text-quaternary-500);
+  --text-color-disabled: var(--text-disabled);
+  --text-color-placeholder: var(--gray-400);
+  --text-color-white: #FFFFFF;
+  --text-color-brand-secondary: var(--brand-500);
+  --text-color-brand-secondary_hover: var(--brand-400);
+  --text-color-error-primary: var(--error-600);
+  --text-color-error-primary_hover: var(--error-500);
+  --text-color-warning-primary: var(--warning-600);
+  --text-color-success-primary: var(--success-600);
+
+  /* --- Foreground (text-fg-*) — icons, non-text elements --- */
+  --color-fg-white: #FFFFFF;
+  --color-fg-primary: var(--text-primary-900);
+  --color-fg-secondary: var(--text-secondary-700);
+  --color-fg-tertiary: var(--text-tertiary-600);
+  --color-fg-quaternary: var(--text-quaternary-500);
+  --color-fg-quaternary_hover: var(--gray-600);
+  --color-fg-disabled: var(--text-disabled);
+  --color-fg-disabled_subtle: var(--gray-300);
+  --color-fg-brand-primary: var(--brand-600);
+  --color-fg-brand-secondary: var(--brand-500);
+  --color-fg-brand-secondary_alt: var(--brand-400);
+  --color-fg-brand-secondary_hover: var(--brand-400);
+  --color-fg-error-primary: var(--error-600);
+  --color-fg-error-secondary: var(--error-500);
+  --color-fg-success-secondary: var(--success-500);
+  --color-fg-warning-secondary: var(--warning-500);
+
+  /* --- Button icon tokens --- */
+  --color-button-primary-icon: var(--brand-300);
+  --color-button-primary-icon_hover: var(--brand-200);
+  --color-button-destructive-primary-icon: var(--error-300);
+  --color-button-destructive-primary-icon_hover: var(--error-200);
+
+  /* --- Border Color (border-*) --- */
+  --border-color-primary: var(--border-primary);
+  --border-color-secondary: var(--border-secondary);
+  --border-color-tertiary: var(--border-tertiary);
+  --border-color-disabled: var(--border-disabled);
+  --border-color-disabled_subtle: var(--gray-300);
+  --border-color-brand: var(--brand-600);
+  --border-color-error: var(--error-600);
+  --border-color-error_subtle: var(--error-300);
+
+  /* --- Ring Color (ring-*) --- */
+  --ring-color-primary: var(--border-primary);
+  --ring-color-secondary: var(--border-secondary);
+  --ring-color-tertiary: var(--border-tertiary);
+  --ring-color-error: var(--error-600);
+  --ring-color-error_subtle: var(--error-300);
+  --ring-color-disabled: var(--border-disabled);
+  --ring-color-disabled_subtle: var(--gray-300);
+  --ring-color-brand: var(--brand-600);
+
+  /* --- Outline Color (outline-*) --- */
+  --outline-color-brand: var(--brand-600);
+  --outline-color-error: var(--error-600);
+  --outline-color-disabled: var(--border-disabled);
 }

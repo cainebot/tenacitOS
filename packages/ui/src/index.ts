@@ -19,4 +19,4 @@ export * from "./providers"
 export * from "./hooks"
 
 // Utils
-export { cx } from "./utils/cx"
+export { cx, sortCx } from "./utils/cx"

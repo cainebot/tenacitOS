@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@import "../src/styles/theme.css";
+@import "../src/styles/typography.css";
+@plugin "tailwindcss-animate";
+@plugin "tailwindcss-react-aria-components";
+@source "../src/**/*.tsx";
+@source "../../../src/components/**/*.tsx";
+
+/* Storybook preview body — sync background with UUI theme */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary-900);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}

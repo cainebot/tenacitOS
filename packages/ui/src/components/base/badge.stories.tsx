@@ -6,9 +6,26 @@ const meta = {
   component: Badge,
   tags: ["autodocs"],
   argTypes: {
-    variant: {
+    color: {
       control: "select",
-      options: ["default", "brand", "success", "warning", "error", "info", "gray"],
+      options: [
+        "gray",
+        "brand",
+        "error",
+        "warning",
+        "success",
+        "gray-blue",
+        "blue-light",
+        "blue",
+        "indigo",
+        "purple",
+        "pink",
+        "orange",
+      ],
+    },
+    type: {
+      control: "select",
+      options: ["pill-color", "color", "modern"],
     },
     size: {
       control: "select",
@@ -22,43 +39,43 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
   args: {
-    variant: "default",
+    color: "gray",
     children: "Default",
   },
 }
 
 export const Brand: Story = {
   args: {
-    variant: "brand",
+    color: "brand",
     children: "Brand",
   },
 }
 
 export const Success: Story = {
   args: {
-    variant: "success",
+    color: "success",
     children: "Success",
   },
 }
 
 export const Warning: Story = {
   args: {
-    variant: "warning",
+    color: "warning",
     children: "Warning",
   },
 }
 
 export const Error: Story = {
   args: {
-    variant: "error",
+    color: "error",
     children: "Error",
   },
 }
 
-export const Info: Story = {
+export const Blue: Story = {
   args: {
-    variant: "info",
-    children: "Info",
+    color: "blue",
+    children: "Blue",
   },
 }
 
@@ -66,13 +83,42 @@ export const AllVariants: Story = {
   args: { children: "All" },
   render: () => (
     <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-      <Badge variant="default">Default</Badge>
-      <Badge variant="brand">Brand</Badge>
-      <Badge variant="success">Success</Badge>
-      <Badge variant="warning">Warning</Badge>
-      <Badge variant="error">Error</Badge>
-      <Badge variant="info">Info</Badge>
-      <Badge variant="gray">Gray</Badge>
+      <Badge color="gray">Gray</Badge>
+      <Badge color="brand">Brand</Badge>
+      <Badge color="success">Success</Badge>
+      <Badge color="warning">Warning</Badge>
+      <Badge color="error">Error</Badge>
+      <Badge color="blue">Blue</Badge>
+      <Badge color="blue-light">Blue Light</Badge>
+      <Badge color="gray-blue">Gray Blue</Badge>
+      <Badge color="indigo">Indigo</Badge>
+      <Badge color="purple">Purple</Badge>
+      <Badge color="pink">Pink</Badge>
+      <Badge color="orange">Orange</Badge>
+    </div>
+  ),
+}
+
+export const AllTypes: Story = {
+  args: { children: "All" },
+  render: () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ width: 80, fontSize: 12, color: "#888" }}>Pill</span>
+        <Badge type="pill-color" color="brand">Brand</Badge>
+        <Badge type="pill-color" color="success">Success</Badge>
+        <Badge type="pill-color" color="error">Error</Badge>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ width: 80, fontSize: 12, color: "#888" }}>Badge</span>
+        <Badge type="color" color="brand">Brand</Badge>
+        <Badge type="color" color="success">Success</Badge>
+        <Badge type="color" color="error">Error</Badge>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ width: 80, fontSize: 12, color: "#888" }}>Modern</span>
+        <Badge type="modern" color="gray">Gray</Badge>
+      </div>
     </div>
   ),
 }

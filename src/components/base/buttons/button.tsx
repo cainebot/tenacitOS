@@ -4,7 +4,7 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, DetailedHTMLProps, FC,
 import React, { isValidElement } from "react";
 import type { ButtonProps as AriaButtonProps, LinkProps as AriaLinkProps } from "react-aria-components";
 import { Button as AriaButton, Link as AriaLink } from "react-aria-components";
-import { cx, sortCx } from "@/utils/cx";
+import { cx, sortCx } from "@openclaw/ui";
 import { isReactComponent } from "@/utils/is-react-component";
 
 export const styles = sortCx({

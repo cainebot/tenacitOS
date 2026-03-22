@@ -1,16 +1,36 @@
 import type { Preview } from "@storybook/react"
-import "../src/styles/theme.css"
-import "../src/styles/typography.css"
+import "./storybook.css"
 
 const preview: Preview = {
-  parameters: {
-    backgrounds: {
-      default: "dark",
-      values: [
-        { name: "dark", value: "#0C0C0C" },
-        { name: "light", value: "#FFFFFF" },
-      ],
+  globalTypes: {
+    theme: {
+      description: "Theme",
+      toolbar: {
+        title: "Theme",
+        icon: "paintbrush",
+        items: [
+          { value: "Dark", title: "Dark", icon: "moon" },
+          { value: "Light", title: "Light", icon: "sun" },
+        ],
+        dynamicTitle: true,
+      },
     },
+  },
+  initialGlobals: {
+    theme: "Dark",
+  },
+  decorators: [
+    (Story, context) => {
+      const theme = context.globals.theme || "Dark"
+      document.documentElement.setAttribute(
+        "data-theme",
+        theme === "Light" ? "light" : "dark",
+      )
+      return Story()
+    },
+  ],
+  parameters: {
+    backgrounds: { disable: true },
     controls: {
       matchers: {
         color: /(background|color)$/i,
