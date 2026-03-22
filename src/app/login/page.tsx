@@ -17,6 +17,7 @@ export default function LoginPage() {
     const searchParams = useSearchParams();
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState<string>("login");
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -57,6 +58,14 @@ export default function LoginPage() {
         }
     }
 
+    async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        // TODO: implement sign-up flow on next screen
+        const formData = new FormData(e.currentTarget);
+        const email = formData.get("email") as string;
+        router.push(`/login/register?email=${encodeURIComponent(email)}`);
+    }
+
     return (
         <section className="relative min-h-screen overflow-hidden bg-primary px-4 py-12 md:px-8 md:pt-24">
             <div className="relative z-10 mx-auto flex w-full flex-col gap-8 sm:max-w-90">
@@ -68,10 +77,21 @@ export default function LoginPage() {
                         <UntitledLogoMinimal className="relative z-10 size-10 md:hidden" />
                     </div>
                     <div className="z-10 flex flex-col gap-2 md:gap-3">
-                        <h1 className="text-display-xs font-semibold text-primary md:text-display-sm">Log in to your account</h1>
-                        <p className="self-stretch p-0 text-md text-tertiary">Welcome back! Please enter your details.</p>
+                        <h1 className="text-display-xs font-semibold text-primary md:text-display-sm">
+                            {activeTab === "login" ? "Log in to your account" : "Create an account"}
+                        </h1>
+                        <p className="self-stretch p-0 text-md text-tertiary">
+                            {activeTab === "login" ? "Welcome back! Please enter your details." : "Start your 30-day free trial."}
+                        </p>
                     </div>
-                    <Tabs defaultSelectedKey="login" className="z-10 w-full">
+                    <Tabs
+                        selectedKey={activeTab}
+                        onSelectionChange={(key) => {
+                            setActiveTab(key as string);
+                            setError(null);
+                        }}
+                        className="z-10 w-full"
+                    >
                         <TabList type="button-minimal" fullWidth size="sm">
                             <Tab id="signup">Sign up</Tab>
                             <Tab id="login">Log in</Tab>
@@ -79,36 +99,68 @@ export default function LoginPage() {
                     </Tabs>
                 </div>
                 <Form
-                    onSubmit={handleSubmit}
+                    onSubmit={activeTab === "login" ? handleSubmit : handleSignup}
                     className="z-10 flex flex-col gap-6"
                 >
-                    <div className="flex flex-col gap-5">
-                        <Input isRequired hideRequiredIndicator label="Email" type="email" name="email" placeholder="Enter your email" size="md" />
-                        <Input isRequired hideRequiredIndicator label="Password" type="password" name="password" size="md" placeholder="••••••••" />
-                    </div>
-                    {error && (
-                        <p className="text-sm text-error-primary">{error}</p>
+                    {activeTab === "login" ? (
+                        <>
+                            <div className="flex flex-col gap-5">
+                                <Input isRequired hideRequiredIndicator label="Email" type="email" name="email" placeholder="Enter your email" size="md" />
+                                <Input isRequired hideRequiredIndicator label="Password" type="password" name="password" size="md" placeholder="••••••••" />
+                            </div>
+                            {error && (
+                                <p className="text-sm text-error-primary">{error}</p>
+                            )}
+                            <div className="flex items-center">
+                                <Checkbox label="Remember for 30 days" name="remember" />
+                                <Button color="link-color" size="md" href="#" className="ml-auto">
+                                    Forgot password
+                                </Button>
+                            </div>
+                            <div className="flex flex-col gap-4">
+                                <Button type="submit" size="lg" isLoading={isLoading} isDisabled={isLoading}>
+                                    Sign in
+                                </Button>
+                                <SocialButton social="google" theme="color">
+                                    Sign in with Google
+                                </SocialButton>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex flex-col gap-5">
+                                <Input isRequired hideRequiredIndicator label="Email" type="email" name="email" placeholder="Enter your email" size="md" />
+                            </div>
+                            {error && (
+                                <p className="text-sm text-error-primary">{error}</p>
+                            )}
+                            <div className="flex flex-col gap-4">
+                                <Button type="submit" size="lg" isLoading={isLoading} isDisabled={isLoading}>
+                                    Continue
+                                </Button>
+                                <SocialButton social="google" theme="color">
+                                    Sign up with Google
+                                </SocialButton>
+                            </div>
+                        </>
                     )}
-                    <div className="flex items-center">
-                        <Checkbox label="Remember for 30 days" name="remember" />
-                        <Button color="link-color" size="md" href="#" className="ml-auto">
-                            Forgot password
-                        </Button>
-                    </div>
-                    <div className="flex flex-col gap-4">
-                        <Button type="submit" size="lg" isLoading={isLoading} isDisabled={isLoading}>
-                            Sign in
-                        </Button>
-                        <SocialButton social="google" theme="color">
-                            Sign in with Google
-                        </SocialButton>
-                    </div>
                 </Form>
                 <div className="z-10 flex justify-center gap-1 text-center">
-                    <span className="text-sm text-tertiary">Don&apos;t have an account?</span>
-                    <Button color="link-color" size="md" href="#">
-                        Sign up
-                    </Button>
+                    {activeTab === "login" ? (
+                        <>
+                            <span className="text-sm text-tertiary">Don&apos;t have an account?</span>
+                            <Button color="link-color" size="md" onClick={() => setActiveTab("signup")}>
+                                Sign up
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-sm text-tertiary">Already have an account?</span>
+                            <Button color="link-color" size="md" onClick={() => setActiveTab("login")}>
+                                Log in
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
         </section>
