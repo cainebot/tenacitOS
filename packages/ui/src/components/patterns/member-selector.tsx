@@ -130,7 +130,7 @@ export function MemberSelector({
       {/* Selected tags row — capped to dropdown width so tags wrap to next line */}
       {selectedUsers.length > 0 && (
         <TagGroup label="Selected members" size="md">
-          <TagList className="flex w-[19.5rem] flex-wrap gap-1">
+          <TagList className="flex max-w-[19.5rem] flex-wrap gap-1">
             {selectedUsers.map((user) => (
               <Tag key={user.id} id={user.id} avatarSrc={user.avatarUrl} onClose={removeUser}>
                 {user.name}

@@ -4,8 +4,8 @@ export type { ModalProps, ModalSize } from "./modal"
 export { Tabs, TabList, Tab, TabPanel } from "./tabs"
 export type { TabsProps, TabListProps, TabProps, TabPanelProps } from "./tabs"
 
-export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "./table"
-export type { TableProps, TableHeaderProps, TableBodyProps, TableRowProps, TableHeadProps, TableCellProps } from "./table"
+export { Table, TableCard, TableRowActionsDropdown } from "./table"
+export type { TableProps, TableHeaderProps, TableHeadProps, TableRowProps, TableCellProps } from "./table"
 
 export { Pagination } from "./pagination"
 export type { PaginationProps } from "./pagination"

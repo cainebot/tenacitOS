@@ -109,7 +109,7 @@ export default function DashboardLayout({
         />
       </button>
 
-      <main className="flex-1 overflow-auto p-6">{children}</main>
+      <main className="flex flex-1 flex-col items-start self-stretch gap-8 overflow-auto py-8 pb-12">{children}</main>
     </div>
   );
 }
