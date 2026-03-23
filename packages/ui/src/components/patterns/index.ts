@@ -12,3 +12,4 @@ export { TableActions, type TableActionsProps, type TableAction } from "./TableA
 export { PageHeader, type PageHeaderProps, type BreadcrumbItem } from "./PageHeader"
 export { OCEmptyState, type OCEmptyStateProps } from "./OCEmptyState"
 export { ConfirmActionDialog } from "./ConfirmActionDialog"
+export { MemberSelector, type MemberSelectorProps, type MemberSelectorUser } from "./member-selector"
