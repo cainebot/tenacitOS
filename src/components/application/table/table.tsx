@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import type { ComponentPropsWithRef, HTMLAttributes, ReactNode, Ref, TdHTMLAttributes, ThHTMLAttributes } from "react"
-import { createContext, isValidElement, useContext } from "react"
-import { ArrowDown, ChevronSelectorVertical, Copy01, Edit01, HelpCircle, Trash01 } from "@untitledui/icons"
+import type { ComponentPropsWithRef, HTMLAttributes, ReactNode, Ref, TdHTMLAttributes, ThHTMLAttributes } from "react";
+import { createContext, isValidElement, useContext } from "react";
+import { ArrowDown, ChevronSelectorVertical, Copy01, Edit01, HelpCircle, Trash01 } from "@untitledui/icons";
 import type {
     CellProps as AriaCellProps,
     ColumnProps as AriaColumnProps,
     RowProps as AriaRowProps,
     TableHeaderProps as AriaTableHeaderProps,
     TableProps as AriaTableProps,
-} from "react-aria-components"
+} from "react-aria-components";
 import {
     Cell as AriaCell,
     Collection as AriaCollection,
@@ -20,12 +20,12 @@ import {
     TableBody as AriaTableBody,
     TableHeader as AriaTableHeader,
     useTableOptions,
-} from "react-aria-components"
-import { Badge } from "../base/badges/badges"
-import { Checkbox } from "../base/checkbox"
-import { Dropdown } from "../base/dropdown"
-import { Tooltip, TooltipTrigger } from "../base/tooltip"
-import { cx } from "../../utils/cx"
+} from "react-aria-components";
+import { Badge } from "@/components/base/badges/badges";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { Tooltip, TooltipTrigger } from "@/components/base/tooltip/tooltip";
+import { cx } from "@/utils/cx";
 
 export const TableRowActionsDropdown = () => (
     <Dropdown.Root>
@@ -45,9 +45,9 @@ export const TableRowActionsDropdown = () => (
             </Dropdown.Menu>
         </Dropdown.Popover>
     </Dropdown.Root>
-)
+);
 
-const TableContext = createContext<{ size: "sm" | "md" }>({ size: "md" })
+const TableContext = createContext<{ size: "sm" | "md" }>({ size: "md" });
 
 const TableCardRoot = ({ children, className, size = "md", ...props }: HTMLAttributes<HTMLDivElement> & { size?: "sm" | "md" }) => {
     return (
@@ -56,19 +56,24 @@ const TableCardRoot = ({ children, className, size = "md", ...props }: HTMLAttri
                 {children}
             </div>
         </TableContext.Provider>
-    )
-}
+    );
+};
 
 interface TableCardHeaderProps {
-    title: string
-    badge?: ReactNode
-    description?: string
-    contentTrailing?: ReactNode
-    className?: string
+    /** The title of the table card header. */
+    title: string;
+    /** The badge displayed next to the title. */
+    badge?: ReactNode;
+    /** The description of the table card header. */
+    description?: string;
+    /** The content displayed after the title and badge. */
+    contentTrailing?: ReactNode;
+    /** The class name of the table card header. */
+    className?: string;
 }
 
 const TableCardHeader = ({ title, badge, description, contentTrailing, className }: TableCardHeaderProps) => {
-    const { size } = useContext(TableContext)
+    const { size } = useContext(TableContext);
 
     return (
         <div
@@ -95,15 +100,15 @@ const TableCardHeader = ({ title, badge, description, contentTrailing, className
             </div>
             {contentTrailing}
         </div>
-    )
+    );
+};
+
+interface TableRootProps extends AriaTableProps, Omit<ComponentPropsWithRef<"table">, "className" | "slot" | "style"> {
+    size?: "sm" | "md";
 }
 
-export interface TableProps extends AriaTableProps, Omit<ComponentPropsWithRef<"table">, "className" | "slot" | "style"> {
-    size?: "sm" | "md"
-}
-
-const TableRoot = ({ className, size = "md", ...props }: TableProps) => {
-    const context = useContext(TableContext)
+const TableRoot = ({ className, size = "md", ...props }: TableRootProps) => {
+    const context = useContext(TableContext);
 
     return (
         <TableContext.Provider value={{ size: context?.size ?? size }}>
@@ -111,19 +116,19 @@ const TableRoot = ({ className, size = "md", ...props }: TableProps) => {
                 <AriaTable className={(state) => cx("w-full overflow-x-hidden", typeof className === "function" ? className(state) : className)} {...props} />
             </div>
         </TableContext.Provider>
-    )
-}
-TableRoot.displayName = "Table"
+    );
+};
+TableRoot.displayName = "Table";
 
-export interface TableHeaderProps<T extends object>
+interface TableHeaderProps<T extends object>
     extends AriaTableHeaderProps<T>,
         Omit<ComponentPropsWithRef<"thead">, "children" | "className" | "slot" | "style"> {
-    bordered?: boolean
+    bordered?: boolean;
 }
 
 const TableHeader = <T extends object>({ columns, children, bordered = true, className, ...props }: TableHeaderProps<T>) => {
-    const { size } = useContext(TableContext)
-    const { selectionBehavior, selectionMode } = useTableOptions()
+    const { size } = useContext(TableContext);
+    const { selectionBehavior, selectionMode } = useTableOptions();
 
     return (
         <AriaTableHeader
@@ -132,8 +137,11 @@ const TableHeader = <T extends object>({ columns, children, bordered = true, cla
                 cx(
                     "relative bg-secondary",
                     size === "sm" ? "h-9" : "h-11",
+
+                    // Row border—using an "after" pseudo-element to avoid the border taking up space.
                     bordered &&
                         "[&>tr>th]:after:pointer-events-none [&>tr>th]:after:absolute [&>tr>th]:after:inset-x-0 [&>tr>th]:after:bottom-0 [&>tr>th]:after:h-px [&>tr>th]:after:bg-border-secondary [&>tr>th]:focus-visible:after:bg-transparent",
+
                     typeof className === "function" ? className(state) : className,
                 )
             }
@@ -149,17 +157,18 @@ const TableHeader = <T extends object>({ columns, children, bordered = true, cla
             )}
             <AriaCollection items={columns}>{children}</AriaCollection>
         </AriaTableHeader>
-    )
-}
-TableHeader.displayName = "TableHeader"
+    );
+};
 
-export interface TableHeadProps extends AriaColumnProps, Omit<ThHTMLAttributes<HTMLTableCellElement>, "children" | "className" | "style" | "id"> {
-    label?: string
-    tooltip?: string
+TableHeader.displayName = "TableHeader";
+
+interface TableHeadProps extends AriaColumnProps, Omit<ThHTMLAttributes<HTMLTableCellElement>, "children" | "className" | "style" | "id"> {
+    label?: string;
+    tooltip?: string;
 }
 
 const TableHead = ({ className, tooltip, label, children, ...props }: TableHeadProps) => {
-    const { selectionBehavior } = useTableOptions()
+    const { selectionBehavior } = useTableOptions();
 
     return (
         <AriaColumn
@@ -197,19 +206,19 @@ const TableHead = ({ className, tooltip, label, children, ...props }: TableHeadP
                 </AriaGroup>
             )}
         </AriaColumn>
-    )
-}
-TableHead.displayName = "TableHead"
+    );
+};
+TableHead.displayName = "TableHead";
 
-export interface TableRowProps<T extends object>
+interface TableRowProps<T extends object>
     extends AriaRowProps<T>,
         Omit<ComponentPropsWithRef<"tr">, "children" | "className" | "onClick" | "slot" | "style" | "id"> {
-    highlightSelectedRow?: boolean
+    highlightSelectedRow?: boolean;
 }
 
 const TableRow = <T extends object>({ columns, children, className, highlightSelectedRow = true, ...props }: TableRowProps<T>) => {
-    const { size } = useContext(TableContext)
-    const { selectionBehavior } = useTableOptions()
+    const { size } = useContext(TableContext);
+    const { selectionBehavior } = useTableOptions();
 
     return (
         <AriaRow
@@ -219,7 +228,10 @@ const TableRow = <T extends object>({ columns, children, className, highlightSel
                     "relative outline-focus-ring transition-colors after:pointer-events-none hover:bg-secondary focus-visible:outline-2 focus-visible:-outline-offset-2",
                     size === "sm" ? "h-14" : "h-18",
                     highlightSelectedRow && "selected:bg-secondary",
+
+                    // Row border—using an "after" pseudo-element to avoid the border taking up space.
                     "[&>td]:after:absolute [&>td]:after:inset-x-0 [&>td]:after:bottom-0 [&>td]:after:h-px [&>td]:after:w-full [&>td]:after:bg-border-secondary last:[&>td]:after:hidden [&>td]:focus-visible:after:opacity-0 focus-visible:[&>td]:after:opacity-0",
+
                     typeof className === "function" ? className(state) : className,
                 )
             }
@@ -233,17 +245,18 @@ const TableRow = <T extends object>({ columns, children, className, highlightSel
             )}
             <AriaCollection items={columns}>{children}</AriaCollection>
         </AriaRow>
-    )
-}
-TableRow.displayName = "TableRow"
+    );
+};
 
-export interface TableCellProps extends AriaCellProps, Omit<TdHTMLAttributes<HTMLTableCellElement>, "children" | "className" | "style" | "id"> {
-    ref?: Ref<HTMLTableCellElement>
+TableRow.displayName = "TableRow";
+
+interface TableCellProps extends AriaCellProps, Omit<TdHTMLAttributes<HTMLTableCellElement>, "children" | "className" | "style" | "id"> {
+    ref?: Ref<HTMLTableCellElement>;
 }
 
 const TableCell = ({ className, children, ...props }: TableCellProps) => {
-    const { size } = useContext(TableContext)
-    const { selectionBehavior } = useTableOptions()
+    const { size } = useContext(TableContext);
+    const { selectionBehavior } = useTableOptions();
 
     return (
         <AriaCell
@@ -253,33 +266,35 @@ const TableCell = ({ className, children, ...props }: TableCellProps) => {
                     "relative text-sm text-tertiary outline-focus-ring focus-visible:z-1 focus-visible:outline-2 focus-visible:-outline-offset-2",
                     size === "sm" && "px-5 py-3",
                     size === "md" && "px-6 py-4",
+
                     selectionBehavior === "toggle" && "nth-2:pl-3",
+
                     typeof className === "function" ? className(state) : className,
                 )
             }
         >
             {children}
         </AriaCell>
-    )
-}
-TableCell.displayName = "TableCell"
+    );
+};
+TableCell.displayName = "TableCell";
 
 const TableCard = {
     Root: TableCardRoot,
     Header: TableCardHeader,
-}
+};
 
 const Table = TableRoot as typeof TableRoot & {
-    Body: typeof AriaTableBody
-    Cell: typeof TableCell
-    Head: typeof TableHead
-    Header: typeof TableHeader
-    Row: typeof TableRow
-}
-Table.Body = AriaTableBody
-Table.Cell = TableCell
-Table.Head = TableHead
-Table.Header = TableHeader
-Table.Row = TableRow
+    Body: typeof AriaTableBody;
+    Cell: typeof TableCell;
+    Head: typeof TableHead;
+    Header: typeof TableHeader;
+    Row: typeof TableRow;
+};
+Table.Body = AriaTableBody;
+Table.Cell = TableCell;
+Table.Head = TableHead;
+Table.Header = TableHeader;
+Table.Row = TableRow;
 
-export { Table, TableCard, TableRowActionsDropdown }
+export { Table, TableCard };

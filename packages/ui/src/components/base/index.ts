@@ -28,6 +28,7 @@ export { Checkbox, CheckboxBase, type CheckboxProps, type CheckboxBaseProps } fr
 export { RadioGroup, Radio, type RadioGroupProps, type RadioProps } from "./radio"
 export { Toggle, ToggleBase, type ToggleProps } from "./toggle"
 export { Avatar, AvatarLabelGroup, type AvatarProps } from "./avatar"
+export { AvatarGroup, type AvatarGroupProps } from "./avatar-group"
 export { Dropdown } from "./dropdown"
 export { ProgressBar, ProgressBarBase, type ProgressBarProps, type ProgressIndicatorWithTextProps } from "./progress-bar"
 export { SocialButton, type SocialButtonProps } from "./buttons/social-button"
