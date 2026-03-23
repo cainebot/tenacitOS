@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Check, ChevronDown, ChevronUp, SearchLg } from "@untitledui/icons"
-import { Avatar } from "../base/avatar"
-import { BadgeWithButton, BadgeWithIcon } from "../base/badge"
-import { InputBase } from "../base/input/input"
+import { ChevronDown, ChevronUp } from "@untitledui/icons"
+import { BadgeWithIcon } from "../base/badge"
+import { Select } from "../base/select/select"
+import { Tag, TagGroup, TagList } from "../base/tags/tags"
 import { cx } from "../../utils/cx"
 
 // ---------------------------------------------------------------------------
@@ -40,39 +40,52 @@ export function MemberSelector({
   className,
 }: MemberSelectorProps) {
   const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState("")
   const [internalSelected, setInternalSelected] = useState<string[]>([])
+  const [comboKey, setComboKey] = useState(0)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   const isControlled = selected !== undefined
   const selectedIds = isControlled ? selected : internalSelected
 
-  // Click-outside handler
+  // Move keyboard focus into the ComboBox input when the panel opens or
+  // resets, so the user can start typing immediately.
+  useEffect(() => {
+    if (!open) return
+    const timer = setTimeout(() => {
+      const input = wrapperRef.current?.querySelector<HTMLInputElement>('[role="combobox"]')
+      input?.focus()
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [open, comboKey])
+
+  // Click-outside — excludes React Aria portal overlays so ComboBox
+  // item clicks don't accidentally close the panel before selection fires.
   useEffect(() => {
     if (!open) return
 
     const handleMouseDown = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setSearch("")
-      }
+      const target = e.target as Element
+      if (wrapperRef.current?.contains(target)) return
+      // React Aria renders popovers inside [data-react-aria-top-layer]
+      if (target.closest("[data-react-aria-top-layer]")) return
+      setOpen(false)
     }
 
     document.addEventListener("mousedown", handleMouseDown)
     return () => document.removeEventListener("mousedown", handleMouseDown)
   }, [open])
 
-  const toggleUser = (id: string) => {
-    const next = selectedIds.includes(id)
-      ? selectedIds.filter((s) => s !== id)
-      : [...selectedIds, id]
-
+  const addUser = (id: string) => {
+    if (selectedIds.includes(id)) return
+    const next = [...selectedIds, id]
     if (isControlled) {
       onChange?.(next)
     } else {
       setInternalSelected(next)
       onChange?.(next)
     }
+    // Increment key to reset ComboBox search after selection
+    setComboKey((prev) => prev + 1)
   }
 
   const removeUser = (id: string) => {
@@ -85,118 +98,75 @@ export function MemberSelector({
     }
   }
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.handle.toLowerCase().includes(search.toLowerCase()),
-  )
-
   const selectedUsers = users.filter((u) => selectedIds.includes(u.id))
+
+  const comboItems = users.map((u) => ({
+    id: u.id,
+    label: u.name,
+    supportingText: u.handle,
+    avatarUrl: u.avatarUrl,
+  }))
 
   return (
     <div ref={wrapperRef} className={cx("relative inline-flex flex-col gap-1.5", className)}>
-      {/* Trigger row */}
+      {/* Trigger */}
       <button
         type="button"
-        onClick={() => {
-          setOpen((prev) => !prev)
-          if (open) setSearch("")
-        }}
-        className="cursor-pointer"
+        onClick={() => setOpen((prev) => !prev)}
+        className="cursor-pointer self-start"
         aria-expanded={open}
         aria-haspopup="listbox"
       >
         <BadgeWithIcon
           color="gray"
-          size="md"
+          size="lg"
+          type="modern"
           iconTrailing={open ? ChevronUp : ChevronDown}
         >
           {label}
         </BadgeWithIcon>
       </button>
 
-      {/* Selected tags row */}
+      {/* Selected tags row — capped to dropdown width so tags wrap to next line */}
       {selectedUsers.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {selectedUsers.map((user) => (
-            <BadgeWithButton
-              key={user.id}
-              color="gray"
-              size="sm"
-              onButtonClick={() => removeUser(user.id)}
-              buttonLabel={`Remove ${user.name}`}
-            >
-              <Avatar
-                size="xs"
-                src={user.avatarUrl}
-                alt={user.name}
-                initials={user.name.charAt(0).toUpperCase()}
-                className="mr-1"
-              />
-              {user.name}
-            </BadgeWithButton>
-          ))}
-        </div>
+        <TagGroup label="Selected members" size="md">
+          <TagList className="flex w-[19.5rem] flex-wrap gap-1">
+            {selectedUsers.map((user) => (
+              <Tag key={user.id} id={user.id} avatarSrc={user.avatarUrl} onClose={removeUser}>
+                {user.name}
+              </Tag>
+            ))}
+          </TagList>
+        </TagGroup>
       )}
 
-      {/* Dropdown panel */}
+      {/* Search panel — UUI Select.ComboBox handles input + floating listbox */}
       {open && (
-        <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border border-secondary bg-primary p-1 shadow-lg">
-          {/* Search input */}
-          <div className="mb-1">
-            <InputBase
-              icon={SearchLg}
-              placeholder="Search..."
-              size="sm"
-              value={search}
-              onChange={(value) => setSearch(value)}
-              aria-label="Search members"
-            />
-          </div>
-
-          {/* User list */}
-          <div className="max-h-60 overflow-y-auto" role="listbox" aria-label="Members">
-            {filteredUsers.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-tertiary">No members found</div>
-            ) : (
-              filteredUsers.map((user) => {
-                const isSelected = selectedIds.includes(user.id)
-                return (
-                  <button
-                    key={user.id}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => toggleUser(user.id)}
-                    className={cx(
-                      "flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left transition duration-100 ease-linear",
-                      "hover:bg-primary_hover",
-                    )}
-                  >
-                    <Avatar
-                      size="xs"
-                      src={user.avatarUrl}
-                      alt={user.name}
-                      initials={user.name.charAt(0).toUpperCase()}
-                    />
-
-                    <div className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-secondary">
-                        {user.name}
-                      </span>
-                      <span className="block truncate text-sm text-tertiary">
-                        {user.handle}
-                      </span>
-                    </div>
-
-                    {isSelected && (
-                      <Check className="size-4 shrink-0 text-brand-primary" />
-                    )}
-                  </button>
-                )
-              })
+        <div className="absolute left-0 top-full z-10 mt-1 w-[19.5rem] min-w-[19.5rem]">
+          <Select.ComboBox
+            key={comboKey}
+            items={comboItems}
+            placeholder="Search..."
+            size="md"
+            shortcut={false}
+            // Keep listbox always open while panel is visible.
+            // React Aria ignores programmatic focus() for menuTrigger="focus",
+            // so we use the controlled isOpen prop instead.
+            isOpen
+            onOpenChange={() => {}}
+            onSelectionChange={(key) => {
+              if (key != null) addUser(String(key))
+            }}
+          >
+            {(item) => (
+              <Select.Item
+                id={item.id}
+                label={item.label}
+                avatarUrl={item.avatarUrl}
+                supportingText={item.supportingText}
+              />
             )}
-          </div>
+          </Select.ComboBox>
         </div>
       )}
     </div>
