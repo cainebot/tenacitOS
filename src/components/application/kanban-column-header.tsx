@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { memo, useRef, useState } from "react"
 import { Plus, Pencil01, Trash01, DotsHorizontal } from "@untitledui/icons"
 import { Badge, ButtonUtility, Dropdown, cx } from "@circos/ui"
 import { Button as AriaButton } from "react-aria-components"
@@ -15,7 +15,7 @@ export interface KanbanColumnHeaderProps {
   className?: string
 }
 
-export function KanbanColumnHeader({
+export const KanbanColumnHeader = memo(function KanbanColumnHeader({
   title,
   onTitleChange,
   count,
@@ -152,4 +152,4 @@ export function KanbanColumnHeader({
       )}
     </div>
   )
-}
+})

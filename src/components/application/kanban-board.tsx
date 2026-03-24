@@ -6,8 +6,7 @@ import { cx } from "@circos/ui"
 import {
   DndContext,
   closestCenter,
-  pointerWithin,
-  KeyboardSensor,
+  closestCorners,
   PointerSensor,
   useSensor,
   useSensors,
@@ -17,12 +16,9 @@ import {
   type DragOverEvent,
   type Modifier,
   type CollisionDetection,
-  rectIntersection,
-  getFirstCollision,
 } from "@dnd-kit/core"
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   horizontalListSortingStrategy,
   useSortable,
   arrayMove,
@@ -64,6 +60,7 @@ function SortableColumnWrapper({ id, children }: { id: string; children: ReactNo
       style={style}
       {...attributes}
       {...listeners}
+      suppressHydrationWarning
       className="shrink-0"
     >
       {isDragging ? (
@@ -106,33 +103,37 @@ export function KanbanBoard<T extends KanbanColumnItem>({
 }: KanbanBoardProps<T>) {
   const [dragType, setDragType] = useState<DragType>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [dragColumns, setDragColumns] = useState<KanbanBoardColumn<T>[] | null>(null)
+  const isDragActive = dragType === "card"
+
+  // During drag, use internal state to avoid parent re-renders
+  const effectiveColumns = dragColumns ?? columns
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  const columnIds = useMemo(() => columns.map((c) => c.id), [columns])
+  const columnIds = useMemo(() => effectiveColumns.map((c) => c.id), [effectiveColumns])
 
   // Find which column a card belongs to
   const findColumnOfCard = useCallback((cardId: string) => {
-    return columns.find((col) => col.items.some((item) => item.id === cardId))
-  }, [columns])
+    return effectiveColumns.find((col) => col.items.some((item) => item.id === cardId))
+  }, [effectiveColumns])
 
   // Find active item for overlay
   const activeCard = useMemo(() => {
     if (dragType !== "card" || !activeId) return null
-    for (const col of columns) {
+    for (const col of effectiveColumns) {
       const item = col.items.find((i) => i.id === activeId)
       if (item) return item
     }
     return null
-  }, [dragType, activeId, columns])
+  }, [dragType, activeId, effectiveColumns])
 
   const activeColumn = useMemo(() => {
     if (dragType !== "column" || !activeId) return null
-    return columns.find((c) => c.id === activeId) ?? null
-  }, [dragType, activeId, columns])
+    return effectiveColumns.find((c) => c.id === activeId) ?? null
+  }, [dragType, activeId, effectiveColumns])
 
   // ------ Handlers ------
 
@@ -140,108 +141,111 @@ export function KanbanBoard<T extends KanbanColumnItem>({
     const type = event.active.data.current?.type as DragType
     setDragType(type)
     setActiveId(String(event.active.id))
+    // Snapshot columns internally — parent won't re-render during drag
+    if (type === "card") setDragColumns([...columns])
   }
 
   const handleDragOver = (event: DragOverEvent) => {
     if (dragType !== "card") return
     const { active, over } = event
-    if (!over) return
+    if (!over || active.id === over.id) return
 
     const activeCardId = String(active.id)
     const overData = over.data.current
-
-    // Determine target column
     const overId = String(over.id)
-    let targetColumnId: string | undefined
-    if (overData?.type === "card") {
-      targetColumnId = overData.columnId
-    } else if (overData?.type === "column" && overData?.columnId) {
-      targetColumnId = overData.columnId
-    } else if (overId.startsWith("droppable-")) {
-      targetColumnId = overId.replace("droppable-", "")
-    } else {
-      // over.id might be a column sortable ID
-      const col = columns.find((c) => c.id === overId)
-      if (col) targetColumnId = col.id
+
+    // When hovering over a column droppable (not a specific card),
+    // use pointer position relative to the column to determine top/bottom insertion
+    let columnDropIndex: number | undefined
+    if (overData?.type !== "card" && over.rect) {
+      const draggedTop = active.rect.current.translated?.top ?? 0
+      const columnMidY = over.rect.top + over.rect.height / 2
+      // If dragged card is in the top half of the column → insert at start, else at end
+      columnDropIndex = draggedTop < columnMidY ? 0 : undefined
     }
 
-    if (!targetColumnId) return
+    setDragColumns((prev) => {
+      if (!prev) return prev
 
-    const sourceCol = findColumnOfCard(activeCardId)
-    if (!sourceCol || sourceCol.id === targetColumnId) {
-      // Same column reorder is handled by dnd-kit's SortableContext automatically
-      // But we need to handle the actual reorder in dragEnd
-      return
-    }
+      // Resolve target column
+      const targetColumnId =
+        overData?.type === "card" ? overData.columnId
+        : overData?.columnId ? overData.columnId
+        : overId.startsWith("droppable-") ? overId.replace("droppable-", "")
+        : prev.find((c) => c.id === overId)?.id
 
-    // Cross-column move: move card from source to target in real-time (on hover)
-    const sourceItems = [...sourceCol.items]
-    const cardIndex = sourceItems.findIndex((i) => i.id === activeCardId)
-    if (cardIndex === -1) return
-    const [card] = sourceItems.splice(cardIndex, 1)
+      if (!targetColumnId) return prev
 
-    const targetCol = columns.find((c) => c.id === targetColumnId)
-    if (!targetCol) return
-    const targetItems = [...targetCol.items]
+      const sourceCol = prev.find((col) => col.items.some((i) => i.id === activeCardId))
+      if (!sourceCol || sourceCol.id === targetColumnId) return prev
 
-    // Insert at the position of the card we're hovering over, or at end
-    if (overData?.type === "card") {
-      const overIndex = targetItems.findIndex((i) => i.id === String(over.id))
-      if (overIndex >= 0) {
-        targetItems.splice(overIndex, 0, card)
+      const targetCol = prev.find((c) => c.id === targetColumnId)
+      if (!targetCol) return prev
+      // Guard: prevent thrashing
+      if (targetCol.items.some((i) => i.id === activeCardId)) return prev
+
+      const card = sourceCol.items.find((i) => i.id === activeCardId)!
+      const sourceItems = sourceCol.items.filter((i) => i.id !== activeCardId)
+      const targetItems = [...targetCol.items]
+
+      if (overData?.type === "card") {
+        const overIndex = targetItems.findIndex((i) => i.id === overId)
+        targetItems.splice(overIndex >= 0 ? overIndex : targetItems.length, 0, card)
+      } else if (columnDropIndex !== undefined) {
+        targetItems.splice(columnDropIndex, 0, card)
       } else {
         targetItems.push(card)
       }
-    } else {
-      targetItems.push(card)
-    }
 
-    onColumnsChange?.(
-      columns.map((c) => {
+      return prev.map((c) => {
         if (c.id === sourceCol.id) return { ...c, items: sourceItems }
         if (c.id === targetColumnId) return { ...c, items: targetItems }
         return c
-      }),
-    )
+      })
+    })
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
     if (dragType === "column" && over && active.id !== over.id) {
-      const oldIndex = columns.findIndex((c) => c.id === String(active.id))
-      const newIndex = columns.findIndex((c) => c.id === String(over.id))
+      const oldIndex = effectiveColumns.findIndex((c) => c.id === String(active.id))
+      const newIndex = effectiveColumns.findIndex((c) => c.id === String(over.id))
       if (oldIndex !== -1 && newIndex !== -1) {
-        onColumnsChange?.(arrayMove(columns, oldIndex, newIndex))
+        onColumnsChange?.(arrayMove(effectiveColumns, oldIndex, newIndex))
       }
     }
 
-    if (dragType === "card" && over) {
-      const activeCardId = String(active.id)
-      const overData = over.data.current
-
-      // Same-column reorder
-      if (overData?.type === "card" && active.id !== over.id) {
-        const col = findColumnOfCard(activeCardId)
-        if (col) {
-          const oldIndex = col.items.findIndex((i) => i.id === activeCardId)
-          const newIndex = col.items.findIndex((i) => i.id === String(over.id))
-          if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-            onColumnsChange?.(
-              columns.map((c) =>
+    if (dragType === "card") {
+      // Commit final state to parent
+      let finalColumns = dragColumns ?? columns
+      if (over) {
+        const activeCardId = String(active.id)
+        const overData = over.data.current
+        // Same-column reorder (cross-column already handled in dragOver)
+        if (overData?.type === "card" && active.id !== over.id) {
+          const col = finalColumns.find((c) => c.items.some((i) => i.id === activeCardId))
+          if (col) {
+            const oldIndex = col.items.findIndex((i) => i.id === activeCardId)
+            const newIndex = col.items.findIndex((i) => i.id === String(over.id))
+            if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+              finalColumns = finalColumns.map((c) =>
                 c.id === col.id ? { ...c, items: arrayMove(c.items, oldIndex, newIndex) } : c,
-              ),
-            )
+              )
+            }
           }
         }
       }
+      onColumnsChange?.(finalColumns)
     }
 
+    setDragColumns(null)
     setDragType(null)
     setActiveId(null)
   }
 
   const handleDragCancel = () => {
+    setDragColumns(null)
     setDragType(null)
     setActiveId(null)
   }
@@ -269,23 +273,18 @@ export function KanbanBoard<T extends KanbanColumnItem>({
   // Collision detection: filter containers by drag type to prevent interference
   const collisionDetection: CollisionDetection = useCallback((args) => {
     if (dragType === "column") {
-      // Only collide with other column sortables
       const columnContainers = args.droppableContainers.filter((c) =>
         columnIds.includes(String(c.id)),
       )
       return closestCenter({ ...args, droppableContainers: columnContainers })
     }
 
-    // For cards: only collide with card sortables + column droppables (not column sortables)
-    const cardContainers = args.droppableContainers.filter((c) => {
-      const id = String(c.id)
-      return !columnIds.includes(id)
-    })
-    const filteredArgs = { ...args, droppableContainers: cardContainers }
-
-    const pointerCollisions = pointerWithin(filteredArgs)
-    if (pointerCollisions.length > 0) return pointerCollisions
-    return rectIntersection(filteredArgs)
+    // For cards: use closestCorners (stable across column boundaries)
+    // Exclude column sortable IDs to prevent card↔column interference
+    const cardContainers = args.droppableContainers.filter((c) =>
+      !columnIds.includes(String(c.id)),
+    )
+    return closestCorners({ ...args, droppableContainers: cardContainers })
   }, [dragType, columnIds])
 
   return (
@@ -300,15 +299,16 @@ export function KanbanBoard<T extends KanbanColumnItem>({
         onDragCancel={handleDragCancel}
       >
         <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-          {columns.map((col) => (
+          {effectiveColumns.map((col) => (
             <SortableColumnWrapper key={col.id} id={col.id}>
               <KanbanColumn
                 columnId={col.id}
                 title={col.title}
-                onTitleChange={(t) => handleColumnTitleChange(col.id, t)}
-                onDelete={() => handleColumnDelete(col.id)}
+                onTitleChange={handleColumnTitleChange}
+                onDelete={handleColumnDelete}
                 items={col.items}
                 activeCardId={dragType === "card" ? activeId : null}
+                isDragActive={isDragActive}
                 renderCard={renderCard}
               />
             </SortableColumnWrapper>

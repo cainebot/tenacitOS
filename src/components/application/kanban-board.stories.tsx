@@ -1,8 +1,7 @@
-"use client"
-
 import { useState, useCallback } from "react"
-import { KanbanCard, type Priority } from "@/components/application/kanban-card"
-import { KanbanBoard, type KanbanBoardColumn } from "@/components/application/kanban-board"
+import type { Meta, StoryObj } from "@storybook/react"
+import { KanbanBoard, type KanbanBoardColumn } from "./kanban-board"
+import { KanbanCard, type Priority } from "./kanban-card"
 
 const sampleUsers = [
   { id: "1", name: "Olivia Rhye", avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=128&h=128&fit=crop&crop=faces" },
@@ -14,8 +13,8 @@ const sampleUsers = [
 interface CardData {
   id: string
   title: string
-  commentsCount?: number
   priority?: Priority | null
+  commentsCount?: number
   subtasks?: { done: number; total: number }
   assigneeId?: string
 }
@@ -49,13 +48,12 @@ const initialColumns: KanbanBoardColumn<CardData>[] = [
     items: [
       { id: "6", title: "Set up CI/CD pipeline for staging", commentsCount: 3, subtasks: { done: 5, total: 5 }, assigneeId: "2" },
       { id: "7", title: "Design system token audit", priority: "critical", subtasks: { done: 12, total: 12 }, assigneeId: "3" },
-      { id: "8", title: "Migrate auth to new provider", commentsCount: 1, priority: "high", subtasks: { done: 8, total: 8 }, assigneeId: "4" },
     ],
   },
 ]
 
-export default function SalesPipelinePage() {
-  const [columns, setColumns] = useState(initialColumns)
+function InteractiveBoard({ columns: initialCols }: { columns: KanbanBoardColumn<CardData>[] }) {
+  const [columns, setColumns] = useState(initialCols)
 
   const updateCard = useCallback((cardId: string, patch: Partial<CardData>) => {
     setColumns((prev) =>
@@ -83,13 +81,57 @@ export default function SalesPipelinePage() {
   ), [updateCard])
 
   return (
-    <div className="h-full overflow-hidden p-6">
-      <KanbanBoard
-        columns={columns}
-        onColumnsChange={setColumns}
-        className="h-full"
-        renderCard={renderCard}
-      />
-    </div>
+    <KanbanBoard
+      columns={columns}
+      onColumnsChange={setColumns}
+      renderCard={renderCard}
+    />
   )
+}
+
+const meta: Meta = {
+  title: "Application/KanbanBoard",
+  tags: ["autodocs"],
+  parameters: {
+    layout: "fullscreen",
+  },
+  decorators: [(Story) => <div className="p-6"><Story /></div>],
+}
+
+export default meta
+type Story = StoryObj<typeof meta>
+
+// ---------------------------------------------------------------------------
+// Default — full interactive board with drag & drop
+// ---------------------------------------------------------------------------
+export const Default: Story = {
+  render: () => <InteractiveBoard columns={initialColumns} />,
+}
+
+// ---------------------------------------------------------------------------
+// Two columns
+// ---------------------------------------------------------------------------
+export const TwoColumns: Story = {
+  render: () => <InteractiveBoard columns={initialColumns.slice(0, 2)} />,
+}
+
+// ---------------------------------------------------------------------------
+// With empty columns
+// ---------------------------------------------------------------------------
+export const WithEmptyColumn: Story = {
+  render: () => (
+    <InteractiveBoard columns={[
+      initialColumns[0],
+      { id: "empty-1", title: "Backlog", items: [] },
+      { id: "empty-2", title: "Blocked", items: [] },
+      initialColumns[1],
+    ]} />
+  ),
+}
+
+// ---------------------------------------------------------------------------
+// Single column
+// ---------------------------------------------------------------------------
+export const SingleColumn: Story = {
+  render: () => <InteractiveBoard columns={[initialColumns[0]]} />,
 }
