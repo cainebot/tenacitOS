@@ -150,8 +150,8 @@
        Utility Colors — Badge/FeaturedIcon (DARK mode — inverted scale)
        Dark bg + light text for proper dark-mode contrast
        ----------------------------------------------------------------------- */
-    --utility-gray-50: var(--gray-800);
-    --utility-gray-100: var(--gray-700);
+    --utility-gray-50: var(--gray-900);
+    --utility-gray-100: var(--gray-800);
     --utility-gray-200: var(--gray-700);
     --utility-gray-400: var(--gray-400);
     --utility-gray-500: var(--gray-300);
