@@ -57,6 +57,17 @@ const initialColumns: KanbanBoardColumn<CardData>[] = [
 export default function SalesPipelinePage() {
   const [columns, setColumns] = useState(initialColumns)
 
+  const updateCard = (cardId: string, patch: Partial<CardData>) => {
+    setColumns((prev) =>
+      prev.map((col) => ({
+        ...col,
+        items: col.items.map((item) =>
+          item.id === cardId ? { ...item, ...patch } : item,
+        ),
+      })),
+    )
+  }
+
   return (
     <div className="h-full overflow-hidden p-6">
       <KanbanBoard
@@ -66,10 +77,13 @@ export default function SalesPipelinePage() {
         renderCard={(card) => (
           <KanbanCard
             title={card.title}
+            onTitleChange={(title) => updateCard(card.id, { title })}
             commentsCount={card.commentsCount}
             priority={card.priority}
+            onPriorityChange={(priority) => updateCard(card.id, { priority })}
             subtasks={card.subtasks}
             assignee={card.assigneeId ? sampleUsers.find((u) => u.id === card.assigneeId) : undefined}
+            onAssigneeChange={(user) => updateCard(card.id, { assigneeId: user?.id })}
             users={sampleUsers}
           />
         )}
