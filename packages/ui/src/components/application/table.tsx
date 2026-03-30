@@ -282,4 +282,4 @@ Table.Head = TableHead
 Table.Header = TableHeader
 Table.Row = TableRow
 
-export { Table, TableCard, TableRowActionsDropdown }
+export { Table, TableCard }

@@ -23,9 +23,11 @@ interface SidebarNavigationSectionDividersProps {
     items: (NavItemType | NavItemDividerType)[];
     /** Live node cards to display in the sidebar footer. When omitted or empty, renders nothing. */
     featuredCards?: FeaturedCardData[];
+    /** When true, renders only the sidebar content without fixed positioning or placeholder. Used by AnimatedSidebar. */
+    bare?: boolean;
 }
 
-export const SidebarNavigationSectionDividers = ({ activeUrl, items, featuredCards }: SidebarNavigationSectionDividersProps) => {
+export const SidebarNavigationSectionDividers = ({ activeUrl, items, featuredCards, bare }: SidebarNavigationSectionDividersProps) => {
     const MAIN_SIDEBAR_WIDTH = 292;
 
     const content = (
@@ -69,6 +71,8 @@ export const SidebarNavigationSectionDividers = ({ activeUrl, items, featuredCar
             </div>
         </aside>
     );
+
+    if (bare) return content;
 
     return (
         <>

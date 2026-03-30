@@ -5,7 +5,10 @@ import { fileURLToPath } from "node:url"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const config: StorybookConfig = {
-  stories: ["../src/**/*.stories.@(ts|tsx)"],
+  stories: [
+    "../src/**/*.stories.@(ts|tsx)",
+    "../../../src/components/**/*.stories.@(ts|tsx)",
+  ],
   staticDirs: ["../public"],
   addons: [
     "@storybook/addon-a11y",
@@ -25,6 +28,9 @@ const config: StorybookConfig = {
         ([find, replacement]) => ({ find, replacement })
       )
     }
+    // Resolve @/components from app src (for app-level stories) — must come before generic @/
+    const appSrc = resolve(__dirname, "../../../src")
+    config.resolve.alias.push({ find: /^@\/components\//, replacement: appSrc + "/components/" })
     config.resolve.alias.push({ find: /^@\//, replacement: uiSrc + "/" })
 
     // Ensure Vite resolves node_modules from workspace root (for tailwindcss, etc.)

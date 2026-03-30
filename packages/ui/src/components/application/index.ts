@@ -38,7 +38,16 @@ export { SidebarNavigationSectionDividers } from "./app-navigation/sidebar-navig
 export type { FeaturedCardData } from "./app-navigation/sidebar-navigation/sidebar-section-dividers"
 export { FeaturedCardProgressBar, type FeaturedCardCommonProps } from "./featured-cards/featured-cards"
 export { SidebarNavigationSlim } from "./app-navigation/sidebar-navigation/sidebar-slim"
+export { AgentBoardPanel } from "./app-navigation/sidebar-navigation/sidebar-agent-board"
+export { SideMenu, type SideMenuProps } from "./app-navigation/sidebar-navigation/side-menu"
+export { SIDEBAR, SIDEBAR_SPRING } from "./app-navigation/sidebar-constants"
 
 export { DatePicker } from "./date-picker/date-picker"
 export { DateRangePicker } from "./date-picker/date-range-picker"
 export { Calendar as DatePickerCalendar } from "./date-picker/calendar"
+
+export { TextEditor } from "./text-editor"
+export type { TextEditorProps, TextEditorIconType } from "./text-editor"
+
+export { FileUpload } from "./file-upload"
+export type { FileUploadProps } from "./file-upload"

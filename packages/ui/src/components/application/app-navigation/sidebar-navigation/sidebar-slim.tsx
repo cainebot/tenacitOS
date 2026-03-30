@@ -30,9 +30,11 @@ interface SidebarNavigationSlimProps {
     hideBorder?: boolean;
     /** Whether to hide the right side border. */
     hideRightBorder?: boolean;
+    /** When true, renders only the main sidebar content (no hover, no fixed positioning, no placeholder). Used by AnimatedSidebar. */
+    bare?: boolean;
 }
 
-export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hideBorder, hideRightBorder }: SidebarNavigationSlimProps) => {
+export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hideBorder, hideRightBorder, bare }: SidebarNavigationSlimProps) => {
     const activeItem = [...items, ...footerItems].find((item) => item.href === activeUrl || item.items?.some((subItem) => subItem.href === activeUrl));
     const [currentItem, setCurrentItem] = useState(activeItem || items[1]);
     const [isHovering, setIsHovering] = useState(false);
@@ -162,6 +164,8 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
             )}
         </AnimatePresence>
     );
+
+    if (bare) return mainSidebar;
 
     return (
         <>

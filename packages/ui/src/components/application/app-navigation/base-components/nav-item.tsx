@@ -83,10 +83,11 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, iconTraili
                 href={href!}
                 target={isExternal ? "_blank" : "_self"}
                 rel="noopener noreferrer"
-                className={cx("py-2 pr-3 pl-10", styles.root, current && styles.rootSelected)}
+                className={cx("py-2 pr-3 px-3", styles.root, current && styles.rootSelected)}
                 onClick={onClick}
                 aria-current={current ? "page" : undefined}
             >
+                {iconElement}
                 {labelElement}
                 {externalIcon}
                 {badgeElement}
