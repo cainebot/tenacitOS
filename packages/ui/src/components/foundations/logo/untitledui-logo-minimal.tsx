@@ -1,14 +1,15 @@
 "use client";
 
-import type { SVGProps } from "react";
-import { useId } from "react";
+import { type SVGProps, useId, useState, useEffect } from "react";
 import { cx } from "@/utils/cx";
 
 export const UntitledLogoMinimal = (props: SVGProps<SVGSVGElement>) => {
-    const id = useId();
+    const reactId = useId();
+    const [id, setId] = useState("uui-logo");
+    useEffect(() => setId(reactId), [reactId]);
 
     return (
-        <svg viewBox="0 0 36 36" fill="none" {...props} className={cx("size-8", props.className)}>
+        <svg viewBox="0 0 36 36" fill="none" {...props} className={cx("size-8", props.className)} suppressHydrationWarning>
             <g clipPath={`url(#clip0-${id})`}>
                 <rect width="36" height="36" rx="9" fill="#22262F" />
                 <rect width="36" height="36" fill={`url(#paint0-${id})`} />

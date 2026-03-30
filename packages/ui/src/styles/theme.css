@@ -107,6 +107,7 @@
        ----------------------------------------------------------------------- */
     --bg-primary: var(--gray-950);
     --bg-secondary: var(--gray-900);
+    --bg-primary_alt: var(--bg-secondary);
     --bg-tertiary: var(--gray-800);
     --bg-quaternary: var(--gray-700);
 
@@ -397,6 +398,7 @@
 
     /* Background tokens (LIGHT mode) */
     --bg-primary: #FFFFFF;
+    --bg-primary_alt: #FFFFFF;
     --bg-secondary: var(--gray-50);
     --bg-tertiary: var(--gray-100);
     --bg-quaternary: var(--gray-200);
@@ -611,7 +613,7 @@
   --color-bg-secondary: var(--bg-secondary);
   --color-bg-tertiary: var(--bg-tertiary);
   --color-bg-quaternary: var(--bg-quaternary);
-  --color-primary_alt: var(--bg-secondary);
+  --color-primary_alt: var(--bg-primary_alt);
   --color-primary_hover: var(--bg-secondary);
   --color-primary-solid: var(--bg-primary-solid);
   --color-secondary_alt: var(--bg-quaternary);
@@ -620,6 +622,7 @@
   --color-active: var(--bg-active);
   --color-disabled: var(--bg-disabled);
   --color-disabled_subtle: var(--bg-disabled_subtle);
+  --color-bg-brand-primary: var(--utility-brand-50);
   --color-bg-brand-solid: var(--brand-600);
   --color-bg-brand-solid_hover: var(--brand-700);
   --color-brand-primary_alt: var(--brand-50);
@@ -661,7 +664,7 @@
   --color-border-secondary: var(--border-secondary);
   --color-border-tertiary: var(--border-tertiary);
   --color-border-disabled: var(--border-disabled);
-  --color-border-brand: var(--brand-600);
+  --color-border-brand: var(--brand-400);
   --color-border-error: var(--error-600);
   --color-border-error_subtle: var(--error-300);
   --color-focus-ring: var(--brand-500);
@@ -845,7 +848,7 @@
 
   /* --- Background Color (bg-*) --- */
   --background-color-primary: var(--bg-primary);
-  --background-color-primary_alt: var(--bg-secondary);
+  --background-color-primary_alt: var(--bg-primary_alt);
   --background-color-primary_hover: var(--bg-secondary);
   --background-color-secondary: var(--bg-secondary);
   --background-color-secondary_hover: var(--bg-tertiary);
@@ -887,7 +890,7 @@
   --color-fg-quaternary_hover: var(--quaternary_hover);
   --color-fg-disabled: var(--text-disabled);
   --color-fg-disabled_subtle: var(--fg-disabled_subtle);
-  --color-fg-brand-primary: var(--brand-600);
+  --color-fg-brand-primary: var(--brand-500);
   --color-fg-brand-primary_alt: var(--gray-300);
   --color-fg-brand-secondary: var(--brand-500);
   --color-fg-brand-secondary_alt: var(--brand-400);
@@ -909,7 +912,7 @@
   --border-color-tertiary: var(--border-tertiary);
   --border-color-disabled: var(--border-disabled);
   --border-color-disabled_subtle: var(--disabled_subtle);
-  --border-color-brand: var(--brand-600);
+  --border-color-brand: var(--brand-400);
   --border-color-error: var(--error-600);
   --border-color-error_subtle: var(--error-300);
 
@@ -921,7 +924,7 @@
   --ring-color-error_subtle: var(--error-300);
   --ring-color-disabled: var(--border-disabled);
   --ring-color-disabled_subtle: var(--disabled_subtle);
-  --ring-color-brand: var(--brand-600);
+  --ring-color-brand: var(--brand-400);
 
   /* --- Outline Color (outline-*) --- */
   --outline-color-brand: var(--brand-600);
