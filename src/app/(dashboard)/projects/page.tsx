@@ -1,6 +1,6 @@
 "use client";
 
-import { HomeLine, SearchLg, Trash01, Edit05 } from "@untitledui/icons";
+import { HomeLine, SearchLg, Trash01, Edit05, Plus } from "@untitledui/icons";
 import { useState } from "react";
 import { PageHeader, Input, MemberSelector, Avatar, AvatarGroup, Table, TableCard, Button } from "@circos/ui";
 import { PaginationCardDefault } from "@/components/application/pagination/pagination";
@@ -100,14 +100,19 @@ export default function ProjectsPage() {
             { label: "Projects" },
           ]}
           actions={
-            <Input
-              className="w-full min-w-[200px] max-w-[320px]"
-              size="sm"
-              aria-label="Search"
-              placeholder="Search"
-              icon={SearchLg}
-              shortcut
-            />
+            <div className="flex items-center gap-3">
+              <Input
+                className="w-full min-w-[200px] max-w-[320px]"
+                size="sm"
+                aria-label="Search"
+                placeholder="Search"
+                icon={SearchLg}
+                shortcut
+              />
+              <Button size="sm" iconLeading={Plus}>
+                Create new
+              </Button>
+            </div>
           }
           bordered={false}
         />

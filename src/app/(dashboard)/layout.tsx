@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import type { FC } from "react";
 import {
   BarChartSquare02,
   Building06,
   Calendar,
-  ChevronLeft,
   ChevronRight,
   Data,
   Rows01,
@@ -15,17 +14,34 @@ import {
 } from "@untitledui/icons";
 import {
   Badge,
-  SidebarNavigationSectionDividers,
-  SidebarNavigationSlim,
-  cx,
+  AgentSubNav,
+  AgentSubNavDivider,
+  AgentListItem,
   type NavItemDividerType,
   type NavItemType,
   type FeaturedCardData,
 } from "@circos/ui";
+import { AgentBoardProvider, useAgentBoard } from "@/contexts/agent-board-context";
+import { AnimatedSidebar } from "@/components/application/animated-sidebar";
 import { BotIcon } from "@/components/icons/bot-icon";
 import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
+import { PROJECT_COVER_COLORS, PROJECT_COVER_ICONS, type ProjectCoverColorId, type ProjectCoverIcon } from "@/components/application/project-cover/project-cover";
 
-// Full sidebar nav items
+/** Tiny display-only project icon for the sidebar (no picker). */
+function ProjectIcon({ color, icon }: { color: ProjectCoverColorId; icon: ProjectCoverIcon }) {
+  const bg = PROJECT_COVER_COLORS.find((c) => c.id === color)?.bg ?? "#b0b0b0";
+  const Icon = PROJECT_COVER_ICONS[icon];
+  return () => (
+    <span
+      className="mr-2 inline-flex shrink-0 items-center justify-center rounded"
+      style={{ backgroundColor: bg, width: 20, height: 20 }}
+    >
+      {Icon && <Icon size={12} color="white" />}
+    </span>
+  );
+}
+
+// Navigation items
 const navItems: (NavItemType | NavItemDividerType)[] = [
   { divider: true, label: "General" },
   { label: "Dashboard", href: "/", icon: BarChartSquare02 },
@@ -34,8 +50,8 @@ const navItems: (NavItemType | NavItemDividerType)[] = [
     icon: Rows01,
     href: "/projects",
     items: [
-      { label: "Sales Pipeline", badge: <Badge color="gray" type="modern" size="sm">4</Badge>, href: "/projects/sales-pipeline" },
-      { label: "Tasks", href: "/projects/tasks" },
+      { label: "Sales Pipeline", icon: ProjectIcon({ color: "orange", icon: "rocket" }), badge: <Badge color="gray" type="modern" size="sm">4</Badge>, href: "/projects/sales-pipeline" },
+      { label: "Tasks", icon: ProjectIcon({ color: "blue", icon: "clipboard-list" }), href: "/projects/tasks" },
       { label: "See all", href: "/projects", iconTrailing: ChevronRight },
     ],
   },
@@ -47,25 +63,24 @@ const navItems: (NavItemType | NavItemDividerType)[] = [
   { label: "Workspaces", href: "/workspaces", icon: Server01 },
 ];
 
-// Derive slim items from navItems — filter out dividers, keep only items with icons
-const slimNavItems = navItems.filter(
-  (item): item is NavItemType & { icon: FC<{ className?: string }> } =>
-    !("divider" in item && item.divider) && "icon" in item && Boolean(item.icon),
-);
+// Mock agent data for the agent board panel
+function AgentBoardContent() {
+  return (
+    <AgentSubNav title="Agents" count={4}>
+      <AgentListItem name="All agents" subtitle="7 total" badgeText="5 active" badgeColor="success" onClick={() => {}} />
+      <AgentSubNavDivider />
+      <AgentListItem name="Ragatha" badgeText="Inactive" badgeColor="error" onClick={() => {}} />
+      <AgentListItem name="Pomni" subtitle="Scrum master" badgeText="IDLE" badgeColor="indigo" onClick={() => {}} />
+      <AgentListItem name="Kinger" badgeText="Working" badgeColor="success" onClick={() => {}} />
+      <AgentListItem name="Jax" badgeText="Working" badgeColor="success" onClick={() => {}} />
+    </AgentSubNav>
+  );
+}
 
-// Sidebar edge positions for the toggle pill
-// Section-dividers: placeholder paddingLeft = 292 + 4 = 296px
-// Slim: placeholder paddingLeft = 68px
-const FULL_EDGE = 296;
-const SLIM_EDGE = 68;
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { agentBoardActive, setAgentBoardActive } = useAgentBoard();
   const { nodes } = useRealtimeNodes();
 
   const nodeCards: FeaturedCardData[] = nodes.map((node) => {
@@ -79,37 +94,46 @@ export default function DashboardLayout({
     };
   });
 
+  // Auto-collapse sidebar when Agent's board opens (visual hint)
+  useEffect(() => {
+    if (agentBoardActive) {
+      setIsCollapsed(true);
+    }
+  }, [agentBoardActive]);
+
+  const isSlim = isCollapsed;
+
+  const handleToggle = () => {
+    setIsCollapsed((prev) => !prev);
+  };
+
   return (
     <div className="flex h-screen flex-col bg-primary lg:flex-row">
-      {/* Sidebar */}
-      {isCollapsed ? (
-        <SidebarNavigationSlim
-          activeUrl={pathname}
-          items={slimNavItems}
-        />
-      ) : (
-        <SidebarNavigationSectionDividers activeUrl={pathname} items={navItems} featuredCards={nodeCards} />
-      )}
+      <AnimatedSidebar
+        activeUrl={pathname}
+        items={navItems}
+        featuredCards={nodeCards}
+        isSlim={isSlim}
+        onToggle={handleToggle}
+        secondaryPanel={<AgentBoardContent />}
+        showSecondaryPanel={agentBoardActive}
+      />
 
-      {/* Collapse / expand toggle — floats at the sidebar's right edge, desktop only */}
-      <button
-        onClick={() => setIsCollapsed((v) => !v)}
-        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        style={{
-          left: isCollapsed ? SLIM_EDGE - 12 : FULL_EDGE - 12,
-          transition: "left 300ms cubic-bezier(0.4, 0, 0.2, 1)",
-        }}
-        className="fixed top-1/2 z-50 hidden -translate-y-1/2 size-6 cursor-pointer items-center justify-center rounded-full border border-secondary bg-primary text-fg-quaternary shadow-sm hover:bg-secondary hover:text-fg-secondary lg:flex"
-      >
-        <ChevronLeft
-          className={cx(
-            "size-3.5 transition-transform duration-300",
-            isCollapsed && "rotate-180",
-          )}
-        />
-      </button>
-
-      <main className="flex flex-1 flex-col items-start self-stretch gap-8 overflow-auto py-8 pb-12">{children}</main>
+      <main className="flex flex-1 flex-col items-start self-stretch gap-8 overflow-auto py-8 pb-12">
+        {children}
+      </main>
     </div>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <AgentBoardProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </AgentBoardProvider>
   );
 }
