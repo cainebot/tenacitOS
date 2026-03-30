@@ -1,8 +1,9 @@
 "use client"
 
 import { type FC, useRef, useState } from "react"
-import { ArrowUp, ArrowDown, Minus, AlertCircle, CheckCircle, Plus, MessageNotificationSquare, GitBranch01, Calendar, XClose, SearchLg } from "@untitledui/icons"
+import { ChevronUpDouble, ChevronUp, ChevronDown, Minus, AlertCircle, Plus, MessageNotificationSquare, GitBranch01, Calendar, XClose, SearchLg, Tag01 } from "@untitledui/icons"
 import type { BadgeColor } from "@circos/ui"
+import { TaskTypeIndicator, type TaskType } from "./task-type-indicator"
 import { getLocalTimeZone, isToday, today } from "@internationalized/date"
 import { I18nProvider } from "react-aria"
 import type { DateValue, Key } from "react-aria-components"
@@ -14,7 +15,7 @@ import {
   Button as AriaButton,
   Popover as AriaPopover,
 } from "react-aria-components"
-import { Avatar, BadgeWithIcon, ButtonUtility, Dropdown, DatePickerCalendar } from "@circos/ui"
+import { Avatar, Badge, BadgeWithIcon, ButtonUtility, Dropdown, DatePickerCalendar } from "@circos/ui"
 import { cx } from "@circos/ui"
 
 const highlightedDates = [today(getLocalTimeZone())]
@@ -22,10 +23,10 @@ const highlightedDates = [today(getLocalTimeZone())]
 export type Priority = "critical" | "high" | "medium" | "low"
 
 const priorityConfig: Record<Priority, { label: string; color: BadgeColor; iconColor: string; iconCssClass: string; icon: FC<{ className?: string }> }> = {
-  critical: { label: "Critical", color: "error",   iconColor: "text-utility-error-500",   iconCssClass: "!text-utility-error-500",   icon: AlertCircle },
-  high:     { label: "High",     color: "error",   iconColor: "text-utility-error-500",   iconCssClass: "!text-utility-error-500",   icon: ArrowUp },
+  critical: { label: "Critical", color: "error",   iconColor: "text-utility-error-500",   iconCssClass: "!text-utility-error-500",   icon: ChevronUpDouble },
+  high:     { label: "High",     color: "error",   iconColor: "text-utility-error-500",   iconCssClass: "!text-utility-error-500",   icon: ChevronUp },
   medium:   { label: "Medium",   color: "warning", iconColor: "text-utility-warning-500", iconCssClass: "!text-utility-warning-500", icon: Minus },
-  low:      { label: "Low",      color: "blue",    iconColor: "text-utility-blue-500",    iconCssClass: "!text-utility-blue-500",    icon: ArrowDown },
+  low:      { label: "Low",      color: "blue",    iconColor: "text-utility-blue-500",    iconCssClass: "!text-utility-blue-500",    icon: ChevronDown },
 }
 
 const priorityKeys = Object.keys(priorityConfig) as Priority[]
@@ -36,9 +37,22 @@ export interface KanbanCardUser {
   avatarUrl?: string
 }
 
+export interface KanbanCardTag {
+  label: string
+  color: BadgeColor
+}
+
+export type KanbanCardSize = "sm" | "md"
+
 export interface KanbanCardProps {
   title: string
   onTitleChange?: (title: string) => void
+  size?: KanbanCardSize
+  taskType?: TaskType
+  tags?: KanbanCardTag[]
+  availableTags?: KanbanCardTag[]
+  onTagsChange?: (tags: KanbanCardTag[]) => void
+  onTagCreate?: (tag: KanbanCardTag) => void
   commentsCount?: number
   priority?: Priority | null
   onPriorityChange?: (priority: Priority | null) => void
@@ -53,9 +67,20 @@ export interface KanbanCardProps {
   className?: string
 }
 
+const cardSizeClasses: Record<KanbanCardSize, string> = {
+  sm: "w-[272px]",
+  md: "w-[312px]",
+}
+
 export function KanbanCard({
   title,
   onTitleChange,
+  size = "sm",
+  taskType,
+  tags,
+  availableTags = [],
+  onTagsChange,
+  onTagCreate,
   commentsCount,
   priority: priorityProp,
   onPriorityChange,
@@ -108,21 +133,19 @@ export function KanbanCard({
   return (
     <div
       className={cx(
-        "group/card flex w-[272px] flex-col gap-4 rounded-xl border border-secondary bg-primary_alt p-4 transition-colors hover:border-primary",
+        "group/card flex flex-col gap-4 border border-secondary bg-primary_alt p-4 transition-colors hover:border-primary",
+        size === "md" ? "rounded-2xl" : "rounded-xl",
+        cardSizeClasses[size],
         done && "opacity-50",
         className,
       )}
     >
       {/* Row 1: Title + comments badge */}
-      <div className={cx("flex w-full items-start", done ? "gap-2" : "gap-1")}>
-        {done && (
-          <button
-            type="button"
-            onClick={() => onDoneChange?.(!done)}
-            className="mt-px shrink-0 cursor-pointer text-fg-success-secondary"
-          >
-            <CheckCircle className="size-5" />
-          </button>
+      <div className="flex w-full items-start gap-1">
+        {taskType && (
+          <div className="mr-1 shrink-0">
+            <TaskTypeIndicator type={taskType} size={size} />
+          </div>
         )}
         <p
           contentEditable
@@ -134,7 +157,7 @@ export function KanbanCard({
               ;(e.target as HTMLElement).blur()
             }
           }}
-          className="min-h-px min-w-0 flex-1 rounded-sm bg-transparent px-1 -ml-1 text-sm font-semibold leading-5 text-primary outline-none transition-colors hover:bg-secondary_hover focus:bg-transparent focus:ring-1 focus:ring-brand-500"
+          className="min-h-px min-w-0 flex-1 rounded-sm bg-transparent px-1 -ml-1 text-md font-semibold leading-6 text-primary outline-none transition-colors hover:bg-secondary_hover focus:bg-transparent focus:ring-1 focus:ring-brand-500"
         >
           {title}
         </p>
@@ -142,7 +165,7 @@ export function KanbanCard({
           <BadgeWithIcon
             type="color"
             color="gray"
-            size="sm"
+            size={size === "md" ? "md" : "sm"}
             iconLeading={MessageNotificationSquare}
             className="ring-0 group-hover/card:ring-1"
           >
@@ -151,7 +174,16 @@ export function KanbanCard({
         )}
       </div>
 
-      {/* Row 2: Actions */}
+      {/* Row 2: Tags */}
+      <TagSelector
+        tags={tags ?? []}
+        availableTags={availableTags}
+        onTagsChange={onTagsChange}
+        onTagCreate={onTagCreate}
+        size={size}
+      />
+
+      {/* Row 3: Actions */}
       <div className="flex w-full items-end justify-between">
         <div className="flex items-center gap-3">
           {/* Priority selector */}
@@ -159,13 +191,14 @@ export function KanbanCard({
             priority={priority}
             onSelect={handlePriorityChange}
             hasPriority={!!priorityCfg}
+            size={size}
           />
 
           {subtasks && (
             <BadgeWithIcon
               type="color"
               color="gray"
-              size="sm"
+              size={size === "md" ? "md" : "sm"}
               iconLeading={GitBranch01}
               className="ring-0 group-hover/card:ring-1"
             >
@@ -255,6 +288,244 @@ export function KanbanCard({
 }
 
 // ---------------------------------------------------------------------------
+// Tag Selector (search, select, create tags)
+// ---------------------------------------------------------------------------
+
+const tagColorOptions: BadgeColor[] = [
+  "gray", "brand", "error", "warning", "success",
+  "blue", "blue-light", "indigo", "purple", "pink", "orange", "gray-blue",
+]
+
+const tagColorDot: Record<BadgeColor, string> = {
+  gray: "bg-utility-gray-500",
+  brand: "bg-utility-brand-500",
+  error: "bg-utility-error-500",
+  warning: "bg-utility-warning-500",
+  success: "bg-utility-success-500",
+  blue: "bg-utility-blue-500",
+  "blue-light": "bg-utility-blue-light-500",
+  indigo: "bg-utility-indigo-500",
+  purple: "bg-utility-purple-500",
+  pink: "bg-utility-pink-500",
+  orange: "bg-utility-orange-500",
+  "gray-blue": "bg-utility-gray-blue-500",
+}
+
+function TagSelector({
+  tags,
+  availableTags,
+  onTagsChange,
+  onTagCreate,
+  size = "sm",
+}: {
+  tags: KanbanCardTag[]
+  availableTags: KanbanCardTag[]
+  onTagsChange?: (tags: KanbanCardTag[]) => void
+  onTagCreate?: (tag: KanbanCardTag) => void
+  size?: KanbanCardSize
+}) {
+  const [search, setSearch] = useState("")
+  const [isCreating, setIsCreating] = useState(false)
+  const [newTagColor, setNewTagColor] = useState<BadgeColor>("gray")
+  const inputRef = useRef<HTMLInputElement>(null)
+  const createInputRef = useRef<HTMLInputElement>(null)
+
+  const selectedLabels = new Set(tags.map((t) => t.label))
+
+  const filtered = search
+    ? availableTags.filter((t) => t.label.toLowerCase().includes(search.toLowerCase()))
+    : availableTags
+
+  const toggleTag = (tag: KanbanCardTag) => {
+    if (selectedLabels.has(tag.label)) {
+      onTagsChange?.(tags.filter((t) => t.label !== tag.label))
+    } else {
+      onTagsChange?.([...tags, tag])
+    }
+  }
+
+  const handleCreate = () => {
+    const name = createInputRef.current?.value.trim()
+    if (!name) return
+    const newTag: KanbanCardTag = { label: name, color: newTagColor }
+    onTagCreate?.(newTag)
+    onTagsChange?.([...tags, newTag])
+    setIsCreating(false)
+    setSearch("")
+  }
+
+  const hasResults = filtered.length > 0
+  const canCreate = search.length > 0 && !availableTags.some((t) => t.label.toLowerCase() === search.toLowerCase())
+  const hasTags = tags.length > 0
+  const canEdit = !!onTagsChange
+
+  // Nothing to show and no way to add
+  if (!hasTags && !canEdit) return null
+
+  return (
+    <div className={cx(
+      "flex w-full flex-wrap items-center gap-1.5",
+      !hasTags && "hidden",
+    )}>
+      {tags.map((tag) => (
+        <Badge
+          key={tag.label}
+          type="color"
+          color={tag.color}
+          size={size === "md" ? "md" : "sm"}
+          className="ring-0"
+        >
+          {tag.label}
+        </Badge>
+      ))}
+
+      <AriaDialogTrigger>
+        <AriaButton
+          className={cx(
+            "inline-flex cursor-pointer items-center justify-center rounded-full text-fg-quaternary outline-none transition-opacity",
+            tags.length > 0
+              ? "size-5 opacity-0 group-hover/card:opacity-100"
+              : "hidden",
+          )}
+        >
+          <Tag01 className="size-4" />
+        </AriaButton>
+        <AriaPopover
+          placement="bottom start"
+          offset={4}
+          onOpenChange={(isOpen) => {
+            if (isOpen) {
+              setSearch("")
+              setIsCreating(false)
+              setTimeout(() => inputRef.current?.focus(), 50)
+            }
+          }}
+          className={({ isEntering, isExiting }) =>
+            cx(
+              "w-56 origin-(--trigger-anchor-point) overflow-hidden rounded-xl bg-primary shadow-lg ring-1 ring-secondary_alt will-change-transform",
+              isEntering && "duration-150 ease-out animate-in fade-in slide-in-from-top-0.5",
+              isExiting && "duration-100 ease-in animate-out fade-out slide-out-to-top-0.5",
+            )
+          }
+        >
+          <AriaDialog className="outline-none">
+            {() => (
+              <>
+                {/* Search */}
+                <div className="flex items-center gap-2 border-b border-secondary px-3 py-2">
+                  <SearchLg className="size-4 shrink-0 text-fg-quaternary" />
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search tags..."
+                    className="w-full bg-transparent text-sm text-primary placeholder:text-quaternary outline-none"
+                  />
+                </div>
+
+                {/* Tag list */}
+                {!isCreating && (
+                  <div className="max-h-48 overflow-y-auto py-1">
+                    {filtered.map((tag) => (
+                      <button
+                        key={tag.label}
+                        type="button"
+                        onClick={() => toggleTag(tag)}
+                        className={cx(
+                          "flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition hover:bg-primary_hover",
+                          selectedLabels.has(tag.label) ? "bg-primary_hover text-primary font-medium" : "text-secondary",
+                        )}
+                      >
+                        <span className={cx("size-2 shrink-0 rounded-full", tagColorDot[tag.color])} />
+                        <span className="flex-1 truncate text-left">{tag.label}</span>
+                        {selectedLabels.has(tag.label) && (
+                          <XClose className="size-3.5 shrink-0 text-fg-quaternary" />
+                        )}
+                      </button>
+                    ))}
+                    {!hasResults && !canCreate && (
+                      <p className="px-3 py-2 text-sm text-quaternary">No tags found</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Create new tag */}
+                {!isCreating && canCreate && (
+                  <div className="border-t border-secondary py-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreating(true)
+                        setNewTagColor("gray")
+                        setTimeout(() => createInputRef.current?.focus(), 50)
+                      }}
+                      className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm font-medium text-secondary transition hover:bg-primary_hover"
+                    >
+                      <Plus className="size-4 shrink-0 text-fg-quaternary" />
+                      Create &ldquo;{search}&rdquo;
+                    </button>
+                  </div>
+                )}
+
+                {isCreating && (
+                  <div className="border-t border-secondary px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={createInputRef}
+                        type="text"
+                        defaultValue={search}
+                        placeholder="Tag name"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleCreate()
+                          if (e.key === "Escape") setIsCreating(false)
+                        }}
+                        className="w-full rounded-md bg-secondary px-2 py-1 text-sm text-primary placeholder:text-quaternary outline-none ring-1 ring-secondary focus:ring-brand-500"
+                      />
+                    </div>
+                    {/* Color picker */}
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {tagColorOptions.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setNewTagColor(color)}
+                          className={cx(
+                            "size-5 rounded-full transition",
+                            tagColorDot[color],
+                            newTagColor === color ? "ring-2 ring-brand-500 ring-offset-1 ring-offset-primary" : "hover:ring-1 hover:ring-secondary",
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <div className="mt-2.5 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsCreating(false)}
+                        className="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium text-secondary transition hover:bg-secondary_hover"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCreate}
+                        className="cursor-pointer rounded-md bg-brand-600 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-brand-700"
+                      >
+                        Create
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </AriaDialog>
+        </AriaPopover>
+      </AriaDialogTrigger>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Priority Selector (popover with priority list)
 // ---------------------------------------------------------------------------
 
@@ -262,13 +533,16 @@ function PrioritySelector({
   priority,
   onSelect,
   hasPriority,
+  size = "sm",
 }: {
   priority: Priority | null
   onSelect: (p: Priority | null) => void
   hasPriority: boolean
+  size?: KanbanCardSize
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const cfg = priority ? priorityConfig[priority] : null
+  const isMd = size === "md"
 
   // When open, always show the button regardless of hover
   const isVisible = hasPriority || isOpen
@@ -277,7 +551,8 @@ function PrioritySelector({
     <AriaDialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
       <AriaButton
         className={cx(
-          "size-max flex cursor-pointer items-center whitespace-nowrap rounded-sm ring-1 ring-inset shadow-xs gap-0.5 py-0.5 pr-2 pl-1.5 text-xs font-medium outline-none",
+          "size-max flex cursor-pointer items-center whitespace-nowrap rounded-sm ring-1 ring-inset shadow-xs py-0.5 pr-2 pl-1.5 font-medium outline-none",
+          isMd ? "gap-1 text-sm" : "gap-0.5 text-xs",
           "bg-primary text-secondary ring-primary",
           !isVisible && "hidden group-hover/card:inline-flex",
         )}

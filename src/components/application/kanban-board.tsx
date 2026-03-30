@@ -17,6 +17,21 @@ import {
   type Modifier,
   type CollisionDetection,
 } from "@dnd-kit/core"
+
+/** PointerSensor that ignores drags starting inside contentEditable or input/textarea */
+class SmartPointerSensor extends PointerSensor {
+  static activators = PointerSensor.activators.map((activator) => ({
+    ...activator,
+    eventName: activator.eventName,
+    handler: (event: PointerEvent, ...args: unknown[]) => {
+      const target = event.target as HTMLElement | null
+      if (target?.isContentEditable || target?.closest("[contenteditable]") || target?.closest("input, textarea, select")) {
+        return false
+      }
+      return (activator.handler as (event: PointerEvent, ...args: unknown[]) => boolean)(event, ...args)
+    },
+  }))
+}
 import {
   SortableContext,
   horizontalListSortingStrategy,
@@ -24,7 +39,9 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { KanbanColumn, type KanbanColumnItem } from "./kanban-column"
+import { KanbanColumn, type KanbanColumnItem, type KanbanColumnSize } from "./kanban-column"
+
+export type KanbanBoardSize = KanbanColumnSize
 
 // ---------------------------------------------------------------------------
 // Lock drag movement to X axis (columns only)
@@ -39,7 +56,7 @@ const restrictToHorizontalAxis: Modifier = ({ transform }) => ({
 // SortableColumn — wrapper that makes a column draggable horizontally
 // ---------------------------------------------------------------------------
 
-function SortableColumnWrapper({ id, children }: { id: string; children: ReactNode }) {
+function SortableColumnWrapper({ id, size = "sm", children }: { id: string; size?: KanbanColumnSize; children: ReactNode }) {
   const {
     attributes,
     listeners,
@@ -64,8 +81,8 @@ function SortableColumnWrapper({ id, children }: { id: string; children: ReactNo
       className="shrink-0"
     >
       {isDragging ? (
-        <div className="flex w-[272px] flex-col gap-3.5">
-          <div className="h-10 rounded-lg bg-tertiary" />
+        <div className={cx("flex flex-col gap-3.5", size === "md" ? "w-[312px]" : "w-[272px]")}>
+          <div className={cx("rounded-lg bg-tertiary", size === "md" ? "h-[42px]" : "h-10")} />
         </div>
       ) : (
         children
@@ -87,6 +104,7 @@ export interface KanbanBoardColumn<T extends KanbanColumnItem> {
 export interface KanbanBoardProps<T extends KanbanColumnItem> {
   columns: KanbanBoardColumn<T>[]
   onColumnsChange?: (columns: KanbanBoardColumn<T>[]) => void
+  size?: KanbanBoardSize
   renderCard: (item: T) => ReactNode
   renderDragOverlay?: (item: T) => ReactNode
   className?: string
@@ -97,6 +115,7 @@ type DragType = "card" | "column" | null
 export function KanbanBoard<T extends KanbanColumnItem>({
   columns,
   onColumnsChange,
+  size = "sm",
   renderCard,
   renderDragOverlay,
   className,
@@ -110,7 +129,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
   const effectiveColumns = dragColumns ?? columns
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(SmartPointerSensor, { activationConstraint: { distance: 5 } }),
   )
 
   const columnIds = useMemo(() => effectiveColumns.map((c) => c.id), [effectiveColumns])
@@ -288,7 +307,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
   }, [dragType, columnIds])
 
   return (
-    <div className={cx("flex items-start gap-4 overflow-x-auto", className)}>
+    <div className={cx("flex items-start gap-4 overflow-auto p-6", className)}>
       <DndContext
         sensors={sensors}
         collisionDetection={collisionDetection}
@@ -300,9 +319,10 @@ export function KanbanBoard<T extends KanbanColumnItem>({
       >
         <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
           {effectiveColumns.map((col) => (
-            <SortableColumnWrapper key={col.id} id={col.id}>
+            <SortableColumnWrapper key={col.id} id={col.id} size={size}>
               <KanbanColumn
                 columnId={col.id}
+                size={size}
                 title={col.title}
                 onTitleChange={handleColumnTitleChange}
                 onDelete={handleColumnDelete}
@@ -328,6 +348,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
             <div className="opacity-90">
               <KanbanColumn
                 columnId={activeColumn.id}
+                size={size}
                 title={activeColumn.title}
                 items={activeColumn.items}
                 renderCard={renderCard}

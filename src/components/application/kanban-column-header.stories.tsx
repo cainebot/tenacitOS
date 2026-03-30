@@ -11,6 +11,7 @@ const meta: Meta<typeof KanbanColumnHeader> = {
   },
   argTypes: {
     active: { control: "boolean" },
+    onlyHumans: { control: "boolean" },
     count: { control: "number" },
   },
 }
@@ -38,6 +39,15 @@ export const Active: Story = {
 export const NoCount: Story = {
   args: {
     count: undefined,
+  },
+}
+
+// ---------------------------------------------------------------------------
+// Only humans toggle on
+// ---------------------------------------------------------------------------
+export const OnlyHumans: Story = {
+  args: {
+    onlyHumans: true,
   },
 }
 

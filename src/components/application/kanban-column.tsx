@@ -14,7 +14,13 @@ import { AnimatePresence, motion } from "motion/react"
 import {
   KanbanColumnHeader,
   type KanbanColumnHeaderProps,
+  type KanbanColumnHeaderSize,
 } from "./kanban-column-header"
+
+const columnWidthClasses: Record<KanbanColumnHeaderSize, string> = {
+  sm: "w-[272px]",
+  md: "w-[312px]",
+}
 
 // ---------------------------------------------------------------------------
 // SortableCard — wraps any card ReactNode with drag handle
@@ -74,9 +80,12 @@ export interface KanbanColumnItem {
   id: string
 }
 
+export type KanbanColumnSize = KanbanColumnHeaderSize
+
 export interface KanbanColumnProps<T extends KanbanColumnItem>
   extends Pick<KanbanColumnHeaderProps, "title" | "active"> {
   columnId: string
+  size?: KanbanColumnSize
   items: T[]
   activeCardId?: string | null
   isDragActive?: boolean
@@ -89,6 +98,7 @@ export interface KanbanColumnProps<T extends KanbanColumnItem>
 
 function KanbanColumnInner<T extends KanbanColumnItem>({
   columnId,
+  size = "sm",
   title,
   onTitleChange,
   onDelete,
@@ -100,6 +110,7 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
   renderCard,
   className,
 }: KanbanColumnProps<T>) {
+  const isMd = size === "md"
   const itemIds = useMemo(() => items.map((i) => i.id), [items])
 
   // Make the column itself a droppable target so cards can be dropped into empty columns
@@ -123,15 +134,18 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
   ))
 
   return (
-    <div className={cx("flex w-[272px] flex-col gap-3.5", className)}>
-      <KanbanColumnHeader
-        title={title}
-        onTitleChange={handleTitleChange}
-        onDelete={handleDelete}
-        onAddCard={onAddCard}
-        count={items.length}
-        active={active}
-      />
+    <div className={cx("flex flex-col gap-3.5", columnWidthClasses[size], className)}>
+      <div className="sticky top-0 z-10 -mb-3.5 bg-primary pb-3.5">
+        <KanbanColumnHeader
+          title={title}
+          onTitleChange={handleTitleChange}
+          onDelete={handleDelete}
+          onAddCard={onAddCard}
+          size={size}
+          count={items.length}
+          active={active}
+        />
+      </div>
 
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
         {isDragActive ? (
@@ -167,7 +181,10 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
         <button
           type="button"
           onClick={onAddCard}
-          className="flex w-full cursor-pointer items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-tertiary transition-colors hover:bg-secondary_hover"
+          className={cx(
+            "flex w-full cursor-pointer items-center gap-1 rounded-lg font-semibold text-tertiary transition-colors hover:bg-secondary_hover",
+            isMd ? "px-4 py-2.5 text-md" : "px-3.5 py-2.5 text-sm",
+          )}
         >
           <Plus className="size-5" />
           <span className="px-0.5">Add card</span>
@@ -178,7 +195,10 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
           transition={{ duration: 0.2, ease: "easeOut" }}
           type="button"
           onClick={onAddCard}
-          className="flex w-full cursor-pointer items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-tertiary transition-colors hover:bg-secondary_hover"
+          className={cx(
+            "flex w-full cursor-pointer items-center gap-1 rounded-lg font-semibold text-tertiary transition-colors hover:bg-secondary_hover",
+            isMd ? "px-4 py-2.5 text-md" : "px-3.5 py-2.5 text-sm",
+          )}
         >
           <Plus className="size-5" />
           <span className="px-0.5">Add card</span>

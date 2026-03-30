@@ -1,15 +1,20 @@
 "use client"
 
 import { memo, useRef, useState } from "react"
-import { Plus, Pencil01, Trash01, DotsHorizontal } from "@untitledui/icons"
-import { Badge, ButtonUtility, Dropdown, cx } from "@circos/ui"
+import { Plus, Pencil01, Trash01, DotsHorizontal, UserCircle } from "@untitledui/icons"
+import { Badge, ButtonUtility, Dropdown, ToggleBase, cx } from "@circos/ui"
 import { Button as AriaButton } from "react-aria-components"
+
+export type KanbanColumnHeaderSize = "sm" | "md"
 
 export interface KanbanColumnHeaderProps {
   title: string
   onTitleChange?: (title: string) => void
+  size?: KanbanColumnHeaderSize
   count?: number
   active?: boolean
+  onlyHumans?: boolean
+  onOnlyHumansChange?: (value: boolean) => void
   onAddCard?: () => void
   onDelete?: () => void
   className?: string
@@ -18,14 +23,20 @@ export interface KanbanColumnHeaderProps {
 export const KanbanColumnHeader = memo(function KanbanColumnHeader({
   title,
   onTitleChange,
+  size = "sm",
   count,
   active = false,
+  onlyHumans = false,
+  onOnlyHumansChange,
   onAddCard,
   onDelete,
   className,
 }: KanbanColumnHeaderProps) {
+  const isMd = size === "md"
   const [isEditing, setIsEditing] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [onlyHumansLocal, setOnlyHumansLocal] = useState(onlyHumans)
+  const preventCloseRef = useRef(false)
   const titleRef = useRef<HTMLParagraphElement>(null)
 
   const startEditing = () => {
@@ -65,7 +76,8 @@ export const KanbanColumnHeader = memo(function KanbanColumnHeader({
   return (
     <div
       className={cx(
-        "group/header flex h-10 items-center justify-between rounded-lg p-2 transition-colors",
+        "group/header flex items-center justify-between rounded-lg transition-colors",
+        isMd ? "h-[42px] px-2 py-3" : "h-10 p-2",
         active
           ? "border border-brand bg-primary_alt"
           : "bg-secondary hover:bg-secondary_hover",
@@ -93,7 +105,8 @@ export const KanbanColumnHeader = memo(function KanbanColumnHeader({
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
               className={cx(
-                "truncate text-sm font-semibold outline-none",
+                "truncate font-semibold outline-none",
+                isMd ? "text-md" : "text-sm",
                 isEditing ? "text-primary" : "text-quaternary",
               )}
             >
@@ -103,7 +116,7 @@ export const KanbanColumnHeader = memo(function KanbanColumnHeader({
         </button>
 
         {count != null && (
-          <Badge type="color" size="sm" color="gray">
+          <Badge type="color" size={isMd ? "md" : "sm"} color="gray">
             {count}
           </Badge>
         )}
@@ -118,26 +131,49 @@ export const KanbanColumnHeader = memo(function KanbanColumnHeader({
           )}
         >
           <ButtonUtility
-            size="xs"
+            size={isMd ? "sm" : "xs"}
             color="tertiary"
             icon={Plus}
             onClick={onAddCard}
           />
 
-          <Dropdown.Root onOpenChange={setIsMenuOpen}>
+          <Dropdown.Root
+            isOpen={isMenuOpen}
+            onOpenChange={(open) => {
+              if (!open && preventCloseRef.current) {
+                preventCloseRef.current = false
+                return
+              }
+              setIsMenuOpen(open)
+            }}
+          >
             <AriaButton
               aria-label="Column options"
               className="cursor-pointer rounded-md p-1.5 text-fg-quaternary outline-focus-ring transition duration-100 ease-linear hover:text-fg-quaternary_hover pressed:text-fg-quaternary_hover"
             >
-              <DotsHorizontal className="size-4" />
+              <DotsHorizontal className={isMd ? "size-5" : "size-4"} />
             </AriaButton>
             <Dropdown.Popover placement="bottom end">
               <Dropdown.Menu
                 onAction={(key) => {
+                  if (key === "only-humans") {
+                    preventCloseRef.current = true
+                    const next = !onlyHumansLocal
+                    setOnlyHumansLocal(next)
+                    onOnlyHumansChange?.(next)
+                    return
+                  }
                   if (key === "rename") startEditing()
                   if (key === "delete") onDelete?.()
                 }}
               >
+                <Dropdown.Item id="only-humans" className="[&_span]:!font-semibold">
+                  <div className="flex items-center gap-2 w-full">
+                    <UserCircle className="size-4 shrink-0 text-fg-quaternary" />
+                    <span className="flex-1 text-sm font-semibold text-secondary">Only humans</span>
+                    <ToggleBase size="sm" isSelected={onlyHumansLocal} />
+                  </div>
+                </Dropdown.Item>
                 <Dropdown.Item id="rename" label="Rename section" icon={Pencil01} />
                 <Dropdown.Item
                   id="delete"
