@@ -301,6 +301,19 @@ export default function TasksPage() {
     setAttachments((prev) => prev.filter((a) => a.id !== id))
   }
 
+  const patchCard = useCallback(
+    async (cardId: string, patch: Record<string, unknown>) => {
+      await fetch(`/api/cards/${cardId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      }).catch(() => {
+        refetch()
+      })
+    },
+    [refetch],
+  )
+
   const handleCardClick = useCallback((cardId: string) => {
     setSelectedCardId(cardId)
   }, [])
@@ -315,22 +328,37 @@ export default function TasksPage() {
     (card: LiveCardData) => (
       <div onClick={() => handleCardClick(card.id)} className="cursor-pointer">
         <KanbanCard
-          title={card.cardRow.title}
+          title={card.props.title ?? ""}
+          onTitleChange={(title) => patchCard(card.cardId, { title })}
+          size="md"
           taskType={card.props.taskType}
           tags={card.props.tags}
-          priority={card.props.priority}
-          assignee={card.props.assignee}
-          subtasks={card.props.subtasks}
-          commentsCount={card.props.commentsCount}
-          done={card.props.done}
-          size="md"
-          users={kanbanUsers}
           availableTags={allLabels}
+          onTagsChange={(tags) =>
+            patchCard(card.cardId, { labels: tags.map((t) => t.label) })
+          }
+          commentsCount={card.props.commentsCount}
+          priority={card.props.priority}
+          onPriorityChange={(priority) =>
+            patchCard(card.cardId, { priority })
+          }
+          subtasks={card.props.subtasks}
+          assignee={card.props.assignee}
+          onAssigneeChange={(user) =>
+            patchCard(card.cardId, { assigned_agent_id: user?.id ?? null })
+          }
+          users={kanbanUsers}
+          done={card.props.done}
           dueDate={card.dueDate}
+          onDueDateChange={(date) =>
+            patchCard(card.cardId, {
+              due_date: date ? date.toString() : null,
+            })
+          }
         />
       </div>
     ),
-    [handleCardClick, kanbanUsers, allLabels],
+    [handleCardClick, patchCard, kanbanUsers, allLabels],
   )
 
   // Loading state
