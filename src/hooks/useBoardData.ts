@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { BoardWithColumns, CardRow } from '@/types/workflow'
+import type { BoardWithColumns, CardRow } from '@/types/project'
 
 export interface BoardData {
   board: BoardWithColumns | null

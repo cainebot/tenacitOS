@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { CardDetail, CustomFieldDefinitionRow } from '@/types/workflow'
+import type { CardDetail, CustomFieldDefinitionRow } from '@/types/project'
 
 interface UseCardDetailReturn {
   card: CardDetail | null
@@ -38,9 +38,9 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
       const data: CardDetail = await res.json()
       setCard(data)
 
-      // Fetch field definitions in parallel using the card's workflow and type
+      // Fetch field definitions in parallel using the card's project and type
       const fieldsRes = await fetch(
-        `/api/workflows/${data.workflow_id}/fields?card_type=${data.card_type}`
+        `/api/projects/${data.project_id}/fields?card_type=${data.card_type}`
       )
       if (fieldsRes.ok) {
         const defs: CustomFieldDefinitionRow[] = await fieldsRes.json()
@@ -197,7 +197,7 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
         })
 
         try {
-          const res = await fetch(`/api/workflows/${fieldDef.workflow_id}/fields/${fieldId}`, {
+          const res = await fetch(`/api/projects/${fieldDef.project_id}/fields/${fieldId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ position: newPosition }),
@@ -211,7 +211,7 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
         }
       } else {
         // Core field order — stored in localStorage
-        const storageKey = `card-field-order-${card.workflow_id}`
+        const storageKey = `card-field-order-${card.project_id}`
         const defaultOrder = ['card_type', 'priority', 'assigned_agent_id', 'due_date', 'labels']
         const stored = localStorage.getItem(storageKey)
         const currentOrder: string[] = stored ? JSON.parse(stored) : defaultOrder

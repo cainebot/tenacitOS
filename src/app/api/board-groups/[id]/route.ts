@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getWorkflow, updateWorkflow, deleteWorkflow } from '@/lib/workflows'
+import { getProject, updateProject, deleteProject } from '@/lib/projects'
 import { getBoards, updateBoard } from '@/lib/boards'
 
 function err(status: number, message: string) {
@@ -10,8 +10,8 @@ function err(status: number, message: string) {
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   try {
-    const [workflow, boards] = await Promise.all([getWorkflow(id), getBoards(id)])
-    return NextResponse.json({ ...workflow, boards })
+    const [project, boards] = await Promise.all([getProject(id), getBoards(id)])
+    return NextResponse.json({ ...project, boards })
   } catch (e) {
     const error = e as Error & { code?: string }
     return err(error.code === 'PGRST116' ? 404 : 500, error.message)
@@ -35,7 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   try {
-    const updated = await updateWorkflow(id, {
+    const updated = await updateProject(id, {
       ...(name ? { name: name.trim() } : {}),
       ...(description !== undefined ? { description: description.trim() || undefined } : {}),
     })
@@ -52,12 +52,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       // Get all boards to find a fallback workflow for removed ones
       const allBoards = await getBoards()
-      const firstOtherWorkflow = allBoards.find(b => b.workflow_id !== id)
+      const firstOtherProject = allBoards.find(b => b.project_id !== id)
 
       await Promise.all([
-        ...toAdd.map(bid => updateBoard(bid, { workflow_id: id })),
+        ...toAdd.map(bid => updateBoard(bid, { project_id: id })),
         ...toRemove.map(bid =>
-          updateBoard(bid, { workflow_id: firstOtherWorkflow?.workflow_id ?? id })
+          updateBoard(bid, { project_id: firstOtherProject?.project_id ?? id })
         ),
       ])
     }
@@ -73,7 +73,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   try {
-    await deleteWorkflow(id)
+    await deleteProject(id)
     return new NextResponse(null, { status: 204 })
   } catch (e) {
     const error = e as Error

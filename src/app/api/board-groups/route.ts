@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getWorkflows, createWorkflow } from '@/lib/workflows'
+import { getProjects, createProject } from '@/lib/projects'
 
 function err(status: number, message: string) {
   return NextResponse.json({ message }, { status })
 }
 
-// GET /api/board-groups — list all board groups (workflows)
+// GET /api/board-groups — list all board groups (projects)
 export async function GET() {
   try {
-    const workflows = await getWorkflows()
-    return NextResponse.json(workflows)
+    const projects = await getProjects()
+    return NextResponse.json(projects)
   } catch (e) {
     const error = e as Error
     return err(500, error.message)
@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const workflow = await createWorkflow({ name: name.trim(), description: description?.trim() || undefined })
-    return NextResponse.json(workflow, { status: 201 })
+    const project = await createProject({ name: name.trim(), description: description?.trim() || undefined })
+    return NextResponse.json(project, { status: 201 })
   } catch (e) {
     const error = e as Error
     return err(500, error.message)
