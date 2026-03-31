@@ -67,7 +67,7 @@ function resolveAgentAsTaskUser(
 // State category -> TaskStatus mapping
 // ---------------------------------------------------------------------------
 
-function stateCategoryToTaskStatus(category: string, stateName: string): TaskStatus {
+export function stateCategoryToTaskStatus(category: string, stateName: string): TaskStatus {
   // state_category: 'to-do' | 'in_progress' | 'done'
   // TaskStatus: 'todo' | 'in_progress' | 'in_review' | 'done' | 'cancelled'
   if (category === 'to-do') return 'todo'
