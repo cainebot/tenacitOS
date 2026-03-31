@@ -19,71 +19,11 @@ import type {
 } from "@/components/application/task-detail-panel"
 import type { DateValue } from "react-aria-components"
 import { useBoardData } from "@/hooks/useBoardData"
-import { cardRowToKanbanCardProps, labelToTag } from "@/lib/adapters"
+import { useCardDetail } from "@/hooks/useCardDetail"
+import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, stateCategoryToTaskStatus } from "@/lib/adapters"
 import { parseDate } from "@internationalized/date"
 import type { CardRow, BoardRow, ProjectStateRow } from "@/types/project"
 import type { AgentRow } from "@/types/supabase"
-
-// ---------------------------------------------------------------------------
-// Mock data — Task Detail Panel (preserved for Phase 65)
-// ---------------------------------------------------------------------------
-
-const mockTaskUsers: TaskUser[] = [
-  { id: "1", name: "Jose Miguel Ojeda", role: "Project Lead" },
-  { id: "2", name: "Joan Marcel", role: "Developer" },
-  { id: "3", name: "Ivana Rodriguez", role: "Designer" },
-  { id: "4", name: "Carlos Mendez", role: "QA Engineer" },
-]
-
-const mockAvailableTags: TaskTag[] = [
-  { label: "Frontend", color: "purple" },
-  { label: "Urgent", color: "error" },
-  { label: "Design", color: "blue" },
-  { label: "Backend", color: "success" },
-  { label: "Documentation", color: "warning" },
-  { label: "Refactor", color: "orange" },
-]
-
-const mockBreadcrumbs: BreadcrumbItem[] = [
-  { code: "KAN-5", taskType: "epic" },
-  { code: "KAN-1", taskType: "story" },
-]
-
-const mockSubtasks: Subtask[] = [
-  { id: "s1", code: "KAN-4", title: "Setup project structure", taskType: "subtask", priority: "medium", assignee: null, status: "done" },
-  { id: "s2", code: "KAN-6", title: "Design landing page mockups", taskType: "subtask", priority: "high", assignee: mockTaskUsers[2], status: "in_progress" },
-  { id: "s3", code: "KAN-7", title: "Implement authentication flow", taskType: "subtask", priority: "critical", assignee: mockTaskUsers[1], status: "todo" },
-]
-
-const mockComments: TaskComment[] = [
-  { id: "c1", author: mockTaskUsers[0], content: "Created this task", createdAt: "Jul 13, 2022", isSystemEvent: true },
-  { id: "c2", author: mockTaskUsers[0], content: "Assigned to Joan Marcel", createdAt: "Jul 13, 2022", isSystemEvent: true },
-  { id: "c3", author: mockTaskUsers[1], content: "I have delegated this task to Ivana, she will assist me with this since I cannot do the assignment.", createdAt: "Jul 18, 2022" },
-  { id: "c4", author: mockTaskUsers[0], content: "In DRIVE Unow > Portfolio you can find the project listing.", createdAt: "Jul 21, 2022" },
-]
-
-const mockAttachments: TaskAttachment[] = [
-  { id: "a1", name: "wireframe-v2.fig", size: "4.2 MB", createdAt: "Jul 15, 2022" },
-  { id: "a2", name: "requirements.pdf", size: "1.8 MB", createdAt: "Jul 16, 2022" },
-]
-
-const mockBodyContent = `
-<p>We need the Unow Work Portfolio to include in:</p>
-<ul>
-  <li>New Unow website</li>
-  <li>Unow sales dossier</li>
-  <li>Sortlist</li>
-  <li>Malt?</li>
-</ul>
-<p>Each work item should contain:</p>
-<ul>
-  <li>Photos (screenshots) or videos</li>
-  <li>Title</li>
-  <li>Client</li>
-  <li>Text: Challenges, Solution, Impact</li>
-</ul>
-<p>In <a href="#">DRIVE</a></p>
-`
 
 // ---------------------------------------------------------------------------
 // Live card item type
@@ -324,21 +264,171 @@ export default function TasksPage() {
 
   // Task detail panel state
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
-  const [title, setTitle] = useState("Task 1")
-  const [status, setStatus] = useState<TaskStatus>("in_progress")
-  const [isCompleted, setIsCompleted] = useState(false)
-  const [assignee, setAssignee] = useState<TaskUser | null>(mockTaskUsers[1])
-  const [dueDate, setDueDate] = useState<DateValue | null>(null)
-  const [detailTags, setDetailTags] = useState<TaskTag[]>([
-    { label: "Frontend", color: "purple" },
-    { label: "Urgent", color: "error" },
-    { label: "Design", color: "blue" },
-    { label: "Backend", color: "success" },
-  ])
-  const [priority, setPriority] = useState<import("@/components/application/kanban-card").Priority | null>("high")
-  const [comments, setComments] = useState(mockComments)
-  const [attachments, setAttachments] = useState(mockAttachments)
-  const [description, setDescription] = useState("Short description for this task goes here.")
+
+  // --- Task Detail Panel: live data via useCardDetail ---
+  const { card: detailCard, loading: detailLoading, updateField: detailUpdateField, moveCard: detailMoveCard, refetch: detailRefetch } = useCardDetail(selectedCardId)
+
+  // Signed URLs for attachments
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({})
+  useEffect(() => {
+    if (!detailCard || detailCard.attachments.length === 0) {
+      setSignedUrls({})
+      return
+    }
+    const paths: Record<string, string> = {}
+    for (const a of detailCard.attachments) paths[a.attachment_id] = a.storage_path
+    fetch(`/api/cards/${detailCard.card_id}/attachments/urls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths }),
+    })
+      .then(r => r.json())
+      .then((urls: Record<string, string>) => setSignedUrls(urls))
+      .catch(() => {})
+  }, [detailCard?.card_id, detailCard?.attachments.length])
+
+  // TaskStatus -> state_id reverse mapping for onStatusChange
+  const statusToStateId = useMemo((): Partial<Record<TaskStatus, string>> => {
+    const map: Partial<Record<TaskStatus, string>> = {}
+    for (const s of projectStates) {
+      const taskStatus = stateCategoryToTaskStatus(s.category, s.name)
+      if (!map[taskStatus]) map[taskStatus] = s.state_id
+    }
+    return map
+  }, [projectStates])
+
+  // Panel users derived from agents (same pattern as kanbanUsers but with role for TaskUser shape)
+  const panelUsers: TaskUser[] = useMemo(
+    () => agents.map(a => ({ id: a.agent_id, name: a.name, role: a.role, avatarUrl: undefined })),
+    [agents],
+  )
+
+  // Adapter output + dueDate + signed URLs merged
+  const panelDataProps = useMemo(() => {
+    if (!detailCard) return null
+    const base = cardDetailToTaskDetailPanelProps(detailCard, agents, projectStates)
+    const dueDate = detailCard.due_date ? parseDate(detailCard.due_date.slice(0, 10)) : null
+    const attachments = (base.attachments ?? []).map(a => ({
+      ...a,
+      thumbnailUrl: signedUrls[a.id] ?? undefined,
+    }))
+    return { ...base, dueDate, attachments }
+  }, [detailCard, agents, projectStates, signedUrls])
+
+  // --- Panel mutation handlers ---
+
+  // Description: debounced save on blur (500ms debounce as safety; primarily on-blur via TipTap)
+  const descriptionRef = useRef<string | null>(null)
+  const descriptionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleDescriptionChange = useCallback((html: string) => {
+    descriptionRef.current = html
+    if (descriptionTimerRef.current) clearTimeout(descriptionTimerRef.current)
+    descriptionTimerRef.current = setTimeout(() => {
+      if (descriptionRef.current !== null) {
+        detailUpdateField('description', descriptionRef.current)
+      }
+    }, 500)
+  }, [detailUpdateField])
+
+  // Status change: resolve TaskStatus string to state_id UUID, then moveCard
+  const handlePanelStatusChange = useCallback((status: TaskStatus) => {
+    const stateId = statusToStateId[status]
+    if (stateId) detailMoveCard(stateId)
+  }, [statusToStateId, detailMoveCard])
+
+  // Toggle complete: move to done or first to-do state
+  const handleToggleComplete = useCallback(() => {
+    if (!detailCard) return
+    const currentState = projectStates.find(s => s.state_id === detailCard.state_id)
+    const isDone = currentState?.category === 'done'
+    const targetStateId = isDone ? todoStateId : doneStateId
+    if (targetStateId) detailMoveCard(targetStateId)
+  }, [detailCard, projectStates, todoStateId, doneStateId, detailMoveCard])
+
+  // Title change
+  const handlePanelTitleChange = useCallback((title: string) => {
+    detailUpdateField('title', title)
+  }, [detailUpdateField])
+
+  // Assignee change
+  const handlePanelAssigneeChange = useCallback((user: TaskUser | null) => {
+    detailUpdateField('assigned_agent_id', user?.id ?? null)
+  }, [detailUpdateField])
+
+  // Due date change
+  const handlePanelDueDateChange = useCallback((date: DateValue | null) => {
+    detailUpdateField('due_date', date ? date.toString() : null)
+  }, [detailUpdateField])
+
+  // Tags change
+  const handlePanelTagsChange = useCallback((tags: TaskTag[]) => {
+    detailUpdateField('labels', tags.map(t => t.label))
+  }, [detailUpdateField])
+
+  // Priority change
+  const handlePanelPriorityChange = useCallback((p: import("@/components/application/kanban-card").Priority | null) => {
+    detailUpdateField('priority', p)
+  }, [detailUpdateField])
+
+  // Add comment
+  const handlePanelAddComment = useCallback(async (content: string) => {
+    if (!detailCard) return
+    await fetch(`/api/cards/${detailCard.card_id}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ author: 'user', text: content }),
+    }).catch(() => {})
+    await detailRefetch()
+    refetch()
+  }, [detailCard, detailRefetch, refetch])
+
+  // Upload attachment (called by onFilesSelected from FileUpload component)
+  const handlePanelFilesSelected = useCallback(async (files: File[]) => {
+    if (!detailCard) return
+    for (const file of files) {
+      const formData = new FormData()
+      formData.append('file', file)
+      await fetch(`/api/cards/${detailCard.card_id}/attachments`, {
+        method: 'POST',
+        body: formData,
+      }).catch(() => {})
+    }
+    await detailRefetch()
+    refetch()
+  }, [detailCard, detailRefetch, refetch])
+
+  // Delete attachment
+  const handlePanelDeleteAttachment = useCallback(async (attachmentId: string) => {
+    if (!detailCard) return
+    await fetch(`/api/cards/${detailCard.card_id}/attachments/${attachmentId}`, {
+      method: 'DELETE',
+    }).catch(() => {})
+    await detailRefetch()
+    refetch()
+  }, [detailCard, detailRefetch, refetch])
+
+  // Add subtask: create child card with card_type 'subtask'
+  const handlePanelAddSubtask = useCallback(async () => {
+    if (!detailCard || !todoStateId) return
+    await fetch('/api/cards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: 'New subtask',
+        project_id: detailCard.project_id,
+        state_id: todoStateId,
+        card_type: 'subtask',
+        parent_card_id: detailCard.card_id,
+      }),
+    }).catch(() => {})
+    await detailRefetch()
+    refetch()
+  }, [detailCard, todoStateId, detailRefetch, refetch])
+
+  // Subtask click: navigate panel to that subtask
+  const handleSubtaskClick = useCallback((sub: Subtask) => {
+    setSelectedCardId(sub.id)
+  }, [])
 
   // Panel resize
   const [panelWidth, setPanelWidth] = useState(612)
@@ -370,17 +460,6 @@ export default function TasksPage() {
     document.addEventListener("mousemove", handleMouseMove)
     document.addEventListener("mouseup", handleMouseUp)
   }, [panelWidth])
-
-  const handleAddComment = (content: string) => {
-    setComments((prev) => [
-      ...prev,
-      { id: `c${Date.now()}`, author: { id: "current", name: "You" }, content, createdAt: "Just now" },
-    ])
-  }
-
-  const handleDeleteAttachment = (id: string) => {
-    setAttachments((prev) => prev.filter((a) => a.id !== id))
-  }
 
   const patchCard = useCallback(
     async (cardId: string, patch: Record<string, unknown>) => {
@@ -508,38 +587,38 @@ export default function TasksPage() {
           {/* Panel content — fixed inner width so content doesn't collapse */}
           <div className="h-full" style={{ width: panelWidth }}>
             <TaskDetailPanel
-              breadcrumbs={mockBreadcrumbs}
-              isCompleted={isCompleted}
-              onToggleComplete={() => setIsCompleted(!isCompleted)}
+              breadcrumbs={panelDataProps?.breadcrumbs}
+              isCompleted={panelDataProps?.isCompleted}
+              onToggleComplete={handleToggleComplete}
               onCopyLink={() => {}}
               onExpand={() => {}}
               onClose={handleClosePanel}
-              title={title}
-              onTitleChange={setTitle}
-              taskType="task"
-              status={status}
-              onStatusChange={setStatus}
-              description={description}
-              onDescriptionChange={setDescription}
-              assignee={assignee}
-              onAssigneeChange={setAssignee}
-              users={mockTaskUsers}
-              dueDate={dueDate}
-              onDueDateChange={setDueDate}
-              tags={detailTags}
-              availableTags={mockAvailableTags}
-              onTagsChange={setDetailTags}
-              priority={priority}
-              onPriorityChange={setPriority}
-              subtasks={mockSubtasks}
-              onAddSubtask={() => {}}
-              onSubtaskClick={(sub) => console.log("subtask clicked", sub)}
-              bodyContent={mockBodyContent}
-              attachments={attachments}
-              onDeleteAttachment={handleDeleteAttachment}
-              onUploadAttachment={() => {}}
-              comments={comments}
-              onAddComment={handleAddComment}
+              title={panelDataProps?.title ?? ''}
+              onTitleChange={handlePanelTitleChange}
+              taskType={panelDataProps?.taskType}
+              status={panelDataProps?.status}
+              onStatusChange={handlePanelStatusChange}
+              description={panelDataProps?.description}
+              onDescriptionChange={handleDescriptionChange}
+              assignee={panelDataProps?.assignee}
+              onAssigneeChange={handlePanelAssigneeChange}
+              users={panelUsers}
+              dueDate={panelDataProps?.dueDate}
+              onDueDateChange={handlePanelDueDateChange}
+              tags={panelDataProps?.tags}
+              availableTags={allLabels}
+              onTagsChange={handlePanelTagsChange}
+              priority={panelDataProps?.priority}
+              onPriorityChange={handlePanelPriorityChange}
+              subtasks={panelDataProps?.subtasks}
+              onAddSubtask={handlePanelAddSubtask}
+              onSubtaskClick={handleSubtaskClick}
+              bodyContent={panelDataProps?.bodyContent}
+              attachments={panelDataProps?.attachments}
+              onFilesSelected={handlePanelFilesSelected}
+              onDeleteAttachment={handlePanelDeleteAttachment}
+              comments={panelDataProps?.comments}
+              onAddComment={handlePanelAddComment}
               className="h-full border-l border-secondary"
             />
           </div>
