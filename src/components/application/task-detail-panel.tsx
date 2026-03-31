@@ -186,11 +186,11 @@ const priorityConfig: Record<Priority, { label: string; color: BadgeColor; iconC
 const priorityKeys = Object.keys(priorityConfig) as Priority[]
 
 const statusConfig: Record<TaskStatus, { label: string; color: BadgeColor }> = {
-  todo:        { label: "Por hacer",    color: "gray" },
-  in_progress: { label: "En curso",     color: "success" },
-  in_review:   { label: "En revision",  color: "blue" },
-  done:        { label: "Completado",   color: "brand" },
-  cancelled:   { label: "Cancelado",    color: "error" },
+  todo:        { label: "To do",        color: "gray" },
+  in_progress: { label: "In progress",  color: "success" },
+  in_review:   { label: "In review",    color: "blue" },
+  done:        { label: "Done",         color: "brand" },
+  cancelled:   { label: "Cancelled",    color: "error" },
 }
 
 const statusKeys = Object.keys(statusConfig) as TaskStatus[]
