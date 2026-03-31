@@ -21,7 +21,7 @@ import type { DateValue } from "react-aria-components"
 import { useBoardData } from "@/hooks/useBoardData"
 import { cardRowToKanbanCardProps, labelToTag } from "@/lib/adapters"
 import { parseDate } from "@internationalized/date"
-import type { CardRow, BoardRow } from "@/types/project"
+import type { CardRow, BoardRow, ProjectStateRow } from "@/types/project"
 import type { AgentRow } from "@/types/supabase"
 
 // ---------------------------------------------------------------------------
@@ -128,6 +128,18 @@ export default function TasksPage() {
       .catch(() => {})
   }, [])
 
+  // Project states for done category derivation
+  const [projectStates, setProjectStates] = useState<ProjectStateRow[]>([])
+  useEffect(() => {
+    if (!board?.project_id) return
+    fetch(`/api/projects/${board.project_id}`)
+      .then((r) => r.json())
+      .then((data: { states?: ProjectStateRow[] }) => {
+        if (data.states) setProjectStates(data.states)
+      })
+      .catch(() => {})
+  }, [board?.project_id])
+
   // KanbanCard user list from agents
   const kanbanUsers = useMemo(
     () => agents.map((a) => ({ id: a.agent_id, name: a.name, avatarUrl: undefined })),
@@ -194,7 +206,7 @@ export default function TasksPage() {
         .filter((c) => col.state_ids.includes(c.state_id))
         .sort((a, b) => (a.sort_order > b.sort_order ? 1 : -1))
         .map((c) => {
-          const props = cardRowToKanbanCardProps(c, agents)
+          const props = cardRowToKanbanCardProps(c, agents, undefined, projectStates)
           return {
             id: c.card_id,
             cardId: c.card_id,
@@ -205,7 +217,7 @@ export default function TasksPage() {
           }
         }),
     }))
-  }, [board, filteredCards, agents])
+  }, [board, filteredCards, agents, projectStates])
 
   // Optimistic columns for DnD
   const prevColumnsRef = useRef(liveColumns)

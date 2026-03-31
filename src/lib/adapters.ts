@@ -108,6 +108,7 @@ export function cardRowToKanbanCardProps(
   card: CardRow,
   agents: AgentRow[],
   opts?: { childrenCount?: { done: number; total: number }; commentsCount?: number },
+  projectStates?: ProjectStateRow[],
 ): Partial<KanbanCardProps> {
   return {
     title: card.title,
@@ -117,7 +118,9 @@ export function cardRowToKanbanCardProps(
     assignee: resolveAgent(card.assigned_agent_id, agents),
     subtasks: opts?.childrenCount,
     commentsCount: opts?.commentsCount,
-    done: false, // Caller determines from state_id vs done-category states
+    done: projectStates
+      ? projectStates.some(s => s.state_id === card.state_id && s.category === 'done')
+      : false,
     // dueDate: NOT mapped here — requires DateValue conversion (parseDate from @internationalized/date)
     // Callbacks NOT mapped — wired by the consuming page, not the adapter
   }
