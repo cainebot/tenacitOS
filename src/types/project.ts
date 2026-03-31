@@ -33,10 +33,21 @@ export type ActivityAction =
 
 // ---- Row interfaces (matching DB columns exactly) ----
 
+export interface ProjectMember {
+  id: string
+  name: string
+  avatarUrl?: string
+  type: 'user' | 'agent'
+}
+
 export interface ProjectRow {
   project_id: string
   name: string
   description: string | null
+  cover_color: string | null    // Phase 61 — project cover color
+  cover_icon: string | null     // Phase 61 — project cover icon
+  members: ProjectMember[]      // Phase 61 — JSONB array of project members
+  is_favorite: boolean          // Phase 61 — user favorite flag
   created_at: string
   updated_at: string
 }
