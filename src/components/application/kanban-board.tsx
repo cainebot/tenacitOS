@@ -108,6 +108,7 @@ export interface KanbanBoardProps<T extends KanbanColumnItem> {
   renderCard: (item: T) => ReactNode
   renderDragOverlay?: (item: T) => ReactNode
   className?: string
+  onAddCard?: (columnId: string) => void
 }
 
 type DragType = "card" | "column" | null
@@ -119,6 +120,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
   renderCard,
   renderDragOverlay,
   className,
+  onAddCard,
 }: KanbanBoardProps<T>) {
   const [dragType, setDragType] = useState<DragType>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -307,7 +309,8 @@ export function KanbanBoard<T extends KanbanColumnItem>({
   }, [dragType, columnIds])
 
   return (
-    <div className={cx("flex items-start gap-4 overflow-auto p-6", className)}>
+    <div className={cx("overflow-auto", className)}>
+    <div className="flex items-stretch gap-4 min-h-full px-6 pb-6">
       <DndContext
         sensors={sensors}
         collisionDetection={collisionDetection}
@@ -326,6 +329,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
                 title={col.title}
                 onTitleChange={handleColumnTitleChange}
                 onDelete={handleColumnDelete}
+                onAddCard={onAddCard ? () => onAddCard(col.id) : undefined}
                 items={col.items}
                 activeCardId={dragType === "card" ? activeId : null}
                 isDragActive={isDragActive}
@@ -363,11 +367,12 @@ export function KanbanBoard<T extends KanbanColumnItem>({
       <button
         type="button"
         onClick={handleAddSection}
-        className="flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-tertiary whitespace-nowrap transition-colors hover:bg-secondary_hover"
+        className="mt-6 flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-tertiary whitespace-nowrap transition-colors hover:bg-secondary_hover"
       >
         <Plus className="size-5" />
         <span className="px-0.5">Add section</span>
       </button>
+    </div>
     </div>
   )
 }
