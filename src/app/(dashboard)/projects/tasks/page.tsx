@@ -140,6 +140,17 @@ export default function TasksPage() {
       .catch(() => {})
   }, [board?.project_id])
 
+  // First done-category and to-do-category state IDs (board-wide constants)
+  const doneStateId = useMemo(() => {
+    const doneState = projectStates.find(s => s.category === 'done')
+    return doneState?.state_id ?? null
+  }, [projectStates])
+
+  const todoStateId = useMemo(() => {
+    const todoState = projectStates.find(s => s.category === 'to-do')
+    return todoState?.state_id ?? null
+  }, [projectStates])
+
   // KanbanCard user list from agents
   const kanbanUsers = useMemo(
     () => agents.map((a) => ({ id: a.agent_id, name: a.name, avatarUrl: undefined })),
@@ -419,6 +430,17 @@ export default function TasksPage() {
           }
           users={kanbanUsers}
           done={card.props.done}
+          onDoneChange={(done) => {
+            const targetStateId = done ? doneStateId : todoStateId
+            if (!targetStateId) return
+            fetch(`/api/cards/${card.cardId}/move`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ state_id: targetStateId, moved_by: "human" }),
+            })
+              .then(() => refetch())
+              .catch(() => refetch())
+          }}
           dueDate={card.dueDate}
           onDueDateChange={(date) =>
             patchCard(card.cardId, {
@@ -428,7 +450,7 @@ export default function TasksPage() {
         />
       </div>
     ),
-    [handleCardClick, patchCard, kanbanUsers, allLabels],
+    [handleCardClick, patchCard, kanbanUsers, allLabels, doneStateId, todoStateId, refetch],
   )
 
   // Loading state
