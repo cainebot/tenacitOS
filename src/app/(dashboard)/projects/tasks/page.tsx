@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
-import { KanbanCard, type Priority, type KanbanCardTag } from "@/components/application/kanban-card"
-import type { TaskType } from "@/components/application/task-type-indicator"
+import { useState, useCallback, useRef, useEffect, useMemo } from "react"
+import { KanbanCard, type KanbanCardProps, type KanbanCardTag } from "@/components/application/kanban-card"
 import { KanbanBoard, type KanbanBoardColumn } from "@/components/application/kanban-board"
 import { KanbanBoardHeader } from "@/components/application/kanban-board-header"
 import { defaultFilterFields, type FilterRow } from "@/components/application/dynamic-filter"
@@ -19,92 +18,14 @@ import type {
   BreadcrumbItem,
 } from "@/components/application/task-detail-panel"
 import type { DateValue } from "react-aria-components"
+import { useBoardData } from "@/hooks/useBoardData"
+import { cardRowToKanbanCardProps, labelToTag } from "@/lib/adapters"
+import { parseDate } from "@internationalized/date"
+import type { CardRow, BoardRow } from "@/types/project"
+import type { AgentRow } from "@/types/supabase"
 
 // ---------------------------------------------------------------------------
-// Mock data — Kanban
-// ---------------------------------------------------------------------------
-
-const sampleTags: KanbanCardTag[] = [
-  { label: "BackOffice", color: "purple" },
-  { label: "Frontend", color: "blue" },
-  { label: "Backend", color: "indigo" },
-  { label: "Operations", color: "orange" },
-  { label: "Marketing", color: "pink" },
-  { label: "DevOps", color: "gray-blue" },
-  { label: "Auth", color: "error" },
-  { label: "Design", color: "brand" },
-  { label: "Urgent", color: "warning" },
-]
-
-const sampleUsers = [
-  { id: "1", name: "Olivia Rhye", avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=128&h=128&fit=crop&crop=faces" },
-  { id: "2", name: "Phoenix Baker", avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&h=128&fit=crop&crop=faces" },
-  { id: "3", name: "Lana Steiner", avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=128&h=128&fit=crop&crop=faces" },
-  { id: "4", name: "Demi Wilkinson", avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=128&h=128&fit=crop&crop=faces" },
-]
-
-interface CardData {
-  id: string
-  title: string
-  taskType?: TaskType
-  tags?: KanbanCardTag[]
-  commentsCount?: number
-  priority?: Priority | null
-  subtasks?: { done: number; total: number }
-  assigneeId?: string
-  done?: boolean
-}
-
-const initialColumns: KanbanBoardColumn<CardData>[] = [
-  {
-    id: "todo",
-    title: "To do",
-    items: [
-      { id: "1", title: "Storage Used", taskType: "story", tags: [{ label: "BackOffice", color: "purple" }], commentsCount: 1, priority: "high", subtasks: { done: 1, total: 9 }, assigneeId: "1" },
-      { id: "2", title: "Occupied Space", taskType: "epic", tags: [{ label: "Frontend", color: "blue" }], commentsCount: 1, priority: "high", subtasks: { done: 1, total: 9 }, assigneeId: "2" },
-      { id: "3", title: "Space Utilized", taskType: "task", tags: [{ label: "Backend", color: "indigo" }], commentsCount: 1, priority: "high", subtasks: { done: 1, total: 9 }, assigneeId: "3" },
-    ],
-  },
-  {
-    id: "in-progress",
-    title: "In progress",
-    items: [
-      { id: "4", title: "Purchase of tables/chairs on MercadoLibre - Review office real estate market", taskType: "research", tags: [{ label: "Operations", color: "orange" }], commentsCount: 1, subtasks: { done: 1, total: 9 }, assigneeId: "4" },
-      { id: "5", title: "Community Manager tasks for Facebook and LinkedIn", taskType: "subtask", tags: [{ label: "Marketing", color: "pink" }], commentsCount: 2, priority: "medium", subtasks: { done: 3, total: 7 }, assigneeId: "1" },
-    ],
-  },
-  {
-    id: "review",
-    title: "Review",
-    items: [],
-  },
-  {
-    id: "done",
-    title: "Done",
-    items: [
-      { id: "6", title: "Set up CI/CD pipeline for staging", taskType: "task", tags: [{ label: "DevOps", color: "gray-blue" }], commentsCount: 3, subtasks: { done: 5, total: 5 }, assigneeId: "2", done: true },
-      { id: "7", title: "Design system token audit", taskType: "bug", priority: "critical", subtasks: { done: 12, total: 12 }, assigneeId: "3", done: true },
-      { id: "8", title: "Migrate auth to new provider", taskType: "spike", tags: [{ label: "Auth", color: "error" }], commentsCount: 1, priority: "high", subtasks: { done: 8, total: 8 }, assigneeId: "4", done: true },
-    ],
-  },
-]
-
-const filterFields = defaultFilterFields.map((f) =>
-  f.type === "member"
-    ? { ...f, values: sampleUsers.map((u) => ({ id: u.id, label: u.name, avatarUrl: u.avatarUrl })) }
-    : f,
-)
-
-const projectAvatars = [
-  { src: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=128&h=128&fit=crop&crop=faces", alt: "Olivia Rhye" },
-  { src: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&h=128&fit=crop&crop=faces", alt: "Phoenix Baker" },
-  { src: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=128&h=128&fit=crop&crop=faces", alt: "Lana Steiner" },
-  { src: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=128&h=128&fit=crop&crop=faces", alt: "Demi Wilkinson" },
-  { src: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=128&h=128&fit=crop&crop=faces", alt: "Drew Cano" },
-]
-
-// ---------------------------------------------------------------------------
-// Mock data — Task Detail Panel
+// Mock data — Task Detail Panel (preserved for Phase 65)
 // ---------------------------------------------------------------------------
 
 const mockTaskUsers: TaskUser[] = [
@@ -165,16 +86,160 @@ const mockBodyContent = `
 `
 
 // ---------------------------------------------------------------------------
+// Live card item type
+// ---------------------------------------------------------------------------
+
+interface LiveCardData {
+  id: string
+  cardId: string
+  stateId: string
+  cardRow: CardRow
+  props: Partial<KanbanCardProps>
+  dueDate: DateValue | null
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export default function TasksPage() {
-  // Kanban state
-  const [columns, setColumns] = useState(initialColumns)
+  // Board discovery
+  const [boardId, setBoardId] = useState("")
+
+  useEffect(() => {
+    fetch("/api/boards?workflow_id=")
+      .then((r) => r.json())
+      .then((boards: BoardRow[]) => {
+        const tasksBoard = boards.find((b) => b.name === "Tasks") ?? boards[0]
+        if (tasksBoard) setBoardId(tasksBoard.board_id)
+      })
+      .catch(() => {})
+  }, [])
+
+  // Live board data
+  const { board, cards, loading, refetch } = useBoardData(boardId)
+
+  // Agents for assignee dropdowns
+  const [agents, setAgents] = useState<AgentRow[]>([])
+  useEffect(() => {
+    fetch("/api/agents/list")
+      .then((r) => r.json())
+      .then((data: AgentRow[]) => setAgents(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [])
+
+  // KanbanCard user list from agents
+  const kanbanUsers = useMemo(
+    () => agents.map((a) => ({ id: a.agent_id, name: a.name, avatarUrl: undefined })),
+    [agents],
+  )
+
+  // Project avatars — empty fallback (project members not available from useBoardData)
+  const projectAvatars: { src: string; alt: string }[] = []
+
+  // Derived labels from all cards
+  const allLabels = useMemo<KanbanCardTag[]>(() => {
+    const labelSet = new Set<string>()
+    cards.forEach((c) => c.labels.forEach((l) => labelSet.add(l)))
+    return Array.from(labelSet).map(labelToTag)
+  }, [cards])
+
+  // Build live columns from BoardWithColumns + cards
+  const liveColumns = useMemo((): KanbanBoardColumn<LiveCardData>[] => {
+    if (!board) return []
+    return board.columns.map((col) => ({
+      id: col.column_id,
+      title: col.name,
+      items: cards
+        .filter((c) => col.state_ids.includes(c.state_id))
+        .sort((a, b) => (a.sort_order > b.sort_order ? 1 : -1))
+        .map((c) => {
+          const props = cardRowToKanbanCardProps(c, agents)
+          return {
+            id: c.card_id,
+            cardId: c.card_id,
+            stateId: c.state_id,
+            cardRow: c,
+            props,
+            dueDate: c.due_date ? parseDate(c.due_date.slice(0, 10)) : null,
+          }
+        }),
+    }))
+  }, [board, cards, agents])
+
+  // Optimistic columns for DnD
+  const prevColumnsRef = useRef(liveColumns)
+  useEffect(() => {
+    prevColumnsRef.current = liveColumns
+  }, [liveColumns])
+
+  const [optimisticColumns, setOptimisticColumns] = useState<KanbanBoardColumn<LiveCardData>[] | null>(null)
+
+  const handleColumnsChange = useCallback(
+    async (newCols: KanbanBoardColumn<LiveCardData>[]) => {
+      const prev = prevColumnsRef.current
+      setOptimisticColumns(newCols)
+
+      // Detect card moves (card appeared in a different column)
+      for (const newCol of newCols) {
+        const colDef = board?.columns.find((c) => c.column_id === newCol.id)
+        const targetStateId = colDef?.state_ids[0]
+        if (!targetStateId) continue
+
+        for (const item of newCol.items) {
+          const wasInCol = prev.find((pc) => pc.items.some((i) => i.id === item.id))
+          if (wasInCol && wasInCol.id !== newCol.id) {
+            fetch(`/api/cards/${item.id}/move`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ state_id: targetStateId, moved_by: "human" }),
+            }).catch(() => {
+              setOptimisticColumns(null)
+              refetch()
+            })
+          }
+        }
+      }
+
+      // Detect column reorder (column order changed, not just items)
+      const newOrder = newCols.map((c) => c.id)
+      const oldOrder = prev.map((c) => c.id)
+      if (JSON.stringify(newOrder) !== JSON.stringify(oldOrder)) {
+        fetch(`/api/boards/${boardId}/columns/reorder`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ column_ids: newOrder }),
+        }).catch(() => {
+          setOptimisticColumns(null)
+          refetch()
+        })
+      }
+
+      // Clear optimistic state after a short delay to allow refetch
+      setTimeout(() => setOptimisticColumns(null), 1000)
+    },
+    [board, boardId, refetch],
+  )
+
+  // Effective columns for rendering
+  const effectiveColumns = optimisticColumns ?? liveColumns
+
+  // UI state
   const [filters, setFilters] = useState<FilterRow[]>([])
   const [search, setSearch] = useState("")
   const [cover, setCover] = useState<ProjectCoverValue>({ color: "blue", icon: "tasks" })
   const [selectedTab, setSelectedTab] = useState("board")
+
+  // Filter fields with live agents
+  const filterFields = useMemo(
+    () =>
+      defaultFilterFields.map((f) =>
+        f.type === "member"
+          ? { ...f, values: agents.map((a) => ({ id: a.agent_id, label: a.name, avatarUrl: undefined })) }
+          : f,
+      ),
+    [agents],
+  )
 
   // Task detail panel state
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
@@ -189,7 +254,7 @@ export default function TasksPage() {
     { label: "Design", color: "blue" },
     { label: "Backend", color: "success" },
   ])
-  const [priority, setPriority] = useState<Priority | null>("high")
+  const [priority, setPriority] = useState<import("@/components/application/kanban-card").Priority | null>("high")
   const [comments, setComments] = useState(mockComments)
   const [attachments, setAttachments] = useState(mockAttachments)
   const [description, setDescription] = useState("Short description for this task goes here.")
@@ -236,17 +301,6 @@ export default function TasksPage() {
     setAttachments((prev) => prev.filter((a) => a.id !== id))
   }
 
-  const updateCard = useCallback((cardId: string, patch: Partial<CardData>) => {
-    setColumns((prev) =>
-      prev.map((col) => ({
-        ...col,
-        items: col.items.map((item) =>
-          item.id === cardId ? { ...item, ...patch } : item,
-        ),
-      })),
-    )
-  }, [])
-
   const handleCardClick = useCallback((cardId: string) => {
     setSelectedCardId(cardId)
   }, [])
@@ -257,32 +311,41 @@ export default function TasksPage() {
 
   const isPanelOpen = selectedCardId !== null
 
-  const renderCard = useCallback((card: CardData) => (
-    <div onClick={() => handleCardClick(card.id)} className="cursor-pointer">
-      <KanbanCard
-        title={card.title}
-        onTitleChange={(title) => updateCard(card.id, { title })}
-        size="md"
-        taskType={card.taskType}
-        tags={card.tags}
-        availableTags={sampleTags}
-        onTagsChange={(tags) => updateCard(card.id, { tags })}
-        commentsCount={card.commentsCount}
-        priority={card.priority}
-        onPriorityChange={(priority) => updateCard(card.id, { priority })}
-        subtasks={card.subtasks}
-        assignee={card.assigneeId ? sampleUsers.find((u) => u.id === card.assigneeId) : undefined}
-        onAssigneeChange={(user) => updateCard(card.id, { assigneeId: user?.id })}
-        users={sampleUsers}
-        done={card.done}
-      />
-    </div>
-  ), [updateCard, handleCardClick])
+  const renderCard = useCallback(
+    (card: LiveCardData) => (
+      <div onClick={() => handleCardClick(card.id)} className="cursor-pointer">
+        <KanbanCard
+          title={card.cardRow.title}
+          taskType={card.props.taskType}
+          tags={card.props.tags}
+          priority={card.props.priority}
+          assignee={card.props.assignee}
+          subtasks={card.props.subtasks}
+          commentsCount={card.props.commentsCount}
+          done={card.props.done}
+          size="md"
+          users={kanbanUsers}
+          availableTags={allLabels}
+          dueDate={card.dueDate}
+        />
+      </div>
+    ),
+    [handleCardClick, kanbanUsers, allLabels],
+  )
+
+  // Loading state
+  if (!boardId || loading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-sm text-tertiary">Loading board...</span>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
       <ProjectHeader
-        name="Tasks"
+        name={board?.name ?? "Tasks"}
         cover={cover}
         onCoverChange={setCover}
         avatars={projectAvatars}
@@ -300,8 +363,8 @@ export default function TasksPage() {
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-hidden">
           <KanbanBoard
-            columns={columns}
-            onColumnsChange={setColumns}
+            columns={effectiveColumns}
+            onColumnsChange={handleColumnsChange}
             size="md"
             className="h-full"
             renderCard={renderCard}
