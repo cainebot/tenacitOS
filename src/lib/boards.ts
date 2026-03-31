@@ -6,16 +6,16 @@ import type {
   BoardWithColumns,
   CardRow,
   CardType,
-} from '@/types/workflow'
+} from '@/types/project'
 
 // ---- Board reads (server client) ----
 
-export async function getBoards(workflowId?: string): Promise<BoardRow[]> {
+export async function getBoards(projectId?: string): Promise<BoardRow[]> {
   const client = createServerClient()
   let query = client.from('boards').select('*')
 
-  if (workflowId) {
-    query = query.eq('workflow_id', workflowId)
+  if (projectId) {
+    query = query.eq('project_id', projectId)
   }
 
   const { data, error } = await query.order('name')
@@ -90,7 +90,7 @@ export async function getBoardCards(boardId: string): Promise<CardRow[]> {
 // ---- Board writes (service role client) ----
 
 export async function createBoard(
-  data: Pick<BoardRow, 'workflow_id' | 'name'> &
+  data: Pick<BoardRow, 'project_id' | 'name'> &
     Partial<Pick<BoardRow, 'description' | 'card_type_filter' | 'state_filter'>>
 ): Promise<BoardRow> {
   const client = createServiceRoleClient()
@@ -107,7 +107,7 @@ export async function createBoard(
 export async function updateBoard(
   id: string,
   data: Partial<
-    Pick<BoardRow, 'name' | 'description' | 'card_type_filter' | 'state_filter' | 'workflow_id' | 'scrum_master_agent_id'>
+    Pick<BoardRow, 'name' | 'description' | 'card_type_filter' | 'state_filter' | 'project_id' | 'scrum_master_agent_id'>
   >
 ): Promise<BoardRow> {
   const client = createServiceRoleClient()

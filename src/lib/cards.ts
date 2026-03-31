@@ -8,15 +8,15 @@ import type {
   CursorPage,
   Priority,
   CardType,
-  WorkflowStateRow,
+  ProjectStateRow,
   CustomFieldDefinitionRow,
-} from '@/types/workflow'
+} from '@/types/project'
 
 // ---- Card filter params for getCards() ----
 
 export interface CardFilters {
   board_id?: string
-  workflow_id?: string
+  project_id?: string
   state_id?: string
   card_type?: CardType
   assigned_agent_id?: string
@@ -35,7 +35,7 @@ export async function getCards(
 ): Promise<CursorPage<CardRow>> {
   const {
     board_id,
-    workflow_id,
+    project_id,
     state_id,
     card_type,
     assigned_agent_id,
@@ -98,7 +98,7 @@ export async function getCards(
     .order('sort_order')
     .limit(limit + 1) // fetch one extra to determine has_more
 
-  if (workflow_id) query = query.eq('workflow_id', workflow_id)
+  if (project_id) query = query.eq('project_id', project_id)
   if (state_id) query = query.eq('state_id', state_id)
   if (card_type) query = query.eq('card_type', card_type)
   if (assigned_agent_id)
@@ -278,7 +278,7 @@ export async function getCardBreadcrumb(
 // ---- Card writes (service role client) ----
 
 export async function createCard(
-  data: Pick<CardRow, 'workflow_id' | 'state_id' | 'card_type' | 'title'> &
+  data: Pick<CardRow, 'project_id' | 'state_id' | 'card_type' | 'title'> &
     Partial<
       Pick<
         CardRow,
@@ -382,14 +382,14 @@ export async function gdprAnonymizeCard(cardId: string): Promise<CardRow> {
   // Step 2: Find a done-category state — prefer one named "lost"
   let lostStateId: string | null = null
   const { data: doneStates } = await client
-    .from('workflow_states')
+    .from('project_states')
     .select('state_id, name, category')
-    .eq('workflow_id', card.workflow_id)
+    .eq('project_id', card.project_id)
     .eq('category', 'done')
     .order('position')
 
   if (doneStates && doneStates.length > 0) {
-    const states = doneStates as WorkflowStateRow[]
+    const states = doneStates as ProjectStateRow[]
     const lostState = states.find((s) =>
       s.name.toLowerCase().includes('lost')
     )
