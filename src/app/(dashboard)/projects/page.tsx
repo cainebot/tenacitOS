@@ -2,7 +2,7 @@
 
 import { HomeLine, SearchLg, Trash01, Edit05, Plus } from "@untitledui/icons";
 import { useState, useEffect, useMemo } from "react";
-import { PageHeader, Input, MemberSelector, Avatar, AvatarGroup, Table, TableCard, Button } from "@circos/ui";
+import { PageHeader, Input, MemberSelector, Avatar, AvatarGroup, Table, TableCard, Button, ModalForm, ConfirmActionDialog } from "@circos/ui";
 import { PaginationCardDefault } from "@/components/application/pagination/pagination";
 import type { ProjectRow } from "@/types/project";
 
@@ -14,6 +14,15 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
+  // CRUD state
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<ProjectRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProjectRow | null>(null);
+  const [formName, setFormName] = useState("");
+  const [formDesc, setFormDesc] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     fetch("/api/projects")
       .then((r) => r.json())
@@ -22,6 +31,12 @@ export default function ProjectsPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
+  const refetchProjects = () => {
+    fetch("/api/projects")
+      .then((r) => r.json())
+      .then((data: ProjectRow[]) => setProjects(data));
+  };
+
   const filtered = useMemo(
     () => projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())),
     [projects, search]
@@ -29,6 +44,64 @@ export default function ProjectsPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const openCreate = () => {
+    setFormName("");
+    setFormDesc("");
+    setIsCreateOpen(true);
+  };
+
+  const handleCreate = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: formName.trim(), description: formDesc.trim() || undefined }),
+      });
+      if (!res.ok) throw new Error("Create failed");
+      setIsCreateOpen(false);
+      refetchProjects();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openEdit = (project: ProjectRow) => {
+    setFormName(project.name);
+    setFormDesc(project.description ?? "");
+    setEditTarget(project);
+  };
+
+  const handleEdit = async () => {
+    if (!editTarget) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/projects/${editTarget.project_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: formName.trim(), description: formDesc.trim() || undefined }),
+      });
+      if (!res.ok) throw new Error("Update failed");
+      setEditTarget(null);
+      refetchProjects();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/projects/${deleteTarget.project_id}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 204) throw new Error("Delete failed");
+      setDeleteTarget(null);
+      refetchProjects();
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <>
@@ -52,7 +125,7 @@ export default function ProjectsPage() {
                 value={search}
                 onChange={(v: string) => { setSearch(v); setPage(1); }}
               />
-              <Button size="sm" iconLeading={Plus}>
+              <Button size="sm" iconLeading={Plus} onClick={openCreate}>
                 Create new
               </Button>
             </div>
@@ -114,8 +187,8 @@ export default function ProjectsPage() {
                 </Table.Cell>
                 <Table.Cell>
                   <div className="flex items-center gap-1">
-                    <Button color="tertiary" size="sm" iconLeading={Trash01} aria-label="Delete" />
-                    <Button color="tertiary" size="sm" iconLeading={Edit05} aria-label="Edit" />
+                    <Button color="tertiary" size="sm" iconLeading={Trash01} aria-label="Delete" onClick={() => setDeleteTarget(project)} />
+                    <Button color="tertiary" size="sm" iconLeading={Edit05} aria-label="Edit" onClick={() => openEdit(project)} />
                   </div>
                 </Table.Cell>
               </Table.Row>
@@ -125,6 +198,47 @@ export default function ProjectsPage() {
         <PaginationCardDefault page={page} total={totalPages} onPageChange={setPage} />
       </TableCard.Root>
     </div>
-  </>
+
+      {/* Create modal */}
+      <ModalForm
+        isOpen={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        title="Create Project"
+        submitLabel="Create"
+        onSubmit={handleCreate}
+        isSubmitting={isSubmitting}
+      >
+        <div className="flex flex-col gap-4">
+          <Input label="Name" value={formName} onChange={setFormName} isRequired size="md" />
+          <Input label="Description" value={formDesc} onChange={setFormDesc} size="md" />
+        </div>
+      </ModalForm>
+
+      {/* Edit modal */}
+      <ModalForm
+        isOpen={editTarget !== null}
+        onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+        title="Edit Project"
+        submitLabel="Save"
+        onSubmit={handleEdit}
+        isSubmitting={isSubmitting}
+      >
+        <div className="flex flex-col gap-4">
+          <Input label="Name" value={formName} onChange={setFormName} isRequired size="md" />
+          <Input label="Description" value={formDesc} onChange={setFormDesc} size="md" />
+        </div>
+      </ModalForm>
+
+      {/* Delete confirmation */}
+      <ConfirmActionDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Project"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        onConfirm={handleDelete}
+        isConfirming={isDeleting}
+        confirmLabel="Delete"
+      />
+    </>
   );
 }
