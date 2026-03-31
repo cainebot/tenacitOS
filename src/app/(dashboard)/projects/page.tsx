@@ -23,6 +23,10 @@ export default function ProjectsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // MemberSelector filter state
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+
   useEffect(() => {
     fetch("/api/projects")
       .then((r) => r.json())
@@ -37,10 +41,44 @@ export default function ProjectsPage() {
       .then((data: ProjectRow[]) => setProjects(data));
   };
 
-  const filtered = useMemo(
-    () => projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())),
-    [projects, search]
-  );
+  const allMembers = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; handle: string; avatarUrl?: string }>();
+    for (const p of projects) {
+      for (const m of p.members ?? []) {
+        if (m.type === "user" && !map.has(m.id)) {
+          map.set(m.id, { id: m.id, name: m.name, handle: m.name.toLowerCase().replace(/\s+/g, "."), avatarUrl: m.avatarUrl });
+        }
+      }
+    }
+    return Array.from(map.values());
+  }, [projects]);
+
+  const allAgents = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; handle: string; avatarUrl?: string }>();
+    for (const p of projects) {
+      for (const m of p.members ?? []) {
+        if (m.type === "agent" && !map.has(m.id)) {
+          map.set(m.id, { id: m.id, name: m.name, handle: m.name.toLowerCase().replace(/\s+/g, "."), avatarUrl: m.avatarUrl });
+        }
+      }
+    }
+    return Array.from(map.values());
+  }, [projects]);
+
+  const filtered = useMemo(() => {
+    let result = projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+    if (selectedMemberIds.length > 0) {
+      result = result.filter((p) =>
+        (p.members ?? []).some((m) => m.type === "user" && selectedMemberIds.includes(m.id))
+      );
+    }
+    if (selectedAgentIds.length > 0) {
+      result = result.filter((p) =>
+        (p.members ?? []).some((m) => m.type === "agent" && selectedAgentIds.includes(m.id))
+      );
+    }
+    return result;
+  }, [projects, search, selectedMemberIds, selectedAgentIds]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -135,8 +173,18 @@ export default function ProjectsPage() {
       </div>
 
       <div className="flex items-start gap-6 self-stretch px-8">
-        <MemberSelector users={[]} label="Members" />
-        <MemberSelector users={[]} label="Agents" />
+        <MemberSelector
+          users={allMembers}
+          selected={selectedMemberIds}
+          onChange={(ids) => { setSelectedMemberIds(ids); setPage(1); }}
+          label="Members"
+        />
+        <MemberSelector
+          users={allAgents}
+          selected={selectedAgentIds}
+          onChange={(ids) => { setSelectedAgentIds(ids); setPage(1); }}
+          label="Agents"
+        />
       </div>
 
       <div className="flex flex-col items-start gap-6 self-stretch px-8">
