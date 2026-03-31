@@ -144,13 +144,53 @@ export default function TasksPage() {
     return Array.from(labelSet).map(labelToTag)
   }, [cards])
 
-  // Build live columns from BoardWithColumns + cards
+  // UI state — declared here so filteredCards can reference them
+  const [filters, setFilters] = useState<FilterRow[]>([])
+  const [search, setSearch] = useState("")
+  const [cover, setCover] = useState<ProjectCoverValue>({ color: "blue", icon: "tasks" })
+  const [selectedTab, setSelectedTab] = useState("board")
+
+  // Filter fields with live agents
+  const filterFields = useMemo(
+    () =>
+      defaultFilterFields.map((f) =>
+        f.type === "member"
+          ? { ...f, values: agents.map((a) => ({ id: a.agent_id, label: a.name, avatarUrl: undefined })) }
+          : f,
+      ),
+    [agents],
+  )
+
+  // Client-side search + DynamicFilter
+  const filteredCards = useMemo(() => {
+    let result = cards
+    if (search) {
+      const term = search.toLowerCase()
+      result = result.filter(
+        (c) =>
+          c.title.toLowerCase().includes(term) ||
+          (c.code ?? "").toLowerCase().includes(term),
+      )
+    }
+    for (const filter of filters) {
+      if (!filter.value) continue
+      if (filter.fieldType === "priority") {
+        result = result.filter((c) => c.priority === filter.value)
+      }
+      if (filter.fieldType === "member") {
+        result = result.filter((c) => c.assigned_agent_id === filter.value)
+      }
+    }
+    return result
+  }, [cards, search, filters])
+
+  // Build live columns from BoardWithColumns + filteredCards
   const liveColumns = useMemo((): KanbanBoardColumn<LiveCardData>[] => {
     if (!board) return []
     return board.columns.map((col) => ({
       id: col.column_id,
       title: col.name,
-      items: cards
+      items: filteredCards
         .filter((c) => col.state_ids.includes(c.state_id))
         .sort((a, b) => (a.sort_order > b.sort_order ? 1 : -1))
         .map((c) => {
@@ -165,7 +205,7 @@ export default function TasksPage() {
           }
         }),
     }))
-  }, [board, cards, agents])
+  }, [board, filteredCards, agents])
 
   // Optimistic columns for DnD
   const prevColumnsRef = useRef(liveColumns)
@@ -175,10 +215,45 @@ export default function TasksPage() {
 
   const [optimisticColumns, setOptimisticColumns] = useState<KanbanBoardColumn<LiveCardData>[] | null>(null)
 
+  const handleAddCard = useCallback(
+    async (columnId: string) => {
+      if (!board) return
+      const colDef = board.columns.find((c) => c.column_id === columnId)
+      const targetStateId = colDef?.state_ids[0]
+      if (!targetStateId) return
+
+      await fetch("/api/cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "New card",
+          project_id: board.project_id,
+          state_id: targetStateId,
+          card_type: "task",
+        }),
+      })
+        .then(() => refetch())
+        .catch(() => {})
+    },
+    [board, refetch],
+  )
+
   const handleColumnsChange = useCallback(
     async (newCols: KanbanBoardColumn<LiveCardData>[]) => {
       const prev = prevColumnsRef.current
       setOptimisticColumns(newCols)
+
+      // Detect column title changes
+      for (const newCol of newCols) {
+        const origCol = prevColumnsRef.current.find((c) => c.id === newCol.id)
+        if (origCol && origCol.title !== newCol.title) {
+          fetch(`/api/boards/${boardId}/columns/${newCol.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: newCol.title }),
+          }).catch(() => refetch())
+        }
+      }
 
       // Detect card moves (card appeared in a different column)
       for (const newCol of newCols) {
@@ -223,23 +298,6 @@ export default function TasksPage() {
 
   // Effective columns for rendering
   const effectiveColumns = optimisticColumns ?? liveColumns
-
-  // UI state
-  const [filters, setFilters] = useState<FilterRow[]>([])
-  const [search, setSearch] = useState("")
-  const [cover, setCover] = useState<ProjectCoverValue>({ color: "blue", icon: "tasks" })
-  const [selectedTab, setSelectedTab] = useState("board")
-
-  // Filter fields with live agents
-  const filterFields = useMemo(
-    () =>
-      defaultFilterFields.map((f) =>
-        f.type === "member"
-          ? { ...f, values: agents.map((a) => ({ id: a.agent_id, label: a.name, avatarUrl: undefined })) }
-          : f,
-      ),
-    [agents],
-  )
 
   // Task detail panel state
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
@@ -393,6 +451,7 @@ export default function TasksPage() {
           <KanbanBoard
             columns={effectiveColumns}
             onColumnsChange={handleColumnsChange}
+            onAddCard={handleAddCard}
             size="md"
             className="h-full"
             renderCard={renderCard}
