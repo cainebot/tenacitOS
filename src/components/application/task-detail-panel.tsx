@@ -303,7 +303,7 @@ export function TaskDetailPanel({
           {/* ================================================================ */}
           {/* F · Description body (rich text)                                 */}
           {/* ================================================================ */}
-          <SectionDescriptionBody bodyContent={bodyContent} />
+          <SectionDescriptionBody bodyContent={bodyContent} onContentChange={onDescriptionChange} />
 
           <div className="h-px bg-border-secondary" />
 
@@ -1177,7 +1177,7 @@ function SectionSubtasks({
 // F · Description body (rich text placeholder)
 // ===========================================================================
 
-function SectionDescriptionBody({ bodyContent }: { bodyContent?: string }) {
+function SectionDescriptionBody({ bodyContent, onContentChange }: { bodyContent?: string; onContentChange?: (html: string) => void }) {
   return (
     <div className="py-4">
       <span className="text-sm font-medium text-primary">Description</span>
@@ -1185,6 +1185,7 @@ function SectionDescriptionBody({ bodyContent }: { bodyContent?: string }) {
       <div className="mt-2">
         <TextEditor
           content={bodyContent}
+          onContentChange={onContentChange}
           maxCharacters={2000}
           hintText="{chars} characters left"
           placeholder="Start writing..."
