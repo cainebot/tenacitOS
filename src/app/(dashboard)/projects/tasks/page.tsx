@@ -20,6 +20,7 @@ import type {
 import type { DateValue } from "react-aria-components"
 import { useBoardData } from "@/hooks/useBoardData"
 import { useCardDetail } from "@/hooks/useCardDetail"
+import { useRealtimeCards } from "@/hooks/useRealtimeCards"
 import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, stateCategoryToTaskStatus } from "@/lib/adapters"
 import { parseDate } from "@internationalized/date"
 import type { CardRow, BoardRow, ProjectStateRow } from "@/types/project"
@@ -58,6 +59,9 @@ export default function TasksPage() {
 
   // Live board data
   const { board, cards, loading, refetch } = useBoardData(boardId)
+
+  // Realtime: any card change triggers a board refetch (RT-01)
+  useRealtimeCards(boardId, refetch)
 
   // Agents for assignee dropdowns
   const [agents, setAgents] = useState<AgentRow[]>([])
