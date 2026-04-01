@@ -10,6 +10,7 @@ import type { KanbanBoardColumn } from '@/components/application/kanban-board'
 interface PendingMutation {
   cardId: string
   toColumnId: string
+  targetIndex: number
   timestamp: number
   timerId: ReturnType<typeof setTimeout>
 }
@@ -63,9 +64,14 @@ export function useOptimisticColumns<T extends { id: string }>(
       }
     }, 5000)
 
+    // Compute the card's target index in the destination column from newColumns
+    const targetCol = newColumns.find((c) => c.id === toColumnId)
+    const targetIndex = targetCol ? targetCol.items.findIndex((i) => i.id === cardId) : -1
+
     pendingRef.current.set(cardId, {
       cardId,
       toColumnId,
+      targetIndex,
       timestamp: Date.now(),
       timerId,
     })
@@ -139,10 +145,13 @@ export function useOptimisticColumns<T extends { id: string }>(
         continue
       }
 
-      // Insert into the target column
+      // Insert into the target column at the recorded drop position
       const targetCol = merged.find((c) => c.id === mutation.toColumnId)
       if (targetCol) {
-        targetCol.items.push(card)
+        const insertAt = mutation.targetIndex >= 0
+          ? Math.min(mutation.targetIndex, targetCol.items.length)
+          : targetCol.items.length
+        targetCol.items.splice(insertAt, 0, card)
       }
     }
 
