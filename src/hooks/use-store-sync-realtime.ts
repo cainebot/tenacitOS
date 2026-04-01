@@ -10,11 +10,20 @@ import type { CardRow } from '@/types/project'
  *
  * Subscribes to Supabase Realtime postgres_changes on the `cards` table.
  *
- * - UPDATE deltas are patched in-memory via syncFromServer() — no HTTP round-trip
- *   (syncFromServer's pendingMutations guard drops deltas silently during drags — RT-02)
+ * - UPDATE deltas patch non-positional fields in-place without touching sort_order or
+ *   column position. This prevents realtime echoes of our own drag mutations from
+ *   overwriting optimistic state (B2 fix: mutation echo suppressor + in-place patch).
+ * - Cross-column moves from external sources (different state_id) are allowed through
+ *   only when the card was NOT recently moved by this client.
  * - INSERT/DELETE events trigger a full board refetch (card count changed)
  * - Cleanup removes channel on boardId change or unmount — no subscription leaks (RT-03)
  * - 300ms debounce batches rapid events from agent burst operations
+ *
+ * @deprecated (Phase 73) Board position correctness now comes from useBoardSyncEngine
+ * (sync_events channel). This hook is kept for non-positional metadata patches
+ * (title, description, labels, priority, assignee, due_date) and INSERT/DELETE
+ * refetch triggers. The positional echo-suppression logic in this hook is still
+ * valuable for card metadata updates.
  */
 export function useStoreSyncRealtime(
   boardId: string,
@@ -27,8 +36,29 @@ export function useStoreSyncRealtime(
   // Debounce timer ref — batches rapid realtime events into a single handler call
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Mutation echo suppressor — tracks card IDs that were recently moved by this client.
+  // When a realtime UPDATE arrives for a card in this Set, we skip the positional update
+  // (it's just an echo of our own mutation). Entries auto-expire after 2 seconds.
+  const recentlyMovedCards = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+
   useEffect(() => {
     if (!boardId) return
+
+    // Expose a way for the store's moveCard to register echoes.
+    // We attach to the store's moveCard by wrapping it via a side-channel ref.
+    // The store calls registerEcho(cardId) when a move is initiated.
+    const suppressEcho = (cardId: string) => {
+      // Clear any existing timer for this card before setting a new one
+      const existing = recentlyMovedCards.current.get(cardId)
+      if (existing) clearTimeout(existing)
+      const timer = setTimeout(() => {
+        recentlyMovedCards.current.delete(cardId)
+      }, 2000)
+      recentlyMovedCards.current.set(cardId, timer)
+    }
+
+    // Register the suppressor on the store so moveCard can call it
+    useBoardStore.getState().registerEchoSuppressor(suppressEcho)
 
     const supabase = createBrowserClient()
 
@@ -57,30 +87,88 @@ export function useStoreSyncRealtime(
               )
               if (!cardBelongsHere) return
 
-              // Step 1: Remove card from whichever column it currently lives in
-              const withoutCard = store.columns.map((col) => ({
-                ...col,
-                items: col.items.filter((c) => c.card_id !== updatedCard.card_id),
-              }))
+              // Mutation echo suppressor (B2 fix): if this card was recently moved by
+              // this client, skip the positional update entirely — it's just an echo.
+              const isEcho = recentlyMovedCards.current.has(updatedCard.card_id)
 
-              // Step 2: Find target column by state_id
-              const targetCol = withoutCard.find((col) => col.stateId === updatedCard.state_id)
-              if (!targetCol) return // state_id not on this board
+              if (isEcho) {
+                // Still patch non-positional fields in-place (title, description, labels,
+                // priority, assignee, due_date, etc.) — but preserve position and sort_order.
+                const patchedColumnsInPlace = store.columns.map((col) => ({
+                  ...col,
+                  items: col.items.map((c) =>
+                    c.card_id === updatedCard.card_id
+                      ? {
+                          ...c,
+                          // Patch only non-positional fields; keep current sort_order and state_id
+                          title: updatedCard.title,
+                          description: updatedCard.description,
+                          labels: updatedCard.labels,
+                          priority: updatedCard.priority,
+                          assigned_agent_id: updatedCard.assigned_agent_id,
+                          due_date: updatedCard.due_date,
+                          card_type: updatedCard.card_type,
+                          parent_card_id: updatedCard.parent_card_id,
+                          updated_at: updatedCard.updated_at,
+                        }
+                      : c,
+                  ),
+                }))
+                store.syncFromServer(patchedColumnsInPlace)
+                return
+              }
 
-              // Step 3: Insert the updated card into target column, sorted by sort_order
-              const patchedColumns = withoutCard.map((col) =>
-                col.columnId === targetCol.columnId
-                  ? {
-                      ...col,
-                      items: [...col.items, updatedCard].sort((a, b) =>
-                        a.sort_order < b.sort_order ? -1 : a.sort_order > b.sort_order ? 1 : 0,
-                      ),
-                    }
-                  : col,
+              // External UPDATE (not our echo): find the card's current column
+              const currentCol = store.columns.find((col) =>
+                col.items.some((c) => c.card_id === updatedCard.card_id),
               )
+              const isColumnChange = currentCol?.stateId !== updatedCard.state_id
 
-              // syncFromServer's pendingMutations guard silently drops delta if drag is in flight (RT-02)
-              store.syncFromServer(patchedColumns)
+              if (!isColumnChange) {
+                // Same column: patch non-positional fields in-place without touching position.
+                // This prevents agents updating metadata from causing position jumps.
+                const patchedInPlace = store.columns.map((col) => ({
+                  ...col,
+                  items: col.items.map((c) =>
+                    c.card_id === updatedCard.card_id
+                      ? {
+                          ...c,
+                          title: updatedCard.title,
+                          description: updatedCard.description,
+                          labels: updatedCard.labels,
+                          priority: updatedCard.priority,
+                          assigned_agent_id: updatedCard.assigned_agent_id,
+                          due_date: updatedCard.due_date,
+                          card_type: updatedCard.card_type,
+                          parent_card_id: updatedCard.parent_card_id,
+                          updated_at: updatedCard.updated_at,
+                        }
+                      : c,
+                  ),
+                }))
+                store.syncFromServer(patchedInPlace)
+              } else {
+                // Column change from an external source (agent or other client):
+                // allow the full remove+reinsert since this is a legitimate cross-column move.
+                const withoutCard = store.columns.map((col) => ({
+                  ...col,
+                  items: col.items.filter((c) => c.card_id !== updatedCard.card_id),
+                }))
+                const targetCol = withoutCard.find((col) => col.stateId === updatedCard.state_id)
+                if (!targetCol) return
+
+                const patchedColumns = withoutCard.map((col) =>
+                  col.columnId === targetCol.columnId
+                    ? {
+                        ...col,
+                        items: [...col.items, updatedCard].sort((a, b) =>
+                          a.sort_order < b.sort_order ? -1 : a.sort_order > b.sort_order ? 1 : 0,
+                        ),
+                      }
+                    : col,
+                )
+                store.syncFromServer(patchedColumns)
+              }
             } else {
               // INSERT or DELETE: card count changed — full board reload is the safe fallback
               refetchRef.current()
@@ -93,6 +181,9 @@ export function useStoreSyncRealtime(
     return () => {
       // Cleanup — clear debounce timer and remove channel (RT-03: no subscription leaks)
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+      // Clear all echo suppressor timers
+      recentlyMovedCards.current.forEach((timer) => clearTimeout(timer))
+      recentlyMovedCards.current.clear()
       supabase.removeChannel(channel)
     }
   }, [boardId])
