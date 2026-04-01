@@ -33,6 +33,9 @@ export interface BoardColumn {
 // State interface
 // ---------------------------------------------------------------------------
 
+// Callback type registered by useStoreSyncRealtime to suppress realtime echoes
+type EchoSuppressor = (cardId: string) => void
+
 interface BoardState {
   boardId: string | null
   columns: BoardColumn[]
@@ -42,7 +45,15 @@ interface BoardState {
   loadBoard: (boardId: string, columns: BoardColumn[]) => void
   moveCard: (params: MoveCardParams) => Promise<void>
   syncFromServer: (columns: BoardColumn[]) => void
+  /**
+   * setSyncColumns — bypass the pending-guard and set columns directly.
+   * Used by the sync engine which handles its own pending tracking.
+   * Phase 73: called by useBoardSyncEngine when the engine emits new columns.
+   */
+  setSyncColumns: (columns: BoardColumn[]) => void
   reset: () => void
+  /** Called by useStoreSyncRealtime to register a per-card echo suppressor (B2 fix) */
+  registerEchoSuppressor: (fn: EchoSuppressor) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -168,6 +179,9 @@ function revertCardToSnapshot(
 // Store — global singleton (no Provider needed)
 // ---------------------------------------------------------------------------
 
+// Module-level echo suppressor ref — set by useStoreSyncRealtime, called in moveCard
+let _echoSuppressor: EchoSuppressor | null = null
+
 export const useBoardStore = create<BoardState>()((set, get) => ({
   boardId: null,
   columns: [],
@@ -188,17 +202,52 @@ export const useBoardStore = create<BoardState>()((set, get) => ({
     set({ columns })
   },
 
+  setSyncColumns: (columns) => {
+    // Phase 73: called by useBoardSyncEngine — bypass pending guard because
+    // the sync engine already has the correct rebased columns incorporating
+    // all pending mutations.
+    set({ columns })
+  },
+
+  registerEchoSuppressor: (fn) => {
+    _echoSuppressor = fn
+  },
+
   moveCard: async (params) => {
     const { cardId, fromColumnId, toColumnId, stateId, sortOrder } = params
+
+    // B2 fix: register this card as "recently moved by us" so realtime echoes are suppressed
+    _echoSuppressor?.(cardId)
 
     // KSTORE-05: Snapshot BEFORE any mutation (enables per-card revert)
     const snapshot = get().columns
 
-    // KSTORE-02 + KSTORE-03: Apply optimistic update synchronously + increment counter
-    set((state) => ({
-      pendingMutations: state.pendingMutations + 1,
-      columns: applyOptimisticMove(state.columns, cardId, fromColumnId, toColumnId, sortOrder),
-    }))
+    const isSameColumn = fromColumnId === toColumnId
+
+    if (isSameColumn) {
+      // B4 fix: for same-column reorders, update sort_order in-place without changing
+      // the card's array position. The visual position is already correct from KanbanBoard.
+      // applyOptimisticMove's sort-by-key would produce a different index than the visual drop.
+      set((state) => ({
+        pendingMutations: state.pendingMutations + 1,
+        columns: state.columns.map((col) =>
+          col.columnId === fromColumnId
+            ? {
+                ...col,
+                items: col.items.map((c) =>
+                  c.card_id === cardId ? { ...c, sort_order: sortOrder } : c,
+                ),
+              }
+            : col,
+        ),
+      }))
+    } else {
+      // KSTORE-02 + KSTORE-03: Apply optimistic update synchronously + increment counter
+      set((state) => ({
+        pendingMutations: state.pendingMutations + 1,
+        columns: applyOptimisticMove(state.columns, cardId, fromColumnId, toColumnId, sortOrder),
+      }))
+    }
 
     // Fire API call to /api/cards/[cardId]/move
     try {
