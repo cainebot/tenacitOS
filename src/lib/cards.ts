@@ -341,13 +341,30 @@ export async function deleteCard(id: string): Promise<void> {
 export async function moveCard(
   cardId: string,
   stateId: string,
-  movedBy: string
+  movedBy: string,
+  sortOrder?: string,
 ): Promise<void> {
   const client = createServiceRoleClient()
-  const { error } = await client.rpc('move_card', {
+
+  // If sortOrder not provided, fetch current sort_order to preserve it.
+  // This maintains backward compatibility with callers that don't compute sort keys
+  // (e.g. useCardDetail.ts status dropdown). Phase 69/70 will ensure all callers
+  // pass sort_order explicitly via the Zustand store.
+  let effectiveSortOrder = sortOrder
+  if (effectiveSortOrder === undefined) {
+    const { data } = await client
+      .from('cards')
+      .select('sort_order')
+      .eq('card_id', cardId)
+      .single()
+    effectiveSortOrder = data?.sort_order ?? ''
+  }
+
+  const { error } = await client.rpc('move_card_with_order', {
     p_card_id: cardId,
     p_new_state_id: stateId,
     p_moved_by: movedBy,
+    p_sort_order: effectiveSortOrder,
   })
 
   if (error) throw error

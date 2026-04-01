@@ -32,11 +32,27 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
   const supabase = createServiceRoleClient()
 
-  // Call move_card RPC — enforces only_humans rule on source state
-  const { error: rpcError } = await supabase.rpc('move_card', {
+  // Resolve sort_order: use provided value, or preserve current sort_order.
+  // Backward compatibility: useCardDetail.ts and task detail panel call this
+  // endpoint WITHOUT sort_order. Phase 69/70 will ensure all callers pass it
+  // explicitly via the Zustand store.
+  let effectiveSortOrder = sort_order as string | undefined
+  if (!effectiveSortOrder || typeof effectiveSortOrder !== 'string') {
+    const { data: currentCard } = await supabase
+      .from('cards')
+      .select('sort_order')
+      .eq('card_id', id)
+      .single()
+    effectiveSortOrder = currentCard?.sort_order ?? ''
+  }
+
+  // Call move_card_with_order RPC — atomically updates state_id and sort_order,
+  // enforces only_humans rule on source state, logs activity
+  const { error: rpcError } = await supabase.rpc('move_card_with_order', {
     p_card_id: id,
     p_new_state_id: state_id as string,
     p_moved_by: moved_by as string,
+    p_sort_order: effectiveSortOrder,
   })
 
   if (rpcError) {
@@ -55,19 +71,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       { message: rpcError.message, code: rpcError.code },
       { status: 500 }
     )
-  }
-
-  // If sort_order was provided, update it separately
-  if (sort_order !== undefined && typeof sort_order === 'string') {
-    const { error: sortError } = await supabase
-      .from('cards')
-      .update({ sort_order: sort_order as string })
-      .eq('card_id', id)
-
-    if (sortError) {
-      // Non-fatal — log but continue
-      console.error('Failed to update sort_order after move:', sortError)
-    }
   }
 
   // Return updated card
