@@ -291,6 +291,7 @@ export default function SalesPipelinePage() {
             const after = cardIndex < newCol.items.length - 1 ? newCol.items[cardIndex + 1].cardRow.sort_order : undefined
             const sort_order = generateSortOrder(before, after)
 
+            applyOptimisticMove(movedCardId, newCol.id, newCol.id, newCols)
             fetch(`/api/cards/${movedCardId}/move`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
