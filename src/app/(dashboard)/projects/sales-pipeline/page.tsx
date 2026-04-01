@@ -21,6 +21,7 @@ import type { DateValue } from "react-aria-components"
 import { useBoardData } from "@/hooks/useBoardData"
 import { useCardDetail } from "@/hooks/useCardDetail"
 import { useStoreSyncRealtime } from "@/hooks/use-store-sync-realtime"
+import { useBoardSyncEngine } from "@/hooks/use-board-sync-engine"
 import { useBoardStore, type BoardColumn } from "@/stores/board-store"
 import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, stateCategoryToTaskStatus } from "@/lib/adapters"
 import { sortKeyBetween } from "@/lib/fractional-index"
@@ -63,7 +64,14 @@ export default function SalesPipelinePage() {
   const { board, cards, loading, refetch } = useBoardData(boardId)
 
   // Realtime: store-aware sync — UPDATE patches in-memory, INSERT/DELETE triggers refetch
+  // (Phase 73: kept for non-positional metadata patches; position driven by sync engine below)
   useStoreSyncRealtime(boardId, refetch)
+
+  // Phase 73: Sync engine — causal event stream for board position correctness
+  const syncEngine = useBoardSyncEngine({
+    boardId,
+    onRefetch: refetch,
+  })
 
   // Agents for assignee dropdowns
   const [agents, setAgents] = useState<AgentRow[]>([])
@@ -126,7 +134,6 @@ export default function SalesPipelinePage() {
   // Zustand store selectors
   const storeLoadBoard = useBoardStore(s => s.loadBoard)
   const storeColumns = useBoardStore(s => s.columns)
-  const storeMoveCard = useBoardStore(s => s.moveCard)
 
   // Seed the store whenever board/cards data changes
   useEffect(() => {
@@ -281,12 +288,12 @@ export default function SalesPipelinePage() {
               afterItem ? afterItem.cardRow.sort_order : null,
             )
 
-            storeMoveCard({
+            // Phase 73: route through sync engine for causal ack + rebase
+            syncEngine.moveSyncCard({
               cardId: item.id,
-              fromColumnId: wasInCol.id,
-              toColumnId: newCol.id,
-              stateId: targetStateId,
+              toStateId: targetStateId,
               sortOrder,
+              boardId,
             })
           }
         }
@@ -326,12 +333,12 @@ export default function SalesPipelinePage() {
               afterItem ? afterItem.cardRow.sort_order : null,
             )
 
-            storeMoveCard({
+            // Phase 73: route through sync engine for causal ack + rebase
+            syncEngine.moveSyncCard({
               cardId: movedCardId,
-              fromColumnId: newCol.id,
-              toColumnId: newCol.id,
-              stateId: targetStateId,
+              toStateId: targetStateId,
               sortOrder,
+              boardId,
             })
           }
         }
@@ -350,7 +357,7 @@ export default function SalesPipelinePage() {
         })
       }
     },
-    [board, boardId, refetch, storeMoveCard],
+    [board, boardId, refetch, syncEngine],
   )
 
   // Task detail panel state
