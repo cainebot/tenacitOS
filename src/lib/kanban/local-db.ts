@@ -226,3 +226,36 @@ export async function loadSnapshot(
     lastAppliedSyncId: state.lastAppliedSyncId,
   }
 }
+
+// ---------------------------------------------------------------------------
+// Debug / instrumentation helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * debugDump — returns a full dump of local sync state for a board.
+ * Used in dev-mode instrumentation and test assertions.
+ *
+ * Checks:
+ *   - lastAppliedSyncId
+ *   - pending mutation count and IDs
+ *   - snapshot freshness (snapshotAt)
+ */
+export async function debugDump(boardId: string): Promise<{
+  lastAppliedSyncId: number
+  snapshotAt: number | null
+  pendingCount: number
+  pendingMutationIds: string[]
+  pendingStatuses: Record<string, LocalMutation['status']>
+}> {
+  const state = await loadSyncState(boardId)
+  const pending = await loadPendingMutations(boardId)
+  return {
+    lastAppliedSyncId: state?.lastAppliedSyncId ?? 0,
+    snapshotAt: state?.snapshotAt ?? null,
+    pendingCount: pending.length,
+    pendingMutationIds: pending.map(m => m.clientMutationId),
+    pendingStatuses: Object.fromEntries(
+      pending.map(m => [m.clientMutationId, m.status]),
+    ),
+  }
+}

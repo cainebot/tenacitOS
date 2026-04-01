@@ -21,7 +21,7 @@ import { useBoardStore, type BoardColumn } from '@/stores/board-store'
 import { useSyncStore } from '@/lib/kanban/sync-store'
 import { SyncEngine } from '@/lib/kanban/sync-engine'
 import type { SyncEvent } from '@/lib/kanban/sync-types'
-import { getClientId } from '@/lib/kanban/local-db'
+import { getClientId, debugDump } from '@/lib/kanban/local-db'
 
 export interface UseBoardSyncEngineOptions {
   boardId: string
@@ -51,6 +51,16 @@ export interface BoardSyncEngineHandle {
 
   /** The last sync_id applied from the server event stream */
   lastAppliedSyncId: number
+
+  /**
+   * debugState — returns live engine state for dev-mode inspection.
+   * Includes clientId, lastAppliedSyncId, pendingCount, pendingMutations,
+   * and a promise to dump the full IndexedDB state for this board.
+   */
+  debugState: () => {
+    engine: ReturnType<import('@/lib/kanban/sync-engine').SyncEngine['debugState']> | null
+    dbDump: Promise<Awaited<ReturnType<typeof debugDump>>>
+  }
 }
 
 export function useBoardSyncEngine(
@@ -274,10 +284,19 @@ export function useBoardSyncEngine(
     }
   }, [setPendingCount])
 
+  const debugState = useCallback(() => {
+    const engine = engineRef.current
+    return {
+      engine: engine ? engine.debugState() : null,
+      dbDump: debugDump(boardId),
+    }
+  }, [boardId])
+
   return {
     moveSyncCard,
     clientId: getClientId(),
     pendingCount: pendingCountStore,
     lastAppliedSyncId: syncIdStore,
+    debugState,
   }
 }

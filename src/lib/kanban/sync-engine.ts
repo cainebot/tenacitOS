@@ -345,6 +345,38 @@ export class SyncEngine {
     this.initialized = false
   }
 
+  // ---- Debug / instrumentation ---------------------------------------------
+
+  /**
+   * debugState — returns a snapshot of the engine's internal state for
+   * dev-mode inspection panels and test assertions.
+   *
+   * Contains:
+   *   - clientId
+   *   - lastAppliedSyncId
+   *   - pendingCount (non-acked, non-failed)
+   *   - pendingMutations (full array for deep inspection)
+   *   - snapshotColumnCount
+   *   - initialized
+   */
+  debugState(): {
+    clientId: string
+    lastAppliedSyncId: number
+    pendingCount: number
+    pendingMutations: LocalMutation[]
+    snapshotColumnCount: number
+    initialized: boolean
+  } {
+    return {
+      clientId: this.clientId,
+      lastAppliedSyncId: this.lastAppliedSyncId,
+      pendingCount: this.pendingCount,
+      pendingMutations: [...this.pending],
+      snapshotColumnCount: this.snapshot.length,
+      initialized: this.initialized,
+    }
+  }
+
   // ---- Private helpers -----------------------------------------------------
 
   private emitColumns(): void {
