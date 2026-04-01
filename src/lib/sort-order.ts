@@ -1,22 +1,28 @@
 /**
  * generateSortOrder — lexicographic midpoint for TEXT sort_order columns.
  *
- * Character space: lowercase a-z (26 chars). Midpoint char = 'n' (index 13).
+ * Character space: '0'-'9' then 'a'-'z' (36 chars, ASCII-sorted).
+ * This ensures we can always prepend before any existing value
+ * (e.g., before "a" → "9n").
+ *
+ * Backward-compatible: existing values like "a", "bm", "c" sort correctly
+ * since digits (48-57) come before lowercase letters (97-122) in ASCII.
  *
  * Usage:
  *   generateSortOrder()               // empty column → "n"
  *   generateSortOrder("x")            // append after x → "xn"
  *   generateSortOrder(undefined, "c") // prepend before c → "bn"
  *   generateSortOrder("a", "c")       // midpoint between a and c → "b"
- *   generateSortOrder("a", "b")       // adjacent, extend depth → "an"
+ *   generateSortOrder(undefined, "a") // prepend before a → "9n"
  */
 
-const CHARS = 'abcdefghijklmnopqrstuvwxyz'
-const MID_CHAR = 'n' // index 13
-const MID_IDX = CHARS.indexOf(MID_CHAR) // 13
+const CHARS = '0123456789abcdefghijklmnopqrstuvwxyz' // 36 chars, ASCII-sorted
+const MID_CHAR = 'n' // roughly middle of the full range
+const FIRST_CHAR = CHARS[0] // '0'
 
 function charIdx(ch: string): number {
-  return CHARS.indexOf(ch)
+  const idx = CHARS.indexOf(ch)
+  return idx >= 0 ? idx : 0
 }
 
 /**
@@ -36,7 +42,6 @@ export function generateSortOrder(before?: string, after?: string): string {
 
   // Case: only after provided (prepend to top)
   if (!before && after) {
-    // Find a string that sorts before `after`
     return _prepend(after)
   }
 
@@ -51,13 +56,15 @@ function _prepend(after: string): string {
     const idx = charIdx(after[i])
     if (idx > 0) {
       // Decrement this char and append MID_CHAR to stay between
-      // e.g. after="c" → "bn", after="an" → "amn"
+      // e.g. after="c" → "bn", after="an" → "amn", after="a" → "9n"
       return after.slice(0, i) + CHARS[idx - 1] + MID_CHAR
     }
-    // char is 'a', keep going deeper
+    // char is '0' (absolute minimum), keep going deeper
   }
-  // All chars are 'a' — prepend by going deeper: "a".repeat(len) + MID_CHAR
-  return after + MID_CHAR
+  // All chars are '0' — extend by one more level
+  // "0".repeat(len) + MID_CHAR is still > "0".repeat(len), but
+  // "0".repeat(len+1) < "0".repeat(len) + MID_CHAR, so go even lower
+  return after + FIRST_CHAR + MID_CHAR
 }
 
 /** Return a string strictly between `lo` and `hi`. */
@@ -65,12 +72,11 @@ function _midpoint(lo: string, hi: string): string {
   const maxLen = Math.max(lo.length, hi.length)
 
   for (let i = 0; i <= maxLen; i++) {
-    const loChar = i < lo.length ? charIdx(lo[i]) : -1 // -1 means "before 'a'"
-    const hiChar = i < hi.length ? charIdx(hi[i]) : 26  // 26 means "after 'z'"
+    const loChar = i < lo.length ? charIdx(lo[i]) : -1
+    const hiChar = i < hi.length ? charIdx(hi[i]) : CHARS.length
 
-    // Actual index in CHARS for lo at this depth:
     const loIdx = loChar === -1 ? 0 : loChar
-    const hiIdx = hiChar === 26 ? 25 : hiChar
+    const hiIdx = hiChar >= CHARS.length ? CHARS.length - 1 : hiChar
 
     if (hiIdx - loIdx > 1) {
       // There's a character between them — pick the midpoint
@@ -86,16 +92,17 @@ function _midpoint(lo: string, hi: string): string {
     // loIdx === hiIdx — same character at this depth, continue to next level
   }
 
-  // Fallback: shouldn't reach here in practice; append MID_CHAR to lo
+  // Fallback: shouldn't reach here in practice
   return lo + MID_CHAR
 }
 
 // ---------------------------------------------------------------------------
 // Expected behavior (for reference):
-// generateSortOrder("a", "c")  => "b"
-// generateSortOrder("a", "b")  => "an"
-// generateSortOrder("an", "b") => "at"  (approx midpoint between n=13 and b's extension)
+// generateSortOrder("a", "c")       => "b"
+// generateSortOrder("a", "b")       => "an"
+// generateSortOrder("an", "b")      => "at" (midpoint)
 // generateSortOrder(undefined, "c") => "bn"
+// generateSortOrder(undefined, "a") => "9n"  (digits sort before letters)
 // generateSortOrder("x", undefined) => "xn"
-// generateSortOrder() => "n"
+// generateSortOrder()               => "n"
 // ---------------------------------------------------------------------------

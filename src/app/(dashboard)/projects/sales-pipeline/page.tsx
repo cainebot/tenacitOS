@@ -218,7 +218,7 @@ export default function SalesPipelinePage() {
   )
 
   const handleColumnsChange = useCallback(
-    async (newCols: KanbanBoardColumn<LiveCardData>[]) => {
+    async (newCols: KanbanBoardColumn<LiveCardData>[], meta?: { activeCardId?: string }) => {
       const prev = effectiveColumnsRef.current
 
       // Detect column title changes
@@ -279,11 +279,11 @@ export default function SalesPipelinePage() {
           new Set(prevIds).size === new Set(newIds).size &&
           prevIds.every((id) => newIds.includes(id))
         ) {
-          // Find the card whose index changed (the dragged card)
-          const movedCardId = newIds.find((id, newIdx) => {
-            const oldIdx = prevIds.indexOf(id)
-            return oldIdx !== newIdx
-          })
+          // Use activeCardId from drag metadata — the only reliable way to know
+          // which card was dragged (index comparison picks the wrong card)
+          const movedCardId = meta?.activeCardId && newIds.includes(meta.activeCardId)
+            ? meta.activeCardId
+            : undefined
 
           if (movedCardId) {
             const cardIndex = newIds.indexOf(movedCardId)

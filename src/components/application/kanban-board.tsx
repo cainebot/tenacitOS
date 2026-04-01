@@ -103,7 +103,7 @@ export interface KanbanBoardColumn<T extends KanbanColumnItem> {
 
 export interface KanbanBoardProps<T extends KanbanColumnItem> {
   columns: KanbanBoardColumn<T>[]
-  onColumnsChange?: (columns: KanbanBoardColumn<T>[]) => void
+  onColumnsChange?: (columns: KanbanBoardColumn<T>[], meta?: { activeCardId?: string }) => void
   size?: KanbanBoardSize
   renderCard: (item: T) => ReactNode
   renderDragOverlay?: (item: T) => ReactNode
@@ -257,7 +257,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
           }
         }
       }
-      onColumnsChange?.(finalColumns)
+      onColumnsChange?.(finalColumns, { activeCardId: String(active.id) })
     }
 
     setDragColumns(null)
@@ -310,7 +310,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
 
   return (
     <div className={cx("overflow-auto", className)}>
-    <div className="flex items-stretch gap-4 min-h-full px-6 pb-6">
+    <div className="flex items-stretch gap-4 min-h-full px-6 pb-6 w-fit">
       <DndContext
         sensors={sensors}
         collisionDetection={collisionDetection}
@@ -367,7 +367,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
       <button
         type="button"
         onClick={handleAddSection}
-        className="mt-6 flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-tertiary whitespace-nowrap transition-colors hover:bg-secondary_hover"
+        className="mt-6 flex shrink-0 cursor-pointer items-center gap-1 self-start rounded-lg px-3 py-2 text-sm font-semibold text-tertiary whitespace-nowrap transition-colors hover:bg-secondary_hover"
       >
         <Plus className="size-5" />
         <span className="px-0.5">Add section</span>
