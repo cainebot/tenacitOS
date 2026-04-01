@@ -20,7 +20,7 @@ import type {
 import type { DateValue } from "react-aria-components"
 import { useBoardData } from "@/hooks/useBoardData"
 import { useCardDetail } from "@/hooks/useCardDetail"
-import { useRealtimeCards } from "@/hooks/useRealtimeCards"
+import { useStoreSyncRealtime } from "@/hooks/use-store-sync-realtime"
 import { useBoardStore, type BoardColumn } from "@/stores/board-store"
 import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, stateCategoryToTaskStatus } from "@/lib/adapters"
 import { sortKeyBetween } from "@/lib/fractional-index"
@@ -62,8 +62,8 @@ export default function TasksPage() {
   // Live board data
   const { board, cards, loading, refetch } = useBoardData(boardId)
 
-  // Realtime: any card change triggers a board refetch (RT-01)
-  useRealtimeCards(boardId, refetch)
+  // Realtime: store-aware sync — UPDATE patches in-memory, INSERT/DELETE triggers refetch
+  useStoreSyncRealtime(boardId, refetch)
 
   // Agents for assignee dropdowns
   const [agents, setAgents] = useState<AgentRow[]>([])
