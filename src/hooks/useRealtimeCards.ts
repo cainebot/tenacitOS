@@ -17,6 +17,9 @@ export function useRealtimeCards(
   const callbackRef = useRef(onCardChange)
   callbackRef.current = onCardChange
 
+  // Debounce timer ref — batches rapid realtime events into a single callback
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     if (!boardId) return
 
@@ -30,16 +33,24 @@ export function useRealtimeCards(
         { event: '*', schema: 'public', table: 'cards' },
         (payload) => {
           const eventType = payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE'
-          callbackRef.current({
+          const realtimePayload: RealtimePayload = {
             eventType,
             new: (payload.new ?? {}) as Record<string, unknown>,
             old: (payload.old ?? {}) as Record<string, unknown>,
-          })
+          }
+
+          // Debounce: clear any pending timer and schedule a new 300ms callback
+          if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+          debounceTimerRef.current = setTimeout(() => {
+            callbackRef.current(realtimePayload)
+            debounceTimerRef.current = null
+          }, 300)
         }
       )
       .subscribe()
 
     return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
       supabase.removeChannel(channel)
     }
   }, [boardId])
