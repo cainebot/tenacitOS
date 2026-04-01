@@ -490,7 +490,15 @@ export default function SalesPipelinePage() {
 
   const renderCard = useCallback(
     (card: LiveCardData) => (
-      <div onClick={() => handleCardClick(card.id)} className="cursor-pointer">
+      <div
+        onClickCapture={(e) => {
+          const target = e.target as HTMLElement
+          const interactive = target.closest('button, input, [role="dialog"], [role="listbox"], [data-react-aria-popover]')
+          if (interactive) return
+          handleCardClick(card.id)
+        }}
+        className="cursor-pointer"
+      >
         <KanbanCard
           title={card.props.title ?? ""}
           onTitleChange={(title) => patchCard(card.cardId, { title })}
@@ -520,9 +528,7 @@ export default function SalesPipelinePage() {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ state_id: targetStateId, moved_by: "human" }),
-            })
-              .then(() => refetch())
-              .catch(() => refetch())
+            }).catch(() => refetch())
           }}
           dueDate={card.dueDate}
           onDueDateChange={(date) =>
