@@ -370,6 +370,51 @@ export async function moveCard(
   if (error) throw error
 }
 
+// ---- Phase 73: Sync-event-aware move (server-side helper) ----
+
+export interface MoveCardSyncResult {
+  cardId: string
+  acceptedSyncId: number
+  clientMutationId: string | null
+}
+
+/**
+ * moveCardWithSyncEvent — server-side card move that also emits a
+ * board_sync_events row in the same transaction.
+ *
+ * Used by server actions or other server-side callers that want causal
+ * event tracking. The HTTP route variant handles browser-side calls.
+ */
+export async function moveCardWithSyncEvent(
+  cardId: string,
+  stateId: string,
+  movedBy: string,
+  sortOrder: string,
+  boardId: string,
+  clientId?: string,
+  clientMutationId?: string,
+): Promise<MoveCardSyncResult> {
+  const client = createServiceRoleClient()
+
+  const { data: syncId, error } = await client.rpc('move_card_with_sync_event', {
+    p_card_id:     cardId,
+    p_new_state_id: stateId,
+    p_moved_by:    movedBy,
+    p_sort_order:  sortOrder,
+    p_board_id:    boardId,
+    p_client_id:   clientId ?? null,
+    p_mutation_id: clientMutationId ?? null,
+  })
+
+  if (error) throw error
+
+  return {
+    cardId,
+    acceptedSyncId: syncId as number,
+    clientMutationId: clientMutationId ?? null,
+  }
+}
+
 // ---- GDPR anonymization ----
 
 /**
