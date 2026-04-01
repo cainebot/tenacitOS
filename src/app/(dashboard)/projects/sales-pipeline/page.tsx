@@ -21,6 +21,7 @@ import type { DateValue } from "react-aria-components"
 import { useBoardData } from "@/hooks/useBoardData"
 import { useCardDetail } from "@/hooks/useCardDetail"
 import { useRealtimeCards } from "@/hooks/useRealtimeCards"
+import { useOptimisticColumns } from "@/hooks/useOptimisticColumns"
 import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, stateCategoryToTaskStatus } from "@/lib/adapters"
 import { parseDate } from "@internationalized/date"
 import type { CardRow, BoardRow, ProjectStateRow } from "@/types/project"
@@ -174,13 +175,14 @@ export default function SalesPipelinePage() {
     }))
   }, [board, filteredCards, agents, projectStates])
 
-  // Optimistic columns for DnD
-  const prevColumnsRef = useRef(liveColumns)
-  useEffect(() => {
-    prevColumnsRef.current = liveColumns
-  }, [liveColumns])
+  // Optimistic columns for DnD — mutation-tracking hook replaces fixed-timer pattern
+  const { effectiveColumns, applyOptimisticMove } = useOptimisticColumns(liveColumns)
 
-  const [optimisticColumns, setOptimisticColumns] = useState<KanbanBoardColumn<LiveCardData>[] | null>(null)
+  // Ref to track current effectiveColumns for handleColumnsChange comparison
+  const effectiveColumnsRef = useRef(effectiveColumns)
+  useEffect(() => {
+    effectiveColumnsRef.current = effectiveColumns
+  }, [effectiveColumns])
 
   const handleAddCard = useCallback(
     async (columnId: string) => {
@@ -207,12 +209,11 @@ export default function SalesPipelinePage() {
 
   const handleColumnsChange = useCallback(
     async (newCols: KanbanBoardColumn<LiveCardData>[]) => {
-      const prev = prevColumnsRef.current
-      setOptimisticColumns(newCols)
+      const prev = effectiveColumnsRef.current
 
       // Detect column title changes
       for (const newCol of newCols) {
-        const origCol = prevColumnsRef.current.find((c) => c.id === newCol.id)
+        const origCol = prev.find((c) => c.id === newCol.id)
         if (origCol && origCol.title !== newCol.title) {
           fetch(`/api/boards/${boardId}/columns/${newCol.id}`, {
             method: "PATCH",
@@ -231,12 +232,12 @@ export default function SalesPipelinePage() {
         for (const item of newCol.items) {
           const wasInCol = prev.find((pc) => pc.items.some((i) => i.id === item.id))
           if (wasInCol && wasInCol.id !== newCol.id) {
+            applyOptimisticMove(item.id, wasInCol.id, newCol.id, newCols)
             fetch(`/api/cards/${item.id}/move`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ state_id: targetStateId, moved_by: "human" }),
             }).catch(() => {
-              setOptimisticColumns(null)
               refetch()
             })
           }
@@ -252,19 +253,12 @@ export default function SalesPipelinePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ column_ids: newOrder }),
         }).catch(() => {
-          setOptimisticColumns(null)
           refetch()
         })
       }
-
-      // Clear optimistic state after a short delay to allow refetch
-      setTimeout(() => setOptimisticColumns(null), 1000)
     },
-    [board, boardId, refetch],
+    [board, boardId, refetch, applyOptimisticMove],
   )
-
-  // Effective columns for rendering
-  const effectiveColumns = optimisticColumns ?? liveColumns
 
   // Task detail panel state
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
