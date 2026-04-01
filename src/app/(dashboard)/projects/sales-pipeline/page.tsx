@@ -23,6 +23,7 @@ import { useCardDetail } from "@/hooks/useCardDetail"
 import { useRealtimeCards } from "@/hooks/useRealtimeCards"
 import { useOptimisticColumns } from "@/hooks/useOptimisticColumns"
 import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, stateCategoryToTaskStatus } from "@/lib/adapters"
+import { generateSortOrder } from "@/lib/sort-order"
 import { parseDate } from "@internationalized/date"
 import type { CardRow, BoardRow, ProjectStateRow } from "@/types/project"
 import type { AgentRow } from "@/types/supabase"
@@ -191,6 +192,14 @@ export default function SalesPipelinePage() {
       const targetStateId = colDef?.state_ids[0]
       if (!targetStateId) return
 
+      // Calculate sort_order for the new card (append to bottom of column)
+      const col = effectiveColumns.find((c) => c.id === columnId)
+      const colItems = col?.items ?? []
+      const lastItem = colItems[colItems.length - 1]
+      const sort_order = lastItem
+        ? generateSortOrder(lastItem.cardRow.sort_order, undefined)
+        : generateSortOrder()
+
       await fetch("/api/cards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -199,12 +208,13 @@ export default function SalesPipelinePage() {
           project_id: board.project_id,
           state_id: targetStateId,
           card_type: "task",
+          sort_order,
         }),
       })
         .then(() => refetch())
         .catch(() => {})
     },
-    [board, refetch],
+    [board, refetch, effectiveColumns],
   )
 
   const handleColumnsChange = useCallback(
@@ -232,11 +242,59 @@ export default function SalesPipelinePage() {
         for (const item of newCol.items) {
           const wasInCol = prev.find((pc) => pc.items.some((i) => i.id === item.id))
           if (wasInCol && wasInCol.id !== newCol.id) {
+            // Cross-column move: calculate sort_order from new neighbors
+            const cardIndex = newCol.items.findIndex((i) => i.id === item.id)
+            const before = cardIndex > 0 ? newCol.items[cardIndex - 1].cardRow.sort_order : undefined
+            const after = cardIndex < newCol.items.length - 1 ? newCol.items[cardIndex + 1].cardRow.sort_order : undefined
+            const sort_order = generateSortOrder(before, after)
+
             applyOptimisticMove(item.id, wasInCol.id, newCol.id, newCols)
             fetch(`/api/cards/${item.id}/move`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ state_id: targetStateId, moved_by: "human" }),
+              body: JSON.stringify({ state_id: targetStateId, moved_by: "human", sort_order }),
+            }).catch(() => {
+              refetch()
+            })
+          }
+        }
+      }
+
+      // Detect same-column reorders (item order within a column changed)
+      for (const newCol of newCols) {
+        const colDef = board?.columns.find((c) => c.column_id === newCol.id)
+        const targetStateId = colDef?.state_ids[0]
+        if (!targetStateId) continue
+
+        const prevCol = prev.find((c) => c.id === newCol.id)
+        if (!prevCol) continue
+
+        const prevIds = prevCol.items.map((i) => i.id)
+        const newIds = newCol.items.map((i) => i.id)
+
+        // Same set of items but different order = reorder
+        if (
+          prevIds.length === newIds.length &&
+          prevIds.some((id, idx) => newIds[idx] !== id) &&
+          new Set(prevIds).size === new Set(newIds).size &&
+          prevIds.every((id) => newIds.includes(id))
+        ) {
+          // Find the card whose index changed (the dragged card)
+          const movedCardId = newIds.find((id, newIdx) => {
+            const oldIdx = prevIds.indexOf(id)
+            return oldIdx !== newIdx
+          })
+
+          if (movedCardId) {
+            const cardIndex = newIds.indexOf(movedCardId)
+            const before = cardIndex > 0 ? newCol.items[cardIndex - 1].cardRow.sort_order : undefined
+            const after = cardIndex < newCol.items.length - 1 ? newCol.items[cardIndex + 1].cardRow.sort_order : undefined
+            const sort_order = generateSortOrder(before, after)
+
+            fetch(`/api/cards/${movedCardId}/move`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ state_id: targetStateId, moved_by: "human", sort_order }),
             }).catch(() => {
               refetch()
             })
