@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { BoardWithColumns, CardRow } from '@/types/project'
 
 export interface BoardData {
@@ -57,10 +57,13 @@ export function useBoardData(boardId: string): BoardData {
   const [cards, setCards] = useState<CardRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const hasLoaded = useRef(false)
 
   const fetchData = useCallback(async () => {
     if (!boardId) return
-    setLoading(true)
+    if (!hasLoaded.current) {
+      setLoading(true)
+    }
     setError(null)
 
     try {
@@ -81,6 +84,7 @@ export function useBoardData(boardId: string): BoardData {
 
       setBoard(boardData)
       setCards(assignCodes(cardsData.data ?? [], boardData.name))
+      hasLoaded.current = true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load board data')
     } finally {
@@ -89,6 +93,7 @@ export function useBoardData(boardId: string): BoardData {
   }, [boardId])
 
   useEffect(() => {
+    hasLoaded.current = false
     fetchData()
   }, [fetchData])
 
