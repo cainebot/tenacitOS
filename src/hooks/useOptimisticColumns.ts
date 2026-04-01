@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useMemo, useState, useEffect } from 'react'
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react'
 import type { KanbanBoardColumn } from '@/components/application/kanban-board'
 
 // ---------------------------------------------------------------------------
@@ -11,7 +11,7 @@ interface PendingMutation {
   cardId: string
   fromColumnId: string
   toColumnId: string
-  targetIndex: number
+  sortOrder: string
   timestamp: number
   timerId: ReturnType<typeof setTimeout>
 }
@@ -22,8 +22,10 @@ interface UseOptimisticColumnsReturn<T extends { id: string }> {
     cardId: string,
     fromColumnId: string,
     toColumnId: string,
-    newColumns: KanbanBoardColumn<T>[],
+    sortOrder: string,
   ) => void
+  revertOptimisticMove: (cardId: string) => void
+  getEffectiveSortOrder: (cardId: string, fallback: string) => string
   pendingMutations: Map<string, PendingMutation>
 }
 
@@ -31,86 +33,96 @@ interface UseOptimisticColumnsReturn<T extends { id: string }> {
 // Hook
 // ---------------------------------------------------------------------------
 
+const SAFETY_TIMEOUT_MS = 8000
+
 export function useOptimisticColumns<T extends { id: string }>(
   liveColumns: KanbanBoardColumn<T>[],
+  getSortOrder: (item: T) => string,
 ): UseOptimisticColumnsReturn<T> {
-  // Pending mutations stored in a ref to avoid Map identity issues with state.
-  // A version counter is the sole trigger for useMemo recalculation.
   const pendingRef = useRef<Map<string, PendingMutation>>(new Map())
+  const optimisticSortOrdersRef = useRef<Map<string, string>>(new Map())
   const [version, setVersion] = useState(0)
 
-  // Snapshot of columns immediately after the last drag (used for the first
-  // render after a move so the exact DnD-produced layout is shown).
-  const optimisticSnapshotRef = useRef<KanbanBoardColumn<T>[] | null>(null)
-
   // --------------------------------------------------
-  // applyOptimisticMove
+  // applyOptimisticMove — records a pending mutation with its sort_order
   // --------------------------------------------------
-  const applyOptimisticMove = (
+  const applyOptimisticMove = useCallback((
     cardId: string,
     fromColumnId: string,
     toColumnId: string,
-    newColumns: KanbanBoardColumn<T>[],
+    sortOrder: string,
   ) => {
-    // Clear any existing safety timer for this card (re-drag scenario)
     const existing = pendingRef.current.get(cardId)
     if (existing) clearTimeout(existing.timerId)
 
-    // Safety timeout: if the mutation is still pending after 5s, drop it
     const timerId = setTimeout(() => {
       if (pendingRef.current.has(cardId)) {
         pendingRef.current.delete(cardId)
-        optimisticSnapshotRef.current = null
+        optimisticSortOrdersRef.current.delete(cardId)
         setVersion((v) => v + 1)
       }
-    }, 5000)
-
-    // Compute the card's target index in the destination column from newColumns
-    const targetCol = newColumns.find((c) => c.id === toColumnId)
-    const targetIndex = targetCol ? targetCol.items.findIndex((i) => i.id === cardId) : -1
+    }, SAFETY_TIMEOUT_MS)
 
     pendingRef.current.set(cardId, {
       cardId,
       fromColumnId,
       toColumnId,
-      targetIndex,
+      sortOrder,
       timestamp: Date.now(),
       timerId,
     })
 
-    optimisticSnapshotRef.current = newColumns
+    optimisticSortOrdersRef.current.set(cardId, sortOrder)
     setVersion((v) => v + 1)
-  }
+  }, [])
 
   // --------------------------------------------------
-  // effectiveColumns — merges pending mutations over liveColumns
+  // revertOptimisticMove — immediately removes optimistic state on error
+  // --------------------------------------------------
+  const revertOptimisticMove = useCallback((cardId: string) => {
+    const mutation = pendingRef.current.get(cardId)
+    if (mutation) clearTimeout(mutation.timerId)
+    pendingRef.current.delete(cardId)
+    optimisticSortOrdersRef.current.delete(cardId)
+    setVersion((v) => v + 1)
+  }, [])
+
+  // --------------------------------------------------
+  // getEffectiveSortOrder — returns optimistic sort_order or fallback
+  // Used by the page to calculate correct neighbor values for rapid reorders
+  // --------------------------------------------------
+  const getEffectiveSortOrder = useCallback((cardId: string, fallback: string): string => {
+    return optimisticSortOrdersRef.current.get(cardId) ?? fallback
+  }, [])
+
+  // --------------------------------------------------
+  // effectiveColumns — merges pending mutations over liveColumns using sort_order
   // --------------------------------------------------
   const effectiveColumns = useMemo((): KanbanBoardColumn<T>[] => {
     const pending = pendingRef.current
+    const sortOverrides = optimisticSortOrdersRef.current
 
     // Fast path: no pending mutations
     if (pending.size === 0) {
       return liveColumns
     }
 
-    // Check each pending mutation: confirm when liveColumns reflects the expected state.
-    // - Cross-column moves: confirmed when the card EXISTS in the target column (presence is sufficient)
-    // - Same-column reorders: confirmed when the card is at the expected targetIndex
-    //   (the card is always present in the same column, so existence check would false-confirm)
+    // Confirm mutations whose sort_order now matches the live data
     const confirmedKeys: string[] = []
     for (const [key, mutation] of pending) {
       const targetCol = liveColumns.find((c) => c.id === mutation.toColumnId)
       if (!targetCol) continue
 
+      const liveCard = targetCol.items.find((item) => item.id === mutation.cardId)
+
       if (mutation.fromColumnId === mutation.toColumnId) {
-        // Same-column reorder: confirm only when card is at the expected position
-        const cardIndex = targetCol.items.findIndex((item) => item.id === mutation.cardId)
-        if (cardIndex === mutation.targetIndex) {
+        // Same-column reorder: confirm when live sort_order matches optimistic
+        if (liveCard && getSortOrder(liveCard) === mutation.sortOrder) {
           confirmedKeys.push(key)
         }
       } else {
-        // Cross-column move: confirm when card exists in target column
-        if (targetCol.items.some((item) => item.id === mutation.cardId)) {
+        // Cross-column move: confirm when card exists in target column AND sort_order matches
+        if (liveCard && getSortOrder(liveCard) === mutation.sortOrder) {
           confirmedKeys.push(key)
         }
       }
@@ -120,19 +132,12 @@ export function useOptimisticColumns<T extends { id: string }>(
       const m = pending.get(key)
       if (m) clearTimeout(m.timerId)
       pending.delete(key)
+      sortOverrides.delete(key)
     }
 
     // After confirmations, if nothing remains, return liveColumns directly
     if (pending.size === 0) {
-      optimisticSnapshotRef.current = null
       return liveColumns
-    }
-
-    // If we still have an optimistic snapshot from the most recent drag,
-    // use it as the immediate rendered layout. This prevents any visual
-    // difference between the DnD drop position and what React renders.
-    if (optimisticSnapshotRef.current) {
-      return optimisticSnapshotRef.current
     }
 
     // Merge: start from liveColumns, move cards according to pending mutations
@@ -142,7 +147,9 @@ export function useOptimisticColumns<T extends { id: string }>(
     }))
 
     for (const [, mutation] of pending) {
-      // Find and remove the card from wherever it currently sits
+      if (mutation.fromColumnId === mutation.toColumnId) continue
+
+      // Cross-column move: find and relocate the card
       let card: T | undefined
       for (const col of merged) {
         const idx = col.items.findIndex((i) => i.id === mutation.cardId)
@@ -157,22 +164,31 @@ export function useOptimisticColumns<T extends { id: string }>(
         const m = pending.get(mutation.cardId)
         if (m) clearTimeout(m.timerId)
         pending.delete(mutation.cardId)
+        sortOverrides.delete(mutation.cardId)
         continue
       }
 
-      // Insert into the target column at the recorded drop position
+      // Insert into the target column (position determined by sort below)
       const targetCol = merged.find((c) => c.id === mutation.toColumnId)
       if (targetCol) {
-        const insertAt = mutation.targetIndex >= 0
-          ? Math.min(mutation.targetIndex, targetCol.items.length)
-          : targetCol.items.length
-        targetCol.items.splice(insertAt, 0, card)
+        targetCol.items.push(card)
       }
+    }
+
+    // Sort each column by sort_order, applying optimistic overrides
+    for (const col of merged) {
+      col.items.sort((a, b) => {
+        const aSort = sortOverrides.get(a.id) ?? getSortOrder(a)
+        const bSort = sortOverrides.get(b.id) ?? getSortOrder(b)
+        if (aSort < bSort) return -1
+        if (aSort > bSort) return 1
+        return 0
+      })
     }
 
     return merged
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveColumns, version])
+  }, [liveColumns, version, getSortOrder])
 
   // --------------------------------------------------
   // Cleanup: clear all safety timers on unmount
@@ -183,12 +199,15 @@ export function useOptimisticColumns<T extends { id: string }>(
         clearTimeout(mutation.timerId)
       }
       pendingRef.current.clear()
+      optimisticSortOrdersRef.current.clear()
     }
   }, [])
 
   return {
     effectiveColumns,
     applyOptimisticMove,
+    revertOptimisticMove,
+    getEffectiveSortOrder,
     pendingMutations: pendingRef.current,
   }
 }

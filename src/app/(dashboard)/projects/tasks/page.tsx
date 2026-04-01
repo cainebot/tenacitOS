@@ -176,8 +176,11 @@ export default function TasksPage() {
     }))
   }, [board, filteredCards, agents, projectStates])
 
-  // Optimistic columns for DnD — mutation-tracking hook replaces fixed-timer pattern
-  const { effectiveColumns, applyOptimisticMove } = useOptimisticColumns(liveColumns)
+  // Optimistic columns for DnD — sort_order-based tracking ensures stable reorder persistence
+  const { effectiveColumns, applyOptimisticMove, revertOptimisticMove, getEffectiveSortOrder } = useOptimisticColumns(
+    liveColumns,
+    (item) => item.cardRow.sort_order,
+  )
 
   // Ref to track current effectiveColumns for handleColumnsChange comparison
   const effectiveColumnsRef = useRef(effectiveColumns)
@@ -242,18 +245,21 @@ export default function TasksPage() {
         for (const item of newCol.items) {
           const wasInCol = prev.find((pc) => pc.items.some((i) => i.id === item.id))
           if (wasInCol && wasInCol.id !== newCol.id) {
-            // Cross-column move: calculate sort_order from new neighbors
+            // Cross-column move: calculate sort_order from new neighbors (using effective values for rapid moves)
             const cardIndex = newCol.items.findIndex((i) => i.id === item.id)
-            const before = cardIndex > 0 ? newCol.items[cardIndex - 1].cardRow.sort_order : undefined
-            const after = cardIndex < newCol.items.length - 1 ? newCol.items[cardIndex + 1].cardRow.sort_order : undefined
+            const beforeItem = cardIndex > 0 ? newCol.items[cardIndex - 1] : null
+            const afterItem = cardIndex < newCol.items.length - 1 ? newCol.items[cardIndex + 1] : null
+            const before = beforeItem ? getEffectiveSortOrder(beforeItem.id, beforeItem.cardRow.sort_order) : undefined
+            const after = afterItem ? getEffectiveSortOrder(afterItem.id, afterItem.cardRow.sort_order) : undefined
             const sort_order = generateSortOrder(before, after)
 
-            applyOptimisticMove(item.id, wasInCol.id, newCol.id, newCols)
+            applyOptimisticMove(item.id, wasInCol.id, newCol.id, sort_order)
             fetch(`/api/cards/${item.id}/move`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ state_id: targetStateId, moved_by: "human", sort_order }),
             }).catch(() => {
+              revertOptimisticMove(item.id)
               refetch()
             })
           }
@@ -287,16 +293,19 @@ export default function TasksPage() {
 
           if (movedCardId) {
             const cardIndex = newIds.indexOf(movedCardId)
-            const before = cardIndex > 0 ? newCol.items[cardIndex - 1].cardRow.sort_order : undefined
-            const after = cardIndex < newCol.items.length - 1 ? newCol.items[cardIndex + 1].cardRow.sort_order : undefined
+            const beforeItem = cardIndex > 0 ? newCol.items[cardIndex - 1] : null
+            const afterItem = cardIndex < newCol.items.length - 1 ? newCol.items[cardIndex + 1] : null
+            const before = beforeItem ? getEffectiveSortOrder(beforeItem.id, beforeItem.cardRow.sort_order) : undefined
+            const after = afterItem ? getEffectiveSortOrder(afterItem.id, afterItem.cardRow.sort_order) : undefined
             const sort_order = generateSortOrder(before, after)
 
-            applyOptimisticMove(movedCardId, newCol.id, newCol.id, newCols)
+            applyOptimisticMove(movedCardId, newCol.id, newCol.id, sort_order)
             fetch(`/api/cards/${movedCardId}/move`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ state_id: targetStateId, moved_by: "human", sort_order }),
             }).catch(() => {
+              revertOptimisticMove(movedCardId)
               refetch()
             })
           }
@@ -316,7 +325,7 @@ export default function TasksPage() {
         })
       }
     },
-    [board, boardId, refetch, applyOptimisticMove],
+    [board, boardId, refetch, applyOptimisticMove, revertOptimisticMove, getEffectiveSortOrder],
   )
 
   // Task detail panel state
