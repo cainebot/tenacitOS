@@ -9,6 +9,7 @@ import type { KanbanBoardColumn } from '@/components/application/kanban-board'
 
 interface PendingMutation {
   cardId: string
+  fromColumnId: string
   toColumnId: string
   targetIndex: number
   timestamp: number
@@ -47,7 +48,7 @@ export function useOptimisticColumns<T extends { id: string }>(
   // --------------------------------------------------
   const applyOptimisticMove = (
     cardId: string,
-    _fromColumnId: string,
+    fromColumnId: string,
     toColumnId: string,
     newColumns: KanbanBoardColumn<T>[],
   ) => {
@@ -70,6 +71,7 @@ export function useOptimisticColumns<T extends { id: string }>(
 
     pendingRef.current.set(cardId, {
       cardId,
+      fromColumnId,
       toColumnId,
       targetIndex,
       timestamp: Date.now(),
@@ -91,13 +93,26 @@ export function useOptimisticColumns<T extends { id: string }>(
       return liveColumns
     }
 
-    // Check each pending mutation: if liveColumns already has the card in the
-    // expected column, that mutation is confirmed — remove it.
+    // Check each pending mutation: confirm when liveColumns reflects the expected state.
+    // - Cross-column moves: confirmed when the card EXISTS in the target column (presence is sufficient)
+    // - Same-column reorders: confirmed when the card is at the expected targetIndex
+    //   (the card is always present in the same column, so existence check would false-confirm)
     const confirmedKeys: string[] = []
     for (const [key, mutation] of pending) {
       const targetCol = liveColumns.find((c) => c.id === mutation.toColumnId)
-      if (targetCol && targetCol.items.some((item) => item.id === mutation.cardId)) {
-        confirmedKeys.push(key)
+      if (!targetCol) continue
+
+      if (mutation.fromColumnId === mutation.toColumnId) {
+        // Same-column reorder: confirm only when card is at the expected position
+        const cardIndex = targetCol.items.findIndex((item) => item.id === mutation.cardId)
+        if (cardIndex === mutation.targetIndex) {
+          confirmedKeys.push(key)
+        }
+      } else {
+        // Cross-column move: confirm when card exists in target column
+        if (targetCol.items.some((item) => item.id === mutation.cardId)) {
+          confirmedKeys.push(key)
+        }
       }
     }
 
