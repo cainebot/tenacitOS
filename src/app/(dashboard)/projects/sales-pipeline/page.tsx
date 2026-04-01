@@ -21,9 +21,9 @@ import type { DateValue } from "react-aria-components"
 import { useBoardData } from "@/hooks/useBoardData"
 import { useCardDetail } from "@/hooks/useCardDetail"
 import { useRealtimeCards } from "@/hooks/useRealtimeCards"
-import { useOptimisticColumns } from "@/hooks/useOptimisticColumns"
+import { useBoardStore, type BoardColumn } from "@/stores/board-store"
 import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, stateCategoryToTaskStatus } from "@/lib/adapters"
-import { generateSortOrder } from "@/lib/sort-order"
+import { sortKeyBetween } from "@/lib/fractional-index"
 import { parseDate } from "@internationalized/date"
 import type { CardRow, BoardRow, ProjectStateRow } from "@/types/project"
 import type { AgentRow } from "@/types/supabase"
@@ -106,13 +106,6 @@ export default function SalesPipelinePage() {
   // Project avatars — empty fallback (project members not available from useBoardData)
   const projectAvatars: { src: string; alt: string }[] = []
 
-  // Derived labels from all cards
-  const allLabels = useMemo<KanbanCardTag[]>(() => {
-    const labelSet = new Set<string>()
-    cards.forEach((c) => c.labels.forEach((l) => labelSet.add(l)))
-    return Array.from(labelSet).map(labelToTag)
-  }, [cards])
-
   // UI state — declared here so filteredCards can reference them
   const [filters, setFilters] = useState<FilterRow[]>([])
   const [search, setSearch] = useState("")
@@ -130,9 +123,38 @@ export default function SalesPipelinePage() {
     [agents],
   )
 
-  // Client-side search + DynamicFilter
+  // Zustand store selectors
+  const storeLoadBoard = useBoardStore(s => s.loadBoard)
+  const storeColumns = useBoardStore(s => s.columns)
+  const storeMoveCard = useBoardStore(s => s.moveCard)
+
+  // Seed the store whenever board/cards data changes
+  useEffect(() => {
+    if (!board || !boardId) return
+    const columns: BoardColumn[] = board.columns.map(col => ({
+      columnId: col.column_id,
+      title: col.name,
+      stateId: col.state_ids[0] ?? '',
+      items: cards
+        .filter(c => col.state_ids.includes(c.state_id))
+        .sort((a, b) => (a.sort_order < b.sort_order ? -1 : 1)),
+    }))
+    storeLoadBoard(boardId, columns)
+  }, [board, boardId, cards, storeLoadBoard])
+
+  // Derived labels from store columns
+  const allLabels = useMemo<KanbanCardTag[]>(() => {
+    const labelSet = new Set<string>()
+    storeColumns.forEach(col => col.items.forEach(c => c.labels.forEach(l => labelSet.add(l))))
+    return Array.from(labelSet).map(labelToTag)
+  }, [storeColumns])
+
+  // Flatten all cards from store columns for filter/search
+  const allCards = useMemo(() => storeColumns.flatMap(col => col.items), [storeColumns])
+
+  // Client-side search + DynamicFilter (used only to derive filteredCards for display)
   const filteredCards = useMemo(() => {
-    let result = cards
+    let result = allCards
     if (search) {
       const term = search.toLowerCase()
       result = result.filter(
@@ -151,18 +173,29 @@ export default function SalesPipelinePage() {
       }
     }
     return result
-  }, [cards, search, filters])
+  }, [allCards, search, filters])
 
-  // Build live columns from BoardWithColumns + filteredCards
-  const liveColumns = useMemo((): KanbanBoardColumn<LiveCardData>[] => {
+  // Derive KanbanBoardColumn<LiveCardData> from store columns (already optimistic)
+  const effectiveColumns = useMemo((): KanbanBoardColumn<LiveCardData>[] => {
     if (!board) return []
-    return board.columns.map((col) => ({
-      id: col.column_id,
-      title: col.name,
-      items: filteredCards
-        .filter((c) => col.state_ids.includes(c.state_id))
-        .sort((a, b) => (a.sort_order > b.sort_order ? 1 : -1))
-        .map((c) => {
+    return storeColumns.map(col => ({
+      id: col.columnId,
+      title: col.title,
+      items: col.items
+        .filter(c => {
+          // Apply search + filter
+          if (search) {
+            const term = search.toLowerCase()
+            if (!c.title.toLowerCase().includes(term) && !(c.code ?? '').toLowerCase().includes(term)) return false
+          }
+          for (const filter of filters) {
+            if (!filter.value) continue
+            if (filter.fieldType === 'priority' && c.priority !== filter.value) return false
+            if (filter.fieldType === 'member' && c.assigned_agent_id !== filter.value) return false
+          }
+          return true
+        })
+        .map(c => {
           const props = cardRowToKanbanCardProps(c, agents, undefined, projectStates)
           return {
             id: c.card_id,
@@ -174,13 +207,7 @@ export default function SalesPipelinePage() {
           }
         }),
     }))
-  }, [board, filteredCards, agents, projectStates])
-
-  // Optimistic columns for DnD — sort_order-based tracking ensures stable reorder persistence
-  const { effectiveColumns, applyOptimisticMove, revertOptimisticMove, getEffectiveSortOrder } = useOptimisticColumns(
-    liveColumns,
-    (item) => item.cardRow.sort_order,
-  )
+  }, [board, storeColumns, agents, projectStates, search, filters])
 
   // Ref to track current effectiveColumns for handleColumnsChange comparison
   const effectiveColumnsRef = useRef(effectiveColumns)
@@ -200,8 +227,8 @@ export default function SalesPipelinePage() {
       const colItems = col?.items ?? []
       const lastItem = colItems[colItems.length - 1]
       const sort_order = lastItem
-        ? generateSortOrder(lastItem.cardRow.sort_order, undefined)
-        : generateSortOrder()
+        ? sortKeyBetween(lastItem.cardRow.sort_order, null)
+        : sortKeyBetween(null, null)
 
       await fetch("/api/cards", {
         method: "POST",
@@ -245,22 +272,21 @@ export default function SalesPipelinePage() {
         for (const item of newCol.items) {
           const wasInCol = prev.find((pc) => pc.items.some((i) => i.id === item.id))
           if (wasInCol && wasInCol.id !== newCol.id) {
-            // Cross-column move: calculate sort_order from new neighbors (using effective values for rapid moves)
+            // Cross-column move: calculate sort_order from new neighbors
             const cardIndex = newCol.items.findIndex((i) => i.id === item.id)
             const beforeItem = cardIndex > 0 ? newCol.items[cardIndex - 1] : null
             const afterItem = cardIndex < newCol.items.length - 1 ? newCol.items[cardIndex + 1] : null
-            const before = beforeItem ? getEffectiveSortOrder(beforeItem.id, beforeItem.cardRow.sort_order) : undefined
-            const after = afterItem ? getEffectiveSortOrder(afterItem.id, afterItem.cardRow.sort_order) : undefined
-            const sort_order = generateSortOrder(before, after)
+            const sortOrder = sortKeyBetween(
+              beforeItem ? beforeItem.cardRow.sort_order : null,
+              afterItem ? afterItem.cardRow.sort_order : null,
+            )
 
-            applyOptimisticMove(item.id, wasInCol.id, newCol.id, sort_order)
-            fetch(`/api/cards/${item.id}/move`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ state_id: targetStateId, moved_by: "human", sort_order }),
-            }).catch(() => {
-              revertOptimisticMove(item.id)
-              refetch()
+            storeMoveCard({
+              cardId: item.id,
+              fromColumnId: wasInCol.id,
+              toColumnId: newCol.id,
+              stateId: targetStateId,
+              sortOrder,
             })
           }
         }
@@ -295,18 +321,17 @@ export default function SalesPipelinePage() {
             const cardIndex = newIds.indexOf(movedCardId)
             const beforeItem = cardIndex > 0 ? newCol.items[cardIndex - 1] : null
             const afterItem = cardIndex < newCol.items.length - 1 ? newCol.items[cardIndex + 1] : null
-            const before = beforeItem ? getEffectiveSortOrder(beforeItem.id, beforeItem.cardRow.sort_order) : undefined
-            const after = afterItem ? getEffectiveSortOrder(afterItem.id, afterItem.cardRow.sort_order) : undefined
-            const sort_order = generateSortOrder(before, after)
+            const sortOrder = sortKeyBetween(
+              beforeItem ? beforeItem.cardRow.sort_order : null,
+              afterItem ? afterItem.cardRow.sort_order : null,
+            )
 
-            applyOptimisticMove(movedCardId, newCol.id, newCol.id, sort_order)
-            fetch(`/api/cards/${movedCardId}/move`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ state_id: targetStateId, moved_by: "human", sort_order }),
-            }).catch(() => {
-              revertOptimisticMove(movedCardId)
-              refetch()
+            storeMoveCard({
+              cardId: movedCardId,
+              fromColumnId: newCol.id,
+              toColumnId: newCol.id,
+              stateId: targetStateId,
+              sortOrder,
             })
           }
         }
@@ -325,7 +350,7 @@ export default function SalesPipelinePage() {
         })
       }
     },
-    [board, boardId, refetch, applyOptimisticMove, revertOptimisticMove, getEffectiveSortOrder],
+    [board, boardId, refetch, storeMoveCard],
   )
 
   // Task detail panel state
