@@ -173,7 +173,7 @@ export default function AgentsPage() {
         /* Filtered — no results */
         <div className="flex flex-col items-center justify-center gap-4 py-16">
           <p className="text-[14px] text-tertiary">No agents match your filters.</p>
-          <Button color="tertiary" size="sm" onPress={handleClearAll}>
+          <Button color="tertiary" size="sm" onClick={handleClearAll}>
             Clear all
           </Button>
         </div>
