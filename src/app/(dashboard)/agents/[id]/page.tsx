@@ -6,6 +6,7 @@ import { Button, FeaturedIcon, Tabs, TabList, Tab, TabPanel } from '@circos/ui'
 import { AlertCircle, SearchMd } from '@untitledui/icons'
 import { useAgent } from '@/hooks/use-agent'
 import { AgentDetailSummaryBar } from '@/components/application/agent-detail-summary-bar'
+import { AgentSkillsTab } from '@/components/application/agent-skills-tab'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -110,7 +111,7 @@ export default function AgentDetailPage({ params }: PageProps) {
           </TabPanel>
 
           <TabPanel id="skills" className="pt-6">
-            <div className="py-4 text-tertiary text-sm">Skills tab content</div>
+            <AgentSkillsTab agentId={id} />
           </TabPanel>
 
           <TabPanel id="activity" className="pt-6">
