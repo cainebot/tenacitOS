@@ -23,6 +23,7 @@ import {
 } from "@circos/ui";
 import { AgentBoardProvider, useAgentBoard } from "@/contexts/agent-board-context";
 import { AnimatedSidebar } from "@/components/application/animated-sidebar";
+import { DevPerfProfiler } from "@/components/dev-perf-profiler";
 import { BotIcon } from "@/components/icons/bot-icon";
 import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
 import { PROJECT_COVER_COLORS, PROJECT_COVER_ICONS, type ProjectCoverColorId, type ProjectCoverIcon } from "@/components/application/project-cover/project-cover";
@@ -122,6 +123,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <main className="flex flex-1 flex-col items-start self-stretch gap-8 overflow-auto py-8 pb-12">
         {children}
       </main>
+
+      <DevPerfProfiler />
     </div>
   );
 }
