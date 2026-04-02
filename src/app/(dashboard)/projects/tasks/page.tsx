@@ -61,15 +61,32 @@ export default function TasksPage() {
   }, [])
 
   // Live board data
-  const { board, cards, loading, refetch } = useBoardData(boardId)
+  const { board, cards, maxSyncId, loading, refetch } = useBoardData(boardId)
 
   // Realtime: store-aware sync — UPDATE patches in-memory, INSERT/DELETE triggers refetch
   // (Phase 73: kept for non-positional metadata patches; position driven by sync engine below)
   useStoreSyncRealtime(boardId, refetch)
 
+  // Derive serverColumns from board+cards for sync engine seeding (D-08)
+  // Must be a stable useMemo — not derived inside useEffect — so the sync engine
+  // receives the right columns + maxSyncId in the same render cycle they arrive.
+  const serverColumns = useMemo((): BoardColumn[] | undefined => {
+    if (!board) return undefined
+    return board.columns.map(col => ({
+      columnId: col.column_id,
+      title: col.name,
+      stateId: col.state_ids[0] ?? '',
+      items: cards
+        .filter(c => col.state_ids.includes(c.state_id))
+        .sort((a, b) => (a.sort_order < b.sort_order ? -1 : 1)),
+    }))
+  }, [board, cards])
+
   // Phase 73: Sync engine — causal event stream for board position correctness
   const syncEngine = useBoardSyncEngine({
     boardId,
+    serverColumns,
+    maxSyncId,
     onRefetch: refetch,
   })
 
