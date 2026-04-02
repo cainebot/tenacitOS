@@ -195,8 +195,8 @@ export class SyncEngine {
     }
 
     this.pending.push(m)
-    await saveMutation(m)
     this.emitColumns()
+    await saveMutation(m)
     return m
   }
 
@@ -275,11 +275,13 @@ export class SyncEngine {
     this.lastAppliedSyncId = Math.max(this.lastAppliedSyncId, event.syncId)
 
     // Ack local mutation if this event corresponds to one of ours
+    let ownAcked = false
     if (event.originClientId === this.clientId && event.originMutationId) {
       const m = this.pending.find(
         x => x.clientMutationId === event.originMutationId,
       )
       if (m) {
+        ownAcked = true
         m.status = 'acked'
         m.acceptedSyncId = event.syncId
         await deleteMutation(m.clientMutationId)
@@ -295,8 +297,11 @@ export class SyncEngine {
     // Persist updated snapshot + watermark
     await saveSnapshot(this.boardId, this.snapshot, this.lastAppliedSyncId)
 
-    // Emit rebased columns to React
-    this.emitColumns()
+    // Emit rebased columns to React — skip if we just acked our own mutation
+    // because the optimistic state already reflects this change
+    if (!ownAcked) {
+      this.emitColumns()
+    }
   }
 
   /**
