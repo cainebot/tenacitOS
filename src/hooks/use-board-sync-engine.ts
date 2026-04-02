@@ -27,6 +27,8 @@ export interface UseBoardSyncEngineOptions {
   boardId: string
   /** Provide when server data is available so the engine can seed from it */
   serverColumns?: BoardColumn[]
+  /** Max sync_id from the server at load time — passed to seedFromServer to avoid false gap detection on reconnect (D-08) */
+  maxSyncId?: number
   /** Called by the engine when a catch-up fetch is needed */
   onRefetch?: () => Promise<void>
 }
@@ -66,7 +68,7 @@ export interface BoardSyncEngineHandle {
 export function useBoardSyncEngine(
   options: UseBoardSyncEngineOptions,
 ): BoardSyncEngineHandle {
-  const { boardId, serverColumns, onRefetch } = options
+  const { boardId, serverColumns, maxSyncId, onRefetch } = options
 
   const setStoreColumns = useBoardStore(s => s.setSyncColumns)
   const setSyncId = useSyncStore(s => s.setSyncId)
@@ -224,8 +226,8 @@ export function useBoardSyncEngine(
   useEffect(() => {
     const engine = engineRef.current
     if (!engine || !serverColumns || serverColumns.length === 0) return
-    engine.seedFromServer(serverColumns, 0)
-  }, [serverColumns])
+    engine.seedFromServer(serverColumns, maxSyncId ?? 0)
+  }, [serverColumns, maxSyncId])
 
   // ---- Move mutation (replaces store.moveCard for sync-engine path) -------
 
