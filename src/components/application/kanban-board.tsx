@@ -256,6 +256,32 @@ export function KanbanBoard<T extends KanbanColumnItem>({
             }
           }
         }
+
+        // Fallback: when over target is a column droppable and card is in that column,
+        // use pointer Y position to determine insertion position
+        if (overData?.type === "column" && overData.columnId) {
+          const targetColumnId = overData.columnId as string
+          const col = finalColumns.find((c) => c.id === targetColumnId)
+          if (col && col.items.some((i) => i.id === activeCardId)) {
+            // Card is already in this column — check if position changed based on pointer
+            const pointerY = event.activatorEvent instanceof PointerEvent ? event.activatorEvent.clientY : null
+            const overRect = over.rect
+            if (pointerY !== null && overRect) {
+              const relativeY = pointerY - overRect.top
+              const slotHeight = overRect.height / Math.max(col.items.length, 1)
+              const targetIndex = Math.min(
+                Math.floor(relativeY / slotHeight),
+                col.items.length - 1,
+              )
+              const oldIndex = col.items.findIndex((i) => i.id === activeCardId)
+              if (oldIndex !== -1 && targetIndex !== oldIndex) {
+                finalColumns = finalColumns.map((c) =>
+                  c.id === col.id ? { ...c, items: arrayMove(c.items, oldIndex, targetIndex) } : c,
+                )
+              }
+            }
+          }
+        }
       }
       onColumnsChange?.(finalColumns, { activeCardId: String(active.id) })
     }
@@ -301,10 +327,11 @@ export function KanbanBoard<T extends KanbanColumnItem>({
     }
 
     // For cards: use closestCorners (stable across column boundaries)
-    // Exclude column sortable IDs to prevent card↔column interference
-    const cardContainers = args.droppableContainers.filter((c) =>
-      !columnIds.includes(String(c.id)),
-    )
+    // Exclude column sortable IDs and droppable-* zone IDs to prevent card↔column interference
+    const cardContainers = args.droppableContainers.filter((c) => {
+      const id = String(c.id)
+      return !columnIds.includes(id) && !id.startsWith('droppable-')
+    })
     return closestCorners({ ...args, droppableContainers: cardContainers })
   }, [dragType, columnIds])
 
@@ -339,10 +366,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
           ))}
         </SortableContext>
 
-        <DragOverlay dropAnimation={{
-          duration: 200,
-          easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
-        }}>
+        <DragOverlay dropAnimation={null}>
           {activeCard ? (
             <div className="rotate-[1deg] scale-[1.02] shadow-lg">
               {(renderDragOverlay ?? renderCard)(activeCard)}
