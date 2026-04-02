@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCard, updateCard, deleteCard } from '@/lib/cards'
-import type { Priority, CardType } from '@/types/workflow'
+import type { Priority, CardType } from '@/types/project'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -89,6 +89,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(card)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
+    if (msg.includes('validate_card_hierarchy')) {
+      return NextResponse.json(
+        {
+          message:
+            'Card hierarchy violation: check that parent card type is compatible with this card_type',
+          details: msg,
+        },
+        { status: 400 }
+      )
+    }
     if (
       (err as { code?: string })?.code === 'PGRST116' ||
       msg.includes('PGRST116')

@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     )
   }
-  const validCardTypes: CardType[] = ['epic', 'story', 'task', 'subtask', 'bug']
+  const validCardTypes: CardType[] = ['epic', 'story', 'task', 'subtask', 'bug', 'spike', 'research']
   if (!card_type || !validCardTypes.includes(card_type as CardType)) {
     return NextResponse.json(
       {

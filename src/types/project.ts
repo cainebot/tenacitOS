@@ -8,7 +8,7 @@
 
 export type StateCategory = 'to-do' | 'in_progress' | 'done'
 
-export type CardType = 'epic' | 'story' | 'task' | 'subtask' | 'bug'
+export type CardType = 'epic' | 'story' | 'task' | 'subtask' | 'bug' | 'spike' | 'research'
 
 export type Priority = 'low' | 'medium' | 'high' | 'critical'
 
