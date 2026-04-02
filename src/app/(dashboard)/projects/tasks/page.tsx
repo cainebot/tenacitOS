@@ -567,13 +567,28 @@ export default function TasksPage() {
   }, [statusToStateId, detailMoveCard])
 
   // Toggle complete: move to done or first to-do state
+  // D-06: Route through sync engine — single source of truth for all card moves
   const handleToggleComplete = useCallback(() => {
     if (!detailCard) return
     const currentState = projectStates.find(s => s.state_id === detailCard.state_id)
     const isDone = currentState?.category === 'done'
     const targetStateId = isDone ? todoStateId : doneStateId
-    if (targetStateId) detailMoveCard(targetStateId)
-  }, [detailCard, projectStates, todoStateId, doneStateId, detailMoveCard])
+    if (!targetStateId) return
+
+    // D-07: Compute sort_order — append to bottom of target column
+    // Use storeColumns (optimistic state) not cards (server state) — RESEARCH Pitfall 5
+    const targetCol = storeColumns.find(col => col.stateId === targetStateId)
+    const items = targetCol?.items ?? []
+    const lastItem = items[items.length - 1]
+    const sortOrder = sortKeyBetween(lastItem?.sort_order ?? null, null)
+
+    syncEngine.moveSyncCard({
+      cardId: detailCard.card_id,
+      toStateId: targetStateId,
+      sortOrder,
+      boardId,
+    })
+  }, [detailCard, projectStates, todoStateId, doneStateId, storeColumns, syncEngine, boardId])
 
   // Title change
   const handlePanelTitleChange = useCallback((title: string) => {
