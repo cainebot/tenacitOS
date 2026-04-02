@@ -252,6 +252,18 @@ export default function TasksPage() {
     effectiveColumnsRef.current = effectiveColumns
   }, [effectiveColumns])
 
+  // Refs for values used inside renderCard — accessed via ref to prevent useCallback
+  // invalidation when these change during drag (which triggers storeColumns updates).
+  // Without refs, renderCard identity changes on every dragOver → KanbanColumn memo invalidated.
+  const storeColumnsRef = useRef(storeColumns)
+  useEffect(() => { storeColumnsRef.current = storeColumns }, [storeColumns])
+
+  const syncEngineRef = useRef(syncEngine)
+  useEffect(() => { syncEngineRef.current = syncEngine }, [syncEngine])
+
+  const boardIdRef = useRef(boardId)
+  useEffect(() => { boardIdRef.current = boardId }, [boardId])
+
   // ---------------------------------------------------------------------------
   // Inline card creation
   // ---------------------------------------------------------------------------
@@ -389,12 +401,13 @@ export default function TasksPage() {
   const handleColumnsChange = useCallback(
     async (newCols: KanbanBoardColumn<LiveCardData>[], meta?: { activeCardId?: string }) => {
       const prev = effectiveColumnsRef.current
+      const currentBoardId = boardIdRef.current
 
       // Detect column title changes
       for (const newCol of newCols) {
         const origCol = prev.find((c) => c.id === newCol.id)
         if (origCol && origCol.title !== newCol.title) {
-          fetch(`/api/boards/${boardId}/columns/${newCol.id}`, {
+          fetch(`/api/boards/${currentBoardId}/columns/${newCol.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: newCol.title }),
@@ -421,11 +434,11 @@ export default function TasksPage() {
             )
 
             // Phase 73: route through sync engine for causal ack + rebase
-            syncEngine.moveSyncCard({
+            syncEngineRef.current.moveSyncCard({
               cardId: item.id,
               toStateId: targetStateId,
               sortOrder,
-              boardId,
+              boardId: currentBoardId,
             })
           }
         }
@@ -466,11 +479,11 @@ export default function TasksPage() {
             )
 
             // Phase 73: route through sync engine for causal ack + rebase
-            syncEngine.moveSyncCard({
+            syncEngineRef.current.moveSyncCard({
               cardId: movedCardId,
               toStateId: targetStateId,
               sortOrder,
-              boardId,
+              boardId: currentBoardId,
             })
           }
         }
@@ -480,7 +493,7 @@ export default function TasksPage() {
       const newOrder = newCols.map((c) => c.id)
       const oldOrder = prev.map((c) => c.id)
       if (JSON.stringify(newOrder) !== JSON.stringify(oldOrder)) {
-        fetch(`/api/boards/${boardId}/columns/reorder`, {
+        fetch(`/api/boards/${currentBoardId}/columns/reorder`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ column_ids: newOrder }),
@@ -489,7 +502,7 @@ export default function TasksPage() {
         })
       }
     },
-    [board, boardId, refetch, syncEngine],
+    [board, refetch],
   )
 
   // Task detail panel state
@@ -767,17 +780,17 @@ export default function TasksPage() {
             if (!targetStateId) return
 
             // Compute sort_order — append to bottom of target column
-            // Use storeColumns (optimistic state) not cards (server state) — RESEARCH Pitfall 5
-            const targetCol = storeColumns.find(col => col.stateId === targetStateId)
+            // Use storeColumnsRef (optimistic state via ref) not storeColumns directly — prevents useCallback invalidation during drag
+            const targetCol = storeColumnsRef.current.find(col => col.stateId === targetStateId)
             const colItems = targetCol?.items ?? []
             const lastColItem = colItems[colItems.length - 1]
             const sortOrder = sortKeyBetween(lastColItem?.sort_order ?? null, null)
 
-            syncEngine.moveSyncCard({
+            syncEngineRef.current.moveSyncCard({
               cardId: card.cardId,
               toStateId: targetStateId,
               sortOrder,
-              boardId,
+              boardId: boardIdRef.current,
             })
           }}
           dueDate={card.dueDate}
@@ -789,7 +802,7 @@ export default function TasksPage() {
         />
       </div>
     ),
-    [handleCardClick, patchCard, kanbanUsers, allLabels, doneStateId, todoStateId, storeColumns, syncEngine, boardId],
+    [handleCardClick, patchCard, kanbanUsers, allLabels, doneStateId, todoStateId],
   )
 
   // Loading state
