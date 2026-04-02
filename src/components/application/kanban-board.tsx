@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useState, useMemo, useCallback } from "react"
+import { type ReactNode, useState, useMemo, useCallback, useRef } from "react"
 import { Plus } from "@untitledui/icons"
 import { cx } from "@circos/ui"
 import {
@@ -109,6 +109,8 @@ export interface KanbanBoardProps<T extends KanbanColumnItem> {
   renderDragOverlay?: (item: T) => ReactNode
   className?: string
   onAddCard?: (columnId: string) => void
+  addingColumnId?: string | null
+  renderAddingCard?: (columnId: string) => ReactNode
 }
 
 type DragType = "card" | "column" | null
@@ -121,6 +123,8 @@ export function KanbanBoard<T extends KanbanColumnItem>({
   renderDragOverlay,
   className,
   onAddCard,
+  addingColumnId,
+  renderAddingCard,
 }: KanbanBoardProps<T>) {
   const [dragType, setDragType] = useState<DragType>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -135,6 +139,12 @@ export function KanbanBoard<T extends KanbanColumnItem>({
   )
 
   const columnIds = useMemo(() => effectiveColumns.map((c) => c.id), [effectiveColumns])
+
+  // Droppable IDs for empty columns — included in card collision detection so empty columns can receive drops
+  const emptyColumnDroppableIds = useMemo(
+    () => new Set(effectiveColumns.filter((c) => c.items.length === 0).map((c) => `droppable-${c.id}`)),
+    [effectiveColumns],
+  )
 
   // Find which column a card belongs to
   const findColumnOfCard = useCallback((cardId: string) => {
@@ -171,8 +181,21 @@ export function KanbanBoard<T extends KanbanColumnItem>({
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    const activeCardId = String(active.id)
     const overData = over.data.current
+
+    // For non-card targets (column droppables), require horizontal overlap
+    // to prevent ping-pong oscillation between columns during drag
+    if (overData?.type !== "card") {
+      const translatedRect = active.rect.current.translated
+      if (translatedRect && over.rect) {
+        const cardCenterX = translatedRect.left + translatedRect.width / 2
+        if (cardCenterX < over.rect.left || cardCenterX > over.rect.left + over.rect.width) {
+          return // Card is not physically over this column — skip to prevent oscillation
+        }
+      }
+    }
+
+    const activeCardId = String(active.id)
     const overId = String(over.id)
 
     // When hovering over a column droppable (not a specific card),
@@ -198,7 +221,11 @@ export function KanbanBoard<T extends KanbanColumnItem>({
       if (!targetColumnId) return prev
 
       const sourceCol = prev.find((col) => col.items.some((i) => i.id === activeCardId))
-      if (!sourceCol || sourceCol.id === targetColumnId) return prev
+      if (!sourceCol) return prev
+      // Same-column card-to-card: skip — handleDragEnd owns same-column reorder (per D-01)
+      if (sourceCol.id === targetColumnId && overData?.type === 'card') return prev
+      // Already in target column (column-droppable hover)
+      if (sourceCol.id === targetColumnId) return prev
 
       const targetCol = prev.find((c) => c.id === targetColumnId)
       if (!targetCol) return prev
@@ -305,6 +332,10 @@ export function KanbanBoard<T extends KanbanColumnItem>({
     onColumnsChange?.(columns.filter((c) => c.id !== colId))
   }, [columns, onColumnsChange])
 
+  const handleAddCardForColumn = useCallback((columnId: string) => {
+    onAddCard?.(columnId)
+  }, [onAddCard])
+
   const handleAddSection = () => {
     const newCol: KanbanBoardColumn<T> = {
       id: `col-${Date.now()}`,
@@ -315,7 +346,11 @@ export function KanbanBoard<T extends KanbanColumnItem>({
   }
 
   // Use different modifiers depending on what's being dragged
-  const modifiers = dragType === "column" ? [restrictToHorizontalAxis] : []
+  // Memoized to prevent unnecessary DndContext re-renders
+  const modifiers = useMemo(
+    () => (dragType === "column" ? [restrictToHorizontalAxis] : []),
+    [dragType],
+  )
 
   // Collision detection: filter containers by drag type to prevent interference
   const collisionDetection: CollisionDetection = useCallback((args) => {
@@ -326,28 +361,47 @@ export function KanbanBoard<T extends KanbanColumnItem>({
       return closestCenter({ ...args, droppableContainers: columnContainers })
     }
 
-    // For cards: two-pass collision detection
-    // Pass 1: closestCorners on card containers only (normal case)
+    // For cards: closestCorners on card containers + empty column droppable zones.
+    // Empty column droppables are only included when the dragged card's center X
+    // is within the column's horizontal bounds — this prevents ping-pong where a
+    // card oscillates between two columns (card moves A→B, A becomes empty,
+    // closestCorners picks A, card moves B→A, B becomes empty → infinite loop).
+    const cardCenterX = args.collisionRect.left + args.collisionRect.width / 2
+
     const cardContainers = args.droppableContainers.filter((c) => {
       const id = String(c.id)
-      return !columnIds.includes(id) && !id.startsWith('droppable-')
+      if (columnIds.includes(id)) return false
+      if (id.startsWith('droppable-')) {
+        if (!emptyColumnDroppableIds.has(id)) return false
+        // Only include if the dragged card is horizontally within this column
+        const rect = args.droppableRects.get(c.id)
+        if (rect) {
+          return cardCenterX >= rect.left && cardCenterX <= rect.right
+        }
+        return false
+      }
+      return true
     })
-    const cardCollisions = closestCorners({ ...args, droppableContainers: cardContainers })
-    if (cardCollisions.length > 0) return cardCollisions
+    return closestCorners({ ...args, droppableContainers: cardContainers })
+  }, [dragType, columnIds, emptyColumnDroppableIds])
 
-    // Pass 2: fallback to column droppable zones (empty columns)
-    const columnDroppables = args.droppableContainers.filter((c) =>
-      String(c.id).startsWith('droppable-'),
-    )
-    return closestCenter({ ...args, droppableContainers: columnDroppables })
-  }, [dragType, columnIds])
+  // Stable ref wrapper — prevents DndContext from re-evaluating collisions when
+  // emptyColumnDroppableIds changes mid-drag (which caused an infinite render loop:
+  // card moves → source column empties → collisionDetection ref changes → DndContext
+  // re-evaluates → card moves back → target empties → loop).
+  const collisionDetectionRef = useRef(collisionDetection)
+  collisionDetectionRef.current = collisionDetection
+  const stableCollisionDetection: CollisionDetection = useCallback(
+    (args) => collisionDetectionRef.current(args),
+    [],
+  )
 
   return (
     <div className={cx("overflow-auto", className)}>
     <div className="flex items-stretch gap-4 min-h-full px-6 pb-6 w-fit">
       <DndContext
         sensors={sensors}
-        collisionDetection={collisionDetection}
+        collisionDetection={stableCollisionDetection}
         modifiers={modifiers}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
@@ -363,7 +417,8 @@ export function KanbanBoard<T extends KanbanColumnItem>({
                 title={col.title}
                 onTitleChange={handleColumnTitleChange}
                 onDelete={handleColumnDelete}
-                onAddCard={onAddCard ? () => onAddCard(col.id) : undefined}
+                onAddCard={onAddCard ? handleAddCardForColumn : undefined}
+                addingCard={addingColumnId === col.id && renderAddingCard ? renderAddingCard(col.id) : undefined}
                 items={col.items}
                 activeCardId={dragType === "card" ? activeId : null}
                 isDragActive={isDragActive}
