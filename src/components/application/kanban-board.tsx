@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useState, useMemo, useCallback, useRef } from "react"
+import { type ReactNode, useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { Plus } from "@untitledui/icons"
 import { cx } from "@circos/ui"
 import {
@@ -140,6 +140,16 @@ export function KanbanBoard<T extends KanbanColumnItem>({
 
   const columnIds = useMemo(() => effectiveColumns.map((c) => c.id), [effectiveColumns])
 
+  // rAF throttle ref for handleDragOver — ensures at most one setDragColumns per animation frame
+  const dragOverRafRef = useRef<number | null>(null)
+
+  // Cleanup rAF on unmount
+  useEffect(() => {
+    return () => {
+      if (dragOverRafRef.current !== null) cancelAnimationFrame(dragOverRafRef.current)
+    }
+  }, [])
+
   // Droppable IDs for empty columns — included in card collision detection so empty columns can receive drops
   const emptyColumnDroppableIds = useMemo(
     () => new Set(effectiveColumns.filter((c) => c.items.length === 0).map((c) => `droppable-${c.id}`)),
@@ -168,15 +178,15 @@ export function KanbanBoard<T extends KanbanColumnItem>({
 
   // ------ Handlers ------
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     const type = event.active.data.current?.type as DragType
     setDragType(type)
     setActiveId(String(event.active.id))
     // Snapshot columns internally — parent won't re-render during drag
     if (type === "card") setDragColumns([...columns])
-  }
+  }, [columns])
 
-  const handleDragOver = (event: DragOverEvent) => {
+  const handleDragOver = useCallback((event: DragOverEvent) => {
     if (dragType !== "card") return
     const { active, over } = event
     if (!over || active.id === over.id) return
@@ -195,65 +205,86 @@ export function KanbanBoard<T extends KanbanColumnItem>({
       }
     }
 
+    // Capture event data into local variables BEFORE the rAF callback —
+    // dnd-kit event objects may be pooled/reused between events.
     const activeCardId = String(active.id)
     const overId = String(over.id)
+    const overType = overData?.type
+    const overColumnId = overData?.columnId
+    const draggedTop = active.rect.current.translated?.top ?? 0
+    const overRectTop = over.rect?.top ?? 0
+    const overRectHeight = over.rect?.height ?? 0
 
     // When hovering over a column droppable (not a specific card),
     // use pointer position relative to the column to determine top/bottom insertion
     let columnDropIndex: number | undefined
-    if (overData?.type !== "card" && over.rect) {
-      const draggedTop = active.rect.current.translated?.top ?? 0
-      const columnMidY = over.rect.top + over.rect.height / 2
+    if (overType !== "card" && over.rect) {
+      const columnMidY = overRectTop + overRectHeight / 2
       // If dragged card is in the top half of the column → insert at start, else at end
       columnDropIndex = draggedTop < columnMidY ? 0 : undefined
     }
 
-    setDragColumns((prev) => {
-      if (!prev) return prev
+    // Cancel any pending rAF — only the latest dragOver matters
+    if (dragOverRafRef.current !== null) {
+      cancelAnimationFrame(dragOverRafRef.current)
+    }
 
-      // Resolve target column
-      const targetColumnId =
-        overData?.type === "card" ? overData.columnId
-        : overData?.columnId ? overData.columnId
-        : overId.startsWith("droppable-") ? overId.replace("droppable-", "")
-        : prev.find((c) => c.id === overId)?.id
+    dragOverRafRef.current = requestAnimationFrame(() => {
+      dragOverRafRef.current = null
 
-      if (!targetColumnId) return prev
+      setDragColumns((prev) => {
+        if (!prev) return prev
 
-      const sourceCol = prev.find((col) => col.items.some((i) => i.id === activeCardId))
-      if (!sourceCol) return prev
-      // Same-column card-to-card: skip — handleDragEnd owns same-column reorder (per D-01)
-      if (sourceCol.id === targetColumnId && overData?.type === 'card') return prev
-      // Already in target column (column-droppable hover)
-      if (sourceCol.id === targetColumnId) return prev
+        // Resolve target column
+        const targetColumnId =
+          overType === "card" ? overColumnId
+          : overColumnId ? overColumnId
+          : overId.startsWith("droppable-") ? overId.replace("droppable-", "")
+          : prev.find((c) => c.id === overId)?.id
 
-      const targetCol = prev.find((c) => c.id === targetColumnId)
-      if (!targetCol) return prev
-      // Guard: prevent thrashing
-      if (targetCol.items.some((i) => i.id === activeCardId)) return prev
+        if (!targetColumnId) return prev
 
-      const card = sourceCol.items.find((i) => i.id === activeCardId)!
-      const sourceItems = sourceCol.items.filter((i) => i.id !== activeCardId)
-      const targetItems = [...targetCol.items]
+        const sourceCol = prev.find((col) => col.items.some((i) => i.id === activeCardId))
+        if (!sourceCol) return prev
+        // Same-column card-to-card: skip — handleDragEnd owns same-column reorder (per D-01)
+        if (sourceCol.id === targetColumnId && overType === 'card') return prev
+        // Already in target column (column-droppable hover)
+        if (sourceCol.id === targetColumnId) return prev
 
-      if (overData?.type === "card") {
-        const overIndex = targetItems.findIndex((i) => i.id === overId)
-        targetItems.splice(overIndex >= 0 ? overIndex : targetItems.length, 0, card)
-      } else if (columnDropIndex !== undefined) {
-        targetItems.splice(columnDropIndex, 0, card)
-      } else {
-        targetItems.push(card)
-      }
+        const targetCol = prev.find((c) => c.id === targetColumnId)
+        if (!targetCol) return prev
+        // Guard: prevent thrashing
+        if (targetCol.items.some((i) => i.id === activeCardId)) return prev
 
-      return prev.map((c) => {
-        if (c.id === sourceCol.id) return { ...c, items: sourceItems }
-        if (c.id === targetColumnId) return { ...c, items: targetItems }
-        return c
+        const card = sourceCol.items.find((i) => i.id === activeCardId)!
+        const sourceItems = sourceCol.items.filter((i) => i.id !== activeCardId)
+        const targetItems = [...targetCol.items]
+
+        if (overType === "card") {
+          const overIndex = targetItems.findIndex((i) => i.id === overId)
+          targetItems.splice(overIndex >= 0 ? overIndex : targetItems.length, 0, card)
+        } else if (columnDropIndex !== undefined) {
+          targetItems.splice(columnDropIndex, 0, card)
+        } else {
+          targetItems.push(card)
+        }
+
+        return prev.map((c) => {
+          if (c.id === sourceCol.id) return { ...c, items: sourceItems }
+          if (c.id === targetColumnId) return { ...c, items: targetItems }
+          return c
+        })
       })
     })
-  }
+  }, [dragType])
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    // Cancel any pending rAF from dragOver — prevent stale update after drag ends
+    if (dragOverRafRef.current !== null) {
+      cancelAnimationFrame(dragOverRafRef.current)
+      dragOverRafRef.current = null
+    }
+
     const { active, over } = event
 
     if (dragType === "column" && over && active.id !== over.id) {
@@ -316,13 +347,19 @@ export function KanbanBoard<T extends KanbanColumnItem>({
     setDragColumns(null)
     setDragType(null)
     setActiveId(null)
-  }
+  }, [dragType, dragColumns, columns, effectiveColumns, onColumnsChange])
 
-  const handleDragCancel = () => {
+  const handleDragCancel = useCallback(() => {
+    // Cancel any pending rAF from dragOver — prevent stale update after cancel
+    if (dragOverRafRef.current !== null) {
+      cancelAnimationFrame(dragOverRafRef.current)
+      dragOverRafRef.current = null
+    }
+
     setDragColumns(null)
     setDragType(null)
     setActiveId(null)
-  }
+  }, [])
 
   const handleColumnTitleChange = useCallback((colId: string, newTitle: string) => {
     onColumnsChange?.(columns.map((c) => c.id === colId ? { ...c, title: newTitle } : c))
@@ -336,14 +373,14 @@ export function KanbanBoard<T extends KanbanColumnItem>({
     onAddCard?.(columnId)
   }, [onAddCard])
 
-  const handleAddSection = () => {
+  const handleAddSection = useCallback(() => {
     const newCol: KanbanBoardColumn<T> = {
       id: `col-${Date.now()}`,
       title: "New section",
       items: [],
     }
     onColumnsChange?.([...columns, newCol])
-  }
+  }, [columns, onColumnsChange])
 
   // Use different modifiers depending on what's being dragged
   // Memoized to prevent unnecessary DndContext re-renders
