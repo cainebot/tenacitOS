@@ -326,13 +326,20 @@ export function KanbanBoard<T extends KanbanColumnItem>({
       return closestCenter({ ...args, droppableContainers: columnContainers })
     }
 
-    // For cards: use closestCorners (stable across column boundaries)
-    // Exclude column sortable IDs and droppable-* zone IDs to prevent card↔column interference
+    // For cards: two-pass collision detection
+    // Pass 1: closestCorners on card containers only (normal case)
     const cardContainers = args.droppableContainers.filter((c) => {
       const id = String(c.id)
       return !columnIds.includes(id) && !id.startsWith('droppable-')
     })
-    return closestCorners({ ...args, droppableContainers: cardContainers })
+    const cardCollisions = closestCorners({ ...args, droppableContainers: cardContainers })
+    if (cardCollisions.length > 0) return cardCollisions
+
+    // Pass 2: fallback to column droppable zones (empty columns)
+    const columnDroppables = args.droppableContainers.filter((c) =>
+      String(c.id).startsWith('droppable-'),
+    )
+    return closestCenter({ ...args, droppableContainers: columnDroppables })
   }, [dragType, columnIds])
 
   return (
