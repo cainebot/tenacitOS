@@ -134,7 +134,7 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
   ))
 
   return (
-    <div className={cx("flex flex-col gap-3.5", columnWidthClasses[size], className)}>
+    <div className={cx("flex h-full flex-col gap-3.5", columnWidthClasses[size], className)}>
       <div className="sticky top-0 z-10 -mb-3.5 bg-primary pb-3.5">
         <KanbanColumnHeader
           title={title}
@@ -149,13 +149,13 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
 
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
         {isDragActive ? (
-          <div ref={setNodeRef} className="flex flex-col gap-2 rounded-lg min-h-[48px]">
+          <div ref={setNodeRef} className="flex flex-1 flex-col gap-2 rounded-lg min-h-[48px]">
             {cardList.map((card) => (
               <div key={card.key}>{card}</div>
             ))}
           </div>
         ) : (
-          <div ref={setNodeRef} className={cx("flex flex-col gap-2 rounded-lg", activeCardId ? "min-h-[48px]" : "min-h-0")}>
+          <div ref={setNodeRef} className={cx("flex flex-1 flex-col gap-2 rounded-lg", activeCardId ? "min-h-[48px]" : "min-h-0")}>
             <AnimatePresence initial={false}>
               {items.map((item) => (
                 <motion.div
