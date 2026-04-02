@@ -61,15 +61,32 @@ export default function SalesPipelinePage() {
   }, [])
 
   // Live board data
-  const { board, cards, loading, refetch } = useBoardData(boardId)
+  const { board, cards, maxSyncId, loading, refetch } = useBoardData(boardId)
 
   // Realtime: store-aware sync — UPDATE patches in-memory, INSERT/DELETE triggers refetch
   // (Phase 73: kept for non-positional metadata patches; position driven by sync engine below)
   useStoreSyncRealtime(boardId, refetch)
 
+  // Derive serverColumns from board+cards for sync engine seeding (D-08)
+  // Must be a stable useMemo — not derived inside useEffect — so the sync engine
+  // receives the right columns + maxSyncId in the same render cycle they arrive.
+  const serverColumns = useMemo((): BoardColumn[] | undefined => {
+    if (!board) return undefined
+    return board.columns.map(col => ({
+      columnId: col.column_id,
+      title: col.name,
+      stateId: col.state_ids[0] ?? '',
+      items: cards
+        .filter(c => col.state_ids.includes(c.state_id))
+        .sort((a, b) => (a.sort_order < b.sort_order ? -1 : 1)),
+    }))
+  }, [board, cards])
+
   // Phase 73: Sync engine — causal event stream for board position correctness
   const syncEngine = useBoardSyncEngine({
     boardId,
+    serverColumns,
+    maxSyncId,
     onRefetch: refetch,
   })
 
@@ -435,13 +452,28 @@ export default function SalesPipelinePage() {
   }, [statusToStateId, detailMoveCard])
 
   // Toggle complete: move to done or first to-do state
+  // D-06: Route through sync engine — single source of truth for all card moves
   const handleToggleComplete = useCallback(() => {
     if (!detailCard) return
     const currentState = projectStates.find(s => s.state_id === detailCard.state_id)
     const isDone = currentState?.category === 'done'
     const targetStateId = isDone ? todoStateId : doneStateId
-    if (targetStateId) detailMoveCard(targetStateId)
-  }, [detailCard, projectStates, todoStateId, doneStateId, detailMoveCard])
+    if (!targetStateId) return
+
+    // D-07: Compute sort_order — append to bottom of target column
+    // Use storeColumns (optimistic state) not cards (server state) — RESEARCH Pitfall 5
+    const targetCol = storeColumns.find(col => col.stateId === targetStateId)
+    const items = targetCol?.items ?? []
+    const lastItem = items[items.length - 1]
+    const sortOrder = sortKeyBetween(lastItem?.sort_order ?? null, null)
+
+    syncEngine.moveSyncCard({
+      cardId: detailCard.card_id,
+      toStateId: targetStateId,
+      sortOrder,
+      boardId,
+    })
+  }, [detailCard, projectStates, todoStateId, doneStateId, storeColumns, syncEngine, boardId])
 
   // Title change
   const handlePanelTitleChange = useCallback((title: string) => {
@@ -618,11 +650,20 @@ export default function SalesPipelinePage() {
           onDoneChange={(done) => {
             const targetStateId = done ? doneStateId : todoStateId
             if (!targetStateId) return
-            fetch(`/api/cards/${card.cardId}/move`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ state_id: targetStateId, moved_by: "human" }),
-            }).catch(() => refetch())
+
+            // Compute sort_order — append to bottom of target column
+            // Use storeColumns (optimistic state) not cards (server state) — RESEARCH Pitfall 5
+            const targetCol = storeColumns.find(col => col.stateId === targetStateId)
+            const colItems = targetCol?.items ?? []
+            const lastColItem = colItems[colItems.length - 1]
+            const sortOrder = sortKeyBetween(lastColItem?.sort_order ?? null, null)
+
+            syncEngine.moveSyncCard({
+              cardId: card.cardId,
+              toStateId: targetStateId,
+              sortOrder,
+              boardId,
+            })
           }}
           dueDate={card.dueDate}
           onDueDateChange={(date) =>
@@ -633,7 +674,7 @@ export default function SalesPipelinePage() {
         />
       </div>
     ),
-    [handleCardClick, patchCard, kanbanUsers, allLabels, doneStateId, todoStateId, refetch],
+    [handleCardClick, patchCard, kanbanUsers, allLabels, doneStateId, todoStateId, storeColumns, syncEngine, boardId],
   )
 
   // Loading state
