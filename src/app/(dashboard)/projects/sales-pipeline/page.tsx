@@ -152,9 +152,17 @@ export default function SalesPipelinePage() {
   const storeLoadBoard = useBoardStore(s => s.loadBoard)
   const storeColumns = useBoardStore(s => s.columns)
 
-  // Seed the store whenever board/cards data changes
+  // Seed the store only on initial load (boardId first appearance) or when boardId changes.
+  // DO NOT include `cards` in the dependency array — server refetches that update `cards`
+  // must NOT call storeLoadBoard() again, because that would destroy any optimistic
+  // reordering already applied to the store (RC-4 fix).
+  const hasSeededRef = useRef(false)
+  const seededBoardIdRef = useRef<string>("")
+
   useEffect(() => {
     if (!board || !boardId) return
+    // Re-seed only when the boardId changes (new board loaded) or on first mount
+    if (hasSeededRef.current && seededBoardIdRef.current === boardId) return
     const columns: BoardColumn[] = board.columns.map(col => ({
       columnId: col.column_id,
       title: col.name,
@@ -164,7 +172,12 @@ export default function SalesPipelinePage() {
         .sort((a, b) => (a.sort_order < b.sort_order ? -1 : 1)),
     }))
     storeLoadBoard(boardId, columns)
-  }, [board, boardId, cards, storeLoadBoard])
+    hasSeededRef.current = true
+    seededBoardIdRef.current = boardId
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board, boardId, storeLoadBoard])
+  // NOTE: `cards` intentionally omitted — INSERT/DELETE Realtime events call refetch()
+  // which updates `cards`, but the store is kept in sync via useStoreSyncRealtime instead.
 
   // Derived labels from store columns
   const allLabels = useMemo<KanbanCardTag[]>(() => {

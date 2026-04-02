@@ -166,8 +166,10 @@ export class SyncEngine {
       this.snapshot = columns
       this.lastAppliedSyncId = serverSyncId
       void saveSnapshot(this.boardId, columns, serverSyncId)
+      // RC-5: emitColumns inside guard — metadata-only Realtime patches must NOT
+      // trigger a stale snapshot broadcast that overwrites optimistic state
+      this.emitColumns()
     }
-    this.emitColumns()
   }
 
   // ---- Mutation queue ------------------------------------------------------
@@ -188,12 +190,9 @@ export class SyncEngine {
       createdAt: Date.now(),
     }
 
-    // Apply to in-memory snapshot optimistically
-    if (m.type === 'move-card') {
-      const { state_id, sort_order } = m.payload as { state_id: string; sort_order: string }
-      this.snapshot = applyMoveToSnapshot(this.snapshot, m.entityId, state_id, sort_order)
-    }
-
+    // RC-3: Do NOT mutate this.snapshot here — snapshot must remain pure server state
+    // so that failMutation can cleanly revert by replaying pending over the untouched snapshot.
+    // The optimistic UI is produced by rebaseOverSnapshot(snapshot, pending) in emitColumns().
     this.pending.push(m)
     this.emitColumns()
     await saveMutation(m)
