@@ -91,7 +91,8 @@ export interface KanbanColumnProps<T extends KanbanColumnItem>
   isDragActive?: boolean
   onTitleChange?: (colId: string, title: string) => void
   onDelete?: (colId: string) => void
-  onAddCard?: () => void
+  onAddCard?: (columnId: string) => void
+  addingCard?: ReactNode
   renderCard: (item: T) => ReactNode
   className?: string
 }
@@ -107,6 +108,7 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
   activeCardId,
   isDragActive,
   onAddCard,
+  addingCard,
   renderCard,
   className,
 }: KanbanColumnProps<T>) {
@@ -134,13 +136,13 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
   ))
 
   return (
-    <div className={cx("flex h-full flex-col gap-3.5", columnWidthClasses[size], className)}>
+    <div className={cx("flex flex-col gap-3.5", columnWidthClasses[size], className)}>
       <div className="sticky top-0 z-10 -mb-3.5 bg-primary pb-3.5">
         <KanbanColumnHeader
           title={title}
           onTitleChange={handleTitleChange}
           onDelete={handleDelete}
-          onAddCard={onAddCard}
+          onAddCard={onAddCard ? () => onAddCard(columnId) : undefined}
           size={size}
           count={items.length}
           active={active}
@@ -149,13 +151,13 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
 
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
         {isDragActive ? (
-          <div ref={setNodeRef} className="flex flex-1 flex-col gap-2 rounded-lg min-h-[48px]">
+          <div ref={setNodeRef} className={cx("flex flex-col gap-2 rounded-lg", items.length === 0 ? "min-h-[200px]" : "min-h-[48px]")}>
             {cardList.map((card) => (
               <div key={card.key}>{card}</div>
             ))}
           </div>
         ) : (
-          <div ref={setNodeRef} className={cx("flex flex-1 flex-col gap-2 rounded-lg", activeCardId ? "min-h-[48px]" : "min-h-0")}>
+          <div ref={setNodeRef} className={cx("flex flex-col gap-2 rounded-lg", activeCardId ? "min-h-[48px]" : "min-h-0")}>
             <AnimatePresence initial={false}>
               {items.map((item) => (
                 <motion.div
@@ -176,11 +178,15 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
         )}
       </SortableContext>
 
+      {/* Inline card creator slot */}
+      {addingCard}
+
       {/* Add card button */}
       {isDragActive ? (
         <button
           type="button"
-          onClick={onAddCard}
+          data-add-card-button
+          onClick={() => onAddCard?.(columnId)}
           className={cx(
             "flex w-full cursor-pointer items-center gap-1 rounded-lg font-semibold text-tertiary transition-colors hover:bg-secondary_hover",
             isMd ? "px-4 py-2.5 text-md" : "px-3.5 py-2.5 text-sm",
@@ -194,7 +200,8 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
           layout
           transition={{ duration: 0.2, ease: "easeOut" }}
           type="button"
-          onClick={onAddCard}
+          data-add-card-button
+          onClick={() => onAddCard?.(columnId)}
           className={cx(
             "flex w-full cursor-pointer items-center gap-1 rounded-lg font-semibold text-tertiary transition-colors hover:bg-secondary_hover",
             isMd ? "px-4 py-2.5 text-md" : "px-3.5 py-2.5 text-sm",
