@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
 import { useBoardStore } from '@/stores/board-store'
+import { isBoardDragActive } from '@/components/application/kanban-board'
 import type { CardRow } from '@/types/project'
 
 /**
@@ -74,6 +75,10 @@ export function useStoreSyncRealtime(
           if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
           debounceTimerRef.current = setTimeout(() => {
             debounceTimerRef.current = null
+
+            // PERF-04: Skip all store patches during active drag — prevents periodic
+            // DOM mutation bursts from Realtime events competing with drag state.
+            if (isBoardDragActive()) return
 
             if (eventType === 'UPDATE') {
               const updatedCard = payload.new as CardRow

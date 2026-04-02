@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useState, useMemo, useCallback, useRef, useEffect } from "react"
+import { type ReactNode, useState, useMemo, useCallback, useRef, useEffect, startTransition } from "react"
 import { Plus } from "@untitledui/icons"
 import { cx } from "@circos/ui"
 import {
@@ -51,6 +51,13 @@ const restrictToHorizontalAxis: Modifier = ({ transform }) => ({
   ...transform,
   y: 0,
 })
+
+// ---------------------------------------------------------------------------
+// Module-level drag flag — read by useStoreSyncRealtime to suppress patches during drag
+// ---------------------------------------------------------------------------
+
+let _boardDragActive = false
+export function isBoardDragActive(): boolean { return _boardDragActive }
 
 // ---------------------------------------------------------------------------
 // SortableColumn — wrapper that makes a column draggable horizontally
@@ -179,6 +186,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
   // ------ Handlers ------
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
+    _boardDragActive = true
     const type = event.active.data.current?.type as DragType
     setDragType(type)
     setActiveId(String(event.active.id))
@@ -291,7 +299,10 @@ export function KanbanBoard<T extends KanbanColumnItem>({
       const oldIndex = effectiveColumns.findIndex((c) => c.id === String(active.id))
       const newIndex = effectiveColumns.findIndex((c) => c.id === String(over.id))
       if (oldIndex !== -1 && newIndex !== -1) {
-        onColumnsChange?.(arrayMove(effectiveColumns, oldIndex, newIndex))
+        // PERF-05: wrap parent notification in startTransition — React batches as non-urgent
+        startTransition(() => {
+          onColumnsChange?.(arrayMove(effectiveColumns, oldIndex, newIndex))
+        })
       }
     }
 
@@ -341,9 +352,18 @@ export function KanbanBoard<T extends KanbanColumnItem>({
           }
         }
       }
-      onColumnsChange?.(finalColumns, { activeCardId: String(active.id) })
+      // PERF-05: wrap parent notification in startTransition — React batches as non-urgent
+      const commitColumns = finalColumns
+      const commitActiveCardId = String(active.id)
+      startTransition(() => {
+        onColumnsChange?.(commitColumns, { activeCardId: commitActiveCardId })
+      })
     }
 
+    // Reset drag flag AFTER logic but BEFORE synchronous state cleanup
+    _boardDragActive = false
+
+    // Synchronous cleanup — DragOverlay disappears immediately (not wrapped in transition)
     setDragColumns(null)
     setDragType(null)
     setActiveId(null)
@@ -355,6 +375,8 @@ export function KanbanBoard<T extends KanbanColumnItem>({
       cancelAnimationFrame(dragOverRafRef.current)
       dragOverRafRef.current = null
     }
+
+    _boardDragActive = false
 
     setDragColumns(null)
     setDragType(null)
