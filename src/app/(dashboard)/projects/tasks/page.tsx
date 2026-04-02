@@ -648,11 +648,20 @@ export default function TasksPage() {
           onDoneChange={(done) => {
             const targetStateId = done ? doneStateId : todoStateId
             if (!targetStateId) return
-            fetch(`/api/cards/${card.cardId}/move`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ state_id: targetStateId, moved_by: "human" }),
-            }).catch(() => refetch())
+
+            // Compute sort_order — append to bottom of target column
+            // Use storeColumns (optimistic state) not cards (server state) — RESEARCH Pitfall 5
+            const targetCol = storeColumns.find(col => col.stateId === targetStateId)
+            const colItems = targetCol?.items ?? []
+            const lastColItem = colItems[colItems.length - 1]
+            const sortOrder = sortKeyBetween(lastColItem?.sort_order ?? null, null)
+
+            syncEngine.moveSyncCard({
+              cardId: card.cardId,
+              toStateId: targetStateId,
+              sortOrder,
+              boardId,
+            })
           }}
           dueDate={card.dueDate}
           onDueDateChange={(date) =>
@@ -663,7 +672,7 @@ export default function TasksPage() {
         />
       </div>
     ),
-    [handleCardClick, patchCard, kanbanUsers, allLabels, doneStateId, todoStateId, refetch],
+    [handleCardClick, patchCard, kanbanUsers, allLabels, doneStateId, todoStateId, storeColumns, syncEngine, boardId],
   )
 
   // Loading state
