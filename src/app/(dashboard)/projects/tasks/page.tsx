@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
-import { KanbanCard, type KanbanCardProps, type KanbanCardTag } from "@/components/application/kanban-card"
+import { KanbanCard, type KanbanCardProps, type KanbanCardTag, type KanbanCardUser, type Priority } from "@/components/application/kanban-card"
 import { KanbanBoard, type KanbanBoardColumn } from "@/components/application/kanban-board"
 import { KanbanBoardHeader } from "@/components/application/kanban-board-header"
 import { defaultFilterFields, type FilterRow } from "@/components/application/dynamic-filter"
@@ -77,7 +77,7 @@ export default function TasksPage() {
       title: col.name,
       stateId: col.state_ids[0] ?? '',
       items: cards
-        .filter(c => col.state_ids.includes(c.state_id))
+        .filter(c => col.state_ids.includes(c.state_id) && c.card_type !== 'epic')
         .sort((a, b) => (a.sort_order < b.sort_order ? -1 : 1)),
     }))
   }, [board, cards])
@@ -168,7 +168,7 @@ export default function TasksPage() {
       title: col.name,
       stateId: col.state_ids[0] ?? '',
       items: cards
-        .filter(c => col.state_ids.includes(c.state_id))
+        .filter(c => col.state_ids.includes(c.state_id) && c.card_type !== 'epic')
         .sort((a, b) => (a.sort_order < b.sort_order ? -1 : 1)),
     }))
     storeLoadBoard(boardId, columns)
@@ -252,14 +252,34 @@ export default function TasksPage() {
     effectiveColumnsRef.current = effectiveColumns
   }, [effectiveColumns])
 
-  const handleAddCard = useCallback(
-    async (columnId: string) => {
+  // ---------------------------------------------------------------------------
+  // Inline card creation
+  // ---------------------------------------------------------------------------
+
+  const [addingColumnId, setAddingColumnId] = useState<string | null>(null)
+  const inlineCardRef = useRef<HTMLDivElement>(null)
+  const pendingCardRef = useRef<{
+    priority: Priority | null
+    assignee: KanbanCardUser | null
+    dueDate: DateValue | null
+    tags: KanbanCardTag[]
+  }>({ priority: null, assignee: null, dueDate: null, tags: [] })
+
+  const getInlineTitle = useCallback((): string => {
+    const titleEl = inlineCardRef.current?.querySelector("[contenteditable]")
+    return (titleEl?.textContent || "").trim()
+  }, [])
+
+  const commitInlineCard = useCallback(
+    (columnId: string) => {
       if (!board) return
+      const title = getInlineTitle()
+      if (!title) return
+
       const colDef = board.columns.find((c) => c.column_id === columnId)
       const targetStateId = colDef?.state_ids[0]
       if (!targetStateId) return
 
-      // Calculate sort_order for the new card (append to bottom of column)
       const col = effectiveColumns.find((c) => c.id === columnId)
       const colItems = col?.items ?? []
       const lastItem = colItems[colItems.length - 1]
@@ -267,21 +287,103 @@ export default function TasksPage() {
         ? sortKeyBetween(lastItem.cardRow.sort_order, null)
         : sortKeyBetween(null, null)
 
-      await fetch("/api/cards", {
+      const data = pendingCardRef.current
+
+      fetch("/api/cards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: "New card",
+          title,
           project_id: board.project_id,
           state_id: targetStateId,
           card_type: "task",
           sort_order,
+          ...(data.priority ? { priority: data.priority } : {}),
+          ...(data.assignee?.id ? { assigned_agent_id: data.assignee.id } : {}),
+          ...(data.dueDate ? { due_date: data.dueDate.toString() } : {}),
+          ...(data.tags.length > 0 ? { labels: data.tags.map((t) => t.label) } : {}),
         }),
       })
         .then(() => refetch())
         .catch(() => {})
     },
-    [board, refetch, effectiveColumns],
+    [board, effectiveColumns, refetch, getInlineTitle],
+  )
+
+  const resetPendingCard = useCallback(() => {
+    pendingCardRef.current = { priority: null, assignee: null, dueDate: null, tags: [] }
+  }, [])
+
+  // Click-outside detection for inline card
+  useEffect(() => {
+    if (!addingColumnId) return
+
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (inlineCardRef.current?.contains(target)) return
+      if (target.closest('[data-react-aria-popover], [role="dialog"], [role="listbox"], [data-react-aria-overlay]')) return
+      if (target.closest("[data-add-card-button]")) return
+
+      const title = getInlineTitle()
+      if (title) {
+        commitInlineCard(addingColumnId)
+      }
+      setAddingColumnId(null)
+      resetPendingCard()
+    }
+
+    document.addEventListener("mousedown", handleMouseDown)
+    return () => document.removeEventListener("mousedown", handleMouseDown)
+  }, [addingColumnId, commitInlineCard, getInlineTitle, resetPendingCard])
+
+  const handleAddCard = useCallback(
+    (columnId: string) => {
+      if (!board) return
+      if (addingColumnId === columnId) return
+
+      // Commit current inline card if it has text
+      if (addingColumnId) {
+        const title = getInlineTitle()
+        if (title) {
+          commitInlineCard(addingColumnId)
+        }
+      }
+
+      resetPendingCard()
+      setAddingColumnId(columnId)
+    },
+    [addingColumnId, board, commitInlineCard, getInlineTitle, resetPendingCard],
+  )
+
+  const renderAddingCard = useCallback(
+    (columnId: string) => (
+      <div ref={inlineCardRef}>
+        <KanbanCard
+          title=""
+          autoFocusTitle
+          size="md"
+          users={kanbanUsers}
+          availableTags={allLabels}
+          onTitleCommit={(text) => {
+            if (text.trim()) {
+              pendingCardRef.current = { ...pendingCardRef.current }
+              commitInlineCard(columnId)
+              setAddingColumnId(null)
+              resetPendingCard()
+            }
+          }}
+          onEscape={() => {
+            setAddingColumnId(null)
+            resetPendingCard()
+          }}
+          onPriorityChange={(p) => { pendingCardRef.current.priority = p }}
+          onAssigneeChange={(u) => { pendingCardRef.current.assignee = u }}
+          onDueDateChange={(d) => { pendingCardRef.current.dueDate = d }}
+          onTagsChange={(t) => { pendingCardRef.current.tags = t }}
+        />
+      </div>
+    ),
+    [kanbanUsers, allLabels, commitInlineCard, resetPendingCard],
   )
 
   const handleColumnsChange = useCallback(
@@ -708,6 +810,8 @@ export default function TasksPage() {
             columns={effectiveColumns}
             onColumnsChange={handleColumnsChange}
             onAddCard={handleAddCard}
+            addingColumnId={addingColumnId}
+            renderAddingCard={renderAddingCard}
             size="md"
             className="h-full"
             renderCard={renderCard}

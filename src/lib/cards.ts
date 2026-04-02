@@ -230,7 +230,7 @@ export async function getCardBreadcrumb(
   const client = createServerClient()
   const breadcrumb: Pick<CardRow, 'card_id' | 'title' | 'card_type' | 'code'>[] = []
 
-  // Start from the card itself and walk up parent chain (max 4 levels = subtask→task→story→epic)
+  // Start from the card itself and walk up parent chain (max depth 2 = subtask→level2→epic; MAX_LEVELS kept at 4 as defensive headroom)
   let currentId: string | null = cardId
   let level = 0
   const MAX_LEVELS = 4
