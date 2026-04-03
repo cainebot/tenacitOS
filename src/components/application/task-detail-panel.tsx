@@ -1,6 +1,6 @@
 "use client"
 
-import { type FC, type ReactNode, useRef, useState } from "react"
+import { type FC, type ReactNode, useEffect, useRef, useState } from "react"
 import {
   ChevronRight,
   ChevronUpDouble,
@@ -71,6 +71,13 @@ export type Priority = "critical" | "high" | "medium" | "low"
 
 export type TaskStatus = "todo" | "in_progress" | "in_review" | "done" | "cancelled"
 
+/** Lightweight shape for board columns passed into the panel */
+export interface BoardColumnOption {
+  columnId: string
+  name: string
+  stateIds: string[]
+}
+
 export interface TaskUser {
   id: string
   name: string
@@ -130,6 +137,12 @@ export interface TaskDetailPanelProps {
   taskType?: TaskType
   status?: TaskStatus
   onStatusChange?: (status: TaskStatus) => void
+  /** Board columns — when provided, the status dropdown shows column names instead of generic statuses */
+  boardColumns?: BoardColumnOption[]
+  /** Current state_id (used with boardColumns to highlight the active column) */
+  stateId?: string
+  /** Callback with state_id when user picks a column */
+  onStateIdChange?: (stateId: string) => void
 
   // Section C
   description?: string
@@ -231,6 +244,9 @@ export function TaskDetailPanel({
   taskType,
   status = "in_progress",
   onStatusChange,
+  boardColumns,
+  stateId,
+  onStateIdChange,
   description,
   onDescriptionChange,
   assignee: assigneeProp,
@@ -271,6 +287,18 @@ export function TaskDetailPanel({
   const assignee = assigneeProp !== undefined ? assigneeProp : internalAssignee
   const handleAssigneeChange = (u: TaskUser | null) => { setInternalAssignee(u); onAssigneeChange?.(u) }
 
+  // Close panel on Escape key
+  useEffect(() => {
+    if (!onClose) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose()
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [onClose])
+
   const subtasksDone = subtasks.filter((s) => s.status === "done").length
   const subtasksProgress = subtasks.length > 0 ? Math.round((subtasksDone / subtasks.length) * 100) : 0
 
@@ -297,6 +325,9 @@ export function TaskDetailPanel({
             onTitleChange={onTitleChange}
             status={status}
             onStatusChange={onStatusChange}
+            boardColumns={boardColumns}
+            stateId={stateId}
+            onStateIdChange={onStateIdChange}
             onAddSubtask={onAddSubtask}
           />
 
@@ -414,6 +445,9 @@ function SectionTaskHeader({
   onTitleChange,
   status = "in_progress",
   onStatusChange,
+  boardColumns,
+  stateId,
+  onStateIdChange,
   onAddSubtask,
 }: {
   breadcrumbs: BreadcrumbItem[]
@@ -421,6 +455,9 @@ function SectionTaskHeader({
   onTitleChange?: (title: string) => void
   status?: TaskStatus
   onStatusChange?: (status: TaskStatus) => void
+  boardColumns?: BoardColumnOption[]
+  stateId?: string
+  onStateIdChange?: (stateId: string) => void
   onAddSubtask?: () => void
 }) {
   return (
@@ -460,30 +497,60 @@ function SectionTaskHeader({
 
       {/* Status select + Add subtask button */}
       <div className="flex items-center gap-2">
-        <Dropdown.Root>
-          <Button
-            color="primary"
-            size="sm"
-            iconTrailing={ChevronDownIcon}
-            slot="menu"
-          >
-            {statusConfig[status].label}
-          </Button>
-          <Dropdown.Popover className="w-48">
-            <Dropdown.Menu
-              selectionMode="single"
-              selectedKeys={new Set([status])}
-              onSelectionChange={(keys) => {
-                const key = [...keys][0] as TaskStatus
-                if (key) onStatusChange?.(key)
-              }}
+        {boardColumns && boardColumns.length > 0 ? (
+          /* Dynamic board columns */
+          <Dropdown.Root>
+            <Button
+              color="primary"
+              size="sm"
+              iconTrailing={ChevronDownIcon}
+              slot="menu"
             >
-              {statusKeys.map((key) => (
-                <Dropdown.Item key={key} id={key} label={statusConfig[key].label} />
-              ))}
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown.Root>
+              {boardColumns.find(c => c.stateIds.includes(stateId ?? ""))?.name ?? statusConfig[status].label}
+            </Button>
+            <Dropdown.Popover className="w-48">
+              <Dropdown.Menu
+                selectionMode="single"
+                selectedKeys={new Set([boardColumns.find(c => c.stateIds.includes(stateId ?? ""))?.columnId ?? ""])}
+                onSelectionChange={(keys) => {
+                  const colId = [...keys][0] as string
+                  const col = boardColumns.find(c => c.columnId === colId)
+                  if (col?.stateIds[0]) onStateIdChange?.(col.stateIds[0])
+                }}
+              >
+                {boardColumns.map((col) => (
+                  <Dropdown.Item key={col.columnId} id={col.columnId} label={col.name} />
+                ))}
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown.Root>
+        ) : (
+          /* Fallback: hardcoded generic statuses */
+          <Dropdown.Root>
+            <Button
+              color="primary"
+              size="sm"
+              iconTrailing={ChevronDownIcon}
+              slot="menu"
+            >
+              {statusConfig[status].label}
+            </Button>
+            <Dropdown.Popover className="w-48">
+              <Dropdown.Menu
+                selectionMode="single"
+                selectedKeys={new Set([status])}
+                onSelectionChange={(keys) => {
+                  const key = [...keys][0] as TaskStatus
+                  if (key) onStatusChange?.(key)
+                }}
+              >
+                {statusKeys.map((key) => (
+                  <Dropdown.Item key={key} id={key} label={statusConfig[key].label} />
+                ))}
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown.Root>
+        )}
 
         <ButtonUtility
           icon={Plus}

@@ -57,6 +57,7 @@ export function SortableCard({ id, columnId, activeCardId, children }: SortableC
       {...attributes}
       {...listeners}
       suppressHydrationWarning
+      data-card
       className={isBeingDragged ? "cursor-grabbing" : "cursor-pointer"}
     >
       {isBeingDragged ? (

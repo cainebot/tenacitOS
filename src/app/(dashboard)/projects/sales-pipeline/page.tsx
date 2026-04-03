@@ -829,7 +829,14 @@ export default function SalesPipelinePage() {
           search={search}
           onSearchChange={setSearch}
         />
-        <div className="flex-1 overflow-hidden">
+        <div
+          className="flex-1 overflow-hidden"
+          onClick={(e) => {
+            const target = e.target as HTMLElement
+            if (target.closest('button, input, textarea, a, [data-card], [role="dialog"], [role="listbox"], [contenteditable], [data-react-aria-popover]')) return
+            handleClosePanel()
+          }}
+        >
           <KanbanBoard
             columns={effectiveColumns}
             onColumnsChange={handleColumnsChange}

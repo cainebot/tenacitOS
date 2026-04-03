@@ -94,6 +94,7 @@ function SortableColumnWrapper({ id, size = "sm", children }: { id: string; size
       {...listeners}
       suppressHydrationWarning
       className="shrink-0"
+      data-board-column
     >
       {isDragging ? (
         <div className={cx("flex flex-col gap-3.5", size === "md" ? "w-[312px]" : "w-[272px]")}>
