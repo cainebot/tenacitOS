@@ -1,0 +1,9 @@
+[
+  { "id": "gangle",  "name": "Gangle",  "emoji": "🎭", "description": "Expressive, emotional — thrives on copy and narrative work." },
+  { "id": "jax",     "name": "Jax",     "emoji": "🃏", "description": "Quick-witted trickster — great for prospecting and outreach." },
+  { "id": "kaufmo",  "name": "Kaufmo",  "emoji": "🤹", "description": "Chaotic creative — excels at brainstorming and ideation." },
+  { "id": "kinger",  "name": "Kinger",  "emoji": "👑", "description": "Strategic leader — natural fit for scrum and coordination roles." },
+  { "id": "pomni",   "name": "Pomni",   "emoji": "🎪", "description": "Anxious but meticulous — ideal for qualification and data enrichment." },
+  { "id": "ragatha", "name": "Ragatha", "emoji": "🧵", "description": "Warm and methodical — best for nurturing and relationship management." },
+  { "id": "zooble",  "name": "Zooble",  "emoji": "🔮", "description": "Shape-shifting analyst — adapts to any enrichment or research task." }
+]

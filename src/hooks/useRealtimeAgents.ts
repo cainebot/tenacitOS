@@ -1,31 +1,45 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
 import type { AgentRow } from '@/types/supabase'
 
+export type AgentRowWithDept = AgentRow & {
+  departments?: { display_name: string } | null
+}
+
 export interface UseRealtimeAgentsResult {
-  agents: AgentRow[]
+  agents: AgentRowWithDept[]
   loading: boolean
   error: string | null
   resync: () => Promise<void>
 }
 
 export function useRealtimeAgents(): UseRealtimeAgentsResult {
-  const [agents, setAgents] = useState<AgentRow[]>([])
+  const [agents, setAgents] = useState<AgentRowWithDept[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const supabase = createBrowserClient()
+  const deptMapRef = useRef<Record<string, string>>({})
 
   const fetchAllAgents = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const { data, error: fetchError } = await supabase.from('agents').select('*')
+      const { data, error: fetchError } = await supabase.from('agents').select('*, departments(display_name)')
       if (fetchError) {
         setError(fetchError.message)
       } else {
-        setAgents((data as AgentRow[]) ?? [])
+        const agentData = (data as AgentRowWithDept[]) ?? []
+        setAgents(agentData)
+        // Build dept lookup for Realtime payloads
+        const map: Record<string, string> = {}
+        agentData.forEach(a => {
+          if (a.department_id && a.departments?.display_name) {
+            map[a.department_id] = a.departments.display_name
+          }
+        })
+        deptMapRef.current = map
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch agents')
@@ -51,10 +65,24 @@ export function useRealtimeAgents(): UseRealtimeAgentsResult {
           const eventType = payload.eventType
 
           if (eventType === 'INSERT') {
-            const newAgent = payload.new as AgentRow
+            const newAgent = payload.new as AgentRowWithDept
+            // Realtime payload lacks join data — patch from dept map
+            if (newAgent.department_id && !newAgent.departments) {
+              const displayName = deptMapRef.current[newAgent.department_id]
+              if (displayName) {
+                newAgent.departments = { display_name: displayName }
+              }
+            }
             setAgents((prev) => [...prev, newAgent])
           } else if (eventType === 'UPDATE') {
-            const updatedAgent = payload.new as AgentRow
+            const updatedAgent = payload.new as AgentRowWithDept
+            // Realtime payload lacks join data — patch from dept map
+            if (updatedAgent.department_id && !updatedAgent.departments) {
+              const displayName = deptMapRef.current[updatedAgent.department_id]
+              if (displayName) {
+                updatedAgent.departments = { display_name: displayName }
+              }
+            }
             setAgents((prev) =>
               prev.map((a) => (a.agent_id === updatedAgent.agent_id ? updatedAgent : a))
             )
