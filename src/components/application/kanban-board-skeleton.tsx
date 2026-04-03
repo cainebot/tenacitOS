@@ -11,7 +11,7 @@ export function KanbanBoardSkeleton({ className }: { className?: string }) {
     <div
       role="status"
       aria-busy="true"
-      className={cx("flex h-full w-full flex-col overflow-hidden", className)}
+      className={cx("flex h-full w-full flex-col overflow-hidden opacity-40", className)}
     >
       {/* ProjectHeader skeleton */}
       <div className="flex flex-col">

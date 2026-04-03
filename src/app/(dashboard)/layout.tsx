@@ -120,7 +120,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         showSecondaryPanel={agentBoardActive}
       />
 
-      <main className="flex flex-1 flex-col items-start self-stretch gap-8 overflow-auto py-8 pb-12">
+      <main className="flex flex-1 flex-col items-start self-stretch gap-8 overflow-auto">
         {children}
       </main>
 
