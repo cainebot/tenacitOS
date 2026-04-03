@@ -56,6 +56,7 @@ export default function ProjectBoardPage() {
 
   // Board discovery chain: slug → project_id → boardId (D-11)
   const [boardId, setBoardId] = useState("")
+  const [discoveryDone, setDiscoveryDone] = useState(false)
 
   useEffect(() => {
     if (!slug) return
@@ -74,6 +75,7 @@ export default function ProjectBoardPage() {
         if (board) setBoardId(board.board_id)
       })
       .catch((err) => { console.error('[board-discovery] Failed:', err) })
+      .finally(() => setDiscoveryDone(true))
   }, [slug])
 
   // Live board data
@@ -907,8 +909,17 @@ export default function ProjectBoardPage() {
   )
 
   // Loading state
-  if (!boardId || loading) {
+  if (!discoveryDone || loading) {
     return <KanbanBoardSkeleton />
+  }
+
+  // No board found for this project
+  if (!boardId) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <p className="text-tertiary text-sm">No board found for this project.</p>
+      </div>
+    )
   }
 
   return (
