@@ -9,6 +9,7 @@ import { defaultFilterFields, type FilterRow } from "@/components/application/dy
 import { ProjectHeader } from "@/components/application/project-header/project-header"
 import type { ProjectCoverValue } from "@/components/application/project-cover/project-cover"
 import { TaskDetailPanel } from "@/components/application/task-detail-panel"
+import { TaskDetailPanelSkeleton } from "@/components/application/task-detail-panel-skeleton"
 import type {
   TaskUser,
   TaskTag,
@@ -879,6 +880,9 @@ export default function TasksPage() {
 
         {/* Panel content — fixed inner width so content doesn't collapse */}
         <div className="h-full" style={{ width: panelWidth }}>
+          {detailLoading ? (
+            <TaskDetailPanelSkeleton className="h-full border-l border-secondary" />
+          ) : (
           <TaskDetailPanel
             breadcrumbs={panelDataProps?.breadcrumbs}
             isCompleted={panelDataProps?.isCompleted}
@@ -916,6 +920,7 @@ export default function TasksPage() {
             onAddComment={handlePanelAddComment}
             className="h-full border-l border-secondary"
           />
+          )}
         </div>
       </div>
     </div>
