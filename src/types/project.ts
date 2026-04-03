@@ -191,7 +191,7 @@ export type CardDetail = CardRow & {
   attachments: CardAttachmentRow[]
   comments: CardCommentRow[]
   parent: { card_id: string; title: string; card_type: CardType } | null
-  children: Pick<CardRow, 'card_id' | 'title' | 'card_type' | 'state_id'>[]
+  children: Pick<CardRow, 'card_id' | 'title' | 'card_type' | 'state_id' | 'priority' | 'assigned_agent_id'>[]
   breadcrumb: Pick<CardRow, 'card_id' | 'title' | 'card_type' | 'code'>[]
   field_values: CardCustomFieldValueRow[]
 }

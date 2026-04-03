@@ -157,7 +157,7 @@ export async function getCard(id: string): Promise<CardDetail> {
         .order('created_at'),
       client
         .from('cards')
-        .select('card_id, title, card_type, state_id')
+        .select('card_id, title, card_type, state_id, priority, assigned_agent_id')
         .eq('parent_card_id', id),
       client
         .from('card_custom_field_values')
@@ -205,7 +205,7 @@ export async function getCard(id: string): Promise<CardDetail> {
     parent,
     children: childrenRes.data as Pick<
       CardRow,
-      'card_id' | 'title' | 'card_type' | 'state_id'
+      'card_id' | 'title' | 'card_type' | 'state_id' | 'priority' | 'assigned_agent_id'
     >[],
     breadcrumb,
     field_values: fieldValuesRes.data as CardCustomFieldValueRow[],
