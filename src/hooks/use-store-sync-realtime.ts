@@ -18,7 +18,7 @@ import type { CardRow } from '@/types/project'
  *   only when the card was NOT recently moved by this client.
  * - INSERT/DELETE events trigger a full board refetch (card count changed)
  * - Cleanup removes channel on boardId change or unmount — no subscription leaks (RT-03)
- * - 300ms debounce batches rapid events from agent burst operations
+ * - 80ms debounce batches rapid events from agent burst operations
  *
  * @deprecated (Phase 73) Board position correctness now comes from useBoardSyncEngine
  * (sync_events channel). This hook is kept for non-positional metadata patches
@@ -71,7 +71,7 @@ export function useStoreSyncRealtime(
         (payload) => {
           const eventType = payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE'
 
-          // Debounce: clear any pending timer and schedule a new 300ms callback
+          // Debounce: clear any pending timer and schedule a new 80ms callback
           if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
           debounceTimerRef.current = setTimeout(() => {
             debounceTimerRef.current = null
@@ -178,7 +178,7 @@ export function useStoreSyncRealtime(
               // INSERT or DELETE: card count changed — full board reload is the safe fallback
               refetchRef.current()
             }
-          }, 300)
+          }, 80)
         },
       )
       .subscribe()

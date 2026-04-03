@@ -51,9 +51,12 @@ interface BoardState {
    * Phase 73: called by useBoardSyncEngine when the engine emits new columns.
    */
   setSyncColumns: (columns: BoardColumn[]) => void
+  renameColumn: (columnId: string, title: string) => void
   reset: () => void
   /** Called by useStoreSyncRealtime to register a per-card echo suppressor (B2 fix) */
   registerEchoSuppressor: (fn: EchoSuppressor) => void
+  /** Patch non-positional fields on a card in the store. No API call — instant UI update. */
+  patchCardInStore: (cardId: string, patch: Partial<Pick<CardRow, 'title' | 'description' | 'labels' | 'priority' | 'assigned_agent_id' | 'due_date' | 'card_type'>>) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -192,6 +195,14 @@ export const useBoardStore = create<BoardState>()((set, get) => ({
     set({ boardId, columns, pendingMutations: 0 })
   },
 
+  renameColumn: (columnId, title) => {
+    set((state) => ({
+      columns: state.columns.map((col) =>
+        col.columnId === columnId ? { ...col, title } : col,
+      ),
+    }))
+  },
+
   reset: () => {
     set({ boardId: null, columns: [], pendingMutations: 0 })
   },
@@ -211,6 +222,17 @@ export const useBoardStore = create<BoardState>()((set, get) => ({
 
   registerEchoSuppressor: (fn) => {
     _echoSuppressor = fn
+  },
+
+  patchCardInStore: (cardId, patch) => {
+    set((state) => ({
+      columns: state.columns.map((col) => ({
+        ...col,
+        items: col.items.map((c) =>
+          c.card_id === cardId ? { ...c, ...patch } : c,
+        ),
+      })),
+    }))
   },
 
   moveCard: async (params) => {

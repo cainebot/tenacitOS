@@ -9,7 +9,6 @@ import { ProjectHeader } from "@/components/application/project-header/project-h
 import type { ProjectCoverValue } from "@/components/application/project-cover/project-cover"
 import { TaskDetailPanel } from "@/components/application/task-detail-panel"
 import type {
-  TaskStatus,
   TaskUser,
   TaskTag,
   Subtask,
@@ -23,7 +22,7 @@ import { useCardDetail } from "@/hooks/useCardDetail"
 import { useStoreSyncRealtime } from "@/hooks/use-store-sync-realtime"
 import { useBoardSyncEngine } from "@/hooks/use-board-sync-engine"
 import { useBoardStore, type BoardColumn } from "@/stores/board-store"
-import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, stateCategoryToTaskStatus } from "@/lib/adapters"
+import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps } from "@/lib/adapters"
 import { sortKeyBetween } from "@/lib/fractional-index"
 import { parseDate } from "@internationalized/date"
 import type { CardRow, BoardRow, ProjectStateRow } from "@/types/project"
@@ -151,6 +150,7 @@ export default function SalesPipelinePage() {
   // Zustand store selectors
   const storeLoadBoard = useBoardStore(s => s.loadBoard)
   const storeColumns = useBoardStore(s => s.columns)
+  const storeRenameColumn = useBoardStore(s => s.renameColumn)
 
   // Seed the store only on initial load (boardId first appearance) or when boardId changes.
   // DO NOT include `cards` in the dependency array — server refetches that update `cards`
@@ -394,6 +394,7 @@ export default function SalesPipelinePage() {
       for (const newCol of newCols) {
         const origCol = prev.find((c) => c.id === newCol.id)
         if (origCol && origCol.title !== newCol.title) {
+          storeRenameColumn(newCol.id, newCol.title)
           fetch(`/api/boards/${boardId}/columns/${newCol.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -517,15 +518,11 @@ export default function SalesPipelinePage() {
       .catch(() => {})
   }, [detailCard?.card_id, detailCard?.attachments.length])
 
-  // TaskStatus -> state_id reverse mapping for onStatusChange
-  const statusToStateId = useMemo((): Partial<Record<TaskStatus, string>> => {
-    const map: Partial<Record<TaskStatus, string>> = {}
-    for (const s of projectStates) {
-      const taskStatus = stateCategoryToTaskStatus(s.category, s.name)
-      if (!map[taskStatus]) map[taskStatus] = s.state_id
-    }
-    return map
-  }, [projectStates])
+  // Board columns for the panel status dropdown — derived from store (updated on rename)
+  const panelBoardColumns = useMemo(
+    () => storeColumns.map(col => ({ columnId: col.columnId, name: col.title, stateIds: [col.stateId] })),
+    [storeColumns],
+  )
 
   // Panel users derived from agents (same pattern as kanbanUsers but with role for TaskUser shape)
   const panelUsers: TaskUser[] = useMemo(
@@ -560,11 +557,10 @@ export default function SalesPipelinePage() {
     }, 500)
   }, [detailUpdateField])
 
-  // Status change: resolve TaskStatus string to state_id UUID, then moveCard
-  const handlePanelStatusChange = useCallback((status: TaskStatus) => {
-    const stateId = statusToStateId[status]
-    if (stateId) detailMoveCard(stateId)
-  }, [statusToStateId, detailMoveCard])
+  // State change: direct state_id from project states dropdown
+  const handlePanelStateIdChange = useCallback((stateId: string) => {
+    detailMoveCard(stateId)
+  }, [detailMoveCard])
 
   // Toggle complete: move to done or first to-do state
   // D-06: Route through sync engine — single source of truth for all card moves
@@ -708,6 +704,8 @@ export default function SalesPipelinePage() {
 
   const patchCard = useCallback(
     async (cardId: string, patch: Record<string, unknown>) => {
+      // Optimistic store update — instant KanbanCard reflection, no wait for API round-trip
+      useBoardStore.getState().patchCardInStore(cardId, patch as Partial<Pick<CardRow, 'title' | 'description' | 'labels' | 'priority' | 'assigned_agent_id' | 'due_date' | 'card_type'>>)
       await fetch(`/api/cards/${cardId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -802,24 +800,25 @@ export default function SalesPipelinePage() {
   }
 
   return (
-    <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
-      <ProjectHeader
-        name={board?.name ?? "Sales pipeline"}
-        cover={cover}
-        onCoverChange={setCover}
-        avatars={projectAvatars}
-        onAddMember={() => {}}
-        selectedTab={selectedTab}
-        onTabChange={setSelectedTab}
-      />
-      <KanbanBoardHeader
-        filterFields={filterFields}
-        filters={filters}
-        onFiltersChange={setFilters}
-        search={search}
-        onSearchChange={setSearch}
-      />
-      <div className="flex flex-1 overflow-hidden">
+    <div className="flex h-full w-full min-w-0 overflow-hidden">
+      {/* Left content column */}
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <ProjectHeader
+          name={board?.name ?? "Sales pipeline"}
+          cover={cover}
+          onCoverChange={setCover}
+          avatars={projectAvatars}
+          onAddMember={() => {}}
+          selectedTab={selectedTab}
+          onTabChange={setSelectedTab}
+        />
+        <KanbanBoardHeader
+          filterFields={filterFields}
+          filters={filters}
+          onFiltersChange={setFilters}
+          search={search}
+          onSearchChange={setSearch}
+        />
         <div className="flex-1 overflow-hidden">
           <KanbanBoard
             columns={effectiveColumns}
@@ -832,58 +831,60 @@ export default function SalesPipelinePage() {
             renderCard={renderCard}
           />
         </div>
+      </div>
 
-        {/* Side Panel — inline flex, shrinks board when open */}
+      {/* Side Panel — full height, shrinks board when open */}
+      <div
+        className="relative flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
+        style={{ width: isPanelOpen ? panelWidth : 0 }}
+      >
+        {/* Resize handle */}
         <div
-          className="relative flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
-          style={{ width: isPanelOpen ? panelWidth : 0 }}
+          onMouseDown={handleMouseDown}
+          className="absolute -left-1 top-0 z-10 flex h-full w-2 cursor-col-resize items-center justify-center opacity-0 transition-opacity hover:opacity-100"
         >
-          {/* Resize handle */}
-          <div
-            onMouseDown={handleMouseDown}
-            className="absolute -left-1 top-0 z-10 flex h-full w-2 cursor-col-resize items-center justify-center opacity-0 transition-opacity hover:opacity-100"
-          >
-            <div className="h-8 w-1 rounded-full bg-fg-quaternary/50" />
-          </div>
+          <div className="h-8 w-1 rounded-full bg-fg-quaternary/50" />
+        </div>
 
-          {/* Panel content — fixed inner width so content doesn't collapse */}
-          <div className="h-full" style={{ width: panelWidth }}>
-            <TaskDetailPanel
-              breadcrumbs={panelDataProps?.breadcrumbs}
-              isCompleted={panelDataProps?.isCompleted}
-              onToggleComplete={handleToggleComplete}
-              onCopyLink={() => {}}
-              onExpand={() => {}}
-              onClose={handleClosePanel}
-              title={panelDataProps?.title ?? ''}
-              onTitleChange={handlePanelTitleChange}
-              taskType={panelDataProps?.taskType}
-              status={panelDataProps?.status}
-              onStatusChange={handlePanelStatusChange}
-              description={panelDataProps?.description}
-              onDescriptionChange={handleDescriptionChange}
-              assignee={panelDataProps?.assignee}
-              onAssigneeChange={handlePanelAssigneeChange}
-              users={panelUsers}
-              dueDate={panelDataProps?.dueDate}
-              onDueDateChange={handlePanelDueDateChange}
-              tags={panelDataProps?.tags}
-              availableTags={allLabels}
-              onTagsChange={handlePanelTagsChange}
-              priority={panelDataProps?.priority}
-              onPriorityChange={handlePanelPriorityChange}
-              subtasks={panelDataProps?.subtasks}
-              onAddSubtask={handlePanelAddSubtask}
-              onSubtaskClick={handleSubtaskClick}
-              bodyContent={panelDataProps?.bodyContent}
-              attachments={panelDataProps?.attachments}
-              onFilesSelected={handlePanelFilesSelected}
-              onDeleteAttachment={handlePanelDeleteAttachment}
-              comments={panelDataProps?.comments}
-              onAddComment={handlePanelAddComment}
-              className="h-full border-l border-secondary"
-            />
-          </div>
+        {/* Panel content — fixed inner width so content doesn't collapse */}
+        <div className="h-full" style={{ width: panelWidth }}>
+          <TaskDetailPanel
+            breadcrumbs={panelDataProps?.breadcrumbs}
+            isCompleted={panelDataProps?.isCompleted}
+            onToggleComplete={handleToggleComplete}
+            onCopyLink={() => {}}
+            onExpand={() => {}}
+            onClose={handleClosePanel}
+            title={panelDataProps?.title ?? ''}
+            onTitleChange={handlePanelTitleChange}
+            taskType={panelDataProps?.taskType}
+            status={panelDataProps?.status}
+            boardColumns={panelBoardColumns}
+            stateId={detailCard?.state_id}
+            onStateIdChange={handlePanelStateIdChange}
+            description={panelDataProps?.description}
+            onDescriptionChange={handleDescriptionChange}
+            assignee={panelDataProps?.assignee}
+            onAssigneeChange={handlePanelAssigneeChange}
+            users={panelUsers}
+            dueDate={panelDataProps?.dueDate}
+            onDueDateChange={handlePanelDueDateChange}
+            tags={panelDataProps?.tags}
+            availableTags={allLabels}
+            onTagsChange={handlePanelTagsChange}
+            priority={panelDataProps?.priority}
+            onPriorityChange={handlePanelPriorityChange}
+            subtasks={panelDataProps?.subtasks}
+            onAddSubtask={handlePanelAddSubtask}
+            onSubtaskClick={handleSubtaskClick}
+            bodyContent={panelDataProps?.bodyContent}
+            attachments={panelDataProps?.attachments}
+            onFilesSelected={handlePanelFilesSelected}
+            onDeleteAttachment={handlePanelDeleteAttachment}
+            comments={panelDataProps?.comments}
+            onAddComment={handlePanelAddComment}
+            className="h-full border-l border-secondary"
+          />
         </div>
       </div>
     </div>
