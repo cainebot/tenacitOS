@@ -663,7 +663,7 @@ export default function SalesPipelinePage() {
   }, [detailCard, detailRefetch, refetch])
 
   // Add subtask: create child card with card_type 'subtask'
-  const handlePanelAddSubtask = useCallback(async (data: { title: string; priority?: TaskPriority; assignee?: string; status?: TaskStatus }) => {
+  const handlePanelAddSubtask = useCallback(async (data: { title: string; priority?: TaskPriority; assignee?: string; status?: TaskStatus; stateId?: string }) => {
     if (!detailCard || !todoStateId) return
     try {
       await fetch('/api/cards', {
@@ -672,7 +672,7 @@ export default function SalesPipelinePage() {
         body: JSON.stringify({
           title: data.title,
           project_id: detailCard.project_id,
-          state_id: todoStateId,
+          state_id: data.stateId ?? todoStateId,
           card_type: 'subtask',
           parent_card_id: detailCard.card_id,
           ...(data.priority && { priority: data.priority }),
@@ -686,17 +686,26 @@ export default function SalesPipelinePage() {
     refetch()
   }, [detailCard, todoStateId, detailRefetch, refetch])
 
-  // Update subtask field: PATCH for title/priority/assignee, /move for status
-  const handleSubtaskUpdate = useCallback(async (subtaskId: string, updates: Partial<Pick<Subtask, 'title' | 'priority' | 'assignee' | 'status'>>) => {
+  // Update subtask field: PATCH for title/priority/assignee, /move for status/stateId
+  const handleSubtaskUpdate = useCallback(async (subtaskId: string, updates: Partial<Pick<Subtask, 'title' | 'priority' | 'assignee' | 'status' | 'stateId'>>) => {
     try {
-      // Handle status change separately — requires /move endpoint
-      if (updates.status) {
+      // Handle stateId change directly — no category lookup needed
+      if (updates.stateId) {
+        await fetch(`/api/cards/${subtaskId}/move`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            state_id: updates.stateId,
+            moved_by: 'user',
+          }),
+        })
+      } else if (updates.status) {
+        // Fallback: Handle status change via category lookup — requires /move endpoint
         const targetState = projectStates.find(s => {
           const cat = s.category
           if (updates.status === 'todo') return cat === 'to-do'
           if (updates.status === 'done') return cat === 'done'
-          if (updates.status === 'cancelled') return cat === 'done' // map cancelled to done category
-          // in_progress and in_review both map to in_progress category
+          if (updates.status === 'cancelled') return cat === 'done'
           return cat === 'in_progress'
         })
         if (targetState) {

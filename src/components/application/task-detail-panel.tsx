@@ -98,6 +98,7 @@ export interface Subtask {
   priority?: Priority | null
   assignee?: TaskUser | null
   status?: TaskStatus
+  stateId?: string
 }
 
 export interface TaskComment {
@@ -163,8 +164,8 @@ export interface TaskDetailPanelProps {
 
   // Section E - Subtasks
   subtasks?: Subtask[]
-  onAddSubtask?: (data: { title: string; priority?: Priority; assignee?: string; status?: TaskStatus }) => void
-  onSubtaskUpdate?: (subtaskId: string, updates: Partial<Pick<Subtask, 'title' | 'priority' | 'assignee' | 'status'>>) => void
+  onAddSubtask?: (data: { title: string; priority?: Priority; assignee?: string; status?: TaskStatus; stateId?: string }) => void
+  onSubtaskUpdate?: (subtaskId: string, updates: Partial<Pick<Subtask, 'title' | 'priority' | 'assignee' | 'status' | 'stateId'>>) => void
   onDeleteAllSubtasks?: () => void
   onSubtaskClick?: (subtask: Subtask) => void
 
@@ -373,6 +374,7 @@ export function TaskDetailPanel({
                 onSubtaskClick={onSubtaskClick}
                 taskType={taskType}
                 users={users}
+                boardColumns={boardColumns}
               />
               <div className="h-px bg-border-secondary" />
             </>
@@ -1103,22 +1105,24 @@ function SectionSubtasks({
   onSubtaskClick,
   taskType,
   users = [],
+  boardColumns,
 }: {
   subtasks: Subtask[]
   subtasksDone: number
   subtasksProgress: number
-  onAddSubtask?: (data: { title: string; priority?: Priority; assignee?: string; status?: TaskStatus }) => void
-  onSubtaskUpdate?: (subtaskId: string, updates: Partial<Pick<Subtask, 'title' | 'priority' | 'assignee' | 'status'>>) => void
+  onAddSubtask?: (data: { title: string; priority?: Priority; assignee?: string; status?: TaskStatus; stateId?: string }) => void
+  onSubtaskUpdate?: (subtaskId: string, updates: Partial<Pick<Subtask, 'title' | 'priority' | 'assignee' | 'status' | 'stateId'>>) => void
   onDeleteAllSubtasks?: () => void
   onSubtaskClick?: (subtask: Subtask) => void
   taskType?: TaskType
   users?: TaskUser[]
+  boardColumns?: BoardColumnOption[]
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null)
   const [titleDraft, setTitleDraft] = useState("")
-  const [creationDraft, setCreationDraft] = useState<{ priority?: Priority; assignee?: string; status?: TaskStatus }>({})
+  const [creationDraft, setCreationDraft] = useState<{ priority?: Priority; assignee?: string; status?: TaskStatus; stateId?: string }>({})
   const inputRef = useRef<HTMLInputElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
 
@@ -1314,30 +1318,58 @@ function SectionSubtasks({
                           onClick={(e) => e.stopPropagation()}
                           className={cx("border-l border-secondary px-3 py-3 cursor-pointer hover:bg-primary_hover", !isLast && "border-b")}
                         >
-                          <Dropdown.Root>
-                            <AriaButton
-                              slot="menu"
-                              className="flex items-center cursor-pointer rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none"
-                            >
-                              <Badge type="modern" color={subStatus.color} size="sm">
-                                {subStatus.label}
-                              </Badge>
-                            </AriaButton>
-                            <Dropdown.Popover className="w-48">
-                              <Dropdown.Menu
-                                selectionMode="single"
-                                selectedKeys={new Set([sub.status ?? 'todo'])}
-                                onSelectionChange={(keys) => {
-                                  const key = [...keys][0] as TaskStatus
-                                  onSubtaskUpdate?.(sub.id, { status: key })
-                                }}
+                          {boardColumns && boardColumns.length > 0 ? (
+                            <Dropdown.Root>
+                              <AriaButton
+                                slot="menu"
+                                className="flex items-center cursor-pointer rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none"
                               >
-                                {statusKeys.map(key => (
-                                  <Dropdown.Item key={key} id={key} label={statusConfig[key].label} />
-                                ))}
-                              </Dropdown.Menu>
-                            </Dropdown.Popover>
-                          </Dropdown.Root>
+                                <Badge type="modern" color={subStatus.color} size="sm">
+                                  {boardColumns.find(c => c.stateIds.includes(sub.stateId ?? ""))?.name ?? subStatus.label}
+                                </Badge>
+                              </AriaButton>
+                              <Dropdown.Popover className="w-48">
+                                <Dropdown.Menu
+                                  selectionMode="single"
+                                  selectedKeys={new Set([boardColumns.find(c => c.stateIds.includes(sub.stateId ?? ""))?.columnId ?? ""])}
+                                  onSelectionChange={(keys) => {
+                                    const colId = [...keys][0] as string
+                                    const col = boardColumns.find(c => c.columnId === colId)
+                                    if (col?.stateIds[0]) onSubtaskUpdate?.(sub.id, { stateId: col.stateIds[0] })
+                                  }}
+                                >
+                                  {boardColumns.map((col) => (
+                                    <Dropdown.Item key={col.columnId} id={col.columnId} label={col.name} />
+                                  ))}
+                                </Dropdown.Menu>
+                              </Dropdown.Popover>
+                            </Dropdown.Root>
+                          ) : (
+                            <Dropdown.Root>
+                              <AriaButton
+                                slot="menu"
+                                className="flex items-center cursor-pointer rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none"
+                              >
+                                <Badge type="modern" color={subStatus.color} size="sm">
+                                  {subStatus.label}
+                                </Badge>
+                              </AriaButton>
+                              <Dropdown.Popover className="w-48">
+                                <Dropdown.Menu
+                                  selectionMode="single"
+                                  selectedKeys={new Set([sub.status ?? 'todo'])}
+                                  onSelectionChange={(keys) => {
+                                    const key = [...keys][0] as TaskStatus
+                                    onSubtaskUpdate?.(sub.id, { status: key })
+                                  }}
+                                >
+                                  {statusKeys.map(key => (
+                                    <Dropdown.Item key={key} id={key} label={statusConfig[key].label} />
+                                  ))}
+                                </Dropdown.Menu>
+                              </Dropdown.Popover>
+                            </Dropdown.Root>
+                          )}
                         </td>
                       </tr>
                     )
@@ -1416,36 +1448,64 @@ function SectionSubtasks({
 
                       {/* Creation row — Status picker */}
                       <td onClick={(e) => e.stopPropagation()} className={cx("border-l border-secondary px-3 py-2.5", subtasks.length > 0 && "border-t")}>
-                        <Dropdown.Root>
-                          <AriaButton
-                            slot="menu"
-                            className="flex items-center cursor-pointer rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none"
-                          >
-                            {(() => {
-                              const statusKey = creationDraft.status ?? 'todo'
-                              const cfg = statusConfig[statusKey]
-                              return (
-                                <Badge type="modern" color={cfg.color} size="sm">
-                                  {cfg.label}
-                                </Badge>
-                              )
-                            })()}
-                          </AriaButton>
-                          <Dropdown.Popover className="w-48">
-                            <Dropdown.Menu
-                              selectionMode="single"
-                              selectedKeys={new Set([creationDraft.status ?? 'todo'])}
-                              onSelectionChange={(keys) => {
-                                const key = [...keys][0] as TaskStatus
-                                setCreationDraft(prev => ({ ...prev, status: key }))
-                              }}
+                        {boardColumns && boardColumns.length > 0 ? (
+                          <Dropdown.Root>
+                            <AriaButton
+                              slot="menu"
+                              className="flex items-center cursor-pointer rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none"
                             >
-                              {statusKeys.map(key => (
-                                <Dropdown.Item key={key} id={key} label={statusConfig[key].label} />
-                              ))}
-                            </Dropdown.Menu>
-                          </Dropdown.Popover>
-                        </Dropdown.Root>
+                              <Badge type="modern" color="gray" size="sm">
+                                {boardColumns.find(c => c.stateIds.includes(creationDraft.stateId ?? ""))?.name ?? boardColumns[0]?.name ?? "To do"}
+                              </Badge>
+                            </AriaButton>
+                            <Dropdown.Popover className="w-48">
+                              <Dropdown.Menu
+                                selectionMode="single"
+                                selectedKeys={new Set([boardColumns.find(c => c.stateIds.includes(creationDraft.stateId ?? ""))?.columnId ?? boardColumns[0]?.columnId ?? ""])}
+                                onSelectionChange={(keys) => {
+                                  const colId = [...keys][0] as string
+                                  const col = boardColumns.find(c => c.columnId === colId)
+                                  if (col?.stateIds[0]) setCreationDraft(prev => ({ ...prev, stateId: col.stateIds[0] }))
+                                }}
+                              >
+                                {boardColumns.map((col) => (
+                                  <Dropdown.Item key={col.columnId} id={col.columnId} label={col.name} />
+                                ))}
+                              </Dropdown.Menu>
+                            </Dropdown.Popover>
+                          </Dropdown.Root>
+                        ) : (
+                          <Dropdown.Root>
+                            <AriaButton
+                              slot="menu"
+                              className="flex items-center cursor-pointer rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none"
+                            >
+                              {(() => {
+                                const statusKey = creationDraft.status ?? 'todo'
+                                const cfg = statusConfig[statusKey]
+                                return (
+                                  <Badge type="modern" color={cfg.color} size="sm">
+                                    {cfg.label}
+                                  </Badge>
+                                )
+                              })()}
+                            </AriaButton>
+                            <Dropdown.Popover className="w-48">
+                              <Dropdown.Menu
+                                selectionMode="single"
+                                selectedKeys={new Set([creationDraft.status ?? 'todo'])}
+                                onSelectionChange={(keys) => {
+                                  const key = [...keys][0] as TaskStatus
+                                  setCreationDraft(prev => ({ ...prev, status: key }))
+                                }}
+                              >
+                                {statusKeys.map(key => (
+                                  <Dropdown.Item key={key} id={key} label={statusConfig[key].label} />
+                                ))}
+                              </Dropdown.Menu>
+                            </Dropdown.Popover>
+                          </Dropdown.Root>
+                        )}
                       </td>
                     </tr>
                   )}

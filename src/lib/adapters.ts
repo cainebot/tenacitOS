@@ -175,6 +175,7 @@ export function cardDetailToTaskDetailPanelProps(
       priority: child.priority as Priority | null,
       assignee: child.assigned_agent_id ? resolveAgentAsTaskUser(child.assigned_agent_id, agents) : null,
       status: childState ? stateCategoryToTaskStatus(childState.category, childState.name) : 'todo',
+      stateId: child.state_id,
     }
   })
 
