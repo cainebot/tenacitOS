@@ -163,23 +163,31 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
               ? items.length === 0 ? "min-h-[200px]" : "min-h-[48px]"
               : "min-h-0",
           )}
-          style={{ contain: "layout style" }}
+          style={isDragActive ? undefined : { contain: "layout style" }}
         >
-          <AnimatePresence initial={false}>
-            {items.map((item) => (
-              <motion.div
-                key={item.id}
-                initial={isDragActive ? false : { opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={isDragActive ? { duration: 0 } : { duration: 0.15, ease: "easeOut" }}
-              >
-                <SortableCard id={item.id} columnId={columnId} activeCardId={activeCardId}>
-                  {renderCard(item)}
-                </SortableCard>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          {isDragActive ? (
+            items.map((item) => (
+              <SortableCard key={item.id} id={item.id} columnId={columnId} activeCardId={activeCardId}>
+                {renderCard(item)}
+              </SortableCard>
+            ))
+          ) : (
+            <AnimatePresence initial={false}>
+              {items.map((item) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                >
+                  <SortableCard id={item.id} columnId={columnId} activeCardId={activeCardId}>
+                    {renderCard(item)}
+                  </SortableCard>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
         </div>
       </SortableContext>
 

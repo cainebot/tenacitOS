@@ -11,6 +11,7 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
+  MeasuringStrategy,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
@@ -51,6 +52,13 @@ const restrictToHorizontalAxis: Modifier = ({ transform }) => ({
   ...transform,
   y: 0,
 })
+
+// Re-measure droppable rects after every DOM change during drag —
+// prevents stale cached rects from causing jumpless (instant) repositioning
+// on second+ cross-column moves.
+const measuringConfig = {
+  droppable: { strategy: MeasuringStrategy.Always },
+}
 
 // ---------------------------------------------------------------------------
 // Module-level drag flag — read by useStoreSyncRealtime to suppress patches during drag
@@ -458,6 +466,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
         sensors={sensors}
         collisionDetection={stableCollisionDetection}
         modifiers={modifiers}
+        measuring={measuringConfig}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
