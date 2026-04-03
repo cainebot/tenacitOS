@@ -17,6 +17,8 @@ import type {
   TaskComment,
   TaskAttachment,
   BreadcrumbItem,
+  Priority as TaskPriority,
+  TaskStatus,
 } from "@/components/application/task-detail-panel"
 import type { DateValue } from "react-aria-components"
 import { useBoardData } from "@/hooks/useBoardData"
@@ -674,7 +676,7 @@ export default function TasksPage() {
   }, [detailCard, detailRefetch, refetch])
 
   // Add subtask: create child card with card_type 'subtask'
-  const handlePanelAddSubtask = useCallback(async (data: { title: string; priority?: string; assignee?: string; status?: string }) => {
+  const handlePanelAddSubtask = useCallback(async (data: { title: string; priority?: TaskPriority; assignee?: string; status?: TaskStatus }) => {
     if (!detailCard || !todoStateId) return
     try {
       await fetch('/api/cards', {
@@ -696,6 +698,54 @@ export default function TasksPage() {
     await detailRefetch()
     refetch()
   }, [detailCard, todoStateId, detailRefetch, refetch])
+
+  // Update subtask field: PATCH for title/priority/assignee, /move for status
+  const handleSubtaskUpdate = useCallback(async (subtaskId: string, updates: Partial<Pick<Subtask, 'title' | 'priority' | 'assignee' | 'status'>>) => {
+    try {
+      // Handle status change separately — requires /move endpoint
+      if (updates.status) {
+        const targetState = projectStates.find(s => {
+          const cat = s.category
+          if (updates.status === 'todo') return cat === 'to-do'
+          if (updates.status === 'done') return cat === 'done'
+          if (updates.status === 'cancelled') return cat === 'done' // map cancelled to done category
+          // in_progress and in_review both map to in_progress category
+          return cat === 'in_progress'
+        })
+        if (targetState) {
+          await fetch(`/api/cards/${subtaskId}/move`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              state_id: targetState.state_id,
+              moved_by: 'user',
+            }),
+          })
+        }
+      }
+
+      // Handle field updates (title, priority, assignee) via PATCH
+      const patchBody: Record<string, unknown> = {}
+      if (updates.title !== undefined) patchBody.title = updates.title
+      if (updates.priority !== undefined) patchBody.priority = updates.priority
+      if (updates.assignee !== undefined) {
+        // Map TaskUser | null → assigned_agent_id string | null
+        patchBody.assigned_agent_id = updates.assignee ? updates.assignee.id : null
+      }
+
+      if (Object.keys(patchBody).length > 0) {
+        await fetch(`/api/cards/${subtaskId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patchBody),
+        })
+      }
+    } catch (err) {
+      console.error('[handleSubtaskUpdate] Failed to update subtask:', err)
+    }
+    await detailRefetch()
+    refetch()
+  }, [projectStates, detailRefetch, refetch])
 
   // Subtask click: navigate panel to that subtask
   const handleSubtaskClick = useCallback((sub: Subtask) => {
@@ -914,6 +964,7 @@ export default function TasksPage() {
             subtasks={panelDataProps?.subtasks}
             onAddSubtask={handlePanelAddSubtask}
             onSubtaskClick={handleSubtaskClick}
+            onSubtaskUpdate={handleSubtaskUpdate}
             bodyContent={panelDataProps?.bodyContent}
             attachments={panelDataProps?.attachments}
             onFilesSelected={handlePanelFilesSelected}
