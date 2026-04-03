@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
+import { useParams } from "next/navigation"
 import { KanbanCard, type KanbanCardProps, type KanbanCardTag, type KanbanCardUser, type Priority } from "@/components/application/kanban-card"
 import { KanbanBoard, type KanbanBoardColumn } from "@/components/application/kanban-board"
 import { KanbanBoardHeader } from "@/components/application/kanban-board-header"
@@ -49,19 +50,31 @@ interface LiveCardData {
 // Page
 // ---------------------------------------------------------------------------
 
-export default function SalesPipelinePage() {
-  // Board discovery
+export default function ProjectBoardPage() {
+  const params = useParams<{ slug: string }>()
+  const slug = params.slug
+
+  // Board discovery chain: slug → project_id → boardId (D-11)
   const [boardId, setBoardId] = useState("")
 
   useEffect(() => {
-    fetch("/api/boards")
+    if (!slug) return
+    fetch(`/api/projects?slug=${encodeURIComponent(slug)}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`Project not found: ${slug}`)
+        return r.json()
+      })
+      .then((project: import('@/types/project').ProjectRow) => {
+        if (!project?.project_id) throw new Error('Project not found')
+        return fetch(`/api/boards?project_id=${project.project_id}`)
+      })
       .then((r) => r.json())
       .then((boards: BoardRow[]) => {
-        const pipelineBoard = boards.find((b) => b.name === "Sales Pipeline") ?? boards[0]
-        if (pipelineBoard) setBoardId(pipelineBoard.board_id)
+        const board = boards[0]
+        if (board) setBoardId(board.board_id)
       })
-      .catch((err) => { console.error('[board-load] Failed:', err) })
-  }, [])
+      .catch((err) => { console.error('[board-discovery] Failed:', err) })
+  }, [slug])
 
   // Live board data
   const { board, cards, maxSyncId, loading, refetch } = useBoardData(boardId)
@@ -903,7 +916,7 @@ export default function SalesPipelinePage() {
       {/* Left content column */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         <ProjectHeader
-          name={board?.name ?? "Sales pipeline"}
+          name={board?.name ?? ""}
           cover={cover}
           onCoverChange={handleCoverChange}
           avatars={projectAvatars}
