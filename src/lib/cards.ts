@@ -254,7 +254,7 @@ export async function getCardBreadcrumb(
 
     const { data: ancestor, error: ancestorErr } = await client
       .from('cards')
-      .select('card_id, title, card_type, parent_card_id')
+      .select('card_id, title, card_type, code, parent_card_id')
       .eq('card_id', currentId)
       .single()
 

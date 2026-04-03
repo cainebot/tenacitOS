@@ -143,7 +143,7 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
 
   return (
     <div className={cx("flex flex-col gap-3.5", columnWidthClasses[size], className)}>
-      <div className="sticky top-0 z-10 -mb-3.5 bg-primary pb-3.5">
+      <div className="sticky top-0 z-10 -mb-3.5 bg-primary pt-3.5 pb-3.5">
         <KanbanColumnHeader
           title={title}
           onTitleChange={handleTitleChange}

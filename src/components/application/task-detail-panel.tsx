@@ -26,6 +26,7 @@ import {
   Edit05,
   Lightning01,
   User01,
+  Link01,
 } from "@untitledui/icons"
 import type { BadgeColor } from "@circos/ui"
 import {
@@ -119,6 +120,7 @@ export interface TaskAttachment {
 
 export interface BreadcrumbItem {
   code: string
+  title?: string
   taskType?: TaskType
   href?: string
 }
@@ -324,6 +326,7 @@ export function TaskDetailPanel({
           {/* ================================================================ */}
           <SectionTaskHeader
             breadcrumbs={breadcrumbs}
+            onCopyLink={onCopyLink}
             title={title}
             onTitleChange={onTitleChange}
             status={status}
@@ -420,8 +423,8 @@ function SectionTopBar({
 }) {
   return (
     <div className="flex items-center justify-end gap-1 px-5 py-2">
-      <ButtonUtility icon={Copy04} size="xs" color="tertiary" tooltip="Copy link" onClick={onCopyLink} />
-      <ButtonUtility icon={Expand06} size="xs" color="tertiary" tooltip="Expand" onClick={onExpand} />
+      <ButtonUtility icon={Copy04} size="sm" color="tertiary" tooltip="Copy link" onClick={onCopyLink} />
+      <ButtonUtility icon={Expand06} size="sm" color="tertiary" tooltip="Expand" onClick={onExpand} />
 
       <Dropdown.Root>
         <Dropdown.DotsButton className="size-7 p-1" />
@@ -436,7 +439,7 @@ function SectionTopBar({
         </Dropdown.Popover>
       </Dropdown.Root>
 
-      <CloseButton size="xs" onPress={onClose} />
+      <CloseButton size="sm" onPress={onClose} />
     </div>
   )
 }
@@ -447,6 +450,7 @@ function SectionTopBar({
 
 function SectionTaskHeader({
   breadcrumbs,
+  onCopyLink,
   title,
   onTitleChange,
   status = "in_progress",
@@ -456,6 +460,7 @@ function SectionTaskHeader({
   onStateIdChange,
 }: {
   breadcrumbs: BreadcrumbItem[]
+  onCopyLink?: () => void
   title: string
   onTitleChange?: (title: string) => void
   status?: TaskStatus
@@ -469,20 +474,56 @@ function SectionTaskHeader({
       {/* Breadcrumb */}
       {breadcrumbs.length > 0 && (
         <nav className="flex items-center gap-1.5" aria-label="Breadcrumb">
-          {breadcrumbs.map((item, i) => (
-            <span key={item.code} className="flex items-center gap-1.5">
-              {i > 0 && (
-                <span className="text-sm text-quaternary">/</span>
-              )}
-              {item.taskType && <TaskTypeIndicator type={item.taskType} size="sm" />}
-              <a
-                href={item.href ?? "#"}
-                className="text-sm font-medium text-tertiary transition-colors hover:text-brand-secondary"
-              >
-                {item.code}
-              </a>
-            </span>
-          ))}
+          {breadcrumbs.map((item, i) => {
+            const isLast = i === breadcrumbs.length - 1
+            const tooltipLabel = !isLast && item.title
+              ? `${item.code}: ${item.title}`
+              : undefined
+            return (
+              <span key={item.code} className="flex items-center gap-1.5">
+                {i > 0 && (
+                  <span className="text-sm text-quaternary">/</span>
+                )}
+                {item.taskType && <TaskTypeIndicator type={item.taskType} size="sm" />}
+                {isLast ? (
+                  <span className="group/crumb flex items-center gap-1">
+                    <span className="text-sm font-medium text-quaternary">{item.code}</span>
+                    {onCopyLink && (
+                      <Tooltip title="Copy link" placement="top" arrow>
+                        <TooltipTrigger>
+                          <button
+                            type="button"
+                            onClick={onCopyLink}
+                            className="flex items-center justify-center text-quaternary opacity-0 transition-opacity group-hover/crumb:opacity-100"
+                          >
+                            <Link01 className="size-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                      </Tooltip>
+                    )}
+                  </span>
+                ) : tooltipLabel ? (
+                  <Tooltip title={tooltipLabel} placement="top" arrow>
+                    <TooltipTrigger>
+                      <a
+                        href={item.href ?? "#"}
+                        className="text-sm font-medium text-tertiary transition-colors hover:text-brand-secondary hover:underline"
+                      >
+                        {item.code}
+                      </a>
+                    </TooltipTrigger>
+                  </Tooltip>
+                ) : (
+                  <a
+                    href={item.href ?? "#"}
+                    className="text-sm font-medium text-tertiary transition-colors hover:text-brand-secondary hover:underline"
+                  >
+                    {item.code}
+                  </a>
+                )}
+              </span>
+            )
+          })}
         </nav>
       )}
 

@@ -179,11 +179,18 @@ export function cardDetailToTaskDetailPanelProps(
     }
   })
 
-  // Map breadcrumbs
-  const breadcrumbs: BreadcrumbItem[] = detail.breadcrumb.map(b => ({
-    code: b.code ?? b.title.slice(0, 8),
-    taskType: b.card_type as TaskType,
-  }))
+  // Map breadcrumbs — ancestors + current card as last item
+  const breadcrumbs: BreadcrumbItem[] = [
+    ...detail.breadcrumb.map(b => ({
+      code: b.code ?? b.title.slice(0, 8),
+      title: b.title,
+      taskType: b.card_type as TaskType,
+    })),
+    {
+      code: detail.code ?? detail.title.slice(0, 8),
+      taskType: detail.card_type as TaskType,
+    },
+  ]
 
   return {
     title: detail.title,
