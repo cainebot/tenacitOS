@@ -43,6 +43,7 @@ export interface ProjectMember {
 export interface ProjectRow {
   project_id: string
   name: string
+  slug: string              // Phase 83 D-08 — URL-safe slug, UNIQUE, immutable after creation
   description: string | null
   cover_color: string | null    // Phase 61 — project cover color
   cover_icon: string | null     // Phase 61 — project cover icon
