@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { KanbanCard, type KanbanCardProps, type KanbanCardTag, type KanbanCardUser, type Priority } from "@/components/application/kanban-card"
 import { KanbanBoard, type KanbanBoardColumn } from "@/components/application/kanban-board"
 import { KanbanBoardHeader } from "@/components/application/kanban-board-header"
+import { KanbanBoardSkeleton } from "@/components/application/kanban-board-skeleton"
 import { defaultFilterFields, type FilterRow } from "@/components/application/dynamic-filter"
 import { ProjectHeader } from "@/components/application/project-header/project-header"
 import type { ProjectCoverValue } from "@/components/application/project-cover/project-cover"
@@ -819,11 +820,7 @@ export default function TasksPage() {
 
   // Loading state
   if (!boardId || loading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center">
-        <span className="text-sm text-tertiary">Loading board...</span>
-      </div>
-    )
+    return <KanbanBoardSkeleton />
   }
 
   return (
