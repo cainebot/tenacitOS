@@ -16,6 +16,7 @@ import type {
   Subtask,
   BreadcrumbItem,
   TaskStatus,
+  Priority,
 } from '@/components/application/task-detail-panel'
 import type { TaskType } from '@/components/application/task-type-indicator'
 import type { BadgeColor } from '@circos/ui'
@@ -171,8 +172,8 @@ export function cardDetailToTaskDetailPanelProps(
       code: '', // Children from the pick don't include code; enriched by caller if needed
       title: child.title,
       taskType: child.card_type as TaskType,
-      priority: null, // Children pick doesn't include priority
-      assignee: null, // Children pick doesn't include assigned_agent_id
+      priority: child.priority as Priority | null,
+      assignee: child.assigned_agent_id ? resolveAgentAsTaskUser(child.assigned_agent_id, agents) : null,
       status: childState ? stateCategoryToTaskStatus(childState.category, childState.name) : 'todo',
     }
   })
