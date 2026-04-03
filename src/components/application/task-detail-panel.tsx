@@ -163,7 +163,8 @@ export interface TaskDetailPanelProps {
 
   // Section E - Subtasks
   subtasks?: Subtask[]
-  onAddSubtask?: (title: string) => void
+  onAddSubtask?: (data: { title: string; priority?: Priority; assignee?: string; status?: TaskStatus }) => void
+  onSubtaskUpdate?: (subtaskId: string, updates: Partial<Pick<Subtask, 'title' | 'priority' | 'assignee' | 'status'>>) => void
   onDeleteAllSubtasks?: () => void
   onSubtaskClick?: (subtask: Subtask) => void
 
@@ -262,6 +263,7 @@ export function TaskDetailPanel({
   onPriorityChange,
   subtasks = [],
   onAddSubtask,
+  onSubtaskUpdate,
   onDeleteAllSubtasks,
   onSubtaskClick,
   bodyContent,
@@ -366,9 +368,11 @@ export function TaskDetailPanel({
                 subtasksDone={subtasksDone}
                 subtasksProgress={subtasksProgress}
                 onAddSubtask={onAddSubtask}
+                onSubtaskUpdate={onSubtaskUpdate}
                 onDeleteAllSubtasks={onDeleteAllSubtasks}
                 onSubtaskClick={onSubtaskClick}
                 taskType={taskType}
+                users={users}
               />
               <div className="h-px bg-border-secondary" />
             </>
@@ -1094,35 +1098,56 @@ function SectionSubtasks({
   subtasksDone,
   subtasksProgress,
   onAddSubtask,
+  onSubtaskUpdate,
   onDeleteAllSubtasks,
   onSubtaskClick,
   taskType,
+  users = [],
 }: {
   subtasks: Subtask[]
   subtasksDone: number
   subtasksProgress: number
-  onAddSubtask?: (title: string) => void
+  onAddSubtask?: (data: { title: string; priority?: Priority; assignee?: string; status?: TaskStatus }) => void
+  onSubtaskUpdate?: (subtaskId: string, updates: Partial<Pick<Subtask, 'title' | 'priority' | 'assignee' | 'status'>>) => void
   onDeleteAllSubtasks?: () => void
   onSubtaskClick?: (subtask: Subtask) => void
   taskType?: TaskType
+  users?: TaskUser[]
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null)
+  const [titleDraft, setTitleDraft] = useState("")
+  const [creationDraft, setCreationDraft] = useState<{ priority?: Priority; assignee?: string; status?: TaskStatus }>({})
   const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (isAdding) inputRef.current?.focus()
-  }, [isAdding])
+  const editInputRef = useRef<HTMLInputElement>(null)
 
   const canAddSubtask = taskType !== 'epic' && taskType !== 'subtask'
 
-  const handleCommit = useCallback((value: string) => {
-    const val = value.trim()
+  // Creation commit — called on Enter or blur-with-content (D-03, D-04)
+  const handleCreationCommit = useCallback((titleValue: string) => {
+    const val = titleValue.trim()
     if (val) {
-      onAddSubtask?.(val)
+      onAddSubtask?.({ title: val, ...creationDraft })
     }
     setIsAdding(false)
-  }, [onAddSubtask])
+    setCreationDraft({})
+  }, [onAddSubtask, creationDraft])
+
+  // Title edit start (D-05)
+  const handleTitleEditStart = useCallback((sub: Subtask) => {
+    setEditingTitleId(sub.id)
+    setTitleDraft(sub.title)
+  }, [])
+
+  // Title edit commit (D-05)
+  const handleTitleEditCommit = useCallback((subtaskId: string, originalTitle: string) => {
+    const val = titleDraft.trim()
+    if (val && val !== originalTitle) {
+      onSubtaskUpdate?.(subtaskId, { title: val })
+    }
+    setEditingTitleId(null)
+  }, [titleDraft, onSubtaskUpdate])
 
   return (
     <div className="py-4">
@@ -1171,8 +1196,8 @@ function SectionSubtasks({
             </div>
           )}
 
-          {/* Bordered table */}
-          {subtasks.length > 0 && (
+          {/* Bordered table — renders if there are subtasks OR if creating the first one (D-01, D-02) */}
+          {(subtasks.length > 0 || isAdding) && (
             <div className="mt-3 overflow-x-auto rounded-lg border border-secondary">
               <table className="w-full min-w-[600px] text-left">
                 <thead>
@@ -1192,86 +1217,352 @@ function SectionSubtasks({
                   </tr>
                 </thead>
                 <tbody>
+                  {/* Existing subtask rows with inline editing (D-05, D-06, D-07, D-08, D-11) */}
                   {subtasks.map((sub, i) => {
                     const subPriority = sub.priority ? priorityConfig[sub.priority] : null
                     const subStatus = sub.status ? statusConfig[sub.status] : statusConfig.todo
-                    const isLast = i === subtasks.length - 1
+                    const isLast = i === subtasks.length - 1 && !isAdding
+                    const isEditing = editingTitleId === sub.id
                     return (
                       <tr
                         key={sub.id}
-                        onClick={() => onSubtaskClick?.(sub)}
-                        className="cursor-pointer transition hover:bg-primary_hover"
+                        onClick={() => !isEditing && onSubtaskClick?.(sub)}
+                        className={cx("transition", isEditing ? "bg-primary_hover" : "cursor-pointer hover:bg-primary_hover")}
                       >
-                        <td className={cx("px-3 py-3", !isLast && "border-b border-secondary")}>
-                          <div className="flex items-center gap-2 whitespace-nowrap">
-                            {sub.taskType && <TaskTypeIndicator type={sub.taskType} size="sm" />}
-                            <span className="shrink-0 text-xs font-semibold text-tertiary">{sub.code}</span>
-                            <span className="truncate text-sm text-secondary">{sub.title}</span>
-                          </div>
-                        </td>
-                        <td className={cx("border-l border-secondary px-3 py-3", !isLast && "border-b")}>
-                          {subPriority ? (
-                            <div className="flex items-center gap-1.5">
-                              <subPriority.icon className={cx("size-4", subPriority.iconColor)} />
-                              <span className="text-sm text-secondary">{subPriority.label}</span>
-                            </div>
+                        {/* Title cell (D-05) */}
+                        <td
+                          onClick={(e) => e.stopPropagation()}
+                          className={cx("px-3 py-3", !isLast && "border-b border-secondary")}
+                        >
+                          {isEditing ? (
+                            <input
+                              ref={editInputRef}
+                              autoFocus
+                              value={titleDraft}
+                              onChange={(e) => setTitleDraft(e.target.value)}
+                              className="w-full bg-transparent text-sm text-primary outline-none"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleTitleEditCommit(sub.id, sub.title)
+                                if (e.key === 'Escape') { e.stopPropagation(); setEditingTitleId(null) }
+                              }}
+                              onBlur={() => handleTitleEditCommit(sub.id, sub.title)}
+                            />
                           ) : (
-                            <span className="text-sm text-quaternary">&mdash;</span>
+                            <div className="flex items-center gap-2 whitespace-nowrap">
+                              {sub.taskType && <TaskTypeIndicator type={sub.taskType} size="sm" />}
+                              <span className="shrink-0 text-xs font-semibold text-tertiary">{sub.code}</span>
+                              <span
+                                onClick={(e) => { e.stopPropagation(); handleTitleEditStart(sub) }}
+                                className="truncate cursor-pointer text-sm text-secondary hover:text-primary hover:underline"
+                              >
+                                {sub.title}
+                              </span>
+                            </div>
                           )}
                         </td>
-                        <td className={cx("border-l border-secondary px-3 py-3", !isLast && "border-b")}>
-                          {sub.assignee ? (
-                            <div className="flex items-center gap-2">
-                              <Avatar size="xs" src={sub.assignee.avatarUrl} alt={sub.assignee.name} />
-                              <span className="truncate text-sm text-secondary">{sub.assignee.name}</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <div className="flex size-6 items-center justify-center rounded-full bg-tertiary">
-                                <User01 className="size-3.5 text-fg-quaternary" />
-                              </div>
-                              <span className="text-sm text-quaternary">Sin asignar</span>
-                            </div>
-                          )}
+
+                        {/* Priority cell — Dropdown picker (D-06, D-07, D-08, D-11) */}
+                        <td
+                          onClick={(e) => e.stopPropagation()}
+                          className={cx("border-l border-secondary px-3 py-3 cursor-pointer hover:bg-primary_hover", !isLast && "border-b")}
+                        >
+                          <Dropdown.Root>
+                            <AriaButton
+                              slot="menu"
+                              className="flex items-center gap-1.5 rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none cursor-pointer"
+                            >
+                              {subPriority ? (
+                                <>
+                                  <subPriority.icon className={cx("size-4", subPriority.iconColor)} />
+                                  <span className="text-sm text-secondary">{subPriority.label}</span>
+                                </>
+                              ) : (
+                                <span className="text-sm text-quaternary">&mdash;</span>
+                              )}
+                            </AriaButton>
+                            <Dropdown.Popover className="w-40">
+                              <Dropdown.Menu
+                                selectionMode="single"
+                                selectedKeys={sub.priority ? new Set([sub.priority]) : new Set()}
+                                onSelectionChange={(keys) => {
+                                  const key = [...keys][0] as Priority
+                                  onSubtaskUpdate?.(sub.id, { priority: key ?? null })
+                                }}
+                              >
+                                {priorityKeys.map(key => (
+                                  <Dropdown.Item key={key} id={key} label={priorityConfig[key].label} />
+                                ))}
+                              </Dropdown.Menu>
+                            </Dropdown.Popover>
+                          </Dropdown.Root>
                         </td>
-                        <td className={cx("border-l border-secondary px-3 py-3", !isLast && "border-b")}>
-                          <Badge type="modern" color="gray" size="sm">
-                            {subStatus.label}
-                          </Badge>
+
+                        {/* Assignee cell — AriaDialogTrigger picker (D-06, D-07, D-08, D-11) */}
+                        <td
+                          onClick={(e) => e.stopPropagation()}
+                          className={cx("border-l border-secondary px-3 py-3 cursor-pointer hover:bg-primary_hover", !isLast && "border-b")}
+                        >
+                          <SubtaskAssigneePicker
+                            assignee={sub.assignee ?? null}
+                            users={users}
+                            onSelect={(user) => onSubtaskUpdate?.(sub.id, { assignee: user ?? undefined })}
+                          />
+                        </td>
+
+                        {/* Status cell — Dropdown picker (D-06, D-07, D-08, D-11) */}
+                        <td
+                          onClick={(e) => e.stopPropagation()}
+                          className={cx("border-l border-secondary px-3 py-3 cursor-pointer hover:bg-primary_hover", !isLast && "border-b")}
+                        >
+                          <Dropdown.Root>
+                            <AriaButton
+                              slot="menu"
+                              className="flex items-center cursor-pointer rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none"
+                            >
+                              <Badge type="modern" color={subStatus.color} size="sm">
+                                {subStatus.label}
+                              </Badge>
+                            </AriaButton>
+                            <Dropdown.Popover className="w-48">
+                              <Dropdown.Menu
+                                selectionMode="single"
+                                selectedKeys={new Set([sub.status ?? 'todo'])}
+                                onSelectionChange={(keys) => {
+                                  const key = [...keys][0] as TaskStatus
+                                  onSubtaskUpdate?.(sub.id, { status: key })
+                                }}
+                              >
+                                {statusKeys.map(key => (
+                                  <Dropdown.Item key={key} id={key} label={statusConfig[key].label} />
+                                ))}
+                              </Dropdown.Menu>
+                            </Dropdown.Popover>
+                          </Dropdown.Root>
                         </td>
                       </tr>
                     )
                   })}
+
+                  {/* Creation row — appended at bottom of table (D-01, D-02, D-03, D-04) */}
+                  {isAdding && (
+                    <tr>
+                      <td className={cx("px-3 py-2.5", subtasks.length > 0 && "border-t border-secondary")}>
+                        <input
+                          ref={inputRef}
+                          autoFocus
+                          placeholder="Subtask title..."
+                          className="w-full bg-transparent text-sm text-primary placeholder:text-placeholder outline-none"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleCreationCommit(e.currentTarget.value)
+                            if (e.key === 'Escape') { e.stopPropagation(); setIsAdding(false); setCreationDraft({}) }
+                          }}
+                          onBlur={(e) => {
+                            // Pitfall 1: don't commit if focus moved to another element within the creation row
+                            const row = e.currentTarget.closest('tr')
+                            if (row && row.contains(e.relatedTarget as Node)) return
+                            handleCreationCommit(e.target.value)
+                          }}
+                        />
+                      </td>
+
+                      {/* Creation row — Priority picker */}
+                      <td onClick={(e) => e.stopPropagation()} className={cx("border-l border-secondary px-3 py-2.5", subtasks.length > 0 && "border-t")}>
+                        <Dropdown.Root>
+                          <AriaButton
+                            slot="menu"
+                            className="flex items-center gap-1.5 rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none cursor-pointer"
+                          >
+                            {creationDraft.priority ? (
+                              <>
+                                {(() => {
+                                  const cfg = priorityConfig[creationDraft.priority]
+                                  return (
+                                    <>
+                                      <cfg.icon className={cx("size-4", cfg.iconColor)} />
+                                      <span className="text-sm text-secondary">{cfg.label}</span>
+                                    </>
+                                  )
+                                })()}
+                              </>
+                            ) : (
+                              <span className="text-sm text-quaternary">&mdash;</span>
+                            )}
+                          </AriaButton>
+                          <Dropdown.Popover className="w-40">
+                            <Dropdown.Menu
+                              selectionMode="single"
+                              selectedKeys={creationDraft.priority ? new Set([creationDraft.priority]) : new Set()}
+                              onSelectionChange={(keys) => {
+                                const key = [...keys][0] as Priority
+                                setCreationDraft(prev => ({ ...prev, priority: key }))
+                              }}
+                            >
+                              {priorityKeys.map(key => (
+                                <Dropdown.Item key={key} id={key} label={priorityConfig[key].label} />
+                              ))}
+                            </Dropdown.Menu>
+                          </Dropdown.Popover>
+                        </Dropdown.Root>
+                      </td>
+
+                      {/* Creation row — Assignee picker */}
+                      <td onClick={(e) => e.stopPropagation()} className={cx("border-l border-secondary px-3 py-2.5", subtasks.length > 0 && "border-t")}>
+                        <SubtaskAssigneePicker
+                          assignee={creationDraft.assignee ? (users.find(u => u.id === creationDraft.assignee) ?? null) : null}
+                          users={users}
+                          onSelect={(user) => setCreationDraft(prev => ({ ...prev, assignee: user?.id ?? undefined }))}
+                        />
+                      </td>
+
+                      {/* Creation row — Status picker */}
+                      <td onClick={(e) => e.stopPropagation()} className={cx("border-l border-secondary px-3 py-2.5", subtasks.length > 0 && "border-t")}>
+                        <Dropdown.Root>
+                          <AriaButton
+                            slot="menu"
+                            className="flex items-center cursor-pointer rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none"
+                          >
+                            {(() => {
+                              const statusKey = creationDraft.status ?? 'todo'
+                              const cfg = statusConfig[statusKey]
+                              return (
+                                <Badge type="modern" color={cfg.color} size="sm">
+                                  {cfg.label}
+                                </Badge>
+                              )
+                            })()}
+                          </AriaButton>
+                          <Dropdown.Popover className="w-48">
+                            <Dropdown.Menu
+                              selectionMode="single"
+                              selectedKeys={new Set([creationDraft.status ?? 'todo'])}
+                              onSelectionChange={(keys) => {
+                                const key = [...keys][0] as TaskStatus
+                                setCreationDraft(prev => ({ ...prev, status: key }))
+                              }}
+                            >
+                              {statusKeys.map(key => (
+                                <Dropdown.Item key={key} id={key} label={statusConfig[key].label} />
+                              ))}
+                            </Dropdown.Menu>
+                          </Dropdown.Popover>
+                        </Dropdown.Root>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-            </div>
-          )}
-
-          {/* Inline subtask creation row */}
-          {isAdding && (
-            <div className="mt-2 flex items-center gap-2 px-1">
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="Subtask title..."
-                className="flex-1 rounded-md border border-primary bg-primary px-3 py-1.5 text-sm text-primary placeholder:text-placeholder outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleCommit((e.target as HTMLInputElement).value)
-                  }
-                  if (e.key === 'Escape') {
-                    setIsAdding(false)
-                  }
-                }}
-                onBlur={(e) => {
-                  handleCommit(e.target.value)
-                }}
-              />
             </div>
           )}
         </>
       )}
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// E1 · Subtask assignee picker (inline, compact version of MetadataAssignee)
+// ---------------------------------------------------------------------------
+
+function SubtaskAssigneePicker({
+  assignee,
+  users,
+  onSelect,
+}: {
+  assignee: TaskUser | null
+  users: TaskUser[]
+  onSelect: (user: TaskUser | null) => void
+}) {
+  const [search, setSearch] = useState("")
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const filtered = search
+    ? users.filter((u) => u.name.toLowerCase().includes(search.toLowerCase()))
+    : users
+
+  return (
+    <AriaDialogTrigger>
+      <AriaButton
+        aria-label="Select assignee"
+        className="flex w-fit cursor-pointer items-center gap-2 rounded px-1 py-0.5 transition hover:bg-secondary_hover outline-none"
+      >
+        {assignee ? (
+          <>
+            <Avatar size="xs" src={assignee.avatarUrl} alt={assignee.name} />
+            <span className="truncate text-sm text-secondary">{assignee.name}</span>
+          </>
+        ) : (
+          <>
+            <div className="flex size-5 items-center justify-center rounded-full bg-tertiary">
+              <User01 className="size-3 text-fg-quaternary" />
+            </div>
+            <span className="text-sm text-quaternary">Sin asignar</span>
+          </>
+        )}
+      </AriaButton>
+      <AriaPopover
+        placement="bottom start"
+        offset={4}
+        onOpenChange={(isOpen) => {
+          if (isOpen) { setSearch(""); setTimeout(() => searchInputRef.current?.focus(), 50) }
+        }}
+        className={({ isEntering, isExiting }) =>
+          cx(
+            "w-52 origin-(--trigger-anchor-point) overflow-hidden rounded-xl bg-primary shadow-lg ring-1 ring-secondary_alt will-change-transform",
+            isEntering && "duration-150 ease-out animate-in fade-in slide-in-from-top-0.5",
+            isExiting && "duration-100 ease-in animate-out fade-out slide-out-to-top-0.5",
+          )
+        }
+      >
+        <AriaDialog aria-label="Assignee picker" className="outline-none">
+          {({ close }) => (
+            <>
+              <div className="flex items-center gap-2 border-b border-secondary px-3 py-2">
+                <SearchLg className="size-4 shrink-0 text-fg-quaternary" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full bg-transparent text-sm text-primary placeholder:text-quaternary outline-none"
+                />
+              </div>
+              <div className="max-h-40 overflow-y-auto py-1">
+                {filtered.map((user) => (
+                  <button
+                    key={user.id}
+                    type="button"
+                    onClick={() => { onSelect(assignee?.id === user.id ? null : user); close() }}
+                    className={cx(
+                      "flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm text-secondary transition hover:bg-primary_hover",
+                      assignee?.id === user.id && "bg-primary_hover text-primary",
+                    )}
+                  >
+                    <Avatar size="xs" src={user.avatarUrl} alt={user.name} />
+                    <span className="truncate font-medium">{user.name}</span>
+                  </button>
+                ))}
+                {filtered.length === 0 && (
+                  <p className="px-3 py-2 text-sm text-quaternary">No results</p>
+                )}
+              </div>
+              {assignee && (
+                <div className="border-t border-secondary py-1">
+                  <button
+                    type="button"
+                    onClick={() => { onSelect(null); close() }}
+                    className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm text-secondary transition hover:bg-primary_hover"
+                  >
+                    <XClose className="size-4 shrink-0 stroke-[2.5px] text-fg-quaternary" />
+                    <span className="font-medium">Unassign</span>
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </AriaDialog>
+      </AriaPopover>
+    </AriaDialogTrigger>
   )
 }
 

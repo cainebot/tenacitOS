@@ -661,18 +661,20 @@ export default function SalesPipelinePage() {
   }, [detailCard, detailRefetch, refetch])
 
   // Add subtask: create child card with card_type 'subtask'
-  const handlePanelAddSubtask = useCallback(async (title: string) => {
+  const handlePanelAddSubtask = useCallback(async (data: { title: string; priority?: string; assignee?: string; status?: string }) => {
     if (!detailCard || !todoStateId) return
     try {
       await fetch('/api/cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title,
+          title: data.title,
           project_id: detailCard.project_id,
           state_id: todoStateId,
           card_type: 'subtask',
           parent_card_id: detailCard.card_id,
+          ...(data.priority && { priority: data.priority }),
+          ...(data.assignee && { assigned_agent_id: data.assignee }),
         }),
       })
     } catch (err) {
