@@ -67,7 +67,7 @@ export function Skeleton({
     >
       <div
         className={cx(
-          "absolute inset-0 -translate-x-full animate-shimmer",
+          "absolute inset-0 -translate-x-full animate-[shimmer_1.5s_ease-in-out_infinite]",
           "bg-gradient-to-r from-transparent via-[var(--bg-quaternary)] to-transparent",
           "motion-reduce:animate-none",
         )}

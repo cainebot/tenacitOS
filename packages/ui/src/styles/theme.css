@@ -306,6 +306,9 @@
     --spacing-9xl:  var(--spacing-24);
     --spacing-10xl: var(--spacing-32);
     --spacing-11xl: var(--spacing-40);
+
+    /* Animation */
+    --animate-shimmer: shimmer 1.5s ease-in-out infinite;
   }
 
   /* =========================================================================
@@ -941,5 +944,5 @@
   --outline-color-disabled: var(--border-disabled);
 
   /* --- Animation --- */
-  --animate-shimmer: var(--animate-shimmer);
+  --animate-shimmer: shimmer 1.5s ease-in-out infinite;
 }
