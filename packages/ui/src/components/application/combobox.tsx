@@ -42,6 +42,7 @@ export function Combobox({
     <AriaComboBox
       className={cx("flex flex-col gap-1.5", className)}
       {...props}
+      aria-label={!label ? (props["aria-label"] ?? placeholder) : undefined}
     >
       {label && (
         <Label className="text-sm font-medium text-secondary">{label}</Label>

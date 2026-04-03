@@ -75,6 +75,8 @@ const cardSizeClasses: Record<KanbanCardSize, string> = {
   md: "w-[312px]",
 }
 
+const dateFormatter = new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short" })
+
 function KanbanCardInner({
   title,
   onTitleChange,
@@ -134,12 +136,11 @@ function KanbanCardInner({
     setIsAssigneeOpen(false)
   }
 
-  const formatter = new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short" })
   const hasDate = dueDate != null
 
   const formatDate = (date: DateValue) => {
     if (isToday(date, getLocalTimeZone())) return "Today"
-    return formatter.format(date.toDate(getLocalTimeZone()))
+    return dateFormatter.format(date.toDate(getLocalTimeZone()))
   }
 
   const priorityCfg = priority ? priorityConfig[priority] : null

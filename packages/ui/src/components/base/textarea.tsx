@@ -87,6 +87,7 @@ export const TextArea = ({
     return (
         <AriaTextField
             {...props}
+            aria-label={!label ? (props["aria-label"] ?? placeholder) : undefined}
             className={(state) =>
                 cx("group flex h-max w-full flex-col items-start justify-start gap-1.5", typeof className === "function" ? className(state) : className)
             }

@@ -614,7 +614,7 @@ function MetadataAssignee({
 
   return (
     <AriaDialogTrigger>
-      <AriaButton className="flex w-fit cursor-pointer items-center gap-2 rounded-md pl-1.5 pr-3 py-1 -ml-1.5 outline-none transition hover:bg-primary_hover">
+      <AriaButton aria-label="Select assignee" className="flex w-fit cursor-pointer items-center gap-2 rounded-md pl-1.5 pr-3 py-1 -ml-1.5 outline-none transition hover:bg-primary_hover">
         {assignee ? (
           <>
             <Avatar size="xs" src={assignee.avatarUrl} alt={assignee.name} />
@@ -643,7 +643,7 @@ function MetadataAssignee({
           )
         }
       >
-        <AriaDialog className="outline-none">
+        <AriaDialog aria-label="Assignee picker" className="outline-none">
           {({ close }) => (
             <>
               <div className="flex items-center gap-2 border-b border-secondary px-3 py-2">
@@ -732,6 +732,7 @@ function MetadataDatePicker({
   return (
     <I18nProvider locale="en-US">
       <AriaDatePicker
+        aria-label="Due date"
         shouldCloseOnSelect={false}
         value={dueDate}
         onChange={onDateChange}
@@ -755,7 +756,7 @@ function MetadataDatePicker({
             )
           }
         >
-          <AriaDialog className="rounded-2xl bg-primary shadow-xl ring ring-secondary_alt">
+          <AriaDialog aria-label="Date picker" className="rounded-2xl bg-primary shadow-xl ring ring-secondary_alt">
             {({ close }) => (
               <>
                 <div className="flex px-6 py-5">
@@ -841,7 +842,7 @@ function MetadataTagPicker({
       ))}
 
       <AriaDialogTrigger>
-        <AriaButton className="inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 text-xs text-quaternary outline-none transition hover:bg-primary_hover hover:text-tertiary">
+        <AriaButton aria-label="Edit tags" className="inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 text-xs text-quaternary outline-none transition hover:bg-primary_hover hover:text-tertiary">
           {tags.length === 0 ? (
             <span className="text-sm text-quaternary">Add tag</span>
           ) : (
@@ -862,7 +863,7 @@ function MetadataTagPicker({
             )
           }
         >
-          <AriaDialog className="outline-none">
+          <AriaDialog aria-label="Tag picker" className="outline-none">
             {() => (
               <>
                 <div className="flex items-center gap-2 border-b border-secondary px-3 py-2">
@@ -964,7 +965,7 @@ function MetadataPriority({
 
   return (
     <AriaDialogTrigger>
-      <AriaButton className="flex w-fit cursor-pointer items-center gap-2 rounded-md pl-1.5 pr-3 py-1 -ml-1.5 outline-none transition hover:bg-primary_hover">
+      <AriaButton aria-label="Set priority" className="flex w-fit cursor-pointer items-center gap-2 rounded-md pl-1.5 pr-3 py-1 -ml-1.5 outline-none transition hover:bg-primary_hover">
         {cfg ? (
           <>
             <cfg.icon className={cx("size-4", cfg.iconColor)} />
@@ -985,7 +986,7 @@ function MetadataPriority({
           )
         }
       >
-        <AriaDialog className="outline-none">
+        <AriaDialog aria-label="Priority picker" className="outline-none">
           {({ close }) => (
             <div className="py-1">
               {priorityKeys.map((key) => {
@@ -1412,7 +1413,7 @@ function CommentRow({ comment }: { comment: TaskComment }) {
 
           {/* Reaction picker */}
           <AriaDialogTrigger>
-            <AriaButton className="cursor-pointer opacity-0 outline-none transition group-hover/comment:opacity-100">
+            <AriaButton aria-label="Add reaction" className="cursor-pointer opacity-0 outline-none transition group-hover/comment:opacity-100">
               <FaceSmile className="size-4 text-fg-quaternary hover:text-fg-quaternary_hover" />
             </AriaButton>
             <AriaPopover
@@ -1426,7 +1427,7 @@ function CommentRow({ comment }: { comment: TaskComment }) {
                 )
               }
             >
-              <AriaDialog className="flex items-center gap-1 rounded-lg bg-primary px-2 py-1.5 shadow-lg ring-1 ring-secondary_alt outline-none">
+              <AriaDialog aria-label="Reaction picker" className="flex items-center gap-1 rounded-lg bg-primary px-2 py-1.5 shadow-lg ring-1 ring-secondary_alt outline-none">
                 {({ close }) => (
                   <>
                     {reactionEmojis.map((r) => (

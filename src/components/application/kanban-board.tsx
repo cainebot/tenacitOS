@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useState, useMemo, useCallback, useRef, useEffect, startTransition } from "react"
+import { type ReactNode, useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { Plus } from "@untitledui/icons"
 import { cx } from "@circos/ui"
 import {
@@ -150,7 +150,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
   // rAF throttle ref for handleDragOver — ensures at most one setDragColumns per animation frame
   const dragOverRafRef = useRef<number | null>(null)
 
-  // Cleanup rAF on unmount
+  // Cleanup rAFs on unmount
   useEffect(() => {
     return () => {
       if (dragOverRafRef.current !== null) cancelAnimationFrame(dragOverRafRef.current)
@@ -299,10 +299,7 @@ export function KanbanBoard<T extends KanbanColumnItem>({
       const oldIndex = effectiveColumns.findIndex((c) => c.id === String(active.id))
       const newIndex = effectiveColumns.findIndex((c) => c.id === String(over.id))
       if (oldIndex !== -1 && newIndex !== -1) {
-        // PERF-05: wrap parent notification in startTransition — React batches as non-urgent
-        startTransition(() => {
-          onColumnsChange?.(arrayMove(effectiveColumns, oldIndex, newIndex))
-        })
+        onColumnsChange?.(arrayMove(effectiveColumns, oldIndex, newIndex))
       }
     }
 
@@ -352,18 +349,17 @@ export function KanbanBoard<T extends KanbanColumnItem>({
           }
         }
       }
-      // PERF-05: wrap parent notification in startTransition — React batches as non-urgent
-      const commitColumns = finalColumns
-      const commitActiveCardId = String(active.id)
-      startTransition(() => {
-        onColumnsChange?.(commitColumns, { activeCardId: commitActiveCardId })
-      })
+      // Notify parent BEFORE cleanup — onColumnsChange triggers async store updates
+      // (via syncEngine.moveSyncCard). Calling it before setDragColumns(null) ensures
+      // the board doesn't flash to pre-drag state (which would trigger costly
+      // AnimatePresence layout animations for every card × 2 render cycles).
+      onColumnsChange?.(finalColumns, { activeCardId: String(active.id) })
     }
 
-    // Reset drag flag AFTER logic but BEFORE synchronous state cleanup
+    // Reset drag flag AFTER parent notification
     _boardDragActive = false
 
-    // Synchronous cleanup — DragOverlay disappears immediately (not wrapped in transition)
+    // Cleanup drag state — DragOverlay disappears immediately
     setDragColumns(null)
     setDragType(null)
     setActiveId(null)

@@ -139,6 +139,7 @@ function SortableFilterRow({
       {/* Field selector */}
       <div className="min-w-0 flex-1">
         <Select
+          aria-label="Field"
           size="sm"
           placeholder="Field"
           placeholderIcon={fieldDef?.icon}
@@ -157,6 +158,7 @@ function SortableFilterRow({
       {/* Operator selector */}
       <div className="w-[150px] shrink-0">
         <Select
+          aria-label="Operator"
           size="sm"
           placeholder="Operator"
           placeholderIcon={Equal}
@@ -175,6 +177,7 @@ function SortableFilterRow({
       {/* Value selector */}
       <div className="min-w-0 flex-1">
         <Select
+          aria-label="Value"
           size="sm"
           placeholder="Select value"
           placeholderIcon={valueDef?.icon}
@@ -343,7 +346,7 @@ export function DynamicFilter({
           )
         }
       >
-        <AriaDialog className="outline-none">
+        <AriaDialog aria-label="Dynamic filter" className="outline-none">
           {() => (
             <div className="flex flex-col gap-0">
               <p className="text-md font-semibold text-primary">Dynamic filter</p>

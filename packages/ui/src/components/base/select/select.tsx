@@ -109,9 +109,10 @@ const SelectValue = ({ isOpen, isFocused, isDisabled, size, placeholder, placeho
 export const SelectContext = createContext<{ size: "sm" | "md" }>({ size: "sm" })
 
 const Select = ({ placeholder = "Select", placeholderIcon, size = "sm", children, items, label, hint, tooltip, className, ...rest }: SelectProps) => {
+    const fallbackAriaLabel = !label ? (rest["aria-label"] ?? placeholder) : undefined
     return (
         <SelectContext.Provider value={{ size }}>
-            <AriaSelect {...rest} className={(state) => cx("flex flex-col gap-1.5", typeof className === "function" ? className(state) : className)}>
+            <AriaSelect {...rest} aria-label={fallbackAriaLabel} className={(state) => cx("flex flex-col gap-1.5", typeof className === "function" ? className(state) : className)}>
                 {(state) => (
                     <>
                         {label && (

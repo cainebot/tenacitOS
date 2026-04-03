@@ -96,6 +96,7 @@ const ComboBoxValue = ({ size, shortcut, placeholder, shortcutClassName, ...othe
 }
 
 export const ComboBox = ({ placeholder = "Search", shortcut = true, size = "sm", children, items, shortcutClassName, ...otherProps }: ComboBoxProps) => {
+    const fallbackAriaLabel = !otherProps.label ? (otherProps["aria-label"] ?? placeholder) : undefined
     const placeholderRef = useRef<HTMLDivElement>(null)
     const [popoverWidth, setPopoverWidth] = useState("")
 
@@ -115,7 +116,7 @@ export const ComboBox = ({ placeholder = "Search", shortcut = true, size = "sm",
 
     return (
         <SelectContext.Provider value={{ size }}>
-            <AriaComboBox menuTrigger="focus" {...otherProps}>
+            <AriaComboBox menuTrigger="focus" {...otherProps} aria-label={fallbackAriaLabel}>
                 {(state) => (
                     <div className="flex flex-col gap-1.5">
                         {otherProps.label && (
