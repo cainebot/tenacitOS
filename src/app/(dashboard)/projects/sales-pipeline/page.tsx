@@ -588,28 +588,38 @@ export default function SalesPipelinePage() {
 
   // Title change
   const handlePanelTitleChange = useCallback((title: string) => {
+    if (!selectedCardId) return
+    useBoardStore.getState().patchCardInStore(selectedCardId, { title })
     detailUpdateField('title', title)
-  }, [detailUpdateField])
+  }, [selectedCardId, detailUpdateField])
 
   // Assignee change
   const handlePanelAssigneeChange = useCallback((user: TaskUser | null) => {
+    if (!selectedCardId) return
+    useBoardStore.getState().patchCardInStore(selectedCardId, { assigned_agent_id: user?.id ?? null })
     detailUpdateField('assigned_agent_id', user?.id ?? null)
-  }, [detailUpdateField])
+  }, [selectedCardId, detailUpdateField])
 
   // Due date change
   const handlePanelDueDateChange = useCallback((date: DateValue | null) => {
+    if (!selectedCardId) return
+    useBoardStore.getState().patchCardInStore(selectedCardId, { due_date: date ? date.toString() : null })
     detailUpdateField('due_date', date ? date.toString() : null)
-  }, [detailUpdateField])
+  }, [selectedCardId, detailUpdateField])
 
   // Tags change
   const handlePanelTagsChange = useCallback((tags: TaskTag[]) => {
+    if (!selectedCardId) return
+    useBoardStore.getState().patchCardInStore(selectedCardId, { labels: tags.map(t => t.label) })
     detailUpdateField('labels', tags.map(t => t.label))
-  }, [detailUpdateField])
+  }, [selectedCardId, detailUpdateField])
 
   // Priority change
   const handlePanelPriorityChange = useCallback((p: import("@/components/application/kanban-card").Priority | null) => {
+    if (!selectedCardId) return
+    useBoardStore.getState().patchCardInStore(selectedCardId, { priority: p ?? undefined })
     detailUpdateField('priority', p)
-  }, [detailUpdateField])
+  }, [selectedCardId, detailUpdateField])
 
   // Add comment
   const handlePanelAddComment = useCallback(async (content: string) => {

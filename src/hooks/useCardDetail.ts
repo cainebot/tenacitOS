@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { CardDetail, CustomFieldDefinitionRow } from '@/types/project'
+import { useBoardStore } from '@/stores/board-store'
 
 interface UseCardDetailReturn {
   card: CardDetail | null
@@ -62,6 +63,48 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
       setError(null)
     }
   }, [cardId, fetchCard])
+
+  // Subscribe to board store — sync non-positional field changes (from patchCardInStore or
+  // Realtime updates that patched the store) into local detail state without a refetch.
+  // Uses .subscribe() (imperative) not useBoardStore() (reactive) to avoid coupling render cycles.
+  useEffect(() => {
+    if (!cardId) return
+
+    const unsub = useBoardStore.subscribe((state) => {
+      // Find this card in the board store columns
+      for (const col of state.columns) {
+        const storeCard = col.items.find(c => c.card_id === cardId)
+        if (storeCard) {
+          setCard(prev => {
+            if (!prev) return prev
+            // Equality check — avoid unnecessary re-renders and infinite loops
+            if (
+              prev.title === storeCard.title &&
+              prev.priority === storeCard.priority &&
+              prev.assigned_agent_id === storeCard.assigned_agent_id &&
+              prev.due_date === storeCard.due_date &&
+              JSON.stringify(prev.labels) === JSON.stringify(storeCard.labels) &&
+              prev.description === storeCard.description
+            ) {
+              return prev // no change
+            }
+            return {
+              ...prev,
+              title: storeCard.title,
+              priority: storeCard.priority,
+              assigned_agent_id: storeCard.assigned_agent_id,
+              due_date: storeCard.due_date,
+              labels: storeCard.labels,
+              description: storeCard.description ?? prev.description,
+            }
+          })
+          return
+        }
+      }
+    })
+
+    return unsub
+  }, [cardId])
 
   const refetch = useCallback(async () => {
     if (cardId) {
