@@ -1,6 +1,6 @@
 "use client"
 
-import { type FC, type ReactNode, useEffect, useRef, useState } from "react"
+import { type FC, type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import {
   ChevronRight,
   ChevronUpDouble,
@@ -163,7 +163,7 @@ export interface TaskDetailPanelProps {
 
   // Section E - Subtasks
   subtasks?: Subtask[]
-  onAddSubtask?: () => void
+  onAddSubtask?: (title: string) => void
   onDeleteAllSubtasks?: () => void
   onSubtaskClick?: (subtask: Subtask) => void
 
@@ -328,7 +328,6 @@ export function TaskDetailPanel({
             boardColumns={boardColumns}
             stateId={stateId}
             onStateIdChange={onStateIdChange}
-            onAddSubtask={onAddSubtask}
           />
 
           {/* ================================================================ */}
@@ -360,7 +359,7 @@ export function TaskDetailPanel({
           {/* ================================================================ */}
           {/* E · Subtasks                                                     */}
           {/* ================================================================ */}
-          {(subtasks.length > 0 || onAddSubtask) && (
+          {(subtasks.length > 0 || (onAddSubtask && taskType !== 'epic' && taskType !== 'subtask')) && (
             <>
               <SectionSubtasks
                 subtasks={subtasks}
@@ -369,6 +368,7 @@ export function TaskDetailPanel({
                 onAddSubtask={onAddSubtask}
                 onDeleteAllSubtasks={onDeleteAllSubtasks}
                 onSubtaskClick={onSubtaskClick}
+                taskType={taskType}
               />
               <div className="h-px bg-border-secondary" />
             </>
@@ -448,7 +448,6 @@ function SectionTaskHeader({
   boardColumns,
   stateId,
   onStateIdChange,
-  onAddSubtask,
 }: {
   breadcrumbs: BreadcrumbItem[]
   title: string
@@ -458,7 +457,6 @@ function SectionTaskHeader({
   boardColumns?: BoardColumnOption[]
   stateId?: string
   onStateIdChange?: (stateId: string) => void
-  onAddSubtask?: () => void
 }) {
   return (
     <div className="flex flex-col gap-3 pb-4">
@@ -552,13 +550,6 @@ function SectionTaskHeader({
           </Dropdown.Root>
         )}
 
-        <ButtonUtility
-          icon={Plus}
-          size="sm"
-          color="secondary"
-          tooltip="Add subtask"
-          onClick={onAddSubtask}
-        />
       </div>
     </div>
   )
@@ -1105,15 +1096,33 @@ function SectionSubtasks({
   onAddSubtask,
   onDeleteAllSubtasks,
   onSubtaskClick,
+  taskType,
 }: {
   subtasks: Subtask[]
   subtasksDone: number
   subtasksProgress: number
-  onAddSubtask?: () => void
+  onAddSubtask?: (title: string) => void
   onDeleteAllSubtasks?: () => void
   onSubtaskClick?: (subtask: Subtask) => void
+  taskType?: TaskType
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isAdding) inputRef.current?.focus()
+  }, [isAdding])
+
+  const canAddSubtask = taskType !== 'epic' && taskType !== 'subtask'
+
+  const handleCommit = useCallback((value: string) => {
+    const val = value.trim()
+    if (val) {
+      onAddSubtask?.(val)
+    }
+    setIsAdding(false)
+  }, [onAddSubtask])
 
   return (
     <div className="py-4">
@@ -1143,7 +1152,9 @@ function SectionSubtasks({
               </Dropdown.Menu>
             </Dropdown.Popover>
           </Dropdown.Root>
-          <ButtonUtility icon={Plus} size="xs" color="tertiary" tooltip="Add subtask" onClick={onAddSubtask} />
+          {canAddSubtask && onAddSubtask && (
+            <ButtonUtility icon={Plus} size="xs" color="tertiary" tooltip="Add subtask" onClick={() => setIsAdding(true)} />
+          )}
         </div>
       </div>
 
@@ -1233,6 +1244,29 @@ function SectionSubtasks({
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Inline subtask creation row */}
+          {isAdding && (
+            <div className="mt-2 flex items-center gap-2 px-1">
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Subtask title..."
+                className="flex-1 rounded-md border border-primary bg-primary px-3 py-1.5 text-sm text-primary placeholder:text-placeholder outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleCommit((e.target as HTMLInputElement).value)
+                  }
+                  if (e.key === 'Escape') {
+                    setIsAdding(false)
+                  }
+                }}
+                onBlur={(e) => {
+                  handleCommit(e.target.value)
+                }}
+              />
             </div>
           )}
         </>
