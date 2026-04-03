@@ -25,6 +25,9 @@ export type { EmptyStateProps } from "./empty-state"
 export { LoadingIndicator } from "./loading-indicator"
 export type { LoadingIndicatorProps, LoadingSize } from "./loading-indicator"
 
+export { Skeleton } from "./skeleton"
+export type { SkeletonProps, SkeletonVariant, SkeletonSize } from "./skeleton"
+
 export { AppNavigation } from "./app-navigation"
 export type { AppNavigationProps, NavItem } from "./app-navigation"
 
