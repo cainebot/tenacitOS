@@ -2,9 +2,11 @@
 
 import { HomeLine, SearchLg, Trash01, Edit05, Plus } from "@untitledui/icons";
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader, Input, MemberSelector, Avatar, AvatarGroup, Table, TableCard, Button, ModalForm, ConfirmActionDialog } from "@circos/ui";
 import { PaginationCardDefault } from "@/components/application/pagination/pagination";
 import type { ProjectRow } from "@/types/project";
+import { ProjectCover, type ProjectCoverValue } from "@/components/application/project-cover/project-cover";
 
 export default function ProjectsPage() {
   const PAGE_SIZE = 7; // matches current mock count per page
@@ -22,6 +24,9 @@ export default function ProjectsPage() {
   const [formDesc, setFormDesc] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const router = useRouter();
+  const [formCover, setFormCover] = useState<ProjectCoverValue>({ color: "gray", icon: "clipboard-list" });
 
   // MemberSelector filter state
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
@@ -86,6 +91,7 @@ export default function ProjectsPage() {
   const openCreate = () => {
     setFormName("");
     setFormDesc("");
+    setFormCover({ color: "gray", icon: "clipboard-list" });
     setIsCreateOpen(true);
   };
 
@@ -95,11 +101,20 @@ export default function ProjectsPage() {
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: formName.trim(), description: formDesc.trim() || undefined }),
+        body: JSON.stringify({
+          name: formName.trim(),
+          description: formDesc.trim() || undefined,
+          cover_color: formCover.color,
+          cover_icon: formCover.icon,
+        }),
       });
       if (!res.ok) throw new Error("Create failed");
+      const project: ProjectRow = await res.json();
       setIsCreateOpen(false);
-      refetchProjects();
+      // Notify sidebar to refresh project list
+      window.dispatchEvent(new Event("project-created"));
+      // Navigate to the new project's board (D-15)
+      router.push(`/projects/${project.slug}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -257,6 +272,7 @@ export default function ProjectsPage() {
         isSubmitting={isSubmitting}
       >
         <div className="flex flex-col gap-4">
+          <ProjectCover value={formCover} onChange={setFormCover} size="lg" />
           <Input label="Name" value={formName} onChange={setFormName} isRequired size="md" />
           <Input label="Description" value={formDesc} onChange={setFormDesc} size="md" />
         </div>

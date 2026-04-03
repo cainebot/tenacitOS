@@ -41,17 +41,6 @@ function ProjectIcon({ color, icon }: { color: ProjectCoverColorId; icon: Projec
   );
 }
 
-/** Map known project names to their filesystem route slugs. */
-const PROJECT_SLUG_MAP: Record<string, string> = {
-  "Sales Pipeline": "sales-pipeline",
-  "Task Management": "tasks",
-  "Tasks": "tasks",
-}
-
-function projectSlug(name: string) {
-  return PROJECT_SLUG_MAP[name] ?? name.toLowerCase().replace(/\s+/g, "-")
-}
-
 // Static nav items (top + bottom around the dynamic Projects section)
 const navItemsTop: (NavItemType | NavItemDividerType)[] = [
   { divider: true, label: "General" },
@@ -101,7 +90,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handler = () => setProjectsVersion((v) => v + 1);
     window.addEventListener("project-cover-changed", handler);
-    return () => window.removeEventListener("project-cover-changed", handler);
+    window.addEventListener("project-created", handler);
+    return () => {
+      window.removeEventListener("project-cover-changed", handler);
+      window.removeEventListener("project-created", handler);
+    };
   }, []);
 
   // Build nav items with dynamic project list
@@ -112,7 +105,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         color: (p.cover_color ?? "gray") as ProjectCoverColorId,
         icon: (p.cover_icon ?? "clipboard-list") as ProjectCoverIcon,
       }),
-      href: `/projects/${projectSlug(p.name)}`,
+      href: `/projects/${p.slug}`,
     }));
 
     return [
