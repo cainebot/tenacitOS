@@ -41,24 +41,28 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return errorResponse(400, 'Invalid JSON body')
   }
 
-  const { name, description } = body as {
+  const { name, description, cover_color, cover_icon } = body as {
     name?: string
     description?: string
+    cover_color?: string
+    cover_icon?: string
   }
 
-  if (!name && description === undefined) {
+  if (!name && description === undefined && cover_color === undefined && cover_icon === undefined) {
     return errorResponse(
       400,
-      'At least one field (name or description) is required',
+      'At least one field is required',
       undefined,
       undefined,
       'VALIDATION_ERROR'
     )
   }
 
-  const updateData: Partial<{ name: string; description: string }> = {}
+  const updateData: Partial<{ name: string; description: string; cover_color: string; cover_icon: string }> = {}
   if (name) updateData.name = name.trim()
   if (description !== undefined) updateData.description = description
+  if (cover_color !== undefined) updateData.cover_color = cover_color
+  if (cover_icon !== undefined) updateData.cover_icon = cover_icon
 
   try {
     const project = await updateProject(id, updateData)

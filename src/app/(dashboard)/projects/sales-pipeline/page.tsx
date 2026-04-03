@@ -102,14 +102,27 @@ export default function SalesPipelinePage() {
       .catch((err) => { console.error('[agent-load] Failed:', err) })
   }, [])
 
-  // Project states for done category derivation
+  // Project states for done category derivation + cover from DB
   const [projectStates, setProjectStates] = useState<ProjectStateRow[]>([])
   useEffect(() => {
     if (!board?.project_id) return
     fetch(`/api/projects/${board.project_id}`)
       .then((r) => r.json())
-      .then((data: { states?: ProjectStateRow[] }) => {
+      .then((data: { project_id?: string; states?: ProjectStateRow[]; cover_color?: string | null; cover_icon?: string | null }) => {
         if (data.states) setProjectStates(data.states)
+        if (data.cover_color && data.cover_icon) {
+          setCover({ color: data.cover_color as ProjectCoverValue["color"], icon: data.cover_icon as ProjectCoverValue["icon"] })
+        } else if (data.project_id) {
+          // DB has no cover yet — seed with the page default so sidebar stays in sync
+          const defaults = { cover_color: "orange", cover_icon: "rocket" }
+          fetch(`/api/projects/${data.project_id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(defaults),
+          })
+            .then(() => { window.dispatchEvent(new Event("project-cover-changed")) })
+            .catch(() => {})
+        }
       })
       .catch((err) => { console.error('[project-states-load] Failed:', err) })
   }, [board?.project_id])
@@ -138,6 +151,19 @@ export default function SalesPipelinePage() {
   const [filters, setFilters] = useState<FilterRow[]>([])
   const [search, setSearch] = useState("")
   const [cover, setCover] = useState<ProjectCoverValue>({ color: "orange", icon: "rocket" })
+
+  // Persist cover changes to DB + notify sidebar
+  const handleCoverChange = useCallback((value: ProjectCoverValue) => {
+    setCover(value)
+    if (!board?.project_id) return
+    fetch(`/api/projects/${board.project_id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cover_color: value.color, cover_icon: value.icon }),
+    })
+      .then(() => { window.dispatchEvent(new Event("project-cover-changed")) })
+      .catch((err) => { console.error('[cover-update] Failed:', err) })
+  }, [board?.project_id])
   const [selectedTab, setSelectedTab] = useState("board")
 
   // Filter fields with live agents
@@ -879,7 +905,7 @@ export default function SalesPipelinePage() {
         <ProjectHeader
           name={board?.name ?? "Sales pipeline"}
           cover={cover}
-          onCoverChange={setCover}
+          onCoverChange={handleCoverChange}
           avatars={projectAvatars}
           onAddMember={() => {}}
           selectedTab={selectedTab}

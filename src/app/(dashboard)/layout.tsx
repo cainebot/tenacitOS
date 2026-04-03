@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import type { FC } from "react";
 import {
   BarChartSquare02,
   Building06,
@@ -13,7 +12,6 @@ import {
   Server01,
 } from "@untitledui/icons";
 import {
-  Badge,
   AgentSubNav,
   AgentSubNavDivider,
   AgentListItem,
@@ -27,6 +25,7 @@ import { DevPerfProfiler } from "@/components/dev-perf-profiler";
 import { BotIcon } from "@/components/icons/bot-icon";
 import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
 import { PROJECT_COVER_COLORS, PROJECT_COVER_ICONS, type ProjectCoverColorId, type ProjectCoverIcon } from "@/components/application/project-cover/project-cover";
+import type { ProjectRow } from "@/types/project";
 
 /** Tiny display-only project icon for the sidebar (no picker). */
 function ProjectIcon({ color, icon }: { color: ProjectCoverColorId; icon: ProjectCoverIcon }) {
@@ -42,20 +41,24 @@ function ProjectIcon({ color, icon }: { color: ProjectCoverColorId; icon: Projec
   );
 }
 
-// Navigation items
-const navItems: (NavItemType | NavItemDividerType)[] = [
+/** Map known project names to their filesystem route slugs. */
+const PROJECT_SLUG_MAP: Record<string, string> = {
+  "Sales Pipeline": "sales-pipeline",
+  "Task Management": "tasks",
+  "Tasks": "tasks",
+}
+
+function projectSlug(name: string) {
+  return PROJECT_SLUG_MAP[name] ?? name.toLowerCase().replace(/\s+/g, "-")
+}
+
+// Static nav items (top + bottom around the dynamic Projects section)
+const navItemsTop: (NavItemType | NavItemDividerType)[] = [
   { divider: true, label: "General" },
   { label: "Dashboard", href: "/", icon: BarChartSquare02 },
-  {
-    label: "Projects",
-    icon: Rows01,
-    href: "/projects",
-    items: [
-      { label: "Sales Pipeline", icon: ProjectIcon({ color: "orange", icon: "rocket" }), badge: <Badge color="gray" type="modern" size="sm">4</Badge>, href: "/projects/sales-pipeline" },
-      { label: "Tasks", icon: ProjectIcon({ color: "blue", icon: "clipboard-list" }), href: "/projects/tasks" },
-      { label: "See all", href: "/projects", iconTrailing: ChevronRight },
-    ],
-  },
+];
+
+const navItemsBottom: (NavItemType | NavItemDividerType)[] = [
   { label: "Organization", href: "/organization", icon: Building06 },
   { label: "Calendar", href: "/calendar", icon: Calendar },
   { divider: true, label: "Agents" },
@@ -83,6 +86,49 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { agentBoardActive, setAgentBoardActive } = useAgentBoard();
   const { nodes } = useRealtimeNodes();
+
+  // Fetch projects for dynamic sidebar icons
+  const [projects, setProjects] = useState<ProjectRow[]>([]);
+  const [projectsVersion, setProjectsVersion] = useState(0);
+  useEffect(() => {
+    fetch("/api/projects")
+      .then((r) => r.json())
+      .then((data: ProjectRow[]) => { if (Array.isArray(data)) setProjects(data) })
+      .catch((err) => { console.error("[sidebar-projects] Failed:", err) })
+  }, [projectsVersion]);
+
+  // Listen for cover changes from project pages to refresh sidebar
+  useEffect(() => {
+    const handler = () => setProjectsVersion((v) => v + 1);
+    window.addEventListener("project-cover-changed", handler);
+    return () => window.removeEventListener("project-cover-changed", handler);
+  }, []);
+
+  // Build nav items with dynamic project list
+  const navItems = useMemo((): (NavItemType | NavItemDividerType)[] => {
+    const projectItems = projects.map((p) => ({
+      label: p.name,
+      icon: ProjectIcon({
+        color: (p.cover_color ?? "gray") as ProjectCoverColorId,
+        icon: (p.cover_icon ?? "clipboard-list") as ProjectCoverIcon,
+      }),
+      href: `/projects/${projectSlug(p.name)}`,
+    }));
+
+    return [
+      ...navItemsTop,
+      {
+        label: "Projects",
+        icon: Rows01,
+        href: "/projects",
+        items: [
+          ...projectItems,
+          { label: "See all", href: "/projects", iconTrailing: ChevronRight },
+        ],
+      },
+      ...navItemsBottom,
+    ];
+  }, [projects]);
 
   const nodeCards: FeaturedCardData[] = nodes.map((node) => {
     const ramPct = node.ram_total_mb > 0

@@ -66,7 +66,7 @@ export async function createProject(
 
 export async function updateProject(
   id: string,
-  data: Partial<Pick<ProjectRow, 'name' | 'description'>>
+  data: Partial<Pick<ProjectRow, 'name' | 'description' | 'cover_color' | 'cover_icon'>>
 ): Promise<ProjectRow> {
   const client = createServiceRoleClient()
   const { data: row, error } = await client
