@@ -56,7 +56,7 @@ export default function SalesPipelinePage() {
         const pipelineBoard = boards.find((b) => b.name === "Sales Pipeline") ?? boards[0]
         if (pipelineBoard) setBoardId(pipelineBoard.board_id)
       })
-      .catch(() => {})
+      .catch((err) => { console.error('[board-load] Failed:', err) })
   }, [])
 
   // Live board data
@@ -95,7 +95,7 @@ export default function SalesPipelinePage() {
     fetch("/api/agents/list")
       .then((r) => r.json())
       .then((data: AgentRow[]) => setAgents(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .catch((err) => { console.error('[agent-load] Failed:', err) })
   }, [])
 
   // Project states for done category derivation
@@ -107,7 +107,7 @@ export default function SalesPipelinePage() {
       .then((data: { states?: ProjectStateRow[] }) => {
         if (data.states) setProjectStates(data.states)
       })
-      .catch(() => {})
+      .catch((err) => { console.error('[project-states-load] Failed:', err) })
   }, [board?.project_id])
 
   // First done-category and to-do-category state IDs (board-wide constants)
@@ -118,7 +118,7 @@ export default function SalesPipelinePage() {
 
   const todoStateId = useMemo(() => {
     const todoState = projectStates.find(s => s.category === 'to-do')
-    return todoState?.state_id ?? null
+    return todoState?.state_id ?? projectStates[0]?.state_id ?? null
   }, [projectStates])
 
   // KanbanCard user list from agents
@@ -305,7 +305,7 @@ export default function SalesPipelinePage() {
         }),
       })
         .then(() => refetch())
-        .catch(() => {})
+        .catch((err) => { console.error('[add-card] Failed:', err) })
     },
     [board, effectiveColumns, refetch, getInlineTitle],
   )
@@ -515,7 +515,7 @@ export default function SalesPipelinePage() {
     })
       .then(r => r.json())
       .then((urls: Record<string, string>) => setSignedUrls(urls))
-      .catch(() => {})
+      .catch((err) => { console.error('[signed-urls] Failed:', err) })
   }, [detailCard?.card_id, detailCard?.attachments.length])
 
   // Board columns for the panel status dropdown — derived from store (updated on rename)
@@ -628,7 +628,7 @@ export default function SalesPipelinePage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ author: 'user', text: content }),
-    }).catch(() => {})
+    }).catch((err) => { console.error('[add-comment] Failed:', err) })
     await detailRefetch()
     refetch()
   }, [detailCard, detailRefetch, refetch])
@@ -642,7 +642,7 @@ export default function SalesPipelinePage() {
       await fetch(`/api/cards/${detailCard.card_id}/attachments`, {
         method: 'POST',
         body: formData,
-      }).catch(() => {})
+      }).catch((err) => { console.error('[upload-attachment] Failed:', err) })
     }
     await detailRefetch()
     refetch()
@@ -653,25 +653,29 @@ export default function SalesPipelinePage() {
     if (!detailCard) return
     await fetch(`/api/cards/${detailCard.card_id}/attachments/${attachmentId}`, {
       method: 'DELETE',
-    }).catch(() => {})
+    }).catch((err) => { console.error('[delete-attachment] Failed:', err) })
     await detailRefetch()
     refetch()
   }, [detailCard, detailRefetch, refetch])
 
   // Add subtask: create child card with card_type 'subtask'
-  const handlePanelAddSubtask = useCallback(async () => {
+  const handlePanelAddSubtask = useCallback(async (title: string) => {
     if (!detailCard || !todoStateId) return
-    await fetch('/api/cards', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: 'New subtask',
-        project_id: detailCard.project_id,
-        state_id: todoStateId,
-        card_type: 'subtask',
-        parent_card_id: detailCard.card_id,
-      }),
-    }).catch(() => {})
+    try {
+      await fetch('/api/cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          project_id: detailCard.project_id,
+          state_id: todoStateId,
+          card_type: 'subtask',
+          parent_card_id: detailCard.card_id,
+        }),
+      })
+    } catch (err) {
+      console.error('[handlePanelAddSubtask] Failed to create subtask:', err)
+    }
     await detailRefetch()
     refetch()
   }, [detailCard, todoStateId, detailRefetch, refetch])
