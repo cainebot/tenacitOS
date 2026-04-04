@@ -166,7 +166,7 @@ function TextBubble({ content, sent }: { content: string; sent: boolean }) {
       className={cx(
         'border border-secondary overflow-clip px-3 py-2 w-full',
         bubbleRadius(sent),
-        sent ? 'bg-primary' : 'bg-secondary',
+        'bg-primary',
       )}
     >
       <p className="text-md text-primary leading-6 whitespace-pre-wrap">{content}</p>
@@ -180,7 +180,7 @@ function ReplyBubble({ content, replyText, sent }: { content: string; replyText:
       className={cx(
         'border border-secondary overflow-clip px-3 py-2 w-full flex flex-col gap-1.5',
         bubbleRadius(sent),
-        sent ? 'bg-primary' : 'bg-secondary',
+        'bg-primary',
       )}
     >
       <div className="border-l-[3px] border-brand rounded-md overflow-clip">
@@ -391,7 +391,7 @@ function LinkPreviewBubble({ url, imageSrc, sent }: { url: string; imageSrc?: st
       className={cx(
         'border border-secondary overflow-clip p-3 w-full flex flex-col gap-1.5 block',
         bubbleRadius(sent),
-        sent ? 'bg-primary' : 'bg-secondary',
+        'bg-primary',
         'hover:opacity-95 transition duration-100 ease-linear',
       )}
     >
@@ -428,7 +428,7 @@ function LinkMinimalBubble({
       className={cx(
         'border border-secondary overflow-clip p-3 w-full flex flex-col gap-1.5 block',
         bubbleRadius(sent),
-        sent ? 'bg-primary' : 'bg-secondary',
+        'bg-primary',
         'hover:opacity-95 transition duration-100 ease-linear',
       )}
     >
@@ -450,7 +450,7 @@ function LinkMinimalBubble({
 
 function WritingBubble() {
   return (
-    <div className="bg-secondary border border-secondary overflow-clip rounded-bl-md rounded-br-md rounded-tr-md p-2.5 inline-flex gap-1.5 items-center w-fit">
+    <div className="bg-primary border border-secondary overflow-clip rounded-bl-md rounded-br-md rounded-tr-md p-2.5 inline-flex gap-1.5 items-center w-fit">
       <span className="size-1.5 rounded-full bg-brand-solid opacity-60 animate-bounce [animation-delay:0ms]" />
       <span className="size-1.5 rounded-full bg-brand-solid opacity-60 animate-bounce [animation-delay:150ms]" />
       <span className="size-1.5 rounded-full bg-brand-solid opacity-60 animate-bounce [animation-delay:300ms]" />
@@ -469,8 +469,8 @@ export function Message(props: MessageProps) {
   return (
     <div
       className={cx(
-        'flex gap-3 items-start relative group w-full',
-        sent && 'justify-end',
+        'flex gap-3 items-start relative group',
+        sent ? 'ml-auto max-w-[70%]' : 'max-w-[80%]',
         props.className,
       )}
       onMouseEnter={() => setIsHovered(true)}

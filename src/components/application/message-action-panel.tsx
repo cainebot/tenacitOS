@@ -37,7 +37,7 @@ export function MessageActionPanel({
   return (
     <div
       className={cx(
-        'bg-primary_alt flex items-center gap-1.5 px-2 py-1.5 rounded-lg shadow-xl',
+        'bg-[#13161b] flex items-center gap-1.5 px-2 py-1.5 rounded-lg shadow-xl',
         className
       )}
       role="toolbar"

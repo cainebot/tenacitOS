@@ -110,6 +110,8 @@
     --bg-primary_alt: var(--bg-secondary);
     --bg-tertiary: var(--gray-800);
     --bg-quaternary: var(--gray-700);
+    --bg-secondary_alt: var(--bg-primary);
+    --bg-primary_hover: var(--gray-800);
 
     /* -----------------------------------------------------------------------
        Text Tokens (DARK mode — light text on dark bg)
@@ -405,6 +407,8 @@
     --bg-secondary: var(--gray-50);
     --bg-tertiary: var(--gray-100);
     --bg-quaternary: var(--gray-200);
+    --bg-secondary_alt: var(--gray-50);
+    --bg-primary_hover: var(--gray-50);
 
     /* Text tokens (LIGHT mode — dark text on light bg) */
     --text-primary-900: var(--gray-900);
@@ -619,7 +623,7 @@
   --color-primary_alt: var(--bg-primary_alt);
   --color-primary_hover: var(--bg-secondary);
   --color-primary-solid: var(--bg-primary-solid);
-  --color-secondary_alt: var(--bg-quaternary);
+  --color-secondary_alt: var(--bg-secondary_alt);
   --color-secondary_hover: var(--secondary_hover);
   --color-tertiary_hover: var(--tertiary_hover);
   --color-active: var(--bg-active);
@@ -861,8 +865,9 @@
   /* --- Background Color (bg-*) --- */
   --background-color-primary: var(--bg-primary);
   --background-color-primary_alt: var(--bg-primary_alt);
-  --background-color-primary_hover: var(--bg-secondary);
+  --background-color-primary_hover: var(--bg-primary_hover);
   --background-color-secondary: var(--bg-secondary);
+  --background-color-secondary_alt: var(--bg-secondary_alt);
   --background-color-secondary_hover: var(--bg-tertiary);
   --background-color-tertiary: var(--bg-tertiary);
   --background-color-quaternary: var(--bg-quaternary);
