@@ -49,8 +49,10 @@ import {
   DatePickerCalendar,
   TextEditor,
   FileUpload,
+  FeedItem,
   cx,
 } from "@circos/ui"
+import { formatDistanceToNow, isYesterday, format } from "date-fns"
 import { TaskTypeIndicator, type TaskType } from "./task-type-indicator"
 import { getLocalTimeZone, isToday, today } from "@internationalized/date"
 import { I18nProvider } from "react-aria"
@@ -63,6 +65,28 @@ import {
   Button as AriaButton,
   Popover as AriaPopover,
 } from "react-aria-components"
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  const diffMs = Date.now() - date.getTime()
+  const diffHours = diffMs / 3_600_000
+
+  if (diffHours < 24) return formatDistanceToNow(date, { addSuffix: true })
+  if (isYesterday(date)) return "Yesterday"
+  return format(date, "MMM d, yyyy")
+}
+
+const reactionEmojis = [
+  { emoji: "👍", label: "Thumbs up" },
+  { emoji: "❤️", label: "Love" },
+  { emoji: "😄", label: "Laugh" },
+  { emoji: "🎉", label: "Celebrate" },
+  { emoji: "👀", label: "Eyes" },
+]
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1806,9 +1830,20 @@ function SectionComments({
         </div>
 
         <TabPanel id="comments">
-          <div className="flex flex-col">
-            {sorted.filter((c) => !c.isSystemEvent).map((comment) => (
-              <CommentRow key={comment.id} comment={comment} />
+          <div className="flex flex-col gap-0.5 pt-3">
+            {sorted.filter((c) => !c.isSystemEvent).map((comment, i, arr) => (
+              <div key={comment.id} className="group/comment relative">
+                <FeedItem
+                  avatarSrc={comment.author.avatarUrl}
+                  avatarAlt={comment.author.name}
+                  name={comment.author.name}
+                  timestamp={formatRelativeTime(comment.createdAt)}
+                  action={comment.content}
+                  connector={i < arr.length - 1}
+                  size="sm"
+                />
+                <CommentReactionPicker />
+              </div>
             ))}
             {comments.filter((c) => !c.isSystemEvent).length === 0 && (
               <p className="py-4 text-center text-sm text-quaternary">No comments yet</p>
@@ -1817,9 +1852,20 @@ function SectionComments({
         </TabPanel>
 
         <TabPanel id="activity">
-          <div className="flex flex-col">
-            {sorted.map((comment) => (
-              <CommentRow key={comment.id} comment={comment} />
+          <div className="flex flex-col gap-0.5 pt-3">
+            {sorted.map((comment, i, arr) => (
+              <div key={comment.id} className="group/comment relative">
+                <FeedItem
+                  avatarSrc={comment.author.avatarUrl}
+                  avatarAlt={comment.author.name}
+                  name={comment.author.name}
+                  timestamp={formatRelativeTime(comment.createdAt)}
+                  action={comment.isSystemEvent ? comment.content : comment.content}
+                  connector={i < arr.length - 1}
+                  size="sm"
+                />
+                {!comment.isSystemEvent && <CommentReactionPicker />}
+              </div>
             ))}
             {comments.length === 0 && (
               <p className="py-4 text-center text-sm text-quaternary">No activity yet</p>
@@ -1860,93 +1906,47 @@ function SectionComments({
   )
 }
 
-const urlRegex = /(https?:\/\/[^\s]+)/g
-
-function linkifyText(text: string) {
-  const parts = text.split(urlRegex)
-  return parts.map((part, i) =>
-    urlRegex.test(part) ? (
-      <a
-        key={i}
-        href={part}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-brand-secondary underline decoration-brand-secondary/40 underline-offset-2 transition hover:decoration-brand-secondary"
-      >
-        {part}
-      </a>
-    ) : (
-      part
-    ),
-  )
-}
-
-const reactionEmojis = [
-  { emoji: "👍", label: "Thumbs up" },
-  { emoji: "❤️", label: "Love" },
-  { emoji: "😄", label: "Laugh" },
-  { emoji: "🎉", label: "Celebrate" },
-  { emoji: "👀", label: "Eyes" },
-]
-
-function CommentRow({ comment }: { comment: TaskComment }) {
+function CommentReactionPicker() {
   return (
-    <div className="group/comment flex gap-3 border-b border-secondary/50 py-3 last:border-b-0">
-      <Avatar
-        size="sm"
-        src={comment.author.avatarUrl}
-        alt={comment.author.name}
-      />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-primary">{comment.author.name}</span>
-            <span className="text-xs text-quaternary">{comment.createdAt}</span>
-          </div>
-
-          {/* Reaction picker */}
-          <AriaDialogTrigger>
-            <AriaButton aria-label="Add reaction" className="cursor-pointer opacity-0 outline-none transition group-hover/comment:opacity-100">
-              <FaceSmile className="size-4 text-fg-quaternary hover:text-fg-quaternary_hover" />
-            </AriaButton>
-            <AriaPopover
-              placement="bottom end"
-              offset={4}
-              className={({ isEntering, isExiting }) =>
-                cx(
-                  "origin-(--trigger-anchor-point) will-change-transform",
-                  isEntering && "duration-150 ease-out animate-in fade-in slide-in-from-top-0.5",
-                  isExiting && "duration-100 ease-in animate-out fade-out slide-out-to-top-0.5",
-                )
-              }
-            >
-              <AriaDialog aria-label="Reaction picker" className="flex items-center gap-1 rounded-lg bg-primary px-2 py-1.5 shadow-lg ring-1 ring-secondary_alt outline-none">
-                {({ close }) => (
-                  <>
-                    {reactionEmojis.map((r) => (
-                      <button
-                        key={r.emoji}
-                        type="button"
-                        aria-label={r.label}
-                        onClick={close}
-                        className="flex size-8 cursor-pointer items-center justify-center rounded-md text-base transition hover:bg-primary_hover"
-                      >
-                        {r.emoji}
-                      </button>
-                    ))}
-                  </>
-                )}
-              </AriaDialog>
-            </AriaPopover>
-          </AriaDialogTrigger>
-        </div>
-        <p className={cx(
-          "mt-1 text-sm leading-relaxed",
-          comment.isSystemEvent ? "text-quaternary italic" : "text-secondary",
-        )}>
-          {linkifyText(comment.content)}
-        </p>
-      </div>
-    </div>
+    <AriaDialogTrigger>
+      <AriaButton
+        aria-label="Add reaction"
+        className="absolute right-0 top-1 cursor-pointer opacity-0 outline-none transition group-hover/comment:opacity-100"
+      >
+        <FaceSmile className="size-4 text-fg-quaternary hover:text-fg-quaternary_hover" />
+      </AriaButton>
+      <AriaPopover
+        placement="bottom end"
+        offset={4}
+        className={({ isEntering, isExiting }) =>
+          cx(
+            "origin-(--trigger-anchor-point) will-change-transform",
+            isEntering && "duration-150 ease-out animate-in fade-in slide-in-from-top-0.5",
+            isExiting && "duration-100 ease-in animate-out fade-out slide-out-to-top-0.5",
+          )
+        }
+      >
+        <AriaDialog
+          aria-label="Reaction picker"
+          className="flex items-center gap-1 rounded-lg bg-primary px-2 py-1.5 shadow-lg ring-1 ring-secondary_alt outline-none"
+        >
+          {({ close }) => (
+            <>
+              {reactionEmojis.map((r) => (
+                <button
+                  key={r.emoji}
+                  type="button"
+                  aria-label={r.label}
+                  onClick={close}
+                  className="flex size-8 cursor-pointer items-center justify-center rounded-md text-base transition hover:bg-primary_hover"
+                >
+                  {r.emoji}
+                </button>
+              ))}
+            </>
+          )}
+        </AriaDialog>
+      </AriaPopover>
+    </AriaDialogTrigger>
   )
 }

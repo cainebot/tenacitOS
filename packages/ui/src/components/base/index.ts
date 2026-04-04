@@ -37,3 +37,15 @@ export { ButtonUtility } from "./buttons/button-utility"
 export { ProgressBar as ProgressIndicatorBar } from "./progress-indicators/progress-indicators"
 export { Form } from "./form/form"
 export { TagGroup, TagList, Tag, type TagItem } from "./tags/tags"
+export {
+  FeedItem,
+  FeedItemLink,
+  FeedItemComment,
+  FeedItemText,
+  FeedItemFile,
+  type FeedItemProps,
+  type FeedItemLinkProps,
+  type FeedItemCommentProps,
+  type FeedItemTextProps,
+  type FeedItemFileProps,
+} from "./feed-item"
