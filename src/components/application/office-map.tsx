@@ -73,13 +73,13 @@ export function OfficeMap() {
       const DIR_INDEX: Record<string, number> = { right: 0, up: 1, left: 2, down: 3 }
       const IDLE_ROW = 1  // Row 1 = idle/breath animations
       const WALK_ROW = 2  // Row 2 = walk animations
-      const SPRITE_SCALE = 1.5
+      const SPRITE_SCALE = 2.0
 
-      const PLAYER_SPEED = 160 // pixels per second (matches Agent Town)
+      const PLAYER_SPEED = 360 // pixels per second
 
       class OfficeScene extends Phaser.Scene {
         private player!: Phaser.GameObjects.Sprite
-        private playerLabel!: Phaser.GameObjects.Text
+        private playerLabel!: Phaser.GameObjects.Container
         private playerFacing = 'down'
         private playerMoving = false
         private wasd!: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key }
@@ -161,15 +161,8 @@ export function OfficeMap() {
           this.player.setDepth(10)
           this.player.play(`${PLAYER_SPRITE.key}_idle_down`)
 
-          // Player name label (follows player)
-          this.playerLabel = this.add.text(0, 0, 'You', {
-            fontSize: '11px',
-            fontFamily: 'Inter, sans-serif',
-            color: '#ffffff',
-            backgroundColor: '#444CE7dd',
-            padding: { x: 8, y: 3 },
-            resolution: 2,
-          }).setOrigin(0.5, 1).setDepth(11)
+          // Player name label (follows player) — UUI tooltip style
+          this.playerLabel = this.createTooltip(playerX, playerY - (72 * SPRITE_SCALE) - 8, 'You', 0x12b76a)
           this.updatePlayerLabel()
 
           // Camera follows player
@@ -224,35 +217,73 @@ export function OfficeMap() {
               console.log('[Office] agent:clicked', agents[i].agent_id)
             })
 
-            // ── Gather-style tooltip: name + status dot ──
+            // ── UUI-style tooltip: name + status dot ──
             const labelY = py - (72 * SPRITE_SCALE) - 8
             const dotColor = STATUS_COLOR[agents[i].status] ?? 0x667085
-
-            const nameText = this.add.text(px - 4, labelY, agents[i].name, {
-              fontSize: '11px',
-              fontFamily: 'Inter, sans-serif',
-              color: '#ffffff',
-              backgroundColor: '#181D27dd',
-              padding: { x: 8, y: 3 },
-              resolution: 2,
-            }).setOrigin(0.5, 1).setDepth(11)
-
-            const textWidth = nameText.width
-            const dot = this.add.circle(
-              px + textWidth / 2 - 10,
-              labelY - nameText.height / 2,
-              4,
-              dotColor,
-            )
-            dot.setDepth(12)
+            this.createTooltip(px, labelY, agents[i].name, dotColor)
           }
+        }
+
+        /** UUI-style tooltip: #0C111D rounded pill, white text, colored dot right */
+        private createTooltip(x: number, y: number, name: string, dotColor: number): Phaser.GameObjects.Container {
+          const text = this.add.text(0, 0, name, {
+            fontSize: '20px',
+            fontFamily: 'Inter, sans-serif',
+            fontStyle: '600',
+            color: '#ffffff',
+            resolution: 2,
+          })
+          text.setOrigin(0, 0)
+
+          const padX = 14
+          const padY = 10
+          const dotRadius = 6
+          const dotGap = 12
+          const tw = text.width
+          const th = text.height
+          const totalW = padX + tw + dotGap + dotRadius * 2 + padX
+          const totalH = padY + th + padY
+          const radius = 12
+
+          // Rounded rect background
+          const bg = this.add.graphics()
+          bg.fillStyle(0x0C111D, 0.92)
+          bg.fillRoundedRect(0, 0, totalW, totalH, radius)
+
+          // Position text inside
+          text.setPosition(padX, padY)
+
+          // Status dot (right side, vertically centered)
+          const dot = this.add.circle(
+            totalW - padX - dotRadius,
+            totalH / 2,
+            dotRadius,
+            dotColor,
+          )
+
+          // Arrow (small triangle pointing down)
+          const arrow = this.add.graphics()
+          arrow.fillStyle(0x0C111D, 0.92)
+          arrow.fillTriangle(
+            totalW / 2 - 5, totalH,
+            totalW / 2 + 5, totalH,
+            totalW / 2, totalH + 5,
+          )
+
+          const container = this.add.container(x - totalW / 2, y - totalH - 5, [bg, text, dot, arrow])
+          container.setDepth(11)
+          container.setData('tooltipW', totalW)
+          container.setData('tooltipH', totalH)
+          return container
         }
 
         private updatePlayerLabel() {
           if (!this.player || !this.playerLabel) return
+          const tw = this.playerLabel.getData('tooltipW') as number
+          const th = this.playerLabel.getData('tooltipH') as number
           this.playerLabel.setPosition(
-            this.player.x,
-            this.player.y - (72 * SPRITE_SCALE) - 8,
+            this.player.x - tw / 2,
+            this.player.y - (72 * SPRITE_SCALE) - 8 - th - 5,
           )
         }
 
