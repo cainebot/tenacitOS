@@ -2,55 +2,6 @@
 
 import { useEffect, useRef } from 'react'
 
-const TILESETS = [
-  { mapName: 'room_builder',            key: 'ts_room_builder',   path: '/assets/tilesets/Room_Builder_Office_48x48.png' },
-  { mapName: 'modern_office',           key: 'ts_modern_office',  path: '/assets/tilesets/Modern_Office_48x48.png' },
-  { mapName: 'Classroom & Library',     key: 'ts_classroom',      path: '/assets/tilesets/5_Classroom_and_library_48x48.png' },
-  { mapName: 'Basement',                key: 'ts_basement',       path: '/assets/tilesets/14_Basement_48x48.png' },
-  { mapName: 'Generic Interiors',       key: 'ts_generic',        path: '/assets/tilesets/1_Generic_48x48.png' },
-  { mapName: 'Interios Room Builder',   key: 'ts_room_builder_b', path: '/assets/tilesets/Room_Builder_48x48.png' },
-  { mapName: '6_Music_and_sport_48x48', key: 'ts_music',          path: '/assets/tilesets/6_Music_and_sport_48x48.png' },
-  { mapName: '3_Bathroom_48x48',        key: 'ts_bathroom',       path: '/assets/tilesets/3_Bathroom_48x48.png' },
-  { mapName: '4_Bedroom_48x48',         key: 'ts_bedroom',        path: '/assets/tilesets/4_Bedroom_48x48.png' },
-  { mapName: '2_LivingRoom_48x48',      key: 'ts_living',         path: '/assets/tilesets/2_LivingRoom_48x48.png' },
-  { mapName: '7_Art_48x48',             key: 'ts_art',            path: '/assets/tilesets/7_Art_48x48.png' },
-  { mapName: '8_Gym_48x48',             key: 'ts_gym',            path: '/assets/tilesets/8_Gym_48x48.png' },
-  { mapName: '9_Fishing_48x48',         key: 'ts_fishing',        path: '/assets/tilesets/9_Fishing_48x48.png' },
-  { mapName: '11_Halloween_48x48',      key: 'ts_halloween',      path: '/assets/tilesets/11_Halloween_48x48.png' },
-  { mapName: '13_Conference_Hall_48x48',key: 'ts_conference',     path: '/assets/tilesets/13_Conference_Hall_48x48.png' },
-  { mapName: '16_Grocery_store_48x48',  key: 'ts_grocery',        path: '/assets/tilesets/16_Grocery_store_48x48.png' },
-]
-
-const VISUAL_LAYERS = ['floor', 'walls', 'ground', 'furniture', 'objects', 'props', 'props-over', 'overhead']
-
-// One character sprite per agent slot (7 available)
-const CHAR_SPRITES = [
-  { key: 'char_0', path: '/assets/characters/Premade_Character_48x48_01.png' },
-  { key: 'char_1', path: '/assets/characters/Premade_Character_48x48_02.png' },
-  { key: 'char_2', path: '/assets/characters/Premade_Character_48x48_03.png' },
-  { key: 'char_3', path: '/assets/characters/Premade_Character_48x48_04.png' },
-  { key: 'char_4', path: '/assets/characters/Premade_Character_48x48_05.png' },
-  { key: 'char_5', path: '/assets/characters/Premade_Character_48x48_06.png' },
-  { key: 'char_6', path: '/assets/characters/Premade_Character_48x48_09.png' },
-]
-
-// LPC extended sheet — walk rows start at 8 (not 0, which is spellcast)
-// Row 8: walk up, 9: walk left, 10: walk down, 11: walk right
-const FACING_ROW: Record<string, number> = { down: 10, left: 9, right: 11, up: 8 }
-
-// Status → dot color
-const STATUS_COLOR: Record<string, number> = {
-  active:  0x12b76a,
-  idle:    0xf79009,
-  working: 0x12b76a,
-}
-
-interface AgentData {
-  agent_id: string
-  name: string
-  status: string
-}
-
 export function OfficeMap() {
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<unknown>(null)
@@ -63,82 +14,128 @@ export function OfficeMap() {
     const initPhaser = async () => {
       const Phaser = (await import('phaser')).default
 
+      // ── Asset configuration ──
+      const TILESET = {
+        mapName: 'map_centered_tileset_64x64',
+        key: 'ts_office_v3',
+        path: '/assets/tilesets/office-v3-tileset.png',
+      }
+
+      const CHAR_SPRITES = [
+        { key: 'char_0', path: '/assets/characters/Premade_Character_48x48_01.png' },
+        { key: 'char_1', path: '/assets/characters/Premade_Character_48x48_02.png' },
+        { key: 'char_2', path: '/assets/characters/Premade_Character_48x48_03.png' },
+        { key: 'char_3', path: '/assets/characters/Premade_Character_48x48_04.png' },
+        { key: 'char_4', path: '/assets/characters/Premade_Character_48x48_05.png' },
+        { key: 'char_5', path: '/assets/characters/Premade_Character_48x48_06.png' },
+        { key: 'char_6', path: '/assets/characters/Premade_Character_48x48_09.png' },
+      ]
+
+      const DEMO_AGENTS = [
+        { agent_id: 'pomni', name: 'Pomni', status: 'active' },
+        { agent_id: 'kinger', name: 'Kinger', status: 'working' },
+        { agent_id: 'ragatha', name: 'Ragatha', status: 'active' },
+        { agent_id: 'jax', name: 'Jax', status: 'idle' },
+        { agent_id: 'gangle', name: 'Gangle', status: 'working' },
+        { agent_id: 'kaufmo', name: 'Kaufmo', status: 'active' },
+        { agent_id: 'zooble', name: 'Zooble', status: 'idle' },
+      ]
+
+      // Spawn positions inside the main office building
+      const SPAWN_POSITIONS = [
+        { tileX: 50, tileY: 40, facing: 'down' },
+        { tileX: 55, tileY: 40, facing: 'down' },
+        { tileX: 60, tileY: 40, facing: 'down' },
+        { tileX: 65, tileY: 40, facing: 'down' },
+        { tileX: 70, tileY: 40, facing: 'down' },
+        { tileX: 75, tileY: 40, facing: 'down' },
+        { tileX: 80, tileY: 40, facing: 'down' },
+      ]
+
+      const STATUS_COLOR: Record<string, number> = {
+        active: 0x12b76a,
+        idle: 0xf79009,
+        working: 0x12b76a,
+      }
+
+      // LPC spritesheet: row 8-11 = walk (up/left/down/right)
+      const FACING_ROW: Record<string, number> = { down: 10, left: 9, right: 11, up: 8 }
+
       class OfficeScene extends Phaser.Scene {
+        private isDragging = false
+
         constructor() { super({ key: 'OfficeScene' }) }
 
         preload() {
-          this.load.tilemapTiledJSON('office', '/assets/maps/office2.json')
-          for (const ts of TILESETS) this.load.image(ts.key, ts.path)
+          this.load.tilemapTiledJSON('office', '/assets/maps/office-v3.json')
+          this.load.image(TILESET.key, TILESET.path)
           for (const c of CHAR_SPRITES) {
             this.load.spritesheet(c.key, c.path, { frameWidth: 48, frameHeight: 48 })
           }
         }
 
         async create() {
-          // ── Map layers ──
-          const map = this.make.tilemap({ key: 'office' })
-          const tilesets = TILESETS
-            .map(ts => map.addTilesetImage(ts.mapName, ts.key))
-            .filter((t): t is Phaser.Tilemaps.Tileset => t !== null)
+          try { await this._create() } catch (e) { console.error('[OfficeScene] create failed:', e) }
+        }
 
-          VISUAL_LAYERS.forEach((name, depth) => {
-            const layer = map.createLayer(name, tilesets)
-            if (layer) layer.setDepth(depth)
-          })
+        private async _create() {
+          // ── Tilemap ──
+          const map = this.make.tilemap({ key: 'office' })
+          console.log('[Office] map:', map.width, 'x', map.height, 'tile:', map.tileWidth, 'x', map.tileHeight)
+
+          const tileset = map.addTilesetImage(TILESET.mapName, TILESET.key)
+          if (!tileset) {
+            console.error('[Office] tileset FAILED:', TILESET.mapName)
+            return
+          }
+          console.log('[Office] tileset loaded:', tileset.name)
+
+          const groundLayer = map.createLayer('ground', tileset)
+          if (!groundLayer) {
+            console.error('[Office] ground layer FAILED')
+            return
+          }
+          groundLayer.setDepth(0)
+
+          console.log('[Office] map px:', map.widthInPixels, 'x', map.heightInPixels)
 
           // ── Camera ──
           const cam = this.cameras.main
           cam.setBounds(0, 0, map.widthInPixels, map.heightInPixels)
           cam.centerOn(map.widthInPixels / 2, map.heightInPixels / 2)
-          cam.setZoom(2)
 
-          this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-            if (!pointer.isDown) return
-            cam.scrollX -= (pointer.x - pointer.prevPosition.x) / cam.zoom
-            cam.scrollY -= (pointer.y - pointer.prevPosition.y) / cam.zoom
-          })
+          const zoomX = this.scale.width / map.widthInPixels
+          const zoomY = this.scale.height / map.heightInPixels
+          cam.setZoom(Math.max(zoomX, zoomY) * 0.95)
 
-          this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => {
-            cam.zoom = Phaser.Math.Clamp(cam.zoom - dy * 0.001, 0.5, 4)
-          })
+          this.setupCameraControls(cam)
 
           // ── Fetch agents ──
-          let agents: AgentData[] = []
+          let agents: { agent_id: string; name: string; status: string }[] = []
           try {
             const res = await fetch('/api/agents/list')
             if (res.ok) agents = await res.json()
-          } catch {
-            // no agents available — map still shows
-          }
+          } catch { /* fallback */ }
+          if (agents.length === 0) agents = DEMO_AGENTS
 
-          if (agents.length === 0) return
+          // ── Spawn agents ──
+          const tileSize = map.tileWidth
+          const count = Math.min(agents.length, SPAWN_POSITIONS.length, CHAR_SPRITES.length)
+          for (let i = 0; i < count; i++) {
+            const spawn = SPAWN_POSITIONS[i]
+            const px = spawn.tileX * tileSize + tileSize / 2
+            const py = spawn.tileY * tileSize + tileSize / 2
 
-          // ── Spawn points from map ──
-          const spawnsLayer = map.getObjectLayer('spawns')
-          const spawnPoints = spawnsLayer?.objects ?? []
-
-          agents.slice(0, spawnPoints.length).forEach((agent, i) => {
-            const spawn = spawnPoints[i]
-            const spawnX = spawn.x ?? 0
-            const spawnY = spawn.y ?? 0
-
-            const facing = (
-              spawn.properties?.find((p: { name: string }) => p.name === 'facing') as
-                { value: string } | undefined
-            )?.value ?? 'down'
-
-            const row = FACING_ROW[facing] ?? 2
-            const charKey = CHAR_SPRITES[i % CHAR_SPRITES.length].key
-            // idle frame: col 4 of the facing row (center of 9-frame LPC walk cycle = standing neutral)
+            const facing = spawn.facing
+            const row = FACING_ROW[facing] ?? 10
+            const charKey = CHAR_SPRITES[i].key
             const frame = row * 56 + 4
 
-            // Character sprite
-            const sprite = this.add.sprite(spawnX, spawnY, charKey, frame)
+            const sprite = this.add.sprite(px, py, charKey, frame)
             sprite.setOrigin(0.5, 1)
             sprite.setDepth(10)
 
-            // Name label
-            this.add.text(spawnX, spawnY - 52, agent.name, {
+            this.add.text(px, py - 52, agents[i].name, {
               fontSize: '9px',
               color: '#ffffff',
               backgroundColor: '#00000099',
@@ -146,10 +143,37 @@ export function OfficeMap() {
               resolution: 2,
             }).setOrigin(0.5, 1).setDepth(11)
 
-            // Status dot
-            const dotColor = STATUS_COLOR[agent.status] ?? 0x667085
-            this.add.circle(spawnX + 13, spawnY - 5, 4, dotColor).setDepth(12)
+            const dotColor = STATUS_COLOR[agents[i].status] ?? 0x667085
+            this.add.circle(px + 13, py - 5, 4, dotColor).setDepth(12)
+          }
+        }
+
+        private setupCameraControls(cam: Phaser.Cameras.Scene2D.Camera) {
+          this.input.on('pointerdown', () => { this.isDragging = false })
+
+          this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+            if (!pointer.isDown) return
+            const dx = pointer.x - pointer.prevPosition.x
+            const dy = pointer.y - pointer.prevPosition.y
+            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) this.isDragging = true
+            cam.scrollX -= dx / cam.zoom
+            cam.scrollY -= dy / cam.zoom
           })
+
+          this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => {
+            cam.zoom = Phaser.Math.Clamp(cam.zoom - dy * 0.002, 0.3, 4)
+          })
+
+          const cursors = this.input.keyboard?.createCursorKeys()
+          if (cursors) {
+            this.events.on('update', () => {
+              const speed = 4 / cam.zoom
+              if (cursors.left.isDown) cam.scrollX -= speed
+              if (cursors.right.isDown) cam.scrollX += speed
+              if (cursors.up.isDown) cam.scrollY -= speed
+              if (cursors.down.isDown) cam.scrollY += speed
+            })
+          }
         }
       }
 
