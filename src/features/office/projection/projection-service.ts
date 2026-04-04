@@ -26,7 +26,7 @@ export function resolveAgentState(input: ProjectionInput): AgentSpatialState {
   }
 
   // Priority 2: Working on executing task
-  const executingTask = activeTasks.find(t => t.status === 'executing')
+  const executingTask = activeTasks.find(t => t.status === 'in_progress')
   if (executingTask) {
     // MVP: picks first project_board binding. Multi-board resolution deferred.
     const boardBinding = zoneBindings.find(

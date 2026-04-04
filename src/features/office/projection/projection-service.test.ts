@@ -11,7 +11,7 @@ function makeAgent(overrides: Partial<AgentRow> = {}): AgentRow {
     node_id: 'node-1',
     name: 'Test Agent',
     emoji: '🤖',
-    status: 'active',
+    status: 'idle',
     current_task_id: null,
     avatar_model: 'default',
     last_activity: '2026-01-01T00:00:00Z',
@@ -112,14 +112,11 @@ describe('resolveAgentState', () => {
         grid_x: 50,
         grid_y: 30,
       }
-      const executingTask = makeTask({ status: 'in_progress' as TaskRow['status'] })
-      // Use the plan-specified status 'executing' — but since TaskStatus doesn't include it,
-      // we cast to match the behavior spec
-      const executingTask2 = { ...makeTask(), status: 'executing' as TaskRow['status'] }
+      const executingTask = makeTask({ status: 'in_progress' })
       const input = makeInput({
         agent,
         homeDesk,
-        activeTasks: [executingTask2],
+        activeTasks: [executingTask],
         zoneBindings: [homeDesk, boardBinding],
       })
       const result = resolveAgentState(input)
@@ -131,7 +128,7 @@ describe('resolveAgentState', () => {
     it('includes truncated task description as chatBubble (max 40 chars)', () => {
       const agent = makeAgent({ status: 'working' })
       const longDescription = 'This is a very long task description that exceeds 40 characters'
-      const executingTask = { ...makeTask(), status: 'executing' as TaskRow['status'], description: longDescription }
+      const executingTask = { ...makeTask(), status: 'in_progress' as TaskRow['status'], description: longDescription }
       const input = makeInput({
         agent,
         activeTasks: [executingTask],
@@ -143,7 +140,7 @@ describe('resolveAgentState', () => {
     it('targets home desk when executing task has no board zone binding', () => {
       const agent = makeAgent({ status: 'working' })
       const homeDesk = makeDesk(agent.agent_id)
-      const executingTask = { ...makeTask(), status: 'executing' as TaskRow['status'] }
+      const executingTask = { ...makeTask(), status: 'in_progress' as TaskRow['status'] }
       const input = makeInput({
         agent,
         homeDesk,
@@ -187,8 +184,8 @@ describe('resolveAgentState', () => {
       expect(result.animationState).toBe('idle')
     })
 
-    it('returns idle animationState for status active', () => {
-      const input = makeInput({ agent: makeAgent({ status: 'active' as AgentRow['status'] }) })
+    it('returns idle animationState for status offline (fallthrough)', () => {
+      const input = makeInput({ agent: makeAgent({ status: 'offline' }) })
       const result = resolveAgentState(input)
       expect(result.animationState).toBe('idle')
     })
@@ -215,7 +212,7 @@ describe('resolveAgentState', () => {
         grid_x: 50,
         grid_y: 30,
       }
-      const executingTask = { ...makeTask(), status: 'executing' as TaskRow['status'] }
+      const executingTask = { ...makeTask(), status: 'in_progress' as TaskRow['status'] }
       const input = makeInput({
         agent,
         homeDesk,
