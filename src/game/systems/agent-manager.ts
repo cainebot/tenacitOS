@@ -3,6 +3,9 @@ import { DEMO_AGENTS, SPAWN_POSITIONS, CHAR_SPRITES, type AgentData } from '../c
 import { AgentSprite } from '../entities/agent-sprite'
 import type { AgentSnapshot } from '../state-snapshot'
 import { IdleBehavior } from './idle-behavior'
+import { NavGrid } from '../pathfinding/nav-grid'
+import { findPath } from '../pathfinding/pathfinder'
+import type { AgentSpatialState } from '@/features/office/types'
 
 /**
  * Fetches agent data and spawns AgentSprite instances.
@@ -13,6 +16,7 @@ import { IdleBehavior } from './idle-behavior'
 export class AgentManager {
   readonly agents: AgentSprite[] = []
   private idleBehavior: IdleBehavior | null = null
+  private navGrid: NavGrid | null = null
 
   async spawnAgents(scene: Phaser.Scene, tileSize: number): Promise<void> {
     let agents: AgentData[] = []
@@ -31,6 +35,68 @@ export class AgentManager {
 
       const agent = new AgentSprite(scene, px, py, charKey, spawn.facing, agents[i])
       this.agents.push(agent)
+    }
+  }
+
+  /** Initialize the navigation grid for A* pathfinding. */
+  initNavGrid(mapWidth: number, mapHeight: number, cellSize: number): void {
+    this.navGrid = new NavGrid(mapWidth, mapHeight, cellSize)
+    this.idleBehavior = new IdleBehavior(this.navGrid)
+    // MVP: no blocked cells (no collision layer in Tiled map)
+    // Future: this.navGrid.setBlockedCells(blockedCells)
+  }
+
+  /**
+   * Handle a projection:update event. Resolves A* path and commands the agent.
+   * Called by OfficeScene's officeEvents listener.
+   */
+  updateProjection(agentId: string, state: AgentSpatialState): void {
+    const agent = this.agents.find(a => a.agentData.agent_id === agentId)
+    if (!agent || !this.navGrid) return
+
+    // Convert current sprite position to grid coordinates
+    const cellSize = this.navGrid.cellSize
+    const startGridX = Math.floor(agent.sprite.x / cellSize)
+    const startGridY = Math.floor(agent.sprite.y / cellSize)
+    const goalGridX = state.targetGridPos.x
+    const goalGridY = state.targetGridPos.y
+
+    // Stop current movement
+    agent.stopMovement()
+
+    // Cancel any ongoing idle wander for this agent
+    if (this.idleBehavior) {
+      this.idleBehavior.cancelWander(agentId)
+    }
+
+    // Set the logical state
+    agent.setAgentState(state.animationState)
+
+    // Show emote if specified
+    if (state.emote) {
+      agent.showEmote(state.emote)
+    }
+
+    // Show chat bubble if specified
+    if (state.chatBubble) {
+      agent.showChatBubble(state.chatBubble)
+    }
+
+    // If already at target cell, don't pathfind
+    if (startGridX === goalGridX && startGridY === goalGridY) {
+      // Already at destination — just update visual state
+      return
+    }
+
+    // Compute A* path (returns pixel coordinates)
+    const path = findPath(
+      { x: startGridX, y: startGridY },
+      { x: goalGridX, y: goalGridY },
+      this.navGrid,
+    )
+
+    if (path.length > 0) {
+      agent.walkToPath(path)
     }
   }
 

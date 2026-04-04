@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import officeEvents, { type AgentSelectPayload } from '@/lib/office-events'
 import { AgentPanel } from '@/components/application/agent-panel'
 import { MiniMap } from '@/components/application/mini-map'
+import { useProjection } from '@/features/office/viewer/hooks/use-projection'
 
 const PhaserBridge = dynamic(
   () => import('@/game/phaser-bridge').then(m => m.PhaserBridge),
@@ -16,6 +17,9 @@ const PhaserBridge = dynamic(
 )
 
 export default function OfficePage() {
+  // Wire Realtime agent/task data -> ProjectionService -> officeEvents
+  useProjection()
+
   const [selectedAgent, setSelectedAgent] = useState<AgentSelectPayload | null>(null)
 
   useEffect(() => {

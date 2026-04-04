@@ -8,6 +8,7 @@ import { CameraController } from '../systems/camera-controller'
 import { snapshot, notifySubscribers } from '../state-snapshot'
 import { drain, type GameCommand } from '../command-queue'
 import { EMOTE_SPRITESHEET_KEY, EMOTE_SPRITESHEET_PATH } from '../entities/emote-display'
+import type { AgentSpatialState } from '@/features/office/types'
 
 // ── Minimap background dimensions ──
 const MINIMAP_W = 200
@@ -19,6 +20,7 @@ export class OfficeScene extends Phaser.Scene {
   private cameraCtrl!: CameraController
   private agentManager!: AgentManager
   private nearbyAgent: AgentSprite | null = null
+  private projectionHandler: ((payload: { agentId: string; state: AgentSpatialState }) => void) | null = null
 
   constructor() {
     super({ key: 'OfficeScene' })
@@ -76,6 +78,17 @@ export class OfficeScene extends Phaser.Scene {
     this.agentManager = new AgentManager()
     await this.agentManager.spawnAgents(this, tileSize)
 
+    // ── NavGrid for A* pathfinding ──
+    this.agentManager.initNavGrid(map.width, map.height, tileSize)
+
+    // ── Listen for projection:update events from React ──
+    this.projectionHandler = ({ agentId, state }) => {
+      this.agentManager.updateProjection(agentId, state)
+      // Update snapshot agents (position may change)
+      snapshot.agents = this.agentManager.toSnapshot()
+    }
+    officeEvents.on('projection:update', this.projectionHandler)
+
     // ── Populate snapshot agents (once — they are static) ──
     snapshot.agents = this.agentManager.toSnapshot()
 
@@ -92,6 +105,19 @@ export class OfficeScene extends Phaser.Scene {
         role: agent.role ?? 'Agent',
         status: agent.status,
       })
+    })
+
+    // ── Cleanup on scene shutdown ──
+    this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (this.projectionHandler) {
+        officeEvents.off('projection:update', this.projectionHandler)
+        this.projectionHandler = null
+      }
+      // Cleanup idle behavior timers
+      const idleBehavior = this.agentManager.getIdleBehavior()
+      if (idleBehavior) {
+        idleBehavior.cancelAll()
+      }
     })
 
     // ── Ready ──
