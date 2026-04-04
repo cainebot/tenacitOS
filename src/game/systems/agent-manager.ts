@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { DEMO_AGENTS, SPAWN_POSITIONS, CHAR_SPRITES, type AgentData } from '../constants'
 import { AgentSprite } from '../entities/agent-sprite'
+import type { AgentSnapshot } from '../state-snapshot'
 
 /**
  * Fetches agent data and spawns AgentSprite instances.
@@ -29,5 +30,24 @@ export class AgentManager {
       const agent = new AgentSprite(scene, px, py, charKey, spawn.facing, agents[i])
       this.agents.push(agent)
     }
+  }
+
+  /** Serializable agent positions for the state snapshot. */
+  toSnapshot(): ReadonlyArray<AgentSnapshot> {
+    return this.agents.map(a => ({
+      id: a.agentData.agent_id,
+      x: a.sprite.x,
+      y: a.sprite.y,
+      name: a.agentData.name,
+      role: a.agentData.role ?? 'Agent',
+      status: a.agentData.status,
+    }))
+  }
+
+  /** Update agent status. Stub for Supabase Realtime integration. */
+  updateAgent(agentId: string, newStatus: string): void {
+    const agent = this.agents.find(a => a.agentData.agent_id === agentId)
+    if (!agent) return
+    ;(agent.agentData as { status: string }).status = newStatus
   }
 }

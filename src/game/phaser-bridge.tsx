@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { snapshot, notifySubscribers } from './state-snapshot'
 
 export function PhaserBridge() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -9,13 +10,23 @@ export function PhaserBridge() {
   useEffect(() => {
     if (!containerRef.current) return
     const container = containerRef.current
-    let game: { destroy: (b: boolean) => void } | null = null
+
+    // StrictMode guard: track if this effect was cleaned up before
+    // the async initPhaser completes. Without this, two Phaser games
+    // get created and the first one's stale update() overwrites the snapshot.
+    let cancelled = false
 
     const initPhaser = async () => {
       const Phaser = (await import('phaser')).default
-      const { OfficeScene } = await import('./scenes/office-scene')
+      if (cancelled) return
 
-      game = new Phaser.Game({
+      const { OfficeScene } = await import('./scenes/office-scene')
+      if (cancelled) return
+
+      // Destroy any leftover game from a previous mount
+      gameRef.current?.destroy(true)
+
+      const game = new Phaser.Game({
         type: Phaser.AUTO,
         parent: container,
         width: container.clientWidth,
@@ -34,8 +45,11 @@ export function PhaserBridge() {
     initPhaser()
 
     return () => {
-      game?.destroy(true)
+      cancelled = true
+      gameRef.current?.destroy(true)
       gameRef.current = null
+      snapshot.lifecycle = 'destroyed'
+      notifySubscribers()
     }
   }, [])
 

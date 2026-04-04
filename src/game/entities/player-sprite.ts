@@ -13,8 +13,11 @@ export class PlayerSprite {
   private label: Phaser.GameObjects.Container
   private labelW: number
   private labelH: number
-  private facing = 'down'
-  private moving = false
+  private _facing = 'down'
+  private _moving = false
+
+  get currentFacing(): string { return this._facing }
+  get isMoving(): boolean { return this._moving }
   private wasd!: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key }
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
 
@@ -77,7 +80,7 @@ export class PlayerSprite {
       this.sprite.y += vy * speed
 
       // Facing direction (horizontal priority on diagonals, Agent Town style)
-      let newFacing = this.facing
+      let newFacing = this._facing
       if (vx < 0) newFacing = 'left'
       else if (vx > 0) newFacing = 'right'
       else if (vy < 0) newFacing = 'up'
@@ -85,16 +88,16 @@ export class PlayerSprite {
 
       const walkKey = `${PLAYER_SPRITE.key}_walk_${newFacing}`
       if (this.sprite.anims.currentAnim?.key !== walkKey) {
-        this.facing = newFacing
+        this._facing = newFacing
         this.sprite.play(walkKey)
       }
-      this.moving = true
+      this._moving = true
     } else {
-      const idleKey = `${PLAYER_SPRITE.key}_idle_${this.facing}`
+      const idleKey = `${PLAYER_SPRITE.key}_idle_${this._facing}`
       if (this.sprite.anims.currentAnim?.key !== idleKey) {
         this.sprite.play(idleKey)
       }
-      this.moving = false
+      this._moving = false
     }
 
     // Y-sort depth

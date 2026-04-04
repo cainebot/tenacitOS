@@ -8,9 +8,25 @@ export interface AgentSelectPayload {
   status: string
 }
 
+export interface AgentSpatialState {
+  targetGridPos: { x: number; y: number }
+  animationState: 'idle' | 'walking' | 'working' | 'thinking' | 'error' | 'emote'
+}
+
 export type OfficeEventMap = {
+  // Existing
   'agent:select': AgentSelectPayload
   'agent:deselect': void
+
+  // Phaser → React (discrete, not per-frame)
+  'agent:clicked': { agentId: string; screenX: number; screenY: number }
+  'agent:hover': { agentId: string } | null
+  'interaction:available': { entityId: string; entityType: 'agent' | 'zone' | 'object' }
+  'player:moved': { gridX: number; gridY: number; facing: string }
+
+  // React → Phaser (discrete)
+  'camera:focus': { x: number; y: number; zoom?: number }
+  'camera:follow': { entityId: string }
 }
 
 type Listener<T> = (payload: T) => void

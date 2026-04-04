@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import officeEvents, { type AgentSelectPayload } from '@/lib/office-events'
 import { AgentPanel } from '@/components/application/agent-panel'
+import { MiniMap } from '@/components/application/mini-map'
 
 const PhaserBridge = dynamic(
   () => import('@/game/phaser-bridge').then(m => m.PhaserBridge),
@@ -36,8 +37,9 @@ export default function OfficePage() {
 
   return (
     <div className="flex flex-row flex-1 w-full overflow-hidden p-2" style={{ minHeight: 0 }}>
-      <div className="flex-1 min-w-0 h-full rounded-3xl overflow-hidden">
+      <div className="relative flex-1 min-w-0 h-full rounded-3xl overflow-hidden">
         <PhaserBridge />
+        <MiniMap />
       </div>
 
       {selectedAgent && (
