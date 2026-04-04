@@ -7,6 +7,7 @@ import { AgentManager } from '../systems/agent-manager'
 import { CameraController } from '../systems/camera-controller'
 import { snapshot, notifySubscribers } from '../state-snapshot'
 import { drain, type GameCommand } from '../command-queue'
+import { EMOTE_SPRITESHEET_KEY, EMOTE_SPRITESHEET_PATH } from '../entities/emote-display'
 
 // ── Minimap background dimensions ──
 const MINIMAP_W = 200
@@ -30,6 +31,9 @@ export class OfficeScene extends Phaser.Scene {
     for (const c of CHAR_SPRITES) {
       this.load.spritesheet(c.key, c.path, { frameWidth: 48, frameHeight: 96 })
     }
+    this.load.spritesheet(EMOTE_SPRITESHEET_KEY, EMOTE_SPRITESHEET_PATH, {
+      frameWidth: 48, frameHeight: 48
+    })
   }
 
   async create() {
@@ -104,8 +108,9 @@ export class OfficeScene extends Phaser.Scene {
       this.handleCommand(cmd)
     }
 
-    // ── B. Game logic (unchanged) ──
+    // ── B. Game logic ──
     this.player.update(delta)
+    this.agentManager.update(delta)  // advance agent walks + idle behavior
 
     if (!this.agentManager) return
     const px = this.player.sprite.x

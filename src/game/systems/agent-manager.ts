@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import { DEMO_AGENTS, SPAWN_POSITIONS, CHAR_SPRITES, type AgentData } from '../constants'
 import { AgentSprite } from '../entities/agent-sprite'
 import type { AgentSnapshot } from '../state-snapshot'
+import { IdleBehavior } from './idle-behavior'
 
 /**
  * Fetches agent data and spawns AgentSprite instances.
@@ -11,6 +12,7 @@ import type { AgentSnapshot } from '../state-snapshot'
  */
 export class AgentManager {
   readonly agents: AgentSprite[] = []
+  private idleBehavior: IdleBehavior | null = null
 
   async spawnAgents(scene: Phaser.Scene, tileSize: number): Promise<void> {
     let agents: AgentData[] = []
@@ -49,5 +51,21 @@ export class AgentManager {
     const agent = this.agents.find(a => a.agentData.agent_id === agentId)
     if (!agent) return
     ;(agent.agentData as { status: string }).status = newStatus
+  }
+
+  /** Get the idle behavior system (available after initNavGrid). */
+  getIdleBehavior(): IdleBehavior | null {
+    return this.idleBehavior
+  }
+
+  /** Advance all agent sprites one frame. Called by OfficeScene.update(). */
+  update(delta: number): void {
+    for (const agent of this.agents) {
+      agent.update(delta)
+    }
+    // Update idle behavior state machine
+    if (this.idleBehavior) {
+      this.idleBehavior.update(this.agents)
+    }
   }
 }
