@@ -1,16 +1,15 @@
 // Typed event bridge between Phaser (emitter) and React (listener)
 // Uses a minimal Map-based EventEmitter — no external deps, no browser EventTarget quirks.
 
+import type { AgentSpatialState } from '@/features/office/types'
+
+export type { AgentSpatialState } from '@/features/office/types'
+
 export interface AgentSelectPayload {
   agent_id: string
   name: string
   role: string
   status: string
-}
-
-export interface AgentSpatialState {
-  targetGridPos: { x: number; y: number }
-  animationState: 'idle' | 'walking' | 'working' | 'thinking' | 'error' | 'emote'
 }
 
 export type OfficeEventMap = {
@@ -27,6 +26,10 @@ export type OfficeEventMap = {
   // React → Phaser (discrete)
   'camera:focus': { x: number; y: number; zoom?: number }
   'camera:follow': { entityId: string }
+
+  // Phase 83 projection
+  'projection:update': { agentId: string; state: AgentSpatialState }
+  'zone:clicked': { zoneId: string; zoneType: string }
 }
 
 type Listener<T> = (payload: T) => void
