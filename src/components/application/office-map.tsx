@@ -41,15 +41,15 @@ export function OfficeMap() {
         { agent_id: 'zooble', name: 'Zooble', status: 'idle' },
       ]
 
-      // Spawn positions inside the main office building
+      // Spawn positions inside the main office building (spread across rooms)
       const SPAWN_POSITIONS = [
-        { tileX: 50, tileY: 40, facing: 'down' },
-        { tileX: 55, tileY: 40, facing: 'down' },
-        { tileX: 60, tileY: 40, facing: 'down' },
-        { tileX: 65, tileY: 40, facing: 'down' },
-        { tileX: 70, tileY: 40, facing: 'down' },
-        { tileX: 75, tileY: 40, facing: 'down' },
-        { tileX: 80, tileY: 40, facing: 'down' },
+        { tileX: 48, tileY: 42, facing: 'down' },   // Left work area
+        { tileX: 58, tileY: 38, facing: 'right' },   // Central lobby upper
+        { tileX: 68, tileY: 42, facing: 'left' },    // Central lobby right
+        { tileX: 42, tileY: 55, facing: 'down' },    // Bottom-left room
+        { tileX: 90, tileY: 38, facing: 'down' },    // Right wing upper
+        { tileX: 55, tileY: 60, facing: 'right' },   // Bottom center
+        { tileX: 82, tileY: 55, facing: 'left' },    // Bottom-right room
       ]
 
       const STATUS_COLOR: Record<string, number> = {
@@ -131,20 +131,27 @@ export function OfficeMap() {
             const charKey = CHAR_SPRITES[i].key
             const frame = row * 56 + 4
 
+            // Scale 48px sprites to match 64px tiles (64/48 = 1.33)
+            const spriteScale = 64 / 48
+
             const sprite = this.add.sprite(px, py, charKey, frame)
             sprite.setOrigin(0.5, 1)
+            sprite.setScale(spriteScale)
             sprite.setDepth(10)
 
-            this.add.text(px, py - 52, agents[i].name, {
-              fontSize: '9px',
+            this.add.text(px, py - 70, agents[i].name, {
+              fontSize: '10px',
+              fontFamily: 'Inter, sans-serif',
               color: '#ffffff',
-              backgroundColor: '#00000099',
-              padding: { x: 4, y: 2 },
+              backgroundColor: '#181D27cc',
+              padding: { x: 5, y: 2 },
               resolution: 2,
             }).setOrigin(0.5, 1).setDepth(11)
 
             const dotColor = STATUS_COLOR[agents[i].status] ?? 0x667085
-            this.add.circle(px + 13, py - 5, 4, dotColor).setDepth(12)
+            const dot = this.add.circle(px + 18, py - 8, 5, dotColor)
+            dot.setStrokeStyle(1.5, 0x181d27)
+            dot.setDepth(12)
           }
         }
 
