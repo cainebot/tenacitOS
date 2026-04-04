@@ -13,6 +13,7 @@ export { PageHeader, type PageHeaderProps, type BreadcrumbItem } from "./PageHea
 export { OCEmptyState, type OCEmptyStateProps } from "./OCEmptyState"
 export { ConfirmActionDialog } from "./ConfirmActionDialog"
 export { MemberSelector, type MemberSelectorProps, type MemberSelectorUser } from "./member-selector"
-export { FeedItem, FeedItemFileCard, FeedItemComment, type FeedItemProps, type FeedItemFileCardProps, type FeedItemCommentProps } from "./FeedItem"
+// FeedItem moved to base/ — legacy patterns/FeedItem.tsx kept for stories only
+export { FeedItemFileCard, type FeedItemFileCardProps } from "./FeedItem"
 export { AgentListItem, type AgentListItemProps } from "./AgentListItem"
 export { AgentSubNav, AgentSubNavDivider, type AgentSubNavProps } from "./AgentSubNav"

@@ -5,7 +5,7 @@
 // no side effects. Created in Phase 62 Plan 03 (D-14, D-14a).
 // ============================================================
 
-import type { CardRow, CardDetail, ProjectStateRow } from '@/types/project'
+import type { CardRow, CardDetail, CardActivityRow, ProjectStateRow } from '@/types/project'
 import type { AgentRow } from '@/types/supabase'
 import type { KanbanCardProps, KanbanCardTag, KanbanCardUser, Priority as KanbanPriority } from '@/components/application/kanban-card'
 import type {
@@ -17,6 +17,8 @@ import type {
   BreadcrumbItem,
   TaskStatus,
   Priority,
+  ActivityEvent,
+  ActivityEventType,
 } from '@/components/application/task-detail-panel'
 import type { TaskType } from '@/components/application/task-type-indicator'
 import type { BadgeColor } from '@circos/ui'
@@ -207,4 +209,101 @@ export function cardDetailToTaskDetailPanelProps(
     breadcrumbs,
     isCompleted: currentState?.category === 'done',
   }
+}
+
+// ---------------------------------------------------------------------------
+// cardActivityToActivityEvents (card_activity rows → ActivityEvent[])
+// ---------------------------------------------------------------------------
+
+const activityActionMap: Record<string, ActivityEventType> = {
+  created: 'created',
+  state_change: 'state_change',
+  field_update: 'field_update',
+  assignment: 'assignment',
+  priority_change: 'priority_change',
+  label_change: 'label_change',
+  parent_change: 'field_update',
+  attachment_add: 'attachment_add',
+  attachment_remove: 'attachment_remove',
+}
+
+export function cardActivityToActivityEvents(
+  rows: CardActivityRow[],
+  agents: AgentRow[],
+  projectStates: ProjectStateRow[],
+): ActivityEvent[] {
+  return rows.map((row) => {
+    const agent = agents.find(a => a.name === row.actor || a.agent_id === row.actor)
+    const actor: TaskUser = agent
+      ? { id: agent.agent_id, name: agent.name, avatarUrl: undefined, role: agent.role }
+      : { id: row.actor, name: row.actor }
+
+    const type = activityActionMap[row.action] ?? 'field_update'
+    const oldVal = row.old_value as Record<string, string> | null
+    const newVal = row.new_value as Record<string, string> | null
+
+    const base: ActivityEvent = {
+      id: row.activity_id,
+      actor,
+      type,
+      createdAt: row.created_at,
+    }
+
+    switch (row.action) {
+      case 'state_change': {
+        const oldState = projectStates.find(s => s.state_id === oldVal?.state_id)
+        const newState = projectStates.find(s => s.state_id === newVal?.state_id)
+        return {
+          ...base,
+          oldValue: oldState?.name ?? oldVal?.state_id ?? 'Unknown',
+          newValue: newState?.name ?? newVal?.state_id ?? 'Unknown',
+        }
+      }
+      case 'assignment':
+        return {
+          ...base,
+          oldValue: oldVal?.agent_id
+            ? (agents.find(a => a.agent_id === oldVal.agent_id)?.name ?? oldVal.agent_id)
+            : undefined,
+          newValue: newVal?.agent_id
+            ? (agents.find(a => a.agent_id === newVal.agent_id)?.name ?? newVal.agent_id)
+            : undefined,
+        }
+      case 'priority_change':
+        return {
+          ...base,
+          oldValue: (oldVal?.priority as string) ?? undefined,
+          newValue: (newVal?.priority as string) ?? undefined,
+        }
+      case 'label_change':
+        return {
+          ...base,
+          oldValue: oldVal ? 'removed' : undefined,
+          labels: ((newVal?.labels ?? oldVal?.labels) as unknown as string[] | undefined)?.map(labelToTag),
+        }
+      case 'attachment_add':
+        return {
+          ...base,
+          attachment: newVal ? {
+            name: (newVal.filename as string) ?? 'File',
+            size: formatFileSize(Number(newVal.size_bytes) || 0),
+            fileType: (newVal.filename as string)?.split('.').pop()?.toUpperCase(),
+          } : undefined,
+        }
+      case 'attachment_remove':
+        return {
+          ...base,
+          oldValue: (oldVal?.filename as string) ?? 'File',
+        }
+      case 'field_update':
+      case 'parent_change':
+        return {
+          ...base,
+          oldValue: oldVal ? JSON.stringify(oldVal) : undefined,
+          newValue: newVal ? JSON.stringify(newVal) : undefined,
+        }
+      default:
+        return base
+    }
+  })
 }

@@ -50,6 +50,9 @@ import {
   TextEditor,
   FileUpload,
   FeedItem,
+  FeedItemText,
+  FeedItemFile,
+  FeedItemLink,
   cx,
 } from "@circos/ui"
 import { formatDistanceToNow, isYesterday, format } from "date-fns"
@@ -134,6 +137,35 @@ export interface TaskComment {
   isSystemEvent?: boolean
 }
 
+export type ActivityEventType =
+  | "comment"
+  | "created"
+  | "state_change"
+  | "assignment"
+  | "priority_change"
+  | "label_change"
+  | "attachment_add"
+  | "attachment_remove"
+  | "due_date_change"
+  | "field_update"
+
+export interface ActivityEvent {
+  id: string
+  actor: TaskUser
+  type: ActivityEventType
+  createdAt: string
+  /** Comment text (type=comment) */
+  content?: string
+  /** Previous value as display string */
+  oldValue?: string
+  /** New value as display string */
+  newValue?: string
+  /** Labels added/removed (type=label_change) */
+  labels?: TaskTag[]
+  /** File info (type=attachment_add) */
+  attachment?: { name: string; size: string; fileType?: string }
+}
+
 export interface TaskAttachment {
   id: string
   name: string
@@ -204,9 +236,10 @@ export interface TaskDetailPanelProps {
   onFilesSelected?: (files: File[]) => void
   onDeleteAttachment?: (id: string) => void
 
-  // Section H - Comments
+  // Section H - Comments & Activity
   comments?: TaskComment[]
   onAddComment?: (content: string) => void
+  activities?: ActivityEvent[]
 
   className?: string
 }
@@ -300,6 +333,7 @@ export function TaskDetailPanel({
   onDeleteAttachment,
   comments = [],
   onAddComment,
+  activities = [],
   className,
 }: TaskDetailPanelProps) {
   // Internal state for uncontrolled fields
@@ -424,6 +458,7 @@ export function TaskDetailPanel({
           {/* ================================================================ */}
           <SectionComments
             comments={comments}
+            activities={activities}
             onAddComment={onAddComment}
           />
         </div>
@@ -1793,17 +1828,285 @@ function SectionAttachments({
 // H · Comments & Activity
 // ===========================================================================
 
+// ---------------------------------------------------------------------------
+// Activity event → FeedItem mapping
+// ---------------------------------------------------------------------------
+
+const fileTypeColorMap: Record<string, string> = {
+  PDF: "bg-error-solid",
+  DOC: "bg-brand-solid",
+  DOCX: "bg-brand-solid",
+  XLS: "bg-success-solid",
+  XLSX: "bg-success-solid",
+  PNG: "bg-warning-solid",
+  JPG: "bg-warning-solid",
+  ZIP: "bg-tertiary",
+  RAR: "bg-tertiary",
+}
+
+function ActivityFeedEntry({
+  event,
+  connector,
+}: {
+  event: ActivityEvent
+  connector: boolean
+}) {
+  switch (event.type) {
+    case "comment":
+      return (
+        <div className="group/comment relative">
+          <FeedItem
+            avatarSrc={event.actor.avatarUrl}
+            avatarAlt={event.actor.name}
+            name={event.actor.name}
+            timestamp={formatRelativeTime(event.createdAt)}
+            connector={connector}
+            size="sm"
+          >
+            <FeedItemText>{event.content}</FeedItemText>
+          </FeedItem>
+          <CommentReactionPicker />
+        </div>
+      )
+
+    case "created":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action="created this card"
+          connector={connector}
+          size="sm"
+        />
+      )
+
+    case "state_change":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={
+            <>
+              moved from <FeedItemLink>{event.oldValue}</FeedItemLink> to{" "}
+              <FeedItemLink>{event.newValue}</FeedItemLink>
+            </>
+          }
+          connector={connector}
+          size="sm"
+        />
+      )
+
+    case "assignment":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={
+            event.newValue ? (
+              <>
+                assigned <FeedItemLink>{event.newValue}</FeedItemLink>
+              </>
+            ) : (
+              <>
+                unassigned <FeedItemLink>{event.oldValue}</FeedItemLink>
+              </>
+            )
+          }
+          connector={connector}
+          size="sm"
+        />
+      )
+
+    case "priority_change":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={
+            <>
+              changed priority from <FeedItemLink>{event.oldValue}</FeedItemLink> to{" "}
+              <FeedItemLink>{event.newValue}</FeedItemLink>
+            </>
+          }
+          connector={connector}
+          size="sm"
+        />
+      )
+
+    case "label_change":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={event.oldValue ? "removed labels" : "added labels"}
+          connector={connector}
+          size="sm"
+        >
+          {event.labels && event.labels.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {event.labels.map((tag) => (
+                <Badge key={tag.label} color={tag.color} size="sm" type="modern">
+                  {tag.label}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </FeedItem>
+      )
+
+    case "attachment_add":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action="added a file"
+          connector={connector}
+          size="sm"
+        >
+          {event.attachment && (
+            <FeedItemFile
+              fileName={event.attachment.name}
+              fileSize={event.attachment.size}
+              fileType={event.attachment.fileType}
+              fileTypeColor={fileTypeColorMap[event.attachment.fileType ?? ""] ?? "bg-tertiary"}
+            />
+          )}
+        </FeedItem>
+      )
+
+    case "attachment_remove":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={
+            <>
+              removed file <FeedItemLink>{event.oldValue}</FeedItemLink>
+            </>
+          }
+          connector={connector}
+          size="sm"
+        />
+      )
+
+    case "due_date_change":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={
+            event.newValue ? (
+              <>
+                set due date to <FeedItemLink>{event.newValue}</FeedItemLink>
+              </>
+            ) : (
+              "removed due date"
+            )
+          }
+          connector={connector}
+          size="sm"
+        />
+      )
+
+    case "field_update":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={
+            <>
+              updated <FeedItemLink>{event.oldValue ?? "field"}</FeedItemLink>
+              {event.newValue && (
+                <>
+                  {" "}to <FeedItemLink>{event.newValue}</FeedItemLink>
+                </>
+              )}
+            </>
+          }
+          connector={connector}
+          size="sm"
+        />
+      )
+
+    default:
+      return null
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Merge comments + activities into unified timeline
+// ---------------------------------------------------------------------------
+
+function mergeTimeline(comments: TaskComment[], activities: ActivityEvent[]): ActivityEvent[] {
+  const commentEvents: ActivityEvent[] = comments
+    .filter((c) => !c.isSystemEvent)
+    .map((c) => ({
+      id: c.id,
+      actor: c.author,
+      type: "comment" as const,
+      createdAt: c.createdAt,
+      content: c.content,
+    }))
+
+  const systemEvents: ActivityEvent[] = comments
+    .filter((c) => c.isSystemEvent)
+    .map((c) => ({
+      id: c.id,
+      actor: c.author,
+      type: "field_update" as const,
+      createdAt: c.createdAt,
+      newValue: c.content,
+    }))
+
+  return [...commentEvents, ...systemEvents, ...activities].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  )
+}
+
 function SectionComments({
   comments,
+  activities,
   onAddComment,
 }: {
   comments: TaskComment[]
+  activities: ActivityEvent[]
   onAddComment?: (content: string) => void
 }) {
   const [commentText, setCommentText] = useState("")
   const [sortNewest, setSortNewest] = useState(false)
 
-  const sorted = sortNewest ? [...comments].reverse() : comments
+  const commentOnlyEvents = comments
+    .filter((c) => !c.isSystemEvent)
+    .map((c): ActivityEvent => ({
+      id: c.id,
+      actor: c.author,
+      type: "comment",
+      createdAt: c.createdAt,
+      content: c.content,
+    }))
+
+  const allEvents = mergeTimeline(comments, activities)
+
+  const sortedComments = sortNewest ? [...commentOnlyEvents].reverse() : commentOnlyEvents
+  const sortedAll = sortNewest ? [...allEvents].reverse() : allEvents
 
   const handleSubmit = () => {
     if (!commentText.trim()) return
@@ -1831,21 +2134,14 @@ function SectionComments({
 
         <TabPanel id="comments">
           <div className="flex flex-col gap-0.5 pt-3">
-            {sorted.filter((c) => !c.isSystemEvent).map((comment, i, arr) => (
-              <div key={comment.id} className="group/comment relative">
-                <FeedItem
-                  avatarSrc={comment.author.avatarUrl}
-                  avatarAlt={comment.author.name}
-                  name={comment.author.name}
-                  timestamp={formatRelativeTime(comment.createdAt)}
-                  action={comment.content}
-                  connector={i < arr.length - 1}
-                  size="sm"
-                />
-                <CommentReactionPicker />
-              </div>
+            {sortedComments.map((event) => (
+              <ActivityFeedEntry
+                key={event.id}
+                event={event}
+                connector={false}
+              />
             ))}
-            {comments.filter((c) => !c.isSystemEvent).length === 0 && (
+            {sortedComments.length === 0 && (
               <p className="py-4 text-center text-sm text-quaternary">No comments yet</p>
             )}
           </div>
@@ -1853,21 +2149,14 @@ function SectionComments({
 
         <TabPanel id="activity">
           <div className="flex flex-col gap-0.5 pt-3">
-            {sorted.map((comment, i, arr) => (
-              <div key={comment.id} className="group/comment relative">
-                <FeedItem
-                  avatarSrc={comment.author.avatarUrl}
-                  avatarAlt={comment.author.name}
-                  name={comment.author.name}
-                  timestamp={formatRelativeTime(comment.createdAt)}
-                  action={comment.isSystemEvent ? comment.content : comment.content}
-                  connector={i < arr.length - 1}
-                  size="sm"
-                />
-                {!comment.isSystemEvent && <CommentReactionPicker />}
-              </div>
+            {sortedAll.map((event, i) => (
+              <ActivityFeedEntry
+                key={event.id}
+                event={event}
+                connector={i < sortedAll.length - 1}
+              />
             ))}
-            {comments.length === 0 && (
+            {sortedAll.length === 0 && (
               <p className="py-4 text-center text-sm text-quaternary">No activity yet</p>
             )}
           </div>

@@ -27,10 +27,10 @@ import { useCardDetail } from "@/hooks/useCardDetail"
 import { useStoreSyncRealtime } from "@/hooks/use-store-sync-realtime"
 import { useBoardSyncEngine } from "@/hooks/use-board-sync-engine"
 import { useBoardStore, type BoardColumn } from "@/stores/board-store"
-import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps } from "@/lib/adapters"
+import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, cardActivityToActivityEvents } from "@/lib/adapters"
 import { sortKeyBetween } from "@/lib/fractional-index"
 import { parseDate } from "@internationalized/date"
-import type { CardRow, BoardRow, ProjectStateRow } from "@/types/project"
+import type { CardRow, CardActivityRow, BoardRow, ProjectStateRow } from "@/types/project"
 import type { AgentRow } from "@/types/supabase"
 
 // ---------------------------------------------------------------------------
@@ -563,6 +563,33 @@ export default function ProjectBoardPage() {
       .catch((err) => { console.error('[signed-urls] Failed:', err) })
   }, [detailCard?.card_id, detailCard?.attachments.length])
 
+  // Activity events for the card
+  const [cardActivities, setCardActivities] = useState<CardActivityRow[]>([])
+  const detailCardId = detailCard?.card_id ?? null
+  useEffect(() => {
+    if (!detailCardId) {
+      setCardActivities([])
+      return
+    }
+    fetch(`/api/cards/${detailCardId}/activity`)
+      .then(r => r.ok ? r.json() : [])
+      .then((rows: CardActivityRow[]) => setCardActivities(rows))
+      .catch((err) => { console.error('[card-activity] Failed:', err) })
+  }, [detailCardId])
+
+  const refetchActivities = useCallback(() => {
+    if (!detailCardId) return
+    fetch(`/api/cards/${detailCardId}/activity`)
+      .then(r => r.ok ? r.json() : [])
+      .then((rows: CardActivityRow[]) => setCardActivities(rows))
+      .catch((err) => { console.error('[card-activity] Failed:', err) })
+  }, [detailCardId])
+
+  const activityEvents = useMemo(
+    () => cardActivityToActivityEvents(cardActivities, agents, projectStates),
+    [cardActivities, agents, projectStates],
+  )
+
   // Board columns for the panel status dropdown — derived from store (updated on rename)
   const panelBoardColumns = useMemo(
     () => storeColumns.map(col => ({ columnId: col.columnId, name: col.title, stateIds: [col.stateId] })),
@@ -675,8 +702,9 @@ export default function ProjectBoardPage() {
       body: JSON.stringify({ author: 'user', text: content }),
     }).catch((err) => { console.error('[add-comment] Failed:', err) })
     await detailRefetch()
+    refetchActivities()
     refetch()
-  }, [detailCard, detailRefetch, refetch])
+  }, [detailCard, detailRefetch, refetchActivities, refetch])
 
   // Upload attachment (called by onFilesSelected from FileUpload component)
   const handlePanelFilesSelected = useCallback(async (files: File[]) => {
@@ -690,8 +718,9 @@ export default function ProjectBoardPage() {
       }).catch((err) => { console.error('[upload-attachment] Failed:', err) })
     }
     await detailRefetch()
+    refetchActivities()
     refetch()
-  }, [detailCard, detailRefetch, refetch])
+  }, [detailCard, detailRefetch, refetchActivities, refetch])
 
   // Delete attachment
   const handlePanelDeleteAttachment = useCallback(async (attachmentId: string) => {
@@ -700,8 +729,9 @@ export default function ProjectBoardPage() {
       method: 'DELETE',
     }).catch((err) => { console.error('[delete-attachment] Failed:', err) })
     await detailRefetch()
+    refetchActivities()
     refetch()
-  }, [detailCard, detailRefetch, refetch])
+  }, [detailCard, detailRefetch, refetchActivities, refetch])
 
   // Add subtask: create child card with card_type 'subtask'
   const handlePanelAddSubtask = useCallback(async (data: { title: string; priority?: TaskPriority; assignee?: string; status?: TaskStatus; stateId?: string }) => {
@@ -1017,6 +1047,7 @@ export default function ProjectBoardPage() {
             onDeleteAttachment={handlePanelDeleteAttachment}
             comments={panelDataProps?.comments}
             onAddComment={handlePanelAddComment}
+            activities={activityEvents}
             className="h-full border-l border-secondary"
           />
           )}
