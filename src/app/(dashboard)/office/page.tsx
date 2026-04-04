@@ -5,8 +5,8 @@ import dynamic from 'next/dynamic'
 import officeEvents, { type AgentSelectPayload } from '@/lib/office-events'
 import { AgentPanel } from '@/components/application/agent-panel'
 
-const OfficeMap = dynamic(
-  () => import('@/components/application/office-map').then(m => m.OfficeMap),
+const PhaserBridge = dynamic(
+  () => import('@/game/phaser-bridge').then(m => m.PhaserBridge),
   { ssr: false, loading: () => (
     <div className="flex flex-1 w-full items-center justify-center">
       <p className="text-sm text-tertiary">Loading office...</p>
@@ -37,7 +37,7 @@ export default function OfficePage() {
   return (
     <div className="flex flex-row flex-1 w-full overflow-hidden p-2" style={{ minHeight: 0 }}>
       <div className="flex-1 min-w-0 h-full rounded-3xl overflow-hidden">
-        <OfficeMap />
+        <PhaserBridge />
       </div>
 
       {selectedAgent && (
