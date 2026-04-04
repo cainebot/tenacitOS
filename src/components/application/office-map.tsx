@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import officeEvents from '@/lib/office-events'
 
 export function OfficeMap() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -34,13 +35,13 @@ export function OfficeMap() {
       ]
 
       const DEMO_AGENTS = [
-        { agent_id: 'pomni', name: 'Pomni', status: 'active' },
-        { agent_id: 'kinger', name: 'Kinger', status: 'working' },
-        { agent_id: 'ragatha', name: 'Ragatha', status: 'active' },
-        { agent_id: 'jax', name: 'Jax', status: 'idle' },
-        { agent_id: 'gangle', name: 'Gangle', status: 'working' },
-        { agent_id: 'kaufmo', name: 'Kaufmo', status: 'active' },
-        { agent_id: 'zooble', name: 'Zooble', status: 'idle' },
+        { agent_id: 'pomni', name: 'Pomni', role: 'Scrum Master', status: 'active' },
+        { agent_id: 'kinger', name: 'Kinger', role: 'Prospector', status: 'working' },
+        { agent_id: 'ragatha', name: 'Ragatha', role: 'Copywriter', status: 'active' },
+        { agent_id: 'jax', name: 'Jax', role: 'Qualifier', status: 'idle' },
+        { agent_id: 'gangle', name: 'Gangle', role: 'Enricher', status: 'working' },
+        { agent_id: 'kaufmo', name: 'Kaufmo', role: 'Developer', status: 'active' },
+        { agent_id: 'zooble', name: 'Zooble', role: 'Analyst', status: 'idle' },
       ]
 
       // Spawn positions inside the main office building (spread across rooms)
@@ -184,7 +185,7 @@ export function OfficeMap() {
           })
 
           // ── Fetch agents ──
-          let agents: { agent_id: string; name: string; status: string }[] = []
+          let agents: { agent_id: string; name: string; role?: string; status: string }[] = []
           try {
             const res = await fetch('/api/agents/list')
             if (res.ok) agents = await res.json()
@@ -214,7 +215,12 @@ export function OfficeMap() {
             // ── Click handler ──
             sprite.setInteractive({ cursor: 'pointer' })
             sprite.on('pointerdown', () => {
-              console.log('[Office] agent:clicked', agents[i].agent_id)
+              officeEvents.emit('agent:select', {
+                agent_id: agents[i].agent_id,
+                name: agents[i].name,
+                role: agents[i].role ?? 'Agent',
+                status: agents[i].status,
+              })
             })
 
             // ── UUI-style tooltip: name + status dot ──
