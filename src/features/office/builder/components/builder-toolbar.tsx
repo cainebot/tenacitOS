@@ -55,9 +55,10 @@ export function BuilderToolbar() {
           >
             <Button
               color="tertiary"
+              iconOnly
               iconLeading={tool.icon}
               aria-label={tool.label}
-              onClick={() => handleToolSwitch(tool.id)}
+              onPress={() => handleToolSwitch(tool.id)}
             />
           </div>
         ))}

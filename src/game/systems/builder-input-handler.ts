@@ -26,10 +26,13 @@ export class BuilderInputHandler {
       // Only handle left button
       if (ptr.button !== 0) return
 
-      const { activeTool } = useBuilderStore.getState()
+      const { activeTool, selectedZoneId } = useBuilderStore.getState()
 
       // Hand tool: panning is handled by BuilderScene directly
       if (activeTool === 'hand') return
+
+      // Zone-requiring tools: block painting if no zone is selected
+      if ((activeTool === 'add-zones' || activeTool === 'seat') && !selectedZoneId) return
 
       this.isDragging = true
       this.dragBatch = []
