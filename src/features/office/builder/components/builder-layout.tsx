@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { BuilderTopBar } from './builder-top-bar'
 import { BuilderToolbar } from './builder-toolbar'
+import { BuilderRightPanel } from './builder-right-panel'
 
 const BuilderBridge = dynamic(
   () => import('@/game/builder-bridge').then((m) => m.BuilderBridge),
@@ -32,10 +33,8 @@ export function BuilderLayout() {
           <BuilderBridge />
         </div>
 
-        {/* Right panel placeholder — replaced by BuilderRightPanel in Wave 2 */}
-        <div className="w-[373px] shrink-0 bg-secondary border-l border-primary flex items-center justify-center">
-          <p className="text-sm text-tertiary">Zone Panel (Wave 2)</p>
-        </div>
+        {/* Right panel — Zone management */}
+        <BuilderRightPanel />
       </div>
     </div>
   )
