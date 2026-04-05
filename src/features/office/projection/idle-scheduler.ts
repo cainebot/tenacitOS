@@ -1,5 +1,4 @@
 import type { POI } from '../types'
-import { HARDCODED_POIS } from './zone-seed'
 
 // Stagger range: 30-120 seconds
 const MIN_IDLE_MS = 30_000
@@ -63,10 +62,10 @@ export class IdleScheduler {
 }
 
 /** Pick a random POI, optionally excluding one by id */
-export function pickRandomPOI(excludeId?: string): POI {
+export function pickRandomPOI(pois: POI[], excludeId?: string): POI {
   const candidates = excludeId
-    ? HARDCODED_POIS.filter(p => p.id !== excludeId)
-    : HARDCODED_POIS
+    ? pois.filter(p => p.id !== excludeId)
+    : pois
   return candidates[Math.floor(Math.random() * candidates.length)]
 }
 

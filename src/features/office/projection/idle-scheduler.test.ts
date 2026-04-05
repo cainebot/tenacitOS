@@ -88,8 +88,8 @@ describe('IdleScheduler', () => {
 })
 
 describe('pickRandomPOI', () => {
-  it('returns a POI object from HARDCODED_POIS', () => {
-    const poi = pickRandomPOI()
+  it('returns a POI object from provided pois array', () => {
+    const poi = pickRandomPOI(HARDCODED_POIS)
     expect(poi).toBeDefined()
     expect(poi.id).toBeTruthy()
     expect(poi.type).toBeTruthy()
@@ -102,7 +102,7 @@ describe('pickRandomPOI', () => {
     const firstPoi = HARDCODED_POIS[0]
     // Run 20 times to ensure exclusion is consistent
     for (let i = 0; i < 20; i++) {
-      const poi = pickRandomPOI(firstPoi.id)
+      const poi = pickRandomPOI(HARDCODED_POIS, firstPoi.id)
       expect(poi.id).not.toBe(firstPoi.id)
     }
   })
