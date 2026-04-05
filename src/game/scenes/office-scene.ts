@@ -1,10 +1,10 @@
 import Phaser from 'phaser'
 import officeEvents from '@/lib/office-events'
-import { TILESET, PLAYER_SPRITE, CHAR_SPRITES, INTERACTION_RANGE } from '../constants'
+import { TILESET, PLAYER_SPRITE, CHAR_SPRITES } from '../constants'
 import { PlayerSprite } from '../entities/player-sprite'
-import { AgentSprite } from '../entities/agent-sprite'
 import { AgentManager } from '../systems/agent-manager'
 import { BindingOverlayRenderer } from '../systems/binding-overlay-renderer'
+import { InteractionManager } from '../systems/interaction-manager'
 import { CameraController } from '../systems/camera-controller'
 import { snapshot, notifySubscribers } from '../state-snapshot'
 import { drain, type GameCommand } from '../command-queue'
@@ -21,7 +21,7 @@ export class OfficeScene extends Phaser.Scene {
   private cameraCtrl!: CameraController
   private agentManager!: AgentManager
   private bindingOverlay!: BindingOverlayRenderer
-  private nearbyAgent: AgentSprite | null = null
+  private interactionMgr!: InteractionManager
   private projectionHandler: ((payload: { agentId: string; state: AgentSpatialState }) => void) | null = null
   private bindingsHandler: ((bindings: import('@/features/office/types').ZoneBinding[]) => void) | null = null
 
@@ -107,17 +107,9 @@ export class OfficeScene extends Phaser.Scene {
     // ── Generate minimap background (async, one-time) ──
     await this.generateMinimapBg(groundLayer)
 
-    // ── E-key → interact with nearest agent ──
-    this.input.keyboard!.on('keydown-E', () => {
-      if (!this.nearbyAgent) return
-      const agent = this.nearbyAgent.agentData
-      officeEvents.emit('agent:select', {
-        agent_id: agent.agent_id,
-        name: agent.name,
-        role: agent.role ?? 'Agent',
-        status: agent.status,
-      })
-    })
+    // ── Interaction manager (proximity scan + E-key) ──
+    this.interactionMgr = new InteractionManager(this)
+    this.interactionMgr.setupInput()
 
     // ── Cleanup on scene shutdown ──
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -130,6 +122,7 @@ export class OfficeScene extends Phaser.Scene {
         this.bindingsHandler = null
       }
       this.bindingOverlay.destroy()
+      this.interactionMgr.destroy()
       // Cleanup idle behavior timers
       const idleBehavior = this.agentManager.getIdleBehavior()
       if (idleBehavior) {
@@ -156,30 +149,12 @@ export class OfficeScene extends Phaser.Scene {
     this.agentManager.update(delta)  // advance agent walks + idle behavior
 
     if (!this.agentManager) return
-    const px = this.player.sprite.x
-    const py = this.player.sprite.y
-    let nearest: AgentSprite | null = null
-    let nearestDist = INTERACTION_RANGE
 
-    for (const agent of this.agentManager.agents) {
-      const dx = agent.sprite.x - px
-      const dy = agent.sprite.y - py
-      const dist = Math.sqrt(dx * dx + dy * dy)
-      if (dist < nearestDist) {
-        nearestDist = dist
-        nearest = agent
-      }
-    }
-
-    for (const agent of this.agentManager.agents) {
-      if (agent === nearest) {
-        agent.showInteractionHint()
-      } else {
-        agent.hideInteractionHint()
-      }
-    }
-
-    this.nearbyAgent = nearest
+    const nearest = this.interactionMgr.update(
+      this.player.sprite.x,
+      this.player.sprite.y,
+      this.agentManager.agents,
+    )
 
     // ── C. Write snapshot ──
     const cam = this.cameras.main
