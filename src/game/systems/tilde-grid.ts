@@ -1,0 +1,206 @@
+import Phaser from 'phaser'
+import type { Zone } from '@/features/office/types'
+
+export interface TildeCell {
+  state: 'default' | 'hover' | 'blocked' | 'room' | 'seat'
+  zoneId: string | null
+  seatId: string | null
+}
+
+const TILDE_COLORS = {
+  default: { bg: 0x535862, alpha: 0.1, border: 0xd5d7da },
+  hover:   { bg: 0x535862, alpha: 0.5, border: 0xd5d7da },
+  blocked: { bg: 0xf04438, alpha: 0.5, border: 0xf04438 },
+  room:    { bg: 0x6172f3, alpha: 0.5, border: 0x6172f3 },
+  seat:    { bg: 0x6172f3, alpha: 0.5, border: 0x6172f3 },
+} as const
+
+export class TildeGrid {
+  private grid: TildeCell[][]
+  private graphics: Phaser.GameObjects.Graphics
+  private textPool: Map<string, Phaser.GameObjects.Text> = new Map()
+  private hoverCell: { row: number; col: number } | null = null
+  private dirty = true
+  private cols: number
+  private rows: number
+  private tileSize: number
+  private scene: Phaser.Scene
+
+  constructor(scene: Phaser.Scene, cols: number, rows: number, tileSize: number) {
+    this.scene = scene
+    this.cols = cols
+    this.rows = rows
+    this.tileSize = tileSize
+
+    // Single Graphics object at depth 5 (above ground 0, below agents 10+)
+    this.graphics = scene.add.graphics()
+    this.graphics.setDepth(5)
+
+    // Initialize grid with all default cells
+    this.grid = Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => ({
+        state: 'default' as const,
+        zoneId: null,
+        seatId: null,
+      }))
+    )
+
+    // Mark dirty when camera moves or zooms
+    scene.cameras.main.on('followupdate', () => { this.dirty = true })
+    scene.cameras.main.on('zoom', () => { this.dirty = true })
+  }
+
+  setHoverCell(row: number, col: number): void {
+    this.hoverCell = { row, col }
+    this.dirty = true
+  }
+
+  clearHover(): void {
+    this.hoverCell = null
+    this.dirty = true
+  }
+
+  setCellState(
+    row: number,
+    col: number,
+    state: TildeCell['state'],
+    zoneId?: string | null,
+    seatId?: string | null,
+  ): void {
+    // Bounds check
+    if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) return
+    this.grid[row][col] = {
+      state,
+      zoneId: zoneId ?? null,
+      seatId: seatId ?? null,
+    }
+    this.dirty = true
+  }
+
+  getCellState(row: number, col: number): TildeCell | null {
+    if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) return null
+    return this.grid[row][col]
+  }
+
+  getGrid(): TildeCell[][] {
+    return this.grid
+  }
+
+  /** Initialize grid from existing zone data (used to restore painted cells from map_json). */
+  loadFromZones(zones: Zone[]): void {
+    // Clear all non-default cells first
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        this.grid[r][c] = { state: 'default', zoneId: null, seatId: null }
+      }
+    }
+
+    for (const zone of zones) {
+      // Paint room cells
+      for (const cell of zone.gridCells) {
+        this.setCellState(cell.y, cell.x, 'room', zone.id, null)
+      }
+      // Paint seat cells
+      if (zone.seats) {
+        for (const seat of zone.seats) {
+          this.setCellState(seat.gridY, seat.gridX, 'seat', zone.id, seat.id)
+        }
+      }
+    }
+
+    this.dirty = true
+  }
+
+  /** Main render loop. Returns immediately if not dirty. */
+  update(zones: Zone[]): void {
+    if (!this.dirty) return
+    this.dirty = false
+
+    const gfx = this.graphics
+    gfx.clear()
+
+    // Build a quick lookup: zoneId -> displayOrder for zone number labels
+    const zoneOrderMap = new Map<string, number>()
+    for (const zone of zones) {
+      if (zone.displayOrder !== undefined) {
+        zoneOrderMap.set(zone.id, zone.displayOrder)
+      }
+    }
+
+    const cam = this.scene.cameras.main
+    const ts = this.tileSize
+
+    // Viewport culling — only render cells visible in the camera view
+    const startCol = Math.max(0, Math.floor(cam.worldView.x / ts))
+    const startRow = Math.max(0, Math.floor(cam.worldView.y / ts))
+    const endCol = Math.min(this.cols - 1, Math.ceil((cam.worldView.x + cam.worldView.width) / ts))
+    const endRow = Math.min(this.rows - 1, Math.ceil((cam.worldView.y + cam.worldView.height) / ts))
+
+    // Track which text keys are visible in this frame
+    const visibleTextKeys = new Set<string>()
+
+    for (let row = startRow; row <= endRow; row++) {
+      for (let col = startCol; col <= endCol; col++) {
+        const cell = this.grid[row][col]
+        const px = col * ts
+        const py = row * ts
+
+        // Determine render state: hover overlay on non-blocked cells
+        const renderState =
+          this.hoverCell?.row === row && this.hoverCell?.col === col && cell.state !== 'blocked'
+            ? 'hover'
+            : cell.state
+
+        const colors = TILDE_COLORS[renderState]
+
+        // Fill
+        gfx.fillStyle(colors.bg, colors.alpha)
+        gfx.fillRect(px, py, ts, ts)
+
+        // Border
+        gfx.lineStyle(1, colors.border, 0.6)
+        gfx.strokeRect(px + 0.5, py + 0.5, ts - 1, ts - 1)
+
+        // Zone number label for room/seat cells
+        if (cell.state === 'room' || cell.state === 'seat') {
+          const key = `${row}-${col}`
+          const displayOrder = cell.zoneId ? (zoneOrderMap.get(cell.zoneId) ?? 0) : 0
+          const label = String(displayOrder)
+          visibleTextKeys.add(key)
+
+          if (this.textPool.has(key)) {
+            const text = this.textPool.get(key)!
+            text.setText(label)
+            text.setPosition(px + ts / 2, py + ts / 2)
+            text.setVisible(true)
+          } else {
+            const text = this.scene.add
+              .text(px + ts / 2, py + ts / 2, label, {
+                fontFamily: 'JetBrains Mono',
+                fontSize: '10px',
+                color: '#2d3282',
+              })
+              .setOrigin(0.5)
+              .setDepth(6)
+            this.textPool.set(key, text)
+          }
+        }
+      }
+    }
+
+    // Hide text objects that are no longer in the visible/room/seat region
+    for (const [key, text] of this.textPool) {
+      if (!visibleTextKeys.has(key)) {
+        text.setVisible(false)
+      }
+    }
+  }
+
+  destroy(): void {
+    this.graphics.destroy()
+    for (const text of this.textPool.values()) {
+      text.destroy()
+    }
+    this.textPool.clear()
+  }
+}
