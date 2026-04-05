@@ -1,13 +1,114 @@
 'use client'
 
-// ZoneProperties — implemented in Task 2 (Wave 2, Plan 02)
-// Stub to allow builder-right-panel.tsx to compile during Task 1 commit.
+import { useState } from 'react'
+import { Trash03 } from '@untitledui/icons'
+import { Button, Input, Select, Toggle, Dropdown } from '@circos/ui'
+import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
+import { DeleteZoneModal } from './delete-zone-modal'
 
 interface ZonePropertiesProps {
   zoneId: string
   onClose: () => void
 }
 
-export function ZoneProperties({ zoneId: _zoneId, onClose: _onClose }: ZonePropertiesProps) {
-  return null
+export function ZoneProperties({ zoneId, onClose }: ZonePropertiesProps) {
+  const zone = useBuilderStore((s) => s.zones.find((z) => z.id === zoneId))
+  const updateZone = useBuilderStore((s) => s.updateZone)
+  const deleteZone = useBuilderStore((s) => s.deleteZone)
+
+  const [showDelete, setShowDelete] = useState(false)
+
+  if (!zone) return null
+
+  const handleDelete = () => {
+    deleteZone(zoneId)
+    onClose()
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-secondary">
+      {/* Section header */}
+      <div className="px-4 pt-2 pb-2 shrink-0">
+        <div className="flex flex-row items-center">
+          <h3 className="text-lg font-semibold text-primary flex-1">Zone Properties</h3>
+          {/* DotsVertical overflow menu — NOT a direct back button per CONTEXT.md */}
+          <Dropdown.Root>
+            <Dropdown.DotsButton />
+            <Dropdown.Popover>
+              <Dropdown.Menu aria-label="Zone properties menu">
+                <Dropdown.Item
+                  label="Close"
+                  onAction={onClose}
+                />
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown.Root>
+        </div>
+        <p className="text-sm text-tertiary truncate">{zone.label}</p>
+      </div>
+
+      {/* Form fields */}
+      <div className="flex flex-col gap-4 px-4 py-4 flex-1 overflow-y-auto">
+        {/* Zone Label — isRequired renders * in text-brand-tertiary via UUI Label component */}
+        <Input
+          label="Zone Label"
+          value={zone.label}
+          onChange={(val) => updateZone(zoneId, { label: val })}
+          placeholder="Enter zone name"
+          isRequired
+        />
+
+        {/* Assigned Agent — isRequired renders * in text-brand-tertiary via UUI Label component */}
+        {/* TODO: Wire to real agents from Supabase (Wave 5) */}
+        <Select
+          label="Assigned Agent"
+          placeholder="Anyone"
+          isRequired
+          items={[{ id: 'anyone', label: 'Anyone' }]}
+        >
+          {(item) => <Select.Item id={item.id}>{item.label}</Select.Item>}
+        </Select>
+
+        {/* Assigned Project — isRequired renders * in text-brand-tertiary via UUI Label component */}
+        {/* TODO: Wire to real projects from Supabase (Wave 5) */}
+        <Select
+          label="Assigned Project"
+          placeholder="None"
+          isRequired
+          items={[{ id: 'none', label: 'None' }]}
+        >
+          {(item) => <Select.Item id={item.id}>{item.label}</Select.Item>}
+        </Select>
+
+        {/* Agent Restricted Area */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-secondary">Agent Restricted Area</span>
+          <Toggle
+            size="sm"
+            isSelected={zone.agentRestricted ?? false}
+            onChange={(val) => updateZone(zoneId, { agentRestricted: val })}
+          />
+        </div>
+      </div>
+
+      {/* Bottom action — sticky at panel bottom */}
+      <div className="px-4 py-4 border-t border-primary shrink-0">
+        <Button
+          color="tertiary-destructive"
+          iconLeading={Trash03}
+          onClick={() => setShowDelete(true)}
+        >
+          Delete Zone
+        </Button>
+      </div>
+
+      {/* Delete confirmation modal */}
+      <DeleteZoneModal
+        isOpen={showDelete}
+        onClose={() => setShowDelete(false)}
+        onConfirm={handleDelete}
+        zoneName={zone.label}
+      />
+    </div>
+  )
 }
