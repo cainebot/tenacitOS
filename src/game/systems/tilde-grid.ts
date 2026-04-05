@@ -242,6 +242,57 @@ export class TildeGrid {
     }
   }
 
+  /**
+   * Serialize the current grid state into an updated OfficeMapDocument.
+   * Hover state is transient and never serialized.
+   */
+  serialize(currentZones: import('@/features/office/types').Zone[], baseMapDoc: import('@/features/office/types').OfficeMapDocument): import('@/features/office/types').OfficeMapDocument {
+    // Build lookup: zoneId -> { gridCells, seats }
+    const zoneMap = new Map<string, { gridCells: Array<{ x: number; y: number }>; seats: Array<{ id: string; gridX: number; gridY: number }> }>()
+
+    // Initialize map for all zones
+    for (const zone of currentZones) {
+      zoneMap.set(zone.id, { gridCells: [], seats: [] })
+    }
+
+    // Collect blocked cells
+    const blocked: Array<{ x: number; y: number }> = []
+
+    // Iterate grid — skip 'default' and 'hover' (transient, do not persist)
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        const cell = this.grid[row][col]
+        if (cell.state === 'blocked') {
+          blocked.push({ x: col, y: row })
+        } else if ((cell.state === 'room' || cell.state === 'seat') && cell.zoneId) {
+          const entry = zoneMap.get(cell.zoneId)
+          if (entry) {
+            entry.gridCells.push({ x: col, y: row })
+            if (cell.state === 'seat' && cell.seatId) {
+              entry.seats.push({ id: cell.seatId, gridX: col, gridY: row })
+            }
+          }
+        }
+      }
+    }
+
+    // Build updated zones array
+    const updatedZones = currentZones.map((z) => ({
+      ...z,
+      gridCells: zoneMap.get(z.id)?.gridCells ?? [],
+      seats: zoneMap.get(z.id)?.seats ?? [],
+    }))
+
+    return {
+      ...baseMapDoc,
+      zones: updatedZones,
+      navGrid: {
+        ...baseMapDoc.navGrid,
+        blocked,
+      },
+    }
+  }
+
   /** Load blocked cells from navGrid data (e.g., mapDocument.navGrid.blocked). */
   loadBlockedCells(blocked: Array<{ x: number; y: number }>): void {
     for (const cell of blocked) {

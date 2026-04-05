@@ -96,6 +96,13 @@ export class BuilderScene extends Phaser.Scene {
     if (mapDoc?.navGrid?.blocked) {
       this.tildeGrid.loadBlockedCells(mapDoc.navGrid.blocked)
     }
+
+    // Expose TildeGrid to React layer for save/publish serialization
+    ;(globalThis as any).__circos_builder_grid = this.tildeGrid
+  }
+
+  shutdown() {
+    delete (globalThis as any).__circos_builder_grid
   }
 
   update() {
