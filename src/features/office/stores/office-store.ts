@@ -2,7 +2,6 @@
 
 import { create } from 'zustand'
 import type { ZoneBinding, POI, OfficeMapDocument } from '../types'
-import { HARDCODED_POIS } from '../projection/zone-seed'
 
 interface OfficeState {
   // State
@@ -21,7 +20,7 @@ interface OfficeState {
 export const useOfficeStore = create<OfficeState>()((set) => ({
   mapDocument: null,
   zoneBindings: [],      // Empty on init — populated by useZoneBindings() from Supabase
-  pois: HARDCODED_POIS,  // POIs are map-level data (Phase 3 Map Builder scope)
+  pois: [],              // Populated from mapDocument.pois by page.tsx via useOfficeMap
   viewMode: 'viewer',
 
   setMapDocument: (doc) => set({ mapDocument: doc }),

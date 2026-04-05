@@ -7,6 +7,7 @@ import { AgentPanel } from '@/components/application/agent-panel'
 import { MiniMap } from '@/components/application/mini-map'
 import { useProjection } from '@/features/office/viewer/hooks/use-projection'
 import { useZoneBindings } from '@/features/office/viewer/hooks/use-zone-bindings'
+import { useOfficeMap } from '@/features/office/viewer/hooks/use-office-map'
 import { useOfficeStore } from '@/features/office/stores/office-store'
 
 const PhaserBridge = dynamic(
@@ -29,6 +30,18 @@ export default function OfficePage() {
       officeEvents.emit('bindings:update', zoneBindings)
     }
   }, [zoneBindings, setZoneBindings])
+
+  // Load map document from Supabase and push to store
+  const { mapDocument } = useOfficeMap()
+  const setMapDocument = useOfficeStore((s) => s.setMapDocument)
+  const setPois = useOfficeStore((s) => s.setPois)
+
+  useEffect(() => {
+    if (mapDocument) {
+      setMapDocument(mapDocument)
+      setPois(mapDocument.pois)
+    }
+  }, [mapDocument, setMapDocument, setPois])
 
   // Wire Realtime agent/task data -> ProjectionService -> officeEvents
   // useProjection reads zoneBindings from store — it will guard on empty bindings
