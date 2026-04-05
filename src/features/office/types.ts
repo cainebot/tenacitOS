@@ -34,6 +34,8 @@ export interface ZoneBinding {
   board_id: string | null
   grid_x: number
   grid_y: number
+  label: string | null
+  color: string | null
 }
 
 // ── Zone — named area on the map ──

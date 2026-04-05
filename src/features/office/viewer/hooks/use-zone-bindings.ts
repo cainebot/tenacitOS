@@ -10,13 +10,13 @@ const PUBLISHED_MAP_ID = '11111111-1111-1111-1111-111111111111'
 // Coordinates match SPAWN_POSITIONS in game/constants.ts.
 // Extracted from zone-seed.ts in Phase 84 cleanup (HARDCODED_ZONE_BINDINGS removed).
 const FALLBACK_ZONE_BINDINGS: ZoneBinding[] = [
-  { binding_id: 'desk-pomni',   zone_id: 'zone-pomni-desk',   binding_type: 'agent_desk', agent_id: 'pomni',   project_id: null, board_id: null, grid_x: 48, grid_y: 42 },
-  { binding_id: 'desk-kinger',  zone_id: 'zone-kinger-desk',  binding_type: 'agent_desk', agent_id: 'kinger',  project_id: null, board_id: null, grid_x: 58, grid_y: 38 },
-  { binding_id: 'desk-ragatha', zone_id: 'zone-ragatha-desk', binding_type: 'agent_desk', agent_id: 'ragatha', project_id: null, board_id: null, grid_x: 68, grid_y: 42 },
-  { binding_id: 'desk-jax',     zone_id: 'zone-jax-desk',     binding_type: 'agent_desk', agent_id: 'jax',     project_id: null, board_id: null, grid_x: 42, grid_y: 55 },
-  { binding_id: 'desk-gangle',  zone_id: 'zone-gangle-desk',  binding_type: 'agent_desk', agent_id: 'gangle',  project_id: null, board_id: null, grid_x: 90, grid_y: 38 },
-  { binding_id: 'desk-kaufmo',  zone_id: 'zone-kaufmo-desk',  binding_type: 'agent_desk', agent_id: 'kaufmo',  project_id: null, board_id: null, grid_x: 55, grid_y: 60 },
-  { binding_id: 'desk-zooble',  zone_id: 'zone-zooble-desk',  binding_type: 'agent_desk', agent_id: 'zooble',  project_id: null, board_id: null, grid_x: 82, grid_y: 55 },
+  { binding_id: 'desk-pomni',   zone_id: 'zone-pomni-desk',   binding_type: 'agent_desk', agent_id: 'pomni',   project_id: null, board_id: null, grid_x: 48, grid_y: 42, label: 'Pomni Desk',   color: null },
+  { binding_id: 'desk-kinger',  zone_id: 'zone-kinger-desk',  binding_type: 'agent_desk', agent_id: 'kinger',  project_id: null, board_id: null, grid_x: 58, grid_y: 38, label: 'Kinger Desk',  color: null },
+  { binding_id: 'desk-ragatha', zone_id: 'zone-ragatha-desk', binding_type: 'agent_desk', agent_id: 'ragatha', project_id: null, board_id: null, grid_x: 68, grid_y: 42, label: 'Ragatha Desk', color: null },
+  { binding_id: 'desk-jax',     zone_id: 'zone-jax-desk',     binding_type: 'agent_desk', agent_id: 'jax',     project_id: null, board_id: null, grid_x: 42, grid_y: 55, label: 'Jax Desk',     color: null },
+  { binding_id: 'desk-gangle',  zone_id: 'zone-gangle-desk',  binding_type: 'agent_desk', agent_id: 'gangle',  project_id: null, board_id: null, grid_x: 90, grid_y: 38, label: 'Gangle Desk',  color: null },
+  { binding_id: 'desk-kaufmo',  zone_id: 'zone-kaufmo-desk',  binding_type: 'agent_desk', agent_id: 'kaufmo',  project_id: null, board_id: null, grid_x: 55, grid_y: 60, label: 'Kaufmo Desk',  color: null },
+  { binding_id: 'desk-zooble',  zone_id: 'zone-zooble-desk',  binding_type: 'agent_desk', agent_id: 'zooble',  project_id: null, board_id: null, grid_x: 82, grid_y: 55, label: 'Zooble Desk',  color: null },
 ]
 
 export interface UseZoneBindingsResult {
