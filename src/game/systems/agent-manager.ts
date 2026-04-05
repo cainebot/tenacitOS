@@ -1,11 +1,11 @@
 import Phaser from 'phaser'
-import { DEMO_AGENTS, SPAWN_POSITIONS, CHAR_SPRITES, type AgentData } from '../constants'
+import { DEMO_AGENTS, SPAWN_POSITIONS, CHAR_SPRITES, type AgentData, type SpawnPosition } from '../constants'
 import { AgentSprite } from '../entities/agent-sprite'
 import type { AgentSnapshot } from '../state-snapshot'
 import { IdleBehavior } from './idle-behavior'
 import { NavGrid } from '../pathfinding/nav-grid'
 import { findPath } from '../pathfinding/pathfinder'
-import type { AgentSpatialState } from '@/features/office/types'
+import type { AgentSpatialState, POI } from '@/features/office/types'
 
 /**
  * Fetches agent data and spawns AgentSprite instances.
@@ -18,7 +18,11 @@ export class AgentManager {
   private idleBehavior: IdleBehavior | null = null
   private navGrid: NavGrid | null = null
 
-  async spawnAgents(scene: Phaser.Scene, tileSize: number): Promise<void> {
+  async spawnAgents(
+    scene: Phaser.Scene,
+    tileSize: number,
+    spawnPoints?: Array<{ id: string; gridX: number; gridY: number; facing: string; forType: string }>,
+  ): Promise<void> {
     let agents: AgentData[] = []
     try {
       const res = await fetch('/api/agents/list')
@@ -26,9 +30,16 @@ export class AgentManager {
     } catch { /* fallback */ }
     if (agents.length === 0) agents = DEMO_AGENTS
 
-    const count = Math.min(agents.length, SPAWN_POSITIONS.length, CHAR_SPRITES.length)
+    // Filter to agent spawn points from mapDocument, fallback to constants
+    const agentSpawns: SpawnPosition[] = spawnPoints
+      ?.filter(sp => sp.forType === 'agent')
+      .map(sp => ({ tileX: sp.gridX, tileY: sp.gridY, facing: sp.facing }))
+      ?? []
+    const spawns = agentSpawns.length > 0 ? agentSpawns : SPAWN_POSITIONS
+
+    const count = Math.min(agents.length, spawns.length, CHAR_SPRITES.length)
     for (let i = 0; i < count; i++) {
-      const spawn = SPAWN_POSITIONS[i]
+      const spawn = spawns[i]
       const px = spawn.tileX * tileSize + tileSize / 2
       const py = spawn.tileY * tileSize + tileSize / 2
       const charKey = CHAR_SPRITES[i].key
@@ -39,9 +50,9 @@ export class AgentManager {
   }
 
   /** Initialize the navigation grid for A* pathfinding. */
-  initNavGrid(mapWidth: number, mapHeight: number, cellSize: number): void {
+  initNavGrid(mapWidth: number, mapHeight: number, cellSize: number, pois: POI[]): void {
     this.navGrid = new NavGrid(mapWidth, mapHeight, cellSize)
-    this.idleBehavior = new IdleBehavior(this.navGrid)
+    this.idleBehavior = new IdleBehavior(this.navGrid, pois)
     // MVP: no blocked cells (no collision layer in Tiled map)
     // Future: this.navGrid.setBlockedCells(blockedCells)
   }
