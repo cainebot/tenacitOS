@@ -46,6 +46,13 @@ export interface Zone {
   label: string
   gridCells: Array<{ x: number; y: number }>
   color: string
+  displayOrder?: number      // Determines tile number + card order in builder
+  agentRestricted?: boolean  // When true, agents cannot enter this zone
+  seats?: Array<{            // Seat positions within this zone
+    id: string
+    gridX: number
+    gridY: number
+  }>
 }
 
 // ── POI — point of interest for idle wandering ──

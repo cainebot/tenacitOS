@@ -51,6 +51,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
-    this.scene.start('OfficeScene')
+    const target = (globalThis as any).__circos_target_scene ?? 'OfficeScene'
+    this.scene.start(target)
   }
 }
