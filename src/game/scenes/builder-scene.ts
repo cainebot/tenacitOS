@@ -1,9 +1,14 @@
 import Phaser from 'phaser'
 import { TILESET } from '../constants'
+import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
+import { TildeGrid } from '../systems/tilde-grid'
+import { BuilderInputHandler } from '../systems/builder-input-handler'
 
 export class BuilderScene extends Phaser.Scene {
   private isDragging = false
   private dragStart = { x: 0, y: 0 }
+  private tildeGrid!: TildeGrid
+  private inputHandler!: BuilderInputHandler
 
   constructor() {
     super({ key: 'BuilderScene' })
@@ -39,9 +44,9 @@ export class BuilderScene extends Phaser.Scene {
     cam.setZoom(1.5)
     cam.centerOn(map.widthInPixels / 2, map.heightInPixels / 2)
 
-    // ── Pointer drag panning (Hand tool) ──
+    // ── Pointer drag panning (Hand tool only) ──
     this.input.on('pointerdown', (ptr: Phaser.Input.Pointer) => {
-      if (ptr.button === 0) {
+      if (ptr.button === 0 && useBuilderStore.getState().activeTool === 'hand') {
         this.isDragging = true
         this.dragStart = { x: ptr.worldX, y: ptr.worldY }
       }
@@ -63,7 +68,31 @@ export class BuilderScene extends Phaser.Scene {
       'wheel',
       (_p: unknown, _o: unknown, _dx: number, dy: number) => {
         cam.zoom = Phaser.Math.Clamp(cam.zoom - dy * 0.002, 0.5, 4)
+        // Zoom change dirties the tilde grid
+        this.tildeGrid?.['dirty'] // access is handled via camera events
       },
     )
+
+    // ── TildeGrid overlay ──
+    this.tildeGrid = new TildeGrid(this, map.width, map.height, map.tileWidth)
+
+    // ── Input handler for zone painting ──
+    this.inputHandler = new BuilderInputHandler(
+      this,
+      this.tildeGrid,
+      map.tileWidth,
+      map.width,
+      map.height,
+    )
+    this.inputHandler.setup()
+
+    // Load existing zone data from builder store into TildeGrid
+    const { zones } = useBuilderStore.getState()
+    this.tildeGrid.loadFromZones(zones)
+  }
+
+  update() {
+    const { zones } = useBuilderStore.getState()
+    this.tildeGrid?.update(zones)
   }
 }
