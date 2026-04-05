@@ -3,9 +3,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
 import type { ZoneBinding } from '../../types'
-import { HARDCODED_ZONE_BINDINGS } from '../../projection/zone-seed'
 
 const PUBLISHED_MAP_ID = '11111111-1111-1111-1111-111111111111'
+
+// Fallback bindings used when office_zone_bindings table is unreachable or empty.
+// Coordinates match SPAWN_POSITIONS in game/constants.ts.
+// Extracted from zone-seed.ts in Phase 84 cleanup (HARDCODED_ZONE_BINDINGS removed).
+const FALLBACK_ZONE_BINDINGS: ZoneBinding[] = [
+  { binding_id: 'desk-pomni',   zone_id: 'zone-pomni-desk',   binding_type: 'agent_desk', agent_id: 'pomni',   project_id: null, board_id: null, grid_x: 48, grid_y: 42 },
+  { binding_id: 'desk-kinger',  zone_id: 'zone-kinger-desk',  binding_type: 'agent_desk', agent_id: 'kinger',  project_id: null, board_id: null, grid_x: 58, grid_y: 38 },
+  { binding_id: 'desk-ragatha', zone_id: 'zone-ragatha-desk', binding_type: 'agent_desk', agent_id: 'ragatha', project_id: null, board_id: null, grid_x: 68, grid_y: 42 },
+  { binding_id: 'desk-jax',     zone_id: 'zone-jax-desk',     binding_type: 'agent_desk', agent_id: 'jax',     project_id: null, board_id: null, grid_x: 42, grid_y: 55 },
+  { binding_id: 'desk-gangle',  zone_id: 'zone-gangle-desk',  binding_type: 'agent_desk', agent_id: 'gangle',  project_id: null, board_id: null, grid_x: 90, grid_y: 38 },
+  { binding_id: 'desk-kaufmo',  zone_id: 'zone-kaufmo-desk',  binding_type: 'agent_desk', agent_id: 'kaufmo',  project_id: null, board_id: null, grid_x: 55, grid_y: 60 },
+  { binding_id: 'desk-zooble',  zone_id: 'zone-zooble-desk',  binding_type: 'agent_desk', agent_id: 'zooble',  project_id: null, board_id: null, grid_x: 82, grid_y: 55 },
+]
 
 export interface UseZoneBindingsResult {
   zoneBindings: ZoneBinding[]
@@ -16,7 +28,7 @@ export interface UseZoneBindingsResult {
 /**
  * Fetches zone bindings from Supabase office_zone_bindings for the published map.
  * Subscribes to Realtime for INSERT/UPDATE/DELETE.
- * Falls back to HARDCODED_ZONE_BINDINGS if the query fails.
+ * Falls back to FALLBACK_ZONE_BINDINGS if the query fails or returns no rows.
  *
  * Pattern: matches useRealtimeAgents (createBrowserClient, full resync on mount,
  * incremental updates via postgres_changes).
@@ -41,14 +53,14 @@ export function useZoneBindings(): UseZoneBindingsResult {
       if (fetchError) {
         console.warn('[useZoneBindings] Supabase error, falling back to hardcoded:', fetchError.message)
         setError(fetchError.message)
-        setZoneBindings(HARDCODED_ZONE_BINDINGS)
+        setZoneBindings(FALLBACK_ZONE_BINDINGS)
         usedFallbackRef.current = true
       } else {
         const rows = (data ?? []) as ZoneBinding[]
         if (rows.length === 0) {
           // No rows in DB yet — fall back to hardcoded until migration is applied
           console.warn('[useZoneBindings] No rows found in office_zone_bindings, using hardcoded fallback')
-          setZoneBindings(HARDCODED_ZONE_BINDINGS)
+          setZoneBindings(FALLBACK_ZONE_BINDINGS)
           usedFallbackRef.current = true
         } else {
           setZoneBindings(rows)
@@ -58,7 +70,7 @@ export function useZoneBindings(): UseZoneBindingsResult {
       const msg = err instanceof Error ? err.message : 'Failed to fetch zone bindings'
       console.warn('[useZoneBindings] Unexpected error, falling back to hardcoded:', msg)
       setError(msg)
-      setZoneBindings(HARDCODED_ZONE_BINDINGS)
+      setZoneBindings(FALLBACK_ZONE_BINDINGS)
       usedFallbackRef.current = true
     } finally {
       setIsLoading(false)
