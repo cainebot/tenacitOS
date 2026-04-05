@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import officeEvents from '@/lib/office-events'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import { useRealtimeTasks } from '@/hooks/useRealtimeTasks'
 import { useOfficeStore } from '../../stores/office-store'
 import { resolveAgentState } from '../../projection/projection-service'
 import { IdleScheduler, pickRandomPOI, pickFlavorText } from '../../projection/idle-scheduler'
-import { getSnapshot } from '@/game/state-snapshot'
+import { subscribe, getSnapshot } from '@/game/state-snapshot'
 import type { AgentSpatialState } from '../../types'
 
 /**
@@ -22,6 +22,17 @@ export function useProjection(): void {
   const { tasks } = useRealtimeTasks()
   const zoneBindings = useOfficeStore((s) => s.zoneBindings)
   const pois = useOfficeStore((s) => s.pois)
+
+  // Track Phaser lifecycle so projection re-fires when scene becomes 'ready'
+  // after React has already mounted (common: Supabase responds before Phaser loads assets)
+  const [lifecycle, setLifecycle] = useState(getSnapshot().lifecycle)
+  useEffect(() => {
+    return subscribe(() => {
+      const snap = getSnapshot()
+      if (snap.lifecycle !== lifecycle) setLifecycle(snap.lifecycle)
+    })
+  }, [lifecycle])
+
   const idleSchedulerRef = useRef<IdleScheduler | null>(null)
 
   // Lazy-init idle scheduler
@@ -31,8 +42,7 @@ export function useProjection(): void {
 
   useEffect(() => {
     // Don't emit until Phaser scene is ready
-    const snap = getSnapshot()
-    if (snap.lifecycle !== 'ready') return
+    if (lifecycle !== 'ready') return
 
     // Don't emit until zone bindings are loaded from Supabase
     // Prevents race condition where projection fires before DB data arrives
@@ -111,5 +121,5 @@ export function useProjection(): void {
     return () => {
       scheduler.cancelAll()
     }
-  }, [agents, tasks, zoneBindings, pois])
+  }, [agents, tasks, zoneBindings, pois, lifecycle])
 }
