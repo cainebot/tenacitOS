@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 import { snapshot, notifySubscribers } from './state-snapshot'
+import { useOfficeStore } from '@/features/office/stores/office-store'
+import { buildManifest } from './asset-manifest'
 
 export function PhaserBridge() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -20,8 +22,14 @@ export function PhaserBridge() {
       const Phaser = (await import('phaser')).default
       if (cancelled) return
 
+      const { BootScene } = await import('./scenes/boot-scene')
       const { OfficeScene } = await import('./scenes/office-scene')
       if (cancelled) return
+
+      // Build manifest from current map document (or null for defaults)
+      const mapDoc = useOfficeStore.getState().mapDocument
+      const manifest = buildManifest(mapDoc)
+      ;(globalThis as any).__circos_manifest = manifest
 
       // Destroy any leftover game from a previous mount
       gameRef.current?.destroy(true)
@@ -32,7 +40,7 @@ export function PhaserBridge() {
         width: container.clientWidth,
         height: container.clientHeight,
         backgroundColor: '#0f1117',
-        scene: [OfficeScene],
+        scene: [BootScene, OfficeScene],
         pixelArt: true,
         antialias: false,
         roundPixels: true,
@@ -48,6 +56,8 @@ export function PhaserBridge() {
       cancelled = true
       gameRef.current?.destroy(true)
       gameRef.current = null
+      // Clean up globalThis manifest reference
+      delete (globalThis as any).__circos_manifest
       snapshot.lifecycle = 'destroyed'
       notifySubscribers()
     }
