@@ -13,7 +13,7 @@ export class PlayerSprite {
   private label: Phaser.GameObjects.Container
   private labelW: number
   private labelH: number
-  private _facing = 'down'
+  private _facing: string
   private _moving = false
 
   get currentFacing(): string { return this._facing }
@@ -21,9 +21,18 @@ export class PlayerSprite {
   private wasd!: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key }
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
 
-  constructor(scene: Phaser.Scene, tileSize: number) {
-    const px = PLAYER_SPAWN.tileX * tileSize + tileSize / 2
-    const py = PLAYER_SPAWN.tileY * tileSize + tileSize / 2
+  constructor(
+    scene: Phaser.Scene,
+    tileSize: number,
+    spawn?: { gridX: number; gridY: number; facing: string },
+  ) {
+    const spawnX = spawn?.gridX ?? PLAYER_SPAWN.tileX
+    const spawnY = spawn?.gridY ?? PLAYER_SPAWN.tileY
+    const spawnFacing = spawn?.facing ?? PLAYER_SPAWN.facing
+    this._facing = spawnFacing
+
+    const px = spawnX * tileSize + tileSize / 2
+    const py = spawnY * tileSize + tileSize / 2
 
     createCharAnims(scene, PLAYER_SPRITE.key)
 
@@ -31,7 +40,7 @@ export class PlayerSprite {
     this.sprite.setOrigin(0.5, 1)
     this.sprite.setScale(SPRITE_SCALE)
     this.sprite.setDepth(10)
-    this.sprite.play(`${PLAYER_SPRITE.key}_idle_down`)
+    this.sprite.play(`${PLAYER_SPRITE.key}_idle_${spawnFacing}`)
 
     // Tooltip (typed — no string-key getData)
     const tooltip = createTooltip(scene, px, py - (72 * SPRITE_SCALE) - 8, 'You', 0x12b76a)
