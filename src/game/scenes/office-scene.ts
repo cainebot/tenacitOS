@@ -4,6 +4,7 @@ import { TILESET, PLAYER_SPRITE, CHAR_SPRITES, INTERACTION_RANGE } from '../cons
 import { PlayerSprite } from '../entities/player-sprite'
 import { AgentSprite } from '../entities/agent-sprite'
 import { AgentManager } from '../systems/agent-manager'
+import { BindingOverlayRenderer } from '../systems/binding-overlay-renderer'
 import { CameraController } from '../systems/camera-controller'
 import { snapshot, notifySubscribers } from '../state-snapshot'
 import { drain, type GameCommand } from '../command-queue'
@@ -19,8 +20,10 @@ export class OfficeScene extends Phaser.Scene {
   private player!: PlayerSprite
   private cameraCtrl!: CameraController
   private agentManager!: AgentManager
+  private bindingOverlay!: BindingOverlayRenderer
   private nearbyAgent: AgentSprite | null = null
   private projectionHandler: ((payload: { agentId: string; state: AgentSpatialState }) => void) | null = null
+  private bindingsHandler: ((bindings: import('@/features/office/types').ZoneBinding[]) => void) | null = null
 
   constructor() {
     super({ key: 'OfficeScene' })
@@ -63,6 +66,9 @@ export class OfficeScene extends Phaser.Scene {
 
     const tileSize = map.tileWidth
 
+    // ── Binding overlay (desk labels + anchor dots) ──
+    this.bindingOverlay = new BindingOverlayRenderer(this, tileSize)
+
     // ── World dimensions ──
     snapshot.world.width = map.widthInPixels
     snapshot.world.height = map.heightInPixels
@@ -89,6 +95,12 @@ export class OfficeScene extends Phaser.Scene {
     }
     officeEvents.on('projection:update', this.projectionHandler)
 
+    // ── Listen for bindings:update events from React ──
+    this.bindingsHandler = (bindings) => {
+      this.bindingOverlay.update(bindings)
+    }
+    officeEvents.on('bindings:update', this.bindingsHandler)
+
     // ── Populate snapshot agents (once — they are static) ──
     snapshot.agents = this.agentManager.toSnapshot()
 
@@ -113,6 +125,11 @@ export class OfficeScene extends Phaser.Scene {
         officeEvents.off('projection:update', this.projectionHandler)
         this.projectionHandler = null
       }
+      if (this.bindingsHandler) {
+        officeEvents.off('bindings:update', this.bindingsHandler)
+        this.bindingsHandler = null
+      }
+      this.bindingOverlay.destroy()
       // Cleanup idle behavior timers
       const idleBehavior = this.agentManager.getIdleBehavior()
       if (idleBehavior) {
