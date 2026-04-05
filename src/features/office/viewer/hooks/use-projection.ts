@@ -34,6 +34,10 @@ export function useProjection(): void {
     const snap = getSnapshot()
     if (snap.lifecycle !== 'ready') return
 
+    // Don't emit until zone bindings are loaded from Supabase
+    // Prevents race condition where projection fires before DB data arrives
+    if (zoneBindings.length === 0) return
+
     const scheduler = idleSchedulerRef.current!
 
     for (const agent of agents) {

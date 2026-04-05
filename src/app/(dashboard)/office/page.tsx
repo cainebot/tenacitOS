@@ -6,6 +6,8 @@ import officeEvents, { type AgentSelectPayload } from '@/lib/office-events'
 import { AgentPanel } from '@/components/application/agent-panel'
 import { MiniMap } from '@/components/application/mini-map'
 import { useProjection } from '@/features/office/viewer/hooks/use-projection'
+import { useZoneBindings } from '@/features/office/viewer/hooks/use-zone-bindings'
+import { useOfficeStore } from '@/features/office/stores/office-store'
 
 const PhaserBridge = dynamic(
   () => import('@/game/phaser-bridge').then(m => m.PhaserBridge),
@@ -17,7 +19,16 @@ const PhaserBridge = dynamic(
 )
 
 export default function OfficePage() {
+  // Load zone bindings from Supabase and push to store
+  const { zoneBindings } = useZoneBindings()
+  const setZoneBindings = useOfficeStore((s) => s.setZoneBindings)
+
+  useEffect(() => {
+    setZoneBindings(zoneBindings)
+  }, [zoneBindings, setZoneBindings])
+
   // Wire Realtime agent/task data -> ProjectionService -> officeEvents
+  // useProjection reads zoneBindings from store — it will guard on empty bindings
   useProjection()
 
   const [selectedAgent, setSelectedAgent] = useState<AgentSelectPayload | null>(null)
