@@ -25,6 +25,9 @@ export default function OfficePage() {
 
   useEffect(() => {
     setZoneBindings(zoneBindings)
+    if (zoneBindings.length > 0) {
+      officeEvents.emit('bindings:update', zoneBindings)
+    }
   }, [zoneBindings, setZoneBindings])
 
   // Wire Realtime agent/task data -> ProjectionService -> officeEvents
