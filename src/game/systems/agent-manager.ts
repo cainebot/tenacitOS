@@ -50,11 +50,12 @@ export class AgentManager {
   }
 
   /** Initialize the navigation grid for A* pathfinding. */
-  initNavGrid(mapWidth: number, mapHeight: number, cellSize: number, pois: POI[]): void {
+  initNavGrid(mapWidth: number, mapHeight: number, cellSize: number, pois: POI[], blockedCells?: Array<{ x: number; y: number }>): void {
     this.navGrid = new NavGrid(mapWidth, mapHeight, cellSize)
     this.idleBehavior = new IdleBehavior(this.navGrid, pois)
-    // MVP: no blocked cells (no collision layer in Tiled map)
-    // Future: this.navGrid.setBlockedCells(blockedCells)
+    if (blockedCells && blockedCells.length > 0) {
+      this.navGrid.setBlockedCells(blockedCells)
+    }
   }
 
   /**
@@ -133,6 +134,11 @@ export class AgentManager {
   /** Get the idle behavior system (available after initNavGrid). */
   getIdleBehavior(): IdleBehavior | null {
     return this.idleBehavior
+  }
+
+  /** Get the navigation grid (available after initNavGrid). */
+  getNavGrid(): NavGrid | null {
+    return this.navGrid
   }
 
   /** Advance all agent sprites one frame. Called by OfficeScene.update(). */

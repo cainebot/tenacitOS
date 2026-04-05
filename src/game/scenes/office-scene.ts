@@ -83,7 +83,12 @@ export class OfficeScene extends Phaser.Scene {
 
     // ── NavGrid for A* pathfinding (pass POIs from store, fallback to hardcoded) ──
     const pois = storePois.length > 0 ? storePois : HARDCODED_POIS
-    this.agentManager.initNavGrid(map.width, map.height, tileSize, pois)
+    const blockedCells = mapDocument?.navGrid?.blocked ?? []
+    this.agentManager.initNavGrid(map.width, map.height, tileSize, pois, blockedCells)
+
+    // Share NavGrid with player for collision
+    const navGrid = this.agentManager.getNavGrid()
+    if (navGrid) this.player.setNavGrid(navGrid)
 
     // ── Listen for projection:update events from React ──
     this.projectionHandler = ({ agentId, state }) => {
@@ -134,7 +139,7 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number) {
-    if (!this.player) return
+    if (!this.player || !this.agentManager || !this.interactionMgr) return
 
     // ── A. Drain command queue ──
     const commands = drain()
@@ -145,8 +150,6 @@ export class OfficeScene extends Phaser.Scene {
     // ── B. Game logic ──
     this.player.update(delta)
     this.agentManager.update(delta)  // advance agent walks + idle behavior
-
-    if (!this.agentManager) return
 
     const nearest = this.interactionMgr.update(
       this.player.sprite.x,

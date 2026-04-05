@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { PLAYER_SPRITE, PLAYER_SPAWN, SPRITE_SCALE, PLAYER_SPEED } from '../constants'
 import { createCharAnims, createTooltip, type TooltipResult } from '../utils/sprite-factory'
+import type { NavGrid } from '../pathfinding/nav-grid'
 
 /**
  * The local player character with WASD/arrow movement.
@@ -15,6 +16,8 @@ export class PlayerSprite {
   private labelH: number
   private _facing: string
   private _moving = false
+  private navGrid: NavGrid | null = null
+  private tileSize: number
 
   get currentFacing(): string { return this._facing }
   get isMoving(): boolean { return this._moving }
@@ -30,6 +33,7 @@ export class PlayerSprite {
     const spawnY = spawn?.gridY ?? PLAYER_SPAWN.tileY
     const spawnFacing = spawn?.facing ?? PLAYER_SPAWN.facing
     this._facing = spawnFacing
+    this.tileSize = tileSize
 
     const px = spawnX * tileSize + tileSize / 2
     const py = spawnY * tileSize + tileSize / 2
@@ -48,6 +52,10 @@ export class PlayerSprite {
     this.labelW = tooltip.width
     this.labelH = tooltip.height
     this.updateLabel()
+  }
+
+  setNavGrid(navGrid: NavGrid): void {
+    this.navGrid = navGrid
   }
 
   setupInput(scene: Phaser.Scene): void {
@@ -85,8 +93,34 @@ export class PlayerSprite {
     const isMoving = vx !== 0 || vy !== 0
 
     if (isMoving) {
-      this.sprite.x += vx * speed
-      this.sprite.y += vy * speed
+      let nextX = this.sprite.x + vx * speed
+      let nextY = this.sprite.y + vy * speed
+
+      // Collision check against navGrid blocked cells
+      if (this.navGrid) {
+        const gridX = Math.floor(nextX / this.tileSize)
+        const gridY = Math.floor(nextY / this.tileSize)
+
+        if (!this.navGrid.isWalkable(gridX, gridY)) {
+          // Try sliding along axes individually
+          const gridXOnly = Math.floor(nextX / this.tileSize)
+          const gridYOnly = Math.floor(this.sprite.y / this.tileSize)
+          const gridXCur = Math.floor(this.sprite.x / this.tileSize)
+          const gridYNew = Math.floor(nextY / this.tileSize)
+
+          if (this.navGrid.isWalkable(gridXOnly, gridYOnly)) {
+            nextY = this.sprite.y // block Y, allow X
+          } else if (this.navGrid.isWalkable(gridXCur, gridYNew)) {
+            nextX = this.sprite.x // block X, allow Y
+          } else {
+            nextX = this.sprite.x // block both
+            nextY = this.sprite.y
+          }
+        }
+      }
+
+      this.sprite.x = nextX
+      this.sprite.y = nextY
 
       // Facing direction (horizontal priority on diagonals, Agent Town style)
       let newFacing = this._facing
