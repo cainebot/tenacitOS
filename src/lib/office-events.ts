@@ -1,9 +1,9 @@
 // Typed event bridge between Phaser (emitter) and React (listener)
 // Uses a minimal Map-based EventEmitter — no external deps, no browser EventTarget quirks.
 
-import type { AgentSpatialState } from '@/features/office/types'
+import type { AgentSpatialState, ZoneBinding } from '@/features/office/types'
 
-export type { AgentSpatialState } from '@/features/office/types'
+export type { AgentSpatialState, ZoneBinding } from '@/features/office/types'
 
 export interface AgentSelectPayload {
   agent_id: string
@@ -30,6 +30,9 @@ export type OfficeEventMap = {
   // Phase 83 projection
   'projection:update': { agentId: string; state: AgentSpatialState }
   'zone:clicked': { zoneId: string; zoneType: string }
+
+  // Phase 85 binding overlays
+  'bindings:update': ZoneBinding[]
 }
 
 type Listener<T> = (payload: T) => void
