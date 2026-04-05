@@ -123,8 +123,27 @@ export class BuilderInputHandler {
         next = { state: 'default', zoneId: null, seatId: null }
       }
 
+    } else if (activeTool === 'blocked') {
+      // Blocked tool: paint any cell (except already blocked) as blocked
+      if (prev.state === 'blocked') return  // no-op — already blocked
+
+      // default, room, seat -> blocked (remove zone and seat data)
+      next = { state: 'blocked', zoneId: null, seatId: null }
+
+    } else if (activeTool === 'seat') {
+      // Seat tool: can only place seats on Room cells
+      if (!selectedZoneId) return  // safety guard
+
+      if (prev.state === 'room') {
+        // Room -> Seat: preserve zoneId, generate new seatId
+        const seatId = 'seat-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)
+        next = { state: 'seat', zoneId: prev.zoneId, seatId }
+      } else {
+        // default, blocked, seat -> no-op (seat only valid on room cells)
+        return
+      }
+
     } else {
-      // Blocked and Seat tools implemented in Plan 04
       return
     }
 

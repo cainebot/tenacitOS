@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { TILESET } from '../constants'
 import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
+import { useOfficeStore } from '@/features/office/stores/office-store'
 import { TildeGrid } from '../systems/tilde-grid'
 import { BuilderInputHandler } from '../systems/builder-input-handler'
 
@@ -89,6 +90,12 @@ export class BuilderScene extends Phaser.Scene {
     // Load existing zone data from builder store into TildeGrid
     const { zones } = useBuilderStore.getState()
     this.tildeGrid.loadFromZones(zones)
+
+    // Load blocked cells from navGrid (if available)
+    const mapDoc = useOfficeStore.getState().mapDocument
+    if (mapDoc?.navGrid?.blocked) {
+      this.tildeGrid.loadBlockedCells(mapDoc.navGrid.blocked)
+    }
   }
 
   update() {
