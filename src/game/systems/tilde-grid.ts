@@ -161,28 +161,74 @@ export class TildeGrid {
         gfx.lineStyle(1, colors.border, 0.6)
         gfx.strokeRect(px + 0.5, py + 0.5, ts - 1, ts - 1)
 
-        // Zone number label for room/seat cells
+        // Blocked cell icon: prohibited sign (circle + diagonal line)
+        if (cell.state === 'blocked') {
+          gfx.lineStyle(2, 0xf04438, 0.9)
+          gfx.strokeCircle(px + ts / 2, py + ts / 2, 6)
+          gfx.lineBetween(
+            px + ts / 2 - 4, py + ts / 2 + 4,
+            px + ts / 2 + 4, py + ts / 2 - 4,
+          )
+        }
+
+        // Seat cell icon: simple armchair silhouette
+        if (cell.state === 'seat') {
+          // Backrest
+          gfx.fillStyle(0x2d3282, 0.8)
+          gfx.fillRoundedRect(px + ts / 2 - 8, py + ts / 2 - 10, 16, 14, 3)
+          // Seat cushion (wider)
+          gfx.fillRoundedRect(px + ts / 2 - 10, py + ts / 2 + 2, 20, 6, 2)
+          // Left armrest
+          gfx.fillRect(px + ts / 2 - 12, py + ts / 2 - 4, 3, 8)
+          // Right armrest
+          gfx.fillRect(px + ts / 2 + 9, py + ts / 2 - 4, 3, 8)
+        }
+
+        // Zone number label for room cells (centered) and seat cells (top-right)
         if (cell.state === 'room' || cell.state === 'seat') {
           const key = `${row}-${col}`
           const displayOrder = cell.zoneId ? (zoneOrderMap.get(cell.zoneId) ?? 0) : 0
           const label = String(displayOrder)
           visibleTextKeys.add(key)
 
-          if (this.textPool.has(key)) {
-            const text = this.textPool.get(key)!
-            text.setText(label)
-            text.setPosition(px + ts / 2, py + ts / 2)
-            text.setVisible(true)
+          if (cell.state === 'seat') {
+            // Seat: zone number at top-right corner
+            if (this.textPool.has(key)) {
+              const text = this.textPool.get(key)!
+              text.setText(label)
+              text.setPosition(px + ts - 4, py + 4)
+              text.setOrigin(1, 0)
+              text.setVisible(true)
+            } else {
+              const text = this.scene.add
+                .text(px + ts - 4, py + 4, label, {
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: '10px',
+                  color: '#2d3282',
+                })
+                .setOrigin(1, 0)
+                .setDepth(6)
+              this.textPool.set(key, text)
+            }
           } else {
-            const text = this.scene.add
-              .text(px + ts / 2, py + ts / 2, label, {
-                fontFamily: 'JetBrains Mono',
-                fontSize: '10px',
-                color: '#2d3282',
-              })
-              .setOrigin(0.5)
-              .setDepth(6)
-            this.textPool.set(key, text)
+            // Room: zone number centered
+            if (this.textPool.has(key)) {
+              const text = this.textPool.get(key)!
+              text.setText(label)
+              text.setPosition(px + ts / 2, py + ts / 2)
+              text.setOrigin(0.5)
+              text.setVisible(true)
+            } else {
+              const text = this.scene.add
+                .text(px + ts / 2, py + ts / 2, label, {
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: '10px',
+                  color: '#2d3282',
+                })
+                .setOrigin(0.5)
+                .setDepth(6)
+              this.textPool.set(key, text)
+            }
           }
         }
       }
@@ -194,6 +240,16 @@ export class TildeGrid {
         text.setVisible(false)
       }
     }
+  }
+
+  /** Load blocked cells from navGrid data (e.g., mapDocument.navGrid.blocked). */
+  loadBlockedCells(blocked: Array<{ x: number; y: number }>): void {
+    for (const cell of blocked) {
+      if (cell.y >= 0 && cell.y < this.rows && cell.x >= 0 && cell.x < this.cols) {
+        this.grid[cell.y][cell.x] = { state: 'blocked', zoneId: null, seatId: null }
+      }
+    }
+    this.dirty = true
   }
 
   destroy(): void {
