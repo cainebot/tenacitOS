@@ -79,8 +79,10 @@ export function useProjection(): void {
       if (state.animationState === 'idle') {
         // Schedule wandering if not already scheduled
         scheduler.scheduleWander(agent.agent_id, () => {
+          // Guard: skip wander if no POIs available
+          if (pois.length === 0) return
           // Pick random POI and emit wander
-          const poi = pickRandomPOI()
+          const poi = pickRandomPOI(pois)
           const wanderState: AgentSpatialState = {
             agentId: agent.agent_id,
             targetZoneId: poi.id,
