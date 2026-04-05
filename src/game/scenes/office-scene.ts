@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import officeEvents from '@/lib/office-events'
-import { TILESET, PLAYER_SPRITE, CHAR_SPRITES } from '../constants'
+import { TILESET } from '../constants'
 import { PlayerSprite } from '../entities/player-sprite'
 import { AgentManager } from '../systems/agent-manager'
 import { BindingOverlayRenderer } from '../systems/binding-overlay-renderer'
@@ -8,7 +8,6 @@ import { InteractionManager } from '../systems/interaction-manager'
 import { CameraController } from '../systems/camera-controller'
 import { snapshot, notifySubscribers } from '../state-snapshot'
 import { drain, type GameCommand } from '../command-queue'
-import { EMOTE_SPRITESHEET_KEY, EMOTE_SPRITESHEET_PATH } from '../entities/emote-display'
 import type { AgentSpatialState } from '@/features/office/types'
 
 // ── Minimap background dimensions ──
@@ -27,18 +26,6 @@ export class OfficeScene extends Phaser.Scene {
 
   constructor() {
     super({ key: 'OfficeScene' })
-  }
-
-  preload() {
-    this.load.tilemapTiledJSON('office', '/assets/maps/office-v3.json')
-    this.load.image(TILESET.key, TILESET.path)
-    this.load.spritesheet(PLAYER_SPRITE.key, PLAYER_SPRITE.path, { frameWidth: 48, frameHeight: 96 })
-    for (const c of CHAR_SPRITES) {
-      this.load.spritesheet(c.key, c.path, { frameWidth: 48, frameHeight: 96 })
-    }
-    this.load.spritesheet(EMOTE_SPRITESHEET_KEY, EMOTE_SPRITESHEET_PATH, {
-      frameWidth: 48, frameHeight: 48
-    })
   }
 
   async create() {
