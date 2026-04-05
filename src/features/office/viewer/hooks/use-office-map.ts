@@ -39,6 +39,7 @@ const FALLBACK_MAP_DOC: OfficeMapDocument = {
  */
 export function useOfficeMap() {
   const [mapDocument, setMapDocument] = useState<OfficeMapDocument>(FALLBACK_MAP_DOC)
+  const [versionNum, setVersionNum] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const supabase = createBrowserClient()
@@ -62,7 +63,7 @@ export function useOfficeMap() {
         // 2. Fetch map_json from the version row
         const { data: versionRow, error: vErr } = await supabase
           .from('office_map_versions')
-          .select('map_json, schema_version')
+          .select('map_json, schema_version, version_num')
           .eq('version_id', mapRow.current_version_id)
           .single()
 
@@ -73,6 +74,7 @@ export function useOfficeMap() {
         }
 
         setMapDocument(versionRow.map_json as OfficeMapDocument)
+        setVersionNum(versionRow.version_num ?? 0)
       } catch (err) {
         console.warn('[useOfficeMap] DB query failed, using hardcoded fallback', err)
         setError(String(err))
@@ -83,5 +85,5 @@ export function useOfficeMap() {
     fetchMap()
   }, [supabase])
 
-  return { mapDocument, loading, error }
+  return { mapDocument, versionNum, loading, error }
 }
