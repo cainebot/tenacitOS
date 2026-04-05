@@ -1,11 +1,49 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Badge, cx } from '@circos/ui'
 import { ArrowLeft, FlipBackward, FlipForward, Save01, Send01 } from '@untitledui/icons'
+import { commandHistory } from '../stores/command-history'
 
 export function BuilderTopBar() {
   const router = useRouter()
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+
+  // Subscribe to CommandHistory changes via onChange callback (NO polling)
+  useEffect(() => {
+    const syncState = () => {
+      setCanUndo(commandHistory.canUndo)
+      setCanRedo(commandHistory.canRedo)
+    }
+    // Subscribe to changes
+    commandHistory.onChange = syncState
+    // Initial sync
+    syncState()
+    return () => {
+      // Cleanup: only unset if we're still the subscriber
+      if (commandHistory.onChange === syncState) {
+        commandHistory.onChange = null
+      }
+    }
+  }, [])
+
+  // Keyboard shortcuts: Cmd+Z (undo), Cmd+Shift+Z / Cmd+Y (redo)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        commandHistory.undo()
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault()
+        commandHistory.redo()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <div className={cx('flex items-center bg-primary border-b border-primary h-[52px] shrink-0')}>
@@ -31,12 +69,16 @@ export function BuilderTopBar() {
         <Button
           color="tertiary"
           iconLeading={FlipBackward}
-          isDisabled
+          isDisabled={!canUndo}
+          onClick={() => commandHistory.undo()}
+          aria-label="Undo"
         />
         <Button
           color="tertiary"
           iconLeading={FlipForward}
-          isDisabled
+          isDisabled={!canRedo}
+          onClick={() => commandHistory.redo()}
+          aria-label="Redo"
         />
         <Badge color="brand" size="sm">Draft</Badge>
       </div>
