@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
+import { PUBLISHED_MAP_ID } from '../../constants'
 import type { ZoneBinding } from '../../types'
-
-const PUBLISHED_MAP_ID = '11111111-1111-1111-1111-111111111111'
 
 // Fallback bindings used when office_zone_bindings table is unreachable or empty.
 // Coordinates match SPAWN_POSITIONS in game/constants.ts.
