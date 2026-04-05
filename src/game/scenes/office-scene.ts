@@ -9,6 +9,8 @@ import { CameraController } from '../systems/camera-controller'
 import { snapshot, notifySubscribers } from '../state-snapshot'
 import { drain, type GameCommand } from '../command-queue'
 import type { AgentSpatialState } from '@/features/office/types'
+import { useOfficeStore } from '@/features/office/stores/office-store'
+import { HARDCODED_POIS } from '@/features/office/projection/zone-seed'
 
 // ── Minimap background dimensions ──
 const MINIMAP_W = 200
@@ -42,6 +44,10 @@ export class OfficeScene extends Phaser.Scene {
   private async _create() {
     snapshot.lifecycle = 'loading'
 
+    // ── Read mapDocument from store (may be null if DB has no data) ──
+    const mapDocument = useOfficeStore.getState().mapDocument
+    const storePois = useOfficeStore.getState().pois
+
     // ── Tilemap ──
     const map = this.make.tilemap({ key: 'office' })
     const tileset = map.addTilesetImage(TILESET.mapName, TILESET.key)
@@ -60,8 +66,12 @@ export class OfficeScene extends Phaser.Scene {
     snapshot.world.width = map.widthInPixels
     snapshot.world.height = map.heightInPixels
 
-    // ── Player ──
-    this.player = new PlayerSprite(this, tileSize)
+    // ── Player (use spawn from mapDocument if available) ──
+    const playerSpawnPoint = mapDocument?.spawnPoints?.find(sp => sp.forType === 'player')
+    const playerSpawn = playerSpawnPoint
+      ? { gridX: playerSpawnPoint.gridX, gridY: playerSpawnPoint.gridY, facing: playerSpawnPoint.facing }
+      : undefined
+    this.player = new PlayerSprite(this, tileSize, playerSpawn)
     this.player.setupInput(this)
 
     // ── Camera ──
@@ -69,10 +79,11 @@ export class OfficeScene extends Phaser.Scene {
 
     // ── Agents (async — awaited to prevent timing bugs) ──
     this.agentManager = new AgentManager()
-    await this.agentManager.spawnAgents(this, tileSize)
+    await this.agentManager.spawnAgents(this, tileSize, mapDocument?.spawnPoints)
 
-    // ── NavGrid for A* pathfinding ──
-    this.agentManager.initNavGrid(map.width, map.height, tileSize)
+    // ── NavGrid for A* pathfinding (pass POIs from store, fallback to hardcoded) ──
+    const pois = storePois.length > 0 ? storePois : HARDCODED_POIS
+    this.agentManager.initNavGrid(map.width, map.height, tileSize, pois)
 
     // ── Listen for projection:update events from React ──
     this.projectionHandler = ({ agentId, state }) => {
