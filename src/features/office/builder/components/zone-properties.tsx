@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Trash03 } from '@untitledui/icons'
 import { Button, Input, Select, Toggle, Dropdown } from '@circos/ui'
 import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
+import { useZoneBindingsWrite } from '../hooks/use-zone-bindings-write'
 import { DeleteZoneModal } from './delete-zone-modal'
 
 interface ZonePropertiesProps {
@@ -16,6 +17,8 @@ export function ZoneProperties({ zoneId, onClose }: ZonePropertiesProps) {
   const updateZone = useBuilderStore((s) => s.updateZone)
   const deleteZone = useBuilderStore((s) => s.deleteZone)
 
+  const { binding, agents, projects, updateBinding } = useZoneBindingsWrite(zoneId)
+
   const [showDelete, setShowDelete] = useState(false)
 
   if (!zone) return null
@@ -24,6 +27,18 @@ export function ZoneProperties({ zoneId, onClose }: ZonePropertiesProps) {
     deleteZone(zoneId)
     onClose()
   }
+
+  // Build agent items: "Anyone" first, then real agents
+  const agentItems = [
+    { id: '', label: 'Anyone' },
+    ...agents.map((a) => ({ id: a.id, label: a.name })),
+  ]
+
+  // Build project items: "None" first, then real projects
+  const projectItems = [
+    { id: '', label: 'None' },
+    ...projects.map((p) => ({ id: p.id, label: p.name })),
+  ]
 
   return (
     <div className="flex flex-col h-full bg-secondary">
@@ -58,24 +73,26 @@ export function ZoneProperties({ zoneId, onClose }: ZonePropertiesProps) {
           isRequired
         />
 
-        {/* Assigned Agent — isRequired renders * in text-brand-tertiary via UUI Label component */}
-        {/* TODO: Wire to real agents from Supabase (Wave 5) */}
+        {/* Assigned Agent — reads from office_zone_bindings, writes via API */}
         <Select
           label="Assigned Agent"
           placeholder="Anyone"
           isRequired
-          items={[{ id: 'anyone', label: 'Anyone' }]}
+          selectedKey={binding?.agent_id ?? ''}
+          onSelectionChange={(key) => updateBinding('agent_id', key === '' ? null : String(key))}
+          items={agentItems}
         >
           {(item) => <Select.Item id={item.id}>{item.label}</Select.Item>}
         </Select>
 
-        {/* Assigned Project — isRequired renders * in text-brand-tertiary via UUI Label component */}
-        {/* TODO: Wire to real projects from Supabase (Wave 5) */}
+        {/* Assigned Project — reads from office_zone_bindings, writes via API */}
         <Select
           label="Assigned Project"
           placeholder="None"
           isRequired
-          items={[{ id: 'none', label: 'None' }]}
+          selectedKey={binding?.project_id ?? ''}
+          onSelectionChange={(key) => updateBinding('project_id', key === '' ? null : String(key))}
+          items={projectItems}
         >
           {(item) => <Select.Item id={item.id}>{item.label}</Select.Item>}
         </Select>
