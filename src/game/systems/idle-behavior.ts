@@ -2,7 +2,6 @@ import type { NavGrid } from '../pathfinding/nav-grid'
 import { findPath } from '../pathfinding/pathfinder'
 import type { AgentSprite } from '../entities/agent-sprite'
 import type { POI } from '@/features/office/types'
-import { HARDCODED_POIS } from '@/features/office/projection/zone-seed'
 
 /** Per-agent idle wandering state */
 interface WanderState {
@@ -21,14 +20,20 @@ interface WanderState {
  */
 export class IdleBehavior {
   private states = new Map<string, WanderState>()
+  private pois: POI[]
 
-  constructor(private navGrid: NavGrid) {}
+  constructor(private navGrid: NavGrid, pois: POI[]) {
+    this.pois = pois
+  }
 
   /**
    * Start an idle wander for the given agent.
    * Picks a random POI, computes A* path, commands agent to walk.
    */
   startWander(agent: AgentSprite, deskGridX: number, deskGridY: number): void {
+    // Guard: if no POIs available, skip wandering entirely
+    if (this.pois.length === 0) return
+
     const agentId = agent.agentData.agent_id
 
     // Cancel any existing wander
@@ -140,10 +145,10 @@ export class IdleBehavior {
     this.states.clear()
   }
 
-  /** Pick a random POI from HARDCODED_POIS. */
+  /** Pick a random POI from the injected pois array. */
   private pickRandomPOI(): POI | null {
-    if (HARDCODED_POIS.length === 0) return null
-    return HARDCODED_POIS[Math.floor(Math.random() * HARDCODED_POIS.length)]
+    if (this.pois.length === 0) return null
+    return this.pois[Math.floor(Math.random() * this.pois.length)]
   }
 
   /** Check if an agent is currently wandering. */
