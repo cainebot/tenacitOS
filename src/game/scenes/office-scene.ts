@@ -100,6 +100,20 @@ export class OfficeScene extends Phaser.Scene {
     const navGrid = this.agentManager.getNavGrid()
     if (navGrid) this.player.setNavGrid(navGrid)
 
+    // ── Block agentRestricted zone cells in NavGrid (PROJ-02, v1 global blocking) ──
+    if (navGrid && mapDocument?.zones) {
+      const restrictedCells: Array<{ x: number; y: number }> = []
+      for (const zone of mapDocument.zones) {
+        if (zone.agentRestricted && zone.gridCells?.length) {
+          restrictedCells.push(...zone.gridCells)
+        }
+      }
+      if (restrictedCells.length > 0) {
+        navGrid.setBlockedCells(restrictedCells)
+        console.log(`[OfficeScene] Blocked ${restrictedCells.length} cells from ${mapDocument.zones.filter(z => z.agentRestricted).length} restricted zone(s)`)
+      }
+    }
+
     // ── Listen for projection:update events from React ──
     this.projectionHandler = ({ agentId, state }) => {
       this.agentManager.updateProjection(agentId, state)
