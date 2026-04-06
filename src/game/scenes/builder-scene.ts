@@ -155,10 +155,14 @@ export class BuilderScene extends Phaser.Scene {
     // Expose TildeGrid to React layer for save/publish serialization
     ;(globalThis as any).__circos_builder_grid = this.tildeGrid
 
-    // ── React tool-change cursor sync ──
+    // ── React tool-change cursor sync + grid re-render on tool switch ──
     this._unsubToolChange = useBuilderStore.subscribe((state, prev) => {
-      if (state.activeTool !== prev.activeTool && !this.tempHand) {
-        setCursor(state.activeTool === 'hand' ? 'grab' : 'crosshair')
+      if (state.activeTool !== prev.activeTool) {
+        // Tool changed: force grid re-render (visibility depends on active tool)
+        this.tildeGrid?.markDirty()
+        if (!this.tempHand) {
+          setCursor(state.activeTool === 'hand' ? 'grab' : 'crosshair')
+        }
       }
     })
   }
@@ -172,7 +176,7 @@ export class BuilderScene extends Phaser.Scene {
 
   update() {
     this.inputHandler?.update()
-    const { zones } = useBuilderStore.getState()
-    this.tildeGrid?.update(zones)
+    const { zones, activeTool } = useBuilderStore.getState()
+    this.tildeGrid?.update(zones, activeTool)
   }
 }

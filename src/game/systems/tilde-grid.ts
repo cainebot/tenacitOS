@@ -1,10 +1,11 @@
 import Phaser from 'phaser'
 import type { Zone } from '@/features/office/types'
+import type { ActiveTool } from '@/features/office/builder/stores/builder-store'
 
 export interface TildeCell {
-  state: 'default' | 'hover' | 'blocked' | 'room' | 'seat'
   zoneId: string | null
   seatId: string | null
+  blocked: boolean
 }
 
 const TILDE_COLORS = {
@@ -14,6 +15,28 @@ const TILDE_COLORS = {
   room:    { bg: 0x6172f3, alpha: 0.5, border: 0x6172f3 },
   seat:    { bg: 0x6172f3, alpha: 0.5, border: 0x6172f3 },
 } as const
+
+type VisualState = 'default' | 'blocked' | 'room' | 'seat'
+
+/** Derive what a cell should look like given the active tool. */
+function getVisualState(cell: TildeCell, activeTool: ActiveTool): VisualState {
+  if (activeTool === 'add-zones') {
+    // Zone tool: only show zone/seat layers, hide blocked
+    if (cell.seatId) return 'seat'
+    if (cell.zoneId) return 'room'
+    return 'default'
+  }
+  if (activeTool === 'blocked') {
+    // Blocked tool: only show blocked layer, hide zones
+    if (cell.blocked) return 'blocked'
+    return 'default'
+  }
+  // Combined view (hand, eraser, seat): blocked > seat > room
+  if (cell.blocked) return 'blocked'
+  if (cell.seatId) return 'seat'
+  if (cell.zoneId) return 'room'
+  return 'default'
+}
 
 export class TildeGrid {
   private grid: TildeCell[][]
@@ -37,12 +60,12 @@ export class TildeGrid {
     this.graphics = scene.add.graphics()
     this.graphics.setDepth(5)
 
-    // Initialize grid with all default cells
+    // Initialize grid with all empty cells
     this.grid = Array.from({ length: rows }, () =>
       Array.from({ length: cols }, () => ({
-        state: 'default' as const,
         zoneId: null,
         seatId: null,
+        blocked: false,
       }))
     )
 
@@ -71,20 +94,14 @@ export class TildeGrid {
     this.dirty = true
   }
 
-  setCellState(
-    row: number,
-    col: number,
-    state: TildeCell['state'],
-    zoneId?: string | null,
-    seatId?: string | null,
-  ): void {
-    // Bounds check
+  /** Force a re-render on the next frame. */
+  markDirty(): void {
+    this.dirty = true
+  }
+
+  setCellState(row: number, col: number, cell: TildeCell): void {
     if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) return
-    this.grid[row][col] = {
-      state,
-      zoneId: zoneId ?? null,
-      seatId: seatId ?? null,
-    }
+    this.grid[row][col] = { ...cell }
     this.dirty = true
   }
 
@@ -99,22 +116,40 @@ export class TildeGrid {
 
   /** Initialize grid from existing zone data (used to restore painted cells from map_json). */
   loadFromZones(zones: Zone[]): void {
-    // Clear all non-default cells first
+    // Clear zone/seat data only — preserve blocked state
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.cols; c++) {
-        this.grid[r][c] = { state: 'default', zoneId: null, seatId: null }
+        this.grid[r][c] = {
+          zoneId: null,
+          seatId: null,
+          blocked: this.grid[r][c].blocked,
+        }
       }
     }
 
     for (const zone of zones) {
       // Paint room cells
       for (const cell of zone.gridCells) {
-        this.setCellState(cell.y, cell.x, 'room', zone.id, null)
+        if (cell.y >= 0 && cell.y < this.rows && cell.x >= 0 && cell.x < this.cols) {
+          const existing = this.grid[cell.y][cell.x]
+          this.grid[cell.y][cell.x] = {
+            zoneId: zone.id,
+            seatId: null,
+            blocked: existing.blocked,
+          }
+        }
       }
       // Paint seat cells
       if (zone.seats) {
         for (const seat of zone.seats) {
-          this.setCellState(seat.gridY, seat.gridX, 'seat', zone.id, seat.id)
+          if (seat.gridY >= 0 && seat.gridY < this.rows && seat.gridX >= 0 && seat.gridX < this.cols) {
+            const existing = this.grid[seat.gridY][seat.gridX]
+            this.grid[seat.gridY][seat.gridX] = {
+              zoneId: zone.id,
+              seatId: seat.id,
+              blocked: existing.blocked,
+            }
+          }
         }
       }
     }
@@ -122,8 +157,19 @@ export class TildeGrid {
     this.dirty = true
   }
 
+  /** Load blocked cells from navGrid data (e.g., mapDocument.navGrid.blocked). */
+  loadBlockedCells(blocked: Array<{ x: number; y: number }>): void {
+    for (const cell of blocked) {
+      if (cell.y >= 0 && cell.y < this.rows && cell.x >= 0 && cell.x < this.cols) {
+        // Only set blocked flag — preserve zone/seat data
+        this.grid[cell.y][cell.x].blocked = true
+      }
+    }
+    this.dirty = true
+  }
+
   /** Main render loop. Returns immediately if not dirty. */
-  update(zones: Zone[]): void {
+  update(zones: Zone[], activeTool: ActiveTool): void {
     if (!this.dirty) return
     this.dirty = false
 
@@ -156,6 +202,8 @@ export class TildeGrid {
         const px = col * ts
         const py = row * ts
 
+        const visualState = getVisualState(cell, activeTool)
+
         // Determine render state: hover overlay on non-blocked cells
         const isInHoverRect = this.hoverRect &&
           row >= Math.min(this.hoverRect.startRow, this.hoverRect.endRow) &&
@@ -166,9 +214,9 @@ export class TildeGrid {
         const renderState =
           isInHoverRect
             ? 'hover'
-            : this.hoverCell?.row === row && this.hoverCell?.col === col && cell.state !== 'blocked'
+            : this.hoverCell?.row === row && this.hoverCell?.col === col && visualState !== 'blocked'
               ? 'hover'
-              : cell.state
+              : visualState
 
         const colors = TILDE_COLORS[renderState]
 
@@ -181,7 +229,7 @@ export class TildeGrid {
         gfx.strokeRect(px + 0.5, py + 0.5, ts - 1, ts - 1)
 
         // Blocked cell icon: prohibited sign (circle + diagonal line)
-        if (cell.state === 'blocked') {
+        if (visualState === 'blocked') {
           gfx.lineStyle(2, 0xf04438, 0.9)
           gfx.strokeCircle(px + ts / 2, py + ts / 2, 6)
           gfx.lineBetween(
@@ -191,7 +239,7 @@ export class TildeGrid {
         }
 
         // Seat cell icon: simple armchair silhouette
-        if (cell.state === 'seat') {
+        if (visualState === 'seat') {
           // Backrest
           gfx.fillStyle(0x2d3282, 0.8)
           gfx.fillRoundedRect(px + ts / 2 - 8, py + ts / 2 - 10, 16, 14, 3)
@@ -204,13 +252,13 @@ export class TildeGrid {
         }
 
         // Zone number label for room cells (centered) and seat cells (top-right)
-        if (cell.state === 'room' || cell.state === 'seat') {
+        if (visualState === 'room' || visualState === 'seat') {
           const key = `${row}-${col}`
           const displayOrder = cell.zoneId ? (zoneOrderMap.get(cell.zoneId) ?? 0) : 0
           const label = String(displayOrder)
           visibleTextKeys.add(key)
 
-          if (cell.state === 'seat') {
+          if (visualState === 'seat') {
             // Seat: zone number at top-right corner
             if (this.textPool.has(key)) {
               const text = this.textPool.get(key)!
@@ -263,7 +311,7 @@ export class TildeGrid {
 
   /**
    * Serialize the current grid state into an updated OfficeMapDocument.
-   * Hover state is transient and never serialized.
+   * Cells with both zone + blocked appear in BOTH zone.gridCells and navGrid.blocked.
    */
   serialize(currentZones: import('@/features/office/types').Zone[], baseMapDoc: import('@/features/office/types').OfficeMapDocument): import('@/features/office/types').OfficeMapDocument {
     // Build lookup: zoneId -> { gridCells, seats }
@@ -277,17 +325,21 @@ export class TildeGrid {
     // Collect blocked cells
     const blocked: Array<{ x: number; y: number }> = []
 
-    // Iterate grid — skip 'default' and 'hover' (transient, do not persist)
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
         const cell = this.grid[row][col]
-        if (cell.state === 'blocked') {
+
+        // Blocked: always add to navGrid.blocked (even if also in a zone)
+        if (cell.blocked) {
           blocked.push({ x: col, y: row })
-        } else if ((cell.state === 'room' || cell.state === 'seat') && cell.zoneId) {
+        }
+
+        // Zone membership: add to zone gridCells (even if also blocked)
+        if (cell.zoneId) {
           const entry = zoneMap.get(cell.zoneId)
           if (entry) {
             entry.gridCells.push({ x: col, y: row })
-            if (cell.state === 'seat' && cell.seatId) {
+            if (cell.seatId) {
               entry.seats.push({ id: cell.seatId, gridX: col, gridY: row })
             }
           }
@@ -310,16 +362,6 @@ export class TildeGrid {
         blocked,
       },
     }
-  }
-
-  /** Load blocked cells from navGrid data (e.g., mapDocument.navGrid.blocked). */
-  loadBlockedCells(blocked: Array<{ x: number; y: number }>): void {
-    for (const cell of blocked) {
-      if (cell.y >= 0 && cell.y < this.rows && cell.x >= 0 && cell.x < this.cols) {
-        this.grid[cell.y][cell.x] = { state: 'blocked', zoneId: null, seatId: null }
-      }
-    }
-    this.dirty = true
   }
 
   destroy(): void {

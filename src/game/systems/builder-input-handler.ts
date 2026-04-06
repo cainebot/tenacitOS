@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { toast } from 'sonner'
 import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
 import { commandHistory, type PaintCommand } from '@/features/office/builder/stores/command-history'
 import { isTempHandActive } from './builder-flags'
@@ -45,6 +46,7 @@ export class BuilderInputHandler {
       this.isDragging = true
       this.dragBatch = []
       this.lastPaintedCell = null
+      this.toastShownThisDrag = false
       this.isRectMode = ptr.event.shiftKey
 
       const cell = this.pixelToCell(ptr)
@@ -103,8 +105,8 @@ export class BuilderInputHandler {
         const batch = [...this.dragBatch]
         const grid = this.tildeGrid
         const command: PaintCommand = {
-          execute: () => batch.forEach(b => grid.setCellState(b.row, b.col, b.next.state, b.next.zoneId, b.next.seatId)),
-          undo: () => batch.forEach(b => grid.setCellState(b.row, b.col, b.prev.state, b.prev.zoneId, b.prev.seatId)),
+          execute: () => batch.forEach(b => grid.setCellState(b.row, b.col, b.next)),
+          undo: () => batch.forEach(b => grid.setCellState(b.row, b.col, b.prev)),
         }
         // Use pushExecuted because cells are ALREADY painted during the drag.
         // execute() is only used on REDO (replay). undo() reverts all batch cells.
@@ -169,6 +171,9 @@ export class BuilderInputHandler {
     }
   }
 
+  /** Throttle toast: only show once per drag session */
+  private toastShownThisDrag = false
+
   private processCell(row: number, col: number): void {
     // Skip if same cell as last painted (prevents redundant operations during slow drags)
     if (this.lastPaintedCell?.row === row && this.lastPaintedCell?.col === col) return
@@ -184,39 +189,52 @@ export class BuilderInputHandler {
     let next: TildeCell | null = null
 
     if (activeTool === 'add-zones') {
-      // No zone selected — modal already shown on tool switch; skip per-click
       if (!selectedZoneId) return
 
-      // All non-default states get replaced with room for this zone
-      next = { state: 'room', zoneId: selectedZoneId, seatId: null }
+      // Zone tool: set zoneId + clear seat, DON'T touch blocked
+      next = { zoneId: selectedZoneId, seatId: null, blocked: prev.blocked }
 
     } else if (activeTool === 'eraser') {
-      if (prev.state === 'default') return  // no-op
+      // Erase: clear everything back to empty
+      if (!prev.zoneId && !prev.seatId && !prev.blocked) return  // no-op — already empty
 
-      // Erase room, blocked, or seat cells back to default
-      if (prev.state === 'room' || prev.state === 'blocked' || prev.state === 'seat') {
-        next = { state: 'default', zoneId: null, seatId: null }
-      }
+      next = { zoneId: null, seatId: null, blocked: false }
 
     } else if (activeTool === 'blocked') {
-      // Blocked tool: paint any cell (except already blocked) as blocked
-      if (prev.state === 'blocked') return  // no-op — already blocked
+      if (prev.blocked) return  // no-op — already blocked
 
-      // default, room, seat -> blocked (remove zone and seat data)
-      next = { state: 'blocked', zoneId: null, seatId: null }
-
-    } else if (activeTool === 'seat') {
-      // Seat tool: can only place seats on Room cells
-      if (!selectedZoneId) return  // safety guard
-
-      if (prev.state === 'room') {
-        // Room -> Seat: preserve zoneId, generate new seatId
-        const seatId = 'seat-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)
-        next = { state: 'seat', zoneId: prev.zoneId, seatId }
-      } else {
-        // default, blocked, seat -> no-op (seat only valid on room cells)
+      // Blocked tool: cannot place blocked on a seat
+      if (prev.seatId) {
+        if (!this.toastShownThisDrag) {
+          this.toastShownThisDrag = true
+          toast.error('No se puede bloquear una celda con seat. Elimina el seat primero.')
+        }
         return
       }
+
+      // Set blocked flag, DON'T touch zone data
+      next = { zoneId: prev.zoneId, seatId: null, blocked: true }
+
+    } else if (activeTool === 'seat') {
+      if (!selectedZoneId) return
+
+      // Seat tool: cannot place seat on blocked cell
+      if (prev.blocked) {
+        if (!this.toastShownThisDrag) {
+          this.toastShownThisDrag = true
+          toast.error('No se puede colocar un seat en una celda bloqueada.')
+        }
+        return
+      }
+
+      // Seat only valid on cells that have a zone
+      if (!prev.zoneId) return
+
+      // Already a seat — no-op
+      if (prev.seatId) return
+
+      const seatId = 'seat-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)
+      next = { zoneId: prev.zoneId, seatId, blocked: false }
 
     } else {
       return
@@ -224,11 +242,11 @@ export class BuilderInputHandler {
 
     if (!next) return
 
-    // Skip if state hasn't changed (no-op avoids dirty batch entries)
-    if (prev.state === next.state && prev.zoneId === next.zoneId && prev.seatId === next.seatId) return
+    // Skip if state hasn't changed
+    if (prev.zoneId === next.zoneId && prev.seatId === next.seatId && prev.blocked === next.blocked) return
 
     // Apply the cell change
-    this.tildeGrid.setCellState(row, col, next.state, next.zoneId, next.seatId)
+    this.tildeGrid.setCellState(row, col, next)
 
     // Add to batch for undo/redo
     this.dragBatch.push({ row, col, prev, next })

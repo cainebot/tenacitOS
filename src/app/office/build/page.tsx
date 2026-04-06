@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { Toaster } from 'sonner'
 import { useOfficeMap } from '@/features/office/viewer/hooks/use-office-map'
 import { useOfficeStore } from '@/features/office/stores/office-store'
 import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
@@ -42,5 +43,10 @@ export default function BuildPage() {
     )
   }
 
-  return <BuilderLayout />
+  return (
+    <>
+      <BuilderLayout />
+      <Toaster position="bottom-center" theme="dark" richColors />
+    </>
+  )
 }
