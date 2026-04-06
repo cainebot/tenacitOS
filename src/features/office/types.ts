@@ -12,6 +12,10 @@ export type AgentAnimationState = 'idle' | 'walking' | 'working' | 'thinking' | 
 
 export type AgentState = 'AT_DESK' | 'WANDERING' | 'WALKING' | 'AT_POI' | 'WORKING'
 
+// ── Agent public display states (Phase 87) — 8 states visible in UI ──
+
+export type AgentDisplayState = 'idle' | 'working' | 'focused' | 'waiting' | 'blocked' | 'overloaded' | 'meeting' | 'error'
+
 // ── Spatial state (canonical definition — office-events.ts partial will be replaced in Plan 04) ──
 
 export interface AgentSpatialState {
@@ -21,6 +25,10 @@ export interface AgentSpatialState {
   animationState: AgentAnimationState
   emote: string | null
   chatBubble: string | null
+  // v2 additions (Phase 87)
+  publicState: AgentDisplayState
+  badge: string | null
+  source: 'durable' | 'ephemeral'
 }
 
 // ── Zone binding — maps zones to agents, projects, or boards ──
@@ -36,6 +44,9 @@ export interface ZoneBinding {
   grid_y: number
   label: string | null
   color: string | null
+  // v2 additions (Phase 87)
+  zone_type: 'desk' | 'office' | 'room'
+  room_capability: string | null
 }
 
 // ── Zone — named area on the map ──
@@ -107,8 +118,60 @@ export interface OfficeMapDocument {
   }
 }
 
+// ── EnrichedTask — TaskRow with board_id resolved from cards JOIN (Phase 87) ──
+
+export interface EnrichedTask extends TaskRow {
+  board_id: string | null  // resolved: task.card_id -> cards.board_id
+}
+
+// ── DurableInput — input to the v2 ProjectionService pure function (Phase 87) ──
+
+export interface DurableInput {
+  agent: AgentRow
+  homeDesk: ZoneBinding | null  // null = agent has no desk binding
+  activeTasks: EnrichedTask[]
+  zoneBindings: ZoneBinding[]
+}
+
+// ── EphemeralOverride — TTL-scoped override from meetings/room activities (Phase 87) ──
+
+export interface EphemeralOverride {
+  context_type: 'meeting' | 'room_activity'
+  targetZoneId: string
+  publicState: AgentDisplayState
+  ttl_seconds: number
+  exit_condition?: string
+  started_at: number  // Date.now() at activation
+}
+
+// ── RuntimeActivitySignal — advisory signal from agent runtime (Phase 87, ADR-007) ──
+
+export interface RuntimeActivitySignal {
+  agent_id: string
+  context_type: 'idle' | 'direct_task' | 'board_task' | 'room_activity' | 'meeting' | 'error'
+  task_id?: string
+  board_id?: string
+  room_capability?: string
+  reason?: string
+  event_id: string       // UUID - dedup key
+  emitted_at: string     // ISO timestamp from agent runtime clock
+}
+
+// ── NormalizedActivity — processed RuntimeActivitySignal (Phase 87) ──
+
+export interface NormalizedActivity {
+  agent_id: string
+  context_type: RuntimeActivitySignal['context_type']
+  board_id: string | null
+  room_capability: string | null
+  reason: string | null
+  is_ephemeral: boolean   // true for meeting/room_activity
+  received_at: number     // Date.now() when processed
+}
+
 // ── ProjectionInput — input to the ProjectionService pure function ──
 // Arch doc section 5.2
+// @deprecated Use DurableInput instead (Phase 87). Will be removed in Plan 03.
 
 export interface ProjectionInput {
   agent: AgentRow
