@@ -8,7 +8,39 @@ import { useOfficeStore } from '../../stores/office-store'
 import { resolveDurable } from '../../projection/projection-service'
 import { IdleScheduler, pickRandomPOI, pickFlavorText } from '../../projection/idle-scheduler'
 import { subscribe, getSnapshot } from '@/game/state-snapshot'
-import type { AgentSpatialState } from '../../types'
+import type { AgentSpatialState, Zone } from '../../types'
+
+/**
+ * Resolve the target grid position for a zone:
+ * 1. Primary: first seat tile in the zone (the armchair placed via builder)
+ * 2. Fallback: first non-blocked gridCell in the zone
+ * 3. Last resort: {x:0, y:0} (should never happen for valid zones)
+ */
+function resolveZoneGridPos(
+  zoneId: string | null,
+  mapZones: Zone[],
+  blockedSet?: Set<string>,
+): { x: number; y: number } | null {
+  if (!zoneId) return null
+  const zone = mapZones.find((z) => z.id === zoneId)
+  if (!zone) return null
+
+  // Primary: seat tile
+  if (zone.seats?.length) {
+    return { x: zone.seats[0].gridX, y: zone.seats[0].gridY }
+  }
+
+  // Fallback: first non-blocked gridCell
+  if (zone.gridCells?.length) {
+    if (blockedSet) {
+      const open = zone.gridCells.find((c) => !blockedSet.has(`${c.x},${c.y}`))
+      if (open) return open
+    }
+    return zone.gridCells[0]
+  }
+
+  return null
+}
 
 /**
  * Wires Supabase Realtime (agents + tasks) through ProjectionService
@@ -24,6 +56,7 @@ export function useProjection(): void {
   const { agents } = useRealtimeAgents()
   const { enrichedTasks } = useEnrichedTasks()
   const zoneBindings = useOfficeStore((s) => s.zoneBindings)
+  const mapZones = useOfficeStore((s) => s.mapDocument?.zones ?? [])
   const pois = useOfficeStore((s) => s.pois)
 
   // Track Phaser lifecycle so projection re-fires when scene becomes 'ready'
@@ -54,9 +87,9 @@ export function useProjection(): void {
     const scheduler = idleSchedulerRef.current!
 
     for (const agent of agents) {
-      // Find home desk binding using v2 canonical lookup (zone_type === 'desk')
+      // Find home desk binding — backward-compatible: zone_type (v2) or binding_type (v1 pre-migration)
       const homeDesk = zoneBindings.find(
-        (b) => b.agent_id === agent.agent_id && b.zone_type === 'desk'
+        (b) => b.agent_id === agent.agent_id && (b.zone_type === 'desk' || b.binding_type === 'agent_desk')
       ) ?? null  // resolveDurable handles null homeDesk with {x:0,y:0} fallback
 
       // Filter active enriched tasks for this agent
@@ -70,40 +103,60 @@ export function useProjection(): void {
         zoneBindings,
       })
 
-      // Emit projection event to Phaser
-      officeEvents.emit('projection:update', {
-        agentId: agent.agent_id,
-        state,
-      })
+      // Resolve actual grid position from zone seat/gridCells (overrides binding grid_x/y)
+      if (state.targetZoneId) {
+        const resolved = resolveZoneGridPos(state.targetZoneId, mapZones)
+        if (resolved) {
+          state.targetGridPos = resolved
+        }
+      }
 
-      // Manage idle wandering
-      if (state.animationState === 'idle') {
-        // Schedule wandering if not already scheduled
-        scheduler.scheduleWander(agent.agent_id, () => {
-          // Guard: skip wander if no POIs available
-          if (pois.length === 0) return
-          // Pick random POI and emit wander
+      // ── Agents without a resolved position: treat as wandering (never emit 0,0) ──
+      // This catches: idle agents (P4) AND desk-bound agents without homeDesk (P1/P2/P3 fallback)
+      const needsWander = state.animationState === 'idle'
+        || (state.targetZoneId === null && state.targetGridPos.x === 0 && state.targetGridPos.y === 0)
+
+      if (needsWander) {
+        if (pois.length > 0) {
+          // Emit immediate POI — agent walks to a random spot right away
           const poi = pickRandomPOI(pois)
-          const wanderState: AgentSpatialState = {
-            agentId: agent.agent_id,
-            targetZoneId: poi.id,
-            targetGridPos: { x: poi.gridX, y: poi.gridY },
-            animationState: 'emote',
-            emote: null,
-            chatBubble: pickFlavorText(poi),
-            publicState: 'idle',      // wandering is still idle public state
-            badge: null,
-            source: 'durable',
-          }
           officeEvents.emit('projection:update', {
             agentId: agent.agent_id,
-            state: wanderState,
+            state: {
+              ...state,
+              targetZoneId: poi.id,
+              targetGridPos: { x: poi.gridX, y: poi.gridY },
+              animationState: 'emote',
+              chatBubble: pickFlavorText(poi),
+            },
           })
-          // No return-to-desk setTimeout — idle scheduler re-triggers next wander on cycle
+        }
+        // Schedule next patrol stop (30-120s pause → walk to another POI)
+        scheduler.scheduleWander(agent.agent_id, () => {
+          if (pois.length === 0) return
+          const poi = pickRandomPOI(pois)
+          officeEvents.emit('projection:update', {
+            agentId: agent.agent_id,
+            state: {
+              agentId: agent.agent_id,
+              targetZoneId: poi.id,
+              targetGridPos: { x: poi.gridX, y: poi.gridY },
+              animationState: 'emote',
+              emote: null,
+              chatBubble: pickFlavorText(poi),
+              publicState: 'idle',
+              badge: null,
+              source: 'durable',
+            },
+          })
         })
       } else {
-        // Non-idle state: cancel any pending wander
+        // ── Non-idle: emit resolved state, cancel pending wander ──
         scheduler.cancelWander(agent.agent_id)
+        officeEvents.emit('projection:update', {
+          agentId: agent.agent_id,
+          state,
+        })
       }
     }
 
@@ -111,5 +164,5 @@ export function useProjection(): void {
     return () => {
       scheduler.cancelAll()
     }
-  }, [agents, enrichedTasks, zoneBindings, pois, lifecycle])
+  }, [agents, enrichedTasks, zoneBindings, mapZones, pois, lifecycle])
 }

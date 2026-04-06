@@ -54,7 +54,7 @@ export function resolveDurable(input: DurableInput): AgentSpatialState {
     const task = executing[0]
     if (task.board_id) {
       const office = zoneBindings.find(
-        b => b.zone_type === 'office' && b.board_id === task.board_id
+        b => (b.zone_type === 'office' || b.binding_type === 'project_board') && b.board_id === task.board_id
       )
       if (office) {
         return {

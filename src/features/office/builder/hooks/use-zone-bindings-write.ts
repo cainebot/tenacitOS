@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
+import { PUBLISHED_MAP_ID } from '../../constants'
 
 interface ZoneBinding {
   binding_id: string
@@ -32,13 +33,31 @@ export function useZoneBindingsWrite(zoneId: string | null) {
 
     const supabase = createBrowserClient()
 
-    // Fetch binding for this zone
+    // Fetch binding for this zone — create a local stub if none exists in DB
     supabase
       .from('office_zone_bindings')
       .select('*')
       .eq('zone_id', zoneId)
       .maybeSingle()
-      .then(({ data }) => setBinding(data as ZoneBinding | null))
+      .then(({ data }) => {
+        if (data) {
+          setBinding(data as ZoneBinding)
+        } else {
+          // No binding row for this zone yet — create a local stub
+          // The API route will upsert on first field update
+          setBinding({
+            binding_id: '',
+            zone_id: zoneId,
+            agent_id: null,
+            project_id: null,
+            board_id: null,
+            label: null,
+            color: null,
+            zone_type: 'desk',
+            room_capability: null,
+          })
+        }
+      })
 
     // Fetch available agents
     supabase
@@ -80,7 +99,7 @@ export function useZoneBindingsWrite(zoneId: string | null) {
       if (!zoneId) return
       setSaving(true)
       try {
-        const body: Record<string, unknown> = { zoneId }
+        const body: Record<string, unknown> = { zoneId, mapId: PUBLISHED_MAP_ID }
         if (field === 'agent_id') body.agentId = value
         if (field === 'project_id') body.projectId = value
         if (field === 'zone_type') body.zoneType = value
