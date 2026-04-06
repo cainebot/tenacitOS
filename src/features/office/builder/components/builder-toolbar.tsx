@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { cx, Button, Grid2x2Plus, Grid2x2Block, Armchair } from '@circos/ui'
+import { cx, Button, Tooltip, Grid2x2Plus, Grid2x2Block, Armchair } from '@circos/ui'
 import { Hand, Eraser } from '@untitledui/icons'
 import { useBuilderStore, type ActiveTool } from '../stores/builder-store'
 import { ZoneRequiredModal } from './zone-required-modal'
@@ -14,11 +14,11 @@ interface ToolConfig {
 }
 
 const TOOLS: ToolConfig[] = [
-  { id: 'hand', icon: Hand, label: 'Pan/Hand' },
-  { id: 'add-zones', icon: Grid2x2Plus, label: 'Add Zones' },
-  { id: 'blocked', icon: Grid2x2Block, label: 'Blocked Zones' },
-  { id: 'eraser', icon: Eraser, label: 'Eraser' },
-  { id: 'seat', icon: Armchair, label: 'Seat' },
+  { id: 'hand', icon: Hand, label: 'Move around' },
+  { id: 'add-zones', icon: Grid2x2Plus, label: 'Create zone' },
+  { id: 'blocked', icon: Grid2x2Block, label: 'Block area' },
+  { id: 'eraser', icon: Eraser, label: 'Erase tiles' },
+  { id: 'seat', icon: Armchair, label: 'Place seat' },
 ]
 
 export function BuilderToolbar() {
@@ -40,22 +40,23 @@ export function BuilderToolbar() {
     <>
       <div className="bg-primary border-r border-primary flex flex-col gap-[4px] px-[10px] py-5 shrink-0">
         {TOOLS.map((tool) => (
-          <div
-            key={tool.id}
-            className={cx(
-              'p-[2px] rounded-md',
-              activeTool === tool.id && 'bg-brand-primary_alt',
-            )}
-          >
-            <Button
-              size="lg"
-              color="tertiary"
-              iconOnly
-              iconLeading={tool.icon}
-              aria-label={tool.label}
-              onPress={() => handleToolSwitch(tool.id)}
-            />
-          </div>
+          <Tooltip key={tool.id} title={tool.label} placement="right" delay={200}>
+            <div
+              className={cx(
+                'p-[2px] rounded-md',
+                activeTool === tool.id && 'bg-brand-primary_alt',
+              )}
+            >
+              <Button
+                size="lg"
+                color="tertiary"
+                iconOnly
+                iconLeading={tool.icon}
+                aria-label={tool.label}
+                onPress={() => handleToolSwitch(tool.id)}
+              />
+            </div>
+          </Tooltip>
         ))}
       </div>
 

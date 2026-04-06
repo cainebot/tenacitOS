@@ -33,15 +33,10 @@ export function BuilderRightPanel() {
   return (
     <div className="w-[373px] shrink-0 bg-secondary border-l border-primary flex flex-col h-full overflow-hidden">
       {editingZoneId ? (
-        <>
-          <div className="bg-primary border-b border-primary p-4 shrink-0">
-            <PanelHeader />
-          </div>
-          <ZoneProperties
-            zoneId={editingZoneId}
-            onClose={() => setEditingZoneId(null)}
-          />
-        </>
+        <ZoneProperties
+          zoneId={editingZoneId}
+          onClose={() => setEditingZoneId(null)}
+        />
       ) : (
         <>
           {/* Section header — bg-primary, border-b, title + tabs */}

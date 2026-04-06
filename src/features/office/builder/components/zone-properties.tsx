@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Trash03 } from '@untitledui/icons'
-import { Button, Input, Select, Toggle, Dropdown } from '@circos/ui'
+import { Save01, Trash03, XClose } from '@untitledui/icons'
+import { Button, Input, Select, Toggle } from '@circos/ui'
 import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
 import { useZoneBindingsWrite } from '../hooks/use-zone-bindings-write'
+import { useBuilderSave } from '../hooks/use-builder-save'
 import { DeleteZoneModal } from './delete-zone-modal'
+import { UnsavedChangesModal } from './unsaved-changes-modal'
 
 interface ZonePropertiesProps {
   zoneId: string
@@ -14,14 +16,31 @@ interface ZonePropertiesProps {
 
 export function ZoneProperties({ zoneId, onClose }: ZonePropertiesProps) {
   const zone = useBuilderStore((s) => s.zones.find((z) => z.id === zoneId))
+  const dirty = useBuilderStore((s) => s.dirty)
   const updateZone = useBuilderStore((s) => s.updateZone)
   const deleteZone = useBuilderStore((s) => s.deleteZone)
 
   const { binding, agents, projects, updateBinding } = useZoneBindingsWrite(zoneId)
+  const { saveDraft, saving } = useBuilderSave()
 
   const [showDelete, setShowDelete] = useState(false)
+  const [showUnsaved, setShowUnsaved] = useState(false)
 
   if (!zone) return null
+
+  const handleClose = () => {
+    if (dirty) {
+      setShowUnsaved(true)
+    } else {
+      onClose()
+    }
+  }
+
+  const handleSave = async () => {
+    const { zones } = useBuilderStore.getState()
+    await saveDraft({ zones } as never)
+    onClose()
+  }
 
   const handleDelete = () => {
     deleteZone(zoneId)
@@ -42,40 +61,37 @@ export function ZoneProperties({ zoneId, onClose }: ZonePropertiesProps) {
 
   return (
     <div className="flex flex-col h-full bg-secondary">
-      {/* Section header */}
-      <div className="px-4 pt-2 pb-2 shrink-0">
-        <div className="flex flex-row items-center">
-          <h3 className="text-lg font-semibold text-primary flex-1">Zone Properties</h3>
-          {/* DotsVertical overflow menu — NOT a direct back button per CONTEXT.md */}
-          <Dropdown.Root>
-            <Dropdown.DotsButton />
-            <Dropdown.Popover>
-              <Dropdown.Menu aria-label="Zone properties menu">
-                <Dropdown.Item
-                  label="Close"
-                  onAction={onClose}
-                />
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown.Root>
+      {/* Section header — bg-primary, border-b, p-4 per Figma */}
+      <div className="bg-primary border-b border-primary p-4 shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-primary">Zones Properties</h3>
+            <p className="text-sm text-tertiary truncate">{zone.label}</p>
+          </div>
+          <Button
+            color="tertiary"
+            size="sm"
+            iconLeading={XClose}
+            onClick={handleClose}
+            aria-label="Close zone properties"
+          />
         </div>
-        <p className="text-sm text-tertiary truncate">{zone.label}</p>
       </div>
 
-      {/* Form fields */}
-      <div className="flex flex-col gap-4 px-4 py-4 flex-1 overflow-y-auto">
-        {/* Zone Label — isRequired renders * in text-brand-tertiary via UUI Label component */}
+      {/* Form fields — gap-2 (8px) per Figma */}
+      <div className="flex flex-col gap-2 p-4 flex-1 overflow-y-auto">
         <Input
           label="Zone Label"
+          size="md"
           value={zone.label}
           onChange={(val) => updateZone(zoneId, { label: val })}
           placeholder="Enter zone name"
           isRequired
         />
 
-        {/* Assigned Agent — reads from office_zone_bindings, writes via API */}
         <Select
           label="Assigned Agent"
+          size="md"
           placeholder="Anyone"
           isRequired
           selectedKey={binding?.agent_id ?? ''}
@@ -85,9 +101,9 @@ export function ZoneProperties({ zoneId, onClose }: ZonePropertiesProps) {
           {(item) => <Select.Item id={item.id}>{item.label}</Select.Item>}
         </Select>
 
-        {/* Assigned Project — reads from office_zone_bindings, writes via API */}
         <Select
           label="Assigned Project"
+          size="md"
           placeholder="None"
           isRequired
           selectedKey={binding?.project_id ?? ''}
@@ -97,26 +113,38 @@ export function ZoneProperties({ zoneId, onClose }: ZonePropertiesProps) {
           {(item) => <Select.Item id={item.id}>{item.label}</Select.Item>}
         </Select>
 
-        {/* Agent Restricted Area */}
-        <div className="flex items-center justify-between">
+        {/* Agent Restricted Area — py-4 (16px), text-sm/medium, text-secondary per Figma */}
+        <div className="flex items-center justify-between py-4">
           <span className="text-sm font-medium text-secondary">Agent Restricted Area</span>
           <Toggle
-            size="sm"
+            size="md"
             isSelected={zone.agentRestricted ?? false}
             onChange={(val) => updateZone(zoneId, { agentRestricted: val })}
           />
         </div>
-      </div>
 
-      {/* Bottom action — sticky at panel bottom */}
-      <div className="px-4 py-4 border-t border-primary shrink-0">
-        <Button
-          color="tertiary-destructive"
-          iconLeading={Trash03}
-          onClick={() => setShowDelete(true)}
-        >
-          Delete Zone
-        </Button>
+        {/* Action buttons — inline in form per Figma */}
+        <div className="flex flex-col gap-2">
+          <Button
+            color="primary"
+            size="md"
+            iconLeading={Save01}
+            onClick={handleSave}
+            isLoading={saving}
+            className="w-full"
+          >
+            Save
+          </Button>
+          <Button
+            color="tertiary-destructive"
+            size="md"
+            iconLeading={Trash03}
+            onClick={() => setShowDelete(true)}
+            className="w-full"
+          >
+            Delete Zone
+          </Button>
+        </div>
       </div>
 
       {/* Delete confirmation modal */}
@@ -125,6 +153,22 @@ export function ZoneProperties({ zoneId, onClose }: ZonePropertiesProps) {
         onClose={() => setShowDelete(false)}
         onConfirm={handleDelete}
         zoneName={zone.label}
+      />
+
+      {/* Unsaved changes modal — shown when closing with dirty state */}
+      <UnsavedChangesModal
+        isOpen={showUnsaved}
+        onClose={() => setShowUnsaved(false)}
+        onDiscard={() => {
+          setShowUnsaved(false)
+          onClose()
+        }}
+        onSave={async () => {
+          await handleSave()
+          setShowUnsaved(false)
+          onClose()
+        }}
+        isSaving={saving}
       />
     </div>
   )

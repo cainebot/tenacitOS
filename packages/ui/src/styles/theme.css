@@ -511,6 +511,11 @@
     --utility-gray-blue-500: #4E5BA6;
     --utility-gray-blue-700: #363F72;
 
+    /* Error background tokens — light mode (Figma variables table) */
+    --color-error-primary: var(--error-50);
+    --color-error-primary_hover: var(--error-100);
+    --color-error-solid_hover: var(--error-700);
+
     /* Shadows — lighter for light mode */
     --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.05);
     --shadow-sm: 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px -1px rgba(0, 0, 0, 0.10);
@@ -635,9 +640,9 @@
   --color-brand-primary_alt: var(--brand-50);
   --color-brand-secondary_hover: var(--brand-400);
   --color-brand-tertiary: var(--brand-300);
-  --color-error-primary: var(--error-50);
-  --color-error-primary_hover: var(--error-100);
-  --color-error-solid_hover: var(--error-700);
+  --color-error-primary: var(--error-950);
+  --color-error-primary_hover: var(--error-800);
+  --color-error-solid_hover: var(--error-500);
   --color-bg-error-solid: var(--error-600);
   --color-bg-success-solid: var(--success-600);
   --color-overlay: rgba(0, 0, 0, 0.70);
@@ -876,9 +881,9 @@
   --background-color-overlay: rgba(0, 0, 0, 0.70);
   --background-color-brand-solid: var(--brand-600);
   --background-color-brand-solid_hover: var(--brand-700);
-  --background-color-error-primary: var(--error-50);
-  --background-color-error-solid: var(--error-600);
-  --background-color-error-solid_hover: var(--error-700);
+  --background-color-error-primary: var(--color-error-primary);
+  --background-color-error-solid: var(--color-bg-error-solid);
+  --background-color-error-solid_hover: var(--color-error-solid_hover);
   --background-color-success-solid: var(--success-600);
 
   /* --- Text Color (text-*) --- */
