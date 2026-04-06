@@ -1,14 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { cx, Button } from '@circos/ui'
-import {
-  Hand,          // Hand/Pan tool
-  PlusSquare,    // Add Zones tool
-  SlashCircle01, // Blocked Zones tool
-  Eraser,        // Eraser tool
-  Cursor01,      // Seat tool (substitute — Armchair not in @untitledui/icons)
-} from '@untitledui/icons'
+import { cx, Button, Grid2x2Plus, Grid2x2Block, Armchair } from '@circos/ui'
+import { Hand, Eraser } from '@untitledui/icons'
 import { useBuilderStore, type ActiveTool } from '../stores/builder-store'
 import { ZoneRequiredModal } from './zone-required-modal'
 
@@ -21,10 +15,10 @@ interface ToolConfig {
 
 const TOOLS: ToolConfig[] = [
   { id: 'hand', icon: Hand, label: 'Pan/Hand' },
-  { id: 'add-zones', icon: PlusSquare, label: 'Add Zones' },
-  { id: 'blocked', icon: SlashCircle01, label: 'Blocked Zones' },
+  { id: 'add-zones', icon: Grid2x2Plus, label: 'Add Zones' },
+  { id: 'blocked', icon: Grid2x2Block, label: 'Blocked Zones' },
   { id: 'eraser', icon: Eraser, label: 'Eraser' },
-  { id: 'seat', icon: Cursor01, label: 'Seat' },
+  { id: 'seat', icon: Armchair, label: 'Seat' },
 ]
 
 export function BuilderToolbar() {
@@ -44,7 +38,7 @@ export function BuilderToolbar() {
 
   return (
     <>
-      <div className="w-[56px] bg-primary border-r border-primary flex flex-col gap-[4px] px-2 py-5 shrink-0">
+      <div className="bg-primary border-r border-primary flex flex-col gap-[4px] px-[10px] py-5 shrink-0">
         {TOOLS.map((tool) => (
           <div
             key={tool.id}
@@ -54,6 +48,7 @@ export function BuilderToolbar() {
             )}
           >
             <Button
+              size="lg"
               color="tertiary"
               iconOnly
               iconLeading={tool.icon}

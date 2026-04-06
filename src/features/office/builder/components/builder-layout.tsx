@@ -34,7 +34,7 @@ export function BuilderLayout() {
   }, [])
 
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden">
+    <div className="flex flex-col h-screen w-full overflow-hidden">
       {/* Top bar — full width header */}
       <BuilderTopBar />
 

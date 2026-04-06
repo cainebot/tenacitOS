@@ -85,71 +85,71 @@ export function BuilderTopBar() {
   }
 
   return (
-    <div className={cx('flex items-center bg-primary border-b border-primary h-[52px] shrink-0')}>
-      {/* Back cell — isolated with border-r, structurally separate from flex row */}
-      <div className="flex items-center justify-center px-2 py-2 border-r border-primary h-full">
+    <div className={cx('flex items-start bg-primary border-b border-primary shrink-0')}>
+      {/* Back cell — isolated with border-r */}
+      <div className="flex items-center p-3 border-r border-primary shrink-0">
         <Button
+          size="lg"
           color="tertiary"
           iconLeading={ArrowLeft}
           onClick={handleBack}
         />
       </div>
 
-      {/* Title */}
-      <div className="flex items-center px-4">
-        <p className="text-md font-semibold text-primary">CircOS Office - Map Builder</p>
-      </div>
+      {/* Content area — flex-1, justify-between */}
+      <div className="flex flex-1 items-center justify-between px-4 py-3 self-stretch">
+        {/* Left group: Title + Undo/Redo + Draft badge */}
+        <div className="flex items-center gap-6">
+          <p className="text-lg font-semibold text-primary">CircOS Office - Map Builder</p>
+          <div className="flex items-center gap-2">
+            <Button
+              size="lg"
+              color="tertiary"
+              iconLeading={FlipBackward}
+              isDisabled={!canUndo}
+              onClick={() => commandHistory.undo()}
+              aria-label="Undo"
+            />
+            <Button
+              size="lg"
+              color="tertiary"
+              iconLeading={FlipForward}
+              isDisabled={!canRedo}
+              onClick={() => commandHistory.redo()}
+              aria-label="Redo"
+            />
+            <Badge type="modern" color="brand" size="md">Draft</Badge>
+          </div>
+        </div>
 
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Center group: Undo, Redo, Draft badge */}
-      <div className="flex items-center gap-2">
-        <Button
-          color="tertiary"
-          iconLeading={FlipBackward}
-          isDisabled={!canUndo}
-          onClick={() => commandHistory.undo()}
-          aria-label="Undo"
-        />
-        <Button
-          color="tertiary"
-          iconLeading={FlipForward}
-          isDisabled={!canRedo}
-          onClick={() => commandHistory.redo()}
-          aria-label="Redo"
-        />
-        <Badge color="brand" size="sm">Draft</Badge>
-      </div>
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Right group: error message + Save Draft + Publish */}
-      <div className="flex items-center gap-3 pr-4">
-        {error && (
-          <p className="text-xs text-error-primary animate-in fade-in">{error}</p>
-        )}
-        <Button
-          color="secondary"
-          iconLeading={Save01}
-          isDisabled={!dirty || saving}
-          isLoading={saving}
-          onClick={async () => {
-            const mapJson = serializeMap()
-            await saveDraft(mapJson)
-          }}
-        >
-          Save Draft
-        </Button>
-        <Button
-          color="primary"
-          iconLeading={Send01}
-          isDisabled={saving}
-          onClick={() => setShowPublish(true)}
-        >
-          Publish
-        </Button>
+        {/* Right group: error message + Save Draft + Publish */}
+        <div className="flex items-center gap-2">
+          {error && (
+            <p className="text-sm text-error-primary animate-in fade-in">{error}</p>
+          )}
+          <Button
+            size="lg"
+            color="secondary"
+            iconLeading={Save01}
+            isDisabled={!dirty || saving}
+            isLoading={saving}
+            onClick={async () => {
+              const mapJson = serializeMap()
+              await saveDraft(mapJson)
+            }}
+          >
+            Save Draft
+          </Button>
+          <Button
+            size="lg"
+            color="primary"
+            iconLeading={Send01}
+            isDisabled={saving}
+            onClick={() => setShowPublish(true)}
+          >
+            Publish
+          </Button>
+        </div>
       </div>
 
       {/* Publish confirmation modal */}

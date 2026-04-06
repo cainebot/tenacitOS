@@ -1,10 +1,23 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { DotsGrid, Edit05 } from '@untitledui/icons'
-import { Badge, Button, cx } from '@circos/ui'
+import { Edit05 } from '@untitledui/icons'
+import { Badge, Button, GripVertical, cx } from '@circos/ui'
+import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
 import type { Zone } from '@/features/office/types'
+
+const COLOR_PALETTE = [
+  '#6172f3',
+  '#15b79e',
+  '#f79009',
+  '#f04438',
+  '#7a5af8',
+  '#ee46bc',
+  '#2e90fa',
+  '#66c61c',
+]
 
 interface ZoneCardProps {
   zone: Zone
@@ -17,6 +30,21 @@ export function ZoneCard({ zone, isActive, onSelect, onEdit }: ZoneCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: zone.id,
   })
+  const [showColorPicker, setShowColorPicker] = useState(false)
+  const colorPickerRef = useRef<HTMLDivElement>(null)
+  const updateZone = useBuilderStore((s) => s.updateZone)
+
+  // Close color picker on outside click
+  useEffect(() => {
+    if (!showColorPicker) return
+    const handler = (e: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setShowColorPicker(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showColorPicker])
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -43,14 +71,14 @@ export function ZoneCard({ zone, isActive, onSelect, onEdit }: ZoneCardProps) {
         tabIndex={-1}
         aria-label="Drag to reorder"
       >
-        <DotsGrid
+        <GripVertical
           className={cx('size-6', isActive ? 'text-brand-primary' : 'text-secondary')}
         />
       </button>
 
       {/* Badge number */}
-      <Badge color={isActive ? 'brand' : 'gray'} size="sm">
-        #{zone.displayOrder ?? 1}
+      <Badge type="modern" color={isActive ? 'brand' : 'gray'} size="sm">
+        {zone.displayOrder ?? 1}
       </Badge>
 
       {/* Label + subtitle column */}
@@ -73,11 +101,38 @@ export function ZoneCard({ zone, isActive, onSelect, onEdit }: ZoneCardProps) {
         </p>
       </div>
 
-      {/* Color dot */}
-      <div
-        className="size-5 rounded-full shrink-0"
-        style={{ backgroundColor: zone.color }}
-      />
+      {/* Color dot with picker */}
+      <div className="relative shrink-0" ref={colorPickerRef}>
+        <button
+          className="size-5 rounded-full shrink-0 border border-secondary"
+          style={{ backgroundColor: zone.color }}
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowColorPicker(!showColorPicker)
+          }}
+          aria-label="Pick zone color"
+        />
+        {showColorPicker && (
+          <div className="absolute right-0 top-7 z-50 bg-primary border border-secondary rounded-lg p-2 shadow-lg grid grid-cols-4 gap-1.5">
+            {COLOR_PALETTE.map((color) => (
+              <button
+                key={color}
+                className={cx(
+                  'size-6 rounded-full border-2',
+                  zone.color === color ? 'border-brand' : 'border-transparent',
+                )}
+                style={{ backgroundColor: color }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  updateZone(zone.id, { color })
+                  setShowColorPicker(false)
+                }}
+                aria-label={`Color ${color}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Edit button */}
       <Button
