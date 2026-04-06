@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { resolveAgentState } from './projection-service'
+import { resolveAgentState, mergeProjection } from './projection-service'
 import type { AgentRow, TaskRow } from '@/types/supabase'
-import type { ProjectionInput, ZoneBinding } from '../types'
+import type { ProjectionInput, ZoneBinding, AgentSpatialState, EphemeralOverride } from '../types'
 
 // ── Factory helpers ──
 
@@ -232,6 +232,173 @@ describe('resolveAgentState', () => {
       const input = makeInput({ agent })
       const result = resolveAgentState(input)
       expect(result.agentId).toBe('custom-agent-42')
+    })
+  })
+})
+
+// ── mergeProjection test helpers ──
+
+function makeDurable(overrides: Partial<AgentSpatialState> = {}): AgentSpatialState {
+  return {
+    agentId: 'agent-1',
+    targetZoneId: 'zone-desk-1',
+    targetGridPos: { x: 10, y: 10 },
+    animationState: 'idle',
+    emote: null,
+    chatBubble: null,
+    publicState: 'idle',
+    badge: null,
+    source: 'durable',
+    ...overrides,
+  }
+}
+
+function makeEphemeral(overrides: Partial<EphemeralOverride> = {}): EphemeralOverride {
+  return {
+    context_type: 'meeting',
+    targetZoneId: 'zone-meeting-1',
+    publicState: 'meeting',
+    ttl_seconds: 300,
+    started_at: Date.now(),
+    ...overrides,
+  }
+}
+
+// ── mergeProjection tests ──
+
+describe('mergeProjection', () => {
+  describe('no ephemeral override', () => {
+    it('returns durable unchanged when ephemeral is null', () => {
+      const durable = makeDurable()
+      const result = mergeProjection(durable, null)
+      expect(result).toEqual(durable)
+      expect(result.source).toBe('durable')
+    })
+
+    it('returns exact same object reference when ephemeral is null', () => {
+      const durable = makeDurable()
+      const result = mergeProjection(durable, null)
+      expect(result).toBe(durable)
+    })
+  })
+
+  describe('error always wins', () => {
+    it('returns durable unchanged when durable.publicState is error, even with valid ephemeral', () => {
+      const durable = makeDurable({ publicState: 'error', animationState: 'error' })
+      const ephemeral = makeEphemeral({ publicState: 'meeting' })
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.publicState).toBe('error')
+      expect(result.source).toBe('durable')
+    })
+
+    it('returns exact durable reference when error wins', () => {
+      const durable = makeDurable({ publicState: 'error' })
+      const ephemeral = makeEphemeral()
+      const result = mergeProjection(durable, ephemeral)
+      expect(result).toBe(durable)
+    })
+  })
+
+  describe('TTL expiry', () => {
+    it('returns durable when TTL has expired (elapsed > ttl_seconds)', () => {
+      const durable = makeDurable()
+      const ephemeral = makeEphemeral({
+        ttl_seconds: 60,
+        started_at: Date.now() - 120_000, // 120 seconds ago — expired
+      })
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.source).toBe('durable')
+      expect(result.publicState).toBe('idle')
+    })
+
+    it('returns durable when TTL has exactly expired (elapsed === ttl_seconds boundary)', () => {
+      const durable = makeDurable()
+      const ephemeral = makeEphemeral({
+        ttl_seconds: 0,
+        started_at: Date.now() - 1_000, // started 1 second ago, ttl=0 → expired
+      })
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.source).toBe('durable')
+    })
+  })
+
+  describe('valid TTL — ephemeral wins', () => {
+    it('returns ephemeral override fields when TTL is valid', () => {
+      const durable = makeDurable()
+      const ephemeral = makeEphemeral({
+        targetZoneId: 'zone-meeting-42',
+        publicState: 'meeting',
+        ttl_seconds: 300,
+        started_at: Date.now(), // just started
+      })
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.targetZoneId).toBe('zone-meeting-42')
+      expect(result.publicState).toBe('meeting')
+      expect(result.source).toBe('ephemeral')
+    })
+
+    it('sets source to ephemeral when ephemeral wins', () => {
+      const durable = makeDurable({ source: 'durable' })
+      const ephemeral = makeEphemeral()
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.source).toBe('ephemeral')
+    })
+
+    it('preserves durable agentId when ephemeral wins', () => {
+      const durable = makeDurable({ agentId: 'my-agent-99' })
+      const ephemeral = makeEphemeral()
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.agentId).toBe('my-agent-99')
+    })
+
+    it('preserves durable targetGridPos when ephemeral wins', () => {
+      const durable = makeDurable({ targetGridPos: { x: 42, y: 17 } })
+      const ephemeral = makeEphemeral()
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.targetGridPos).toEqual({ x: 42, y: 17 })
+    })
+
+    it('preserves durable animationState when ephemeral wins', () => {
+      const durable = makeDurable({ animationState: 'working' })
+      const ephemeral = makeEphemeral()
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.animationState).toBe('working')
+    })
+
+    it('preserves durable emote when ephemeral wins', () => {
+      const durable = makeDurable({ emote: 'thinking' })
+      const ephemeral = makeEphemeral()
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.emote).toBe('thinking')
+    })
+
+    it('preserves durable chatBubble when ephemeral wins', () => {
+      const durable = makeDurable({ chatBubble: 'Hello world' })
+      const ephemeral = makeEphemeral()
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.chatBubble).toBe('Hello world')
+    })
+
+    it('preserves durable badge when ephemeral wins', () => {
+      const durable = makeDurable({ badge: 'overloaded' })
+      const ephemeral = makeEphemeral()
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.badge).toBe('overloaded')
+    })
+  })
+
+  describe('room_activity ephemeral override', () => {
+    it('works with room_activity context_type as well as meeting', () => {
+      const durable = makeDurable()
+      const ephemeral = makeEphemeral({
+        context_type: 'room_activity',
+        targetZoneId: 'zone-room-5',
+        publicState: 'focused',
+      })
+      const result = mergeProjection(durable, ephemeral)
+      expect(result.targetZoneId).toBe('zone-room-5')
+      expect(result.publicState).toBe('focused')
+      expect(result.source).toBe('ephemeral')
     })
   })
 })
