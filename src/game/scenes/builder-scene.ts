@@ -4,12 +4,16 @@ import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
 import { useOfficeStore } from '@/features/office/stores/office-store'
 import { TildeGrid } from '../systems/tilde-grid'
 import { BuilderInputHandler } from '../systems/builder-input-handler'
+import { isTempHandActive, setTempHand } from '../systems/builder-flags'
 
 export class BuilderScene extends Phaser.Scene {
   private isDragging = false
   private dragStart = { x: 0, y: 0 }
   private tildeGrid!: TildeGrid
   private inputHandler!: BuilderInputHandler
+  /** Temporary hand mode via Space or middle-click */
+  private get tempHand() { return isTempHandActive }
+  private set tempHand(v: boolean) { setTempHand(v) }
 
   constructor() {
     super({ key: 'BuilderScene' })
@@ -45,11 +49,29 @@ export class BuilderScene extends Phaser.Scene {
     cam.setZoom(1.5)
     cam.centerOn(map.widthInPixels / 2, map.heightInPixels / 2)
 
-    // ── Pointer drag panning (Hand tool only) ──
+    // ── Cursor helper (Phaser-native default cursor) ──
+    const setCursor = (cursor: string) => {
+      this.input.setDefaultCursor(cursor)
+    }
+
+    const isHandActive = () =>
+      this.tempHand || useBuilderStore.getState().activeTool === 'hand'
+
+    // ── Pointer drag panning (Hand tool OR tempHand via Space/middle-click) ──
     this.input.on('pointerdown', (ptr: Phaser.Input.Pointer) => {
-      if (ptr.button === 0 && useBuilderStore.getState().activeTool === 'hand') {
+      // Middle-click activates temporary hand
+      if (ptr.button === 1) {
+        this.tempHand = true
         this.isDragging = true
         this.dragStart = { x: ptr.worldX, y: ptr.worldY }
+        setCursor('grabbing')
+        return
+      }
+
+      if (ptr.button === 0 && isHandActive()) {
+        this.isDragging = true
+        this.dragStart = { x: ptr.worldX, y: ptr.worldY }
+        setCursor('grabbing')
       }
     })
 
@@ -60,9 +82,39 @@ export class BuilderScene extends Phaser.Scene {
       }
     })
 
-    this.input.on('pointerup', () => {
+    this.input.on('pointerup', (ptr: Phaser.Input.Pointer) => {
       this.isDragging = false
+
+      // Release middle-click temporary hand
+      if (ptr.button === 1) {
+        this.tempHand = false
+        // Restore cursor based on real active tool
+        setCursor(useBuilderStore.getState().activeTool === 'hand' ? 'grab' : 'crosshair')
+        return
+      }
+
+      if (isHandActive()) {
+        setCursor('grab')
+      }
     })
+
+    // ── Space key: temporary hand mode ──
+    this.input.keyboard?.on('keydown-SPACE', (e: KeyboardEvent) => {
+      e.preventDefault()
+      if (this.tempHand) return // already in temp hand
+      this.tempHand = true
+      setCursor('grab')
+    })
+
+    this.input.keyboard?.on('keyup-SPACE', () => {
+      this.tempHand = false
+      this.isDragging = false
+      // Restore cursor based on real active tool
+      setCursor(useBuilderStore.getState().activeTool === 'hand' ? 'grab' : 'crosshair')
+    })
+
+    // ── Set initial cursor based on active tool ──
+    setCursor(useBuilderStore.getState().activeTool === 'hand' ? 'grab' : 'crosshair')
 
     // ── Mouse wheel zoom (0.5x to 4x range) ──
     this.input.on(
@@ -99,9 +151,19 @@ export class BuilderScene extends Phaser.Scene {
 
     // Expose TildeGrid to React layer for save/publish serialization
     ;(globalThis as any).__circos_builder_grid = this.tildeGrid
+
+    // ── React tool-change cursor sync ──
+    this._unsubToolChange = useBuilderStore.subscribe((state, prev) => {
+      if (state.activeTool !== prev.activeTool && !this.tempHand) {
+        setCursor(state.activeTool === 'hand' ? 'grab' : 'crosshair')
+      }
+    })
   }
 
+  private _unsubToolChange?: () => void
+
   shutdown() {
+    this._unsubToolChange?.()
     delete (globalThis as any).__circos_builder_grid
   }
 

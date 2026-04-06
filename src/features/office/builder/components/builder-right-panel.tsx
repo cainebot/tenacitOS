@@ -1,53 +1,78 @@
 'use client'
 
 import { useState } from 'react'
-import { DotsVertical } from '@untitledui/icons'
-import { Button, Dropdown, Tabs, TabList, Tab, TabPanel } from '@circos/ui'
+import { Dropdown, Tabs, TabList, Tab, Hammer, Armchair } from '@circos/ui'
 import { ZoneList } from './zone-list'
 import { ZoneProperties } from './zone-properties'
 
+function PanelHeader() {
+  return (
+    <div className="flex gap-4 items-start w-full">
+      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+        <h3 className="text-lg font-semibold text-primary">Zones</h3>
+        <p className="text-sm text-tertiary truncate">
+          Administra las zonas de tu oficina creando u editando zonas.
+        </p>
+      </div>
+      <Dropdown.Root>
+        <Dropdown.DotsButton />
+        <Dropdown.Popover>
+          <Dropdown.Menu aria-label="Panel menu">
+            <Dropdown.Item label="Close panel" isDisabled />
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown.Root>
+    </div>
+  )
+}
+
 export function BuilderRightPanel() {
   const [editingZoneId, setEditingZoneId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('build')
 
   return (
     <div className="w-[373px] shrink-0 bg-secondary border-l border-primary flex flex-col h-full overflow-hidden">
-      {/* Section header */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="flex flex-row items-center">
-          <h3 className="text-lg font-semibold text-primary flex-1">Zones</h3>
-          <Dropdown.Root>
-            <Dropdown.DotsButton />
-            <Dropdown.Popover>
-              <Dropdown.Menu aria-label="Panel menu">
-                <Dropdown.Item label="Close panel" isDisabled />
-              </Dropdown.Menu>
-            </Dropdown.Popover>
-          </Dropdown.Root>
-        </div>
-        <p className="text-sm text-tertiary truncate">Manage office zones and properties</p>
-      </div>
-
-      {/* If editing a zone, show ZoneProperties, else show tabs with zone list */}
       {editingZoneId ? (
-        <ZoneProperties
-          zoneId={editingZoneId}
-          onClose={() => setEditingZoneId(null)}
-        />
+        <>
+          <div className="bg-primary border-b border-primary p-4 shrink-0">
+            <PanelHeader />
+          </div>
+          <ZoneProperties
+            zoneId={editingZoneId}
+            onClose={() => setEditingZoneId(null)}
+          />
+        </>
       ) : (
-        <Tabs className="flex flex-col flex-1 min-h-0">
-          <TabList className="mx-3 mb-1 shrink-0">
-            <Tab id="build">Build</Tab>
-            <Tab id="objetcs">Objetcs</Tab>
-          </TabList>
+        <>
+          {/* Section header — bg-primary, border-b, title + tabs */}
+          <div className="bg-primary border-b border-primary shrink-0 flex flex-col gap-5 px-4 pt-4 pb-4">
+            <PanelHeader />
+            <Tabs
+              selectedKey={activeTab}
+              onSelectionChange={(key) => setActiveTab(key as string)}
+            >
+              <TabList type="button-minimal" fullWidth>
+                <Tab id="build" className="flex">
+                  <Hammer className="size-4" />
+                  Build
+                </Tab>
+                <Tab id="objetcs" className="flex">
+                  <Armchair className="size-4" />
+                  Objetcs
+                </Tab>
+              </TabList>
+            </Tabs>
+          </div>
 
-          <TabPanel id="build" className="flex-1 overflow-y-auto px-3 py-2 pt-0">
-            <ZoneList onEdit={(id) => setEditingZoneId(id)} />
-          </TabPanel>
-
-          <TabPanel id="objetcs" className="flex-1 overflow-y-auto px-3 py-2 pt-0">
-            <p className="text-sm text-tertiary p-4">Coming soon</p>
-          </TabPanel>
-        </Tabs>
+          {/* Tab content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {activeTab === 'build' ? (
+              <ZoneList onEdit={(id) => setEditingZoneId(id)} />
+            ) : (
+              <p className="text-sm text-tertiary">Coming soon</p>
+            )}
+          </div>
+        </>
       )}
     </div>
   )

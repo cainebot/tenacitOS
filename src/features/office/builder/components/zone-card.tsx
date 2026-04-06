@@ -77,7 +77,7 @@ export function ZoneCard({ zone, isActive, onSelect, onEdit }: ZoneCardProps) {
       </button>
 
       {/* Badge number */}
-      <Badge type="modern" color={isActive ? 'brand' : 'gray'} size="sm">
+      <Badge type="modern" color={isActive ? 'brand' : 'gray'} size="md">
         {zone.displayOrder ?? 1}
       </Badge>
 
@@ -102,7 +102,7 @@ export function ZoneCard({ zone, isActive, onSelect, onEdit }: ZoneCardProps) {
       </div>
 
       {/* Color dot with picker */}
-      <div className="relative shrink-0" ref={colorPickerRef}>
+      <div className="relative shrink-0 flex" ref={colorPickerRef}>
         <button
           className="size-5 rounded-full shrink-0 border border-secondary"
           style={{ backgroundColor: zone.color }}
@@ -113,7 +113,7 @@ export function ZoneCard({ zone, isActive, onSelect, onEdit }: ZoneCardProps) {
           aria-label="Pick zone color"
         />
         {showColorPicker && (
-          <div className="absolute right-0 top-7 z-50 bg-primary border border-secondary rounded-lg p-2 shadow-lg grid grid-cols-4 gap-1.5">
+          <div className="absolute right-0 top-7 z-50 w-max bg-primary border border-secondary rounded-lg p-2 shadow-lg grid grid-cols-4 gap-1.5">
             {COLOR_PALETTE.map((color) => (
               <button
                 key={color}

@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
 import { commandHistory, type PaintCommand } from '@/features/office/builder/stores/command-history'
+import { isTempHandActive } from './builder-flags'
 import type { TildeGrid, TildeCell } from './tilde-grid'
 
 export class BuilderInputHandler {
@@ -28,8 +29,8 @@ export class BuilderInputHandler {
 
       const { activeTool, selectedZoneId } = useBuilderStore.getState()
 
-      // Hand tool: panning is handled by BuilderScene directly
-      if (activeTool === 'hand') return
+      // Hand tool or temporary hand (Space/middle-click): panning handled by BuilderScene
+      if (activeTool === 'hand' || isTempHandActive) return
 
       // Zone-requiring tools: block painting if no zone is selected
       if ((activeTool === 'add-zones' || activeTool === 'seat') && !selectedZoneId) return

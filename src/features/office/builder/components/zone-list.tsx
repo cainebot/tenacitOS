@@ -16,6 +16,7 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
 import { Button } from '@circos/ui'
+import { Plus } from '@untitledui/icons'
 import { useBuilderStore } from '@/features/office/builder/stores/builder-store'
 import { ZoneCard } from './zone-card'
 
@@ -83,7 +84,7 @@ export function ZoneList({ onEdit }: ZoneListProps) {
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-3">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -106,8 +107,8 @@ export function ZoneList({ onEdit }: ZoneListProps) {
       </DndContext>
 
       <div className="pt-2">
-        <Button color="secondary" className="w-full" onClick={handleAddZone}>
-          + New Zone
+        <Button color="secondary" size="md" iconLeading={Plus} className="w-full" onClick={handleAddZone}>
+          New Zone
         </Button>
       </div>
     </div>
