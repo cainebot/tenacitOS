@@ -1,4 +1,4 @@
-import type { AgentSpatialState, ProjectionInput } from '../types'
+import type { AgentSpatialState, EphemeralOverride, ProjectionInput } from '../types'
 
 /**
  * resolveAgentState — pure function: business state -> spatial state
@@ -63,5 +63,35 @@ export function resolveAgentState(input: ProjectionInput): AgentSpatialState {
     animationState: 'idle',
     emote: null,
     chatBubble: null,
+  }
+}
+
+/**
+ * mergeProjection — combines durable projection with ephemeral override.
+ *
+ * ADR-009: Two-layer model with forced expiry.
+ * Precedence rules:
+ *   1. Error state always wins — ephemeral cannot override an error.
+ *   2. No ephemeral → return durable unchanged.
+ *   3. TTL expired → return durable (ephemeral discarded).
+ *   4. Valid ephemeral → overlay targetZoneId + publicState, source='ephemeral'.
+ *      Durable fields (agentId, targetGridPos, animationState, emote, chatBubble, badge) are preserved.
+ */
+export function mergeProjection(
+  durable: AgentSpatialState,
+  ephemeral: EphemeralOverride | null
+): AgentSpatialState {
+  // Error always overrides ephemeral — durable error state is authoritative
+  if (durable.publicState === 'error') return durable
+  if (!ephemeral) return durable
+
+  const elapsed = (Date.now() - ephemeral.started_at) / 1000
+  if (elapsed > ephemeral.ttl_seconds) return durable  // TTL expired
+
+  return {
+    ...durable,
+    targetZoneId: ephemeral.targetZoneId,
+    publicState: ephemeral.publicState,
+    source: 'ephemeral',
   }
 }
