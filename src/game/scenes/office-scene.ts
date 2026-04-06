@@ -6,6 +6,7 @@ import { AgentManager } from '../systems/agent-manager'
 import { BindingOverlayRenderer } from '../systems/binding-overlay-renderer'
 import { InteractionManager } from '../systems/interaction-manager'
 import { CameraController } from '../systems/camera-controller'
+import { ZoneHighlight } from '../systems/zone-highlight'
 import { snapshot, notifySubscribers } from '../state-snapshot'
 import { drain, type GameCommand } from '../command-queue'
 import type { AgentSpatialState } from '@/features/office/types'
@@ -23,6 +24,7 @@ export class OfficeScene extends Phaser.Scene {
   private agentManager!: AgentManager
   private bindingOverlay!: BindingOverlayRenderer
   private interactionMgr!: InteractionManager
+  private zoneHighlight!: ZoneHighlight
   private projectionHandler: ((payload: { agentId: string; state: AgentSpatialState }) => void) | null = null
   private bindingsHandler: ((bindings: import('@/features/office/types').ZoneBinding[]) => void) | null = null
 
@@ -61,6 +63,14 @@ export class OfficeScene extends Phaser.Scene {
 
     // ── Binding overlay (desk labels + anchor dots) ──
     this.bindingOverlay = new BindingOverlayRenderer(this, tileSize)
+
+    // ── Zone highlight (Gather-style white border on enter) ──
+    this.zoneHighlight = new ZoneHighlight(this, tileSize)
+    if (mapDocument?.zones) {
+      this.zoneHighlight.setZones(mapDocument.zones)
+    }
+    // Debug: log zone count
+    console.log('[OfficeScene] Zone highlight initialized, zones:', mapDocument?.zones?.length ?? 0)
 
     // ── World dimensions ──
     snapshot.world.width = map.widthInPixels
@@ -116,6 +126,7 @@ export class OfficeScene extends Phaser.Scene {
 
     // ── Cleanup on scene shutdown ──
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
+      delete (globalThis as any).__circos_viewer_cam
       if (this.projectionHandler) {
         officeEvents.off('projection:update', this.projectionHandler)
         this.projectionHandler = null
@@ -125,6 +136,7 @@ export class OfficeScene extends Phaser.Scene {
         this.bindingsHandler = null
       }
       this.bindingOverlay.destroy()
+      this.zoneHighlight.destroy()
       this.interactionMgr.destroy()
       // Cleanup idle behavior timers
       const idleBehavior = this.agentManager.getIdleBehavior()
@@ -133,13 +145,16 @@ export class OfficeScene extends Phaser.Scene {
       }
     })
 
+    // Expose camera ref for React HTML overlays (zone badge)
+    ;(globalThis as any).__circos_viewer_cam = this.cameras.main
+
     // ── Ready ──
     snapshot.lifecycle = 'ready'
     notifySubscribers()
   }
 
   update(_time: number, delta: number) {
-    if (!this.player || !this.agentManager || !this.interactionMgr) return
+    if (!this.player || !this.agentManager || !this.interactionMgr || !this.zoneHighlight) return
 
     // ── A. Drain command queue ──
     const commands = drain()
@@ -150,6 +165,12 @@ export class OfficeScene extends Phaser.Scene {
     // ── B. Game logic ──
     this.player.update(delta)
     this.agentManager.update(delta)  // advance agent walks + idle behavior
+
+    // ── Zone presence detection ──
+    const currentZoneId = this.zoneHighlight.update(
+      this.player.sprite.x,
+      this.player.sprite.y,
+    )
 
     const nearest = this.interactionMgr.update(
       this.player.sprite.x,
@@ -165,6 +186,7 @@ export class OfficeScene extends Phaser.Scene {
     snapshot.player.y = this.player.sprite.y
     snapshot.player.facing = this.player.currentFacing
     snapshot.player.moving = this.player.isMoving
+    snapshot.player.zoneId = currentZoneId
     snapshot.camera.x = cam.worldView.x
     snapshot.camera.y = cam.worldView.y
     snapshot.camera.w = cam.worldView.width

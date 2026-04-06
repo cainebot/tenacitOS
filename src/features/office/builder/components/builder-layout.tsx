@@ -7,6 +7,7 @@ import { BuilderTopBar } from './builder-top-bar'
 import { BuilderToolbar } from './builder-toolbar'
 import { BuilderRightPanel } from './builder-right-panel'
 import { BuilderPopover } from './builder-popover'
+import { ZoneLabelOverlay } from './zone-label-overlay'
 
 const BuilderBridge = dynamic(
   () => import('@/game/builder-bridge').then((m) => m.BuilderBridge),
@@ -43,9 +44,10 @@ export function BuilderLayout() {
         {/* Left toolbar */}
         <BuilderToolbar />
 
-        {/* Center canvas — Phaser builder + popover overlay */}
+        {/* Center canvas — Phaser builder + HTML overlays */}
         <div className="relative flex-1 min-w-0 min-h-0">
           <BuilderBridge />
+          <ZoneLabelOverlay />
           <BuilderPopover />
         </div>
 

@@ -41,7 +41,6 @@ function getVisualState(cell: TildeCell, activeTool: ActiveTool): VisualState {
 export class TildeGrid {
   private grid: TildeCell[][]
   private graphics: Phaser.GameObjects.Graphics
-  private textPool: Map<string, Phaser.GameObjects.Text> = new Map()
   private hoverCell: { row: number; col: number } | null = null
   private hoverRect: { startRow: number; startCol: number; endRow: number; endCol: number } | null = null
   private dirty = true
@@ -114,6 +113,20 @@ export class TildeGrid {
     return this.grid
   }
 
+  /** Clear all cells belonging to a specific zone (used when deleting a zone). */
+  clearZoneCells(zoneId: string): void {
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        const cell = this.grid[r][c]
+        if (cell.zoneId === zoneId) {
+          cell.zoneId = null
+          cell.seatId = null
+        }
+      }
+    }
+    this.dirty = true
+  }
+
   /** Initialize grid from existing zone data (used to restore painted cells from map_json). */
   loadFromZones(zones: Zone[]): void {
     // Clear zone/seat data only — preserve blocked state
@@ -176,14 +189,6 @@ export class TildeGrid {
     const gfx = this.graphics
     gfx.clear()
 
-    // Build a quick lookup: zoneId -> displayOrder for zone number labels
-    const zoneOrderMap = new Map<string, number>()
-    for (const zone of zones) {
-      if (zone.displayOrder !== undefined) {
-        zoneOrderMap.set(zone.id, zone.displayOrder)
-      }
-    }
-
     const cam = this.scene.cameras.main
     const ts = this.tileSize
 
@@ -192,9 +197,6 @@ export class TildeGrid {
     const startRow = Math.max(0, Math.floor(cam.worldView.y / ts))
     const endCol = Math.min(this.cols - 1, Math.ceil((cam.worldView.x + cam.worldView.width) / ts))
     const endRow = Math.min(this.rows - 1, Math.ceil((cam.worldView.y + cam.worldView.height) / ts))
-
-    // Track which text keys are visible in this frame
-    const visibleTextKeys = new Set<string>()
 
     for (let row = startRow; row <= endRow; row++) {
       for (let col = startCol; col <= endCol; col++) {
@@ -250,61 +252,6 @@ export class TildeGrid {
           // Right armrest
           gfx.fillRect(px + ts / 2 + 9, py + ts / 2 - 4, 3, 8)
         }
-
-        // Zone number label for room cells (centered) and seat cells (top-right)
-        if (visualState === 'room' || visualState === 'seat') {
-          const key = `${row}-${col}`
-          const displayOrder = cell.zoneId ? (zoneOrderMap.get(cell.zoneId) ?? 0) : 0
-          const label = String(displayOrder)
-          visibleTextKeys.add(key)
-
-          if (visualState === 'seat') {
-            // Seat: zone number at top-right corner
-            if (this.textPool.has(key)) {
-              const text = this.textPool.get(key)!
-              text.setText(label)
-              text.setPosition(px + ts - 4, py + 4)
-              text.setOrigin(1, 0)
-              text.setVisible(true)
-            } else {
-              const text = this.scene.add
-                .text(px + ts - 4, py + 4, label, {
-                  fontFamily: 'JetBrains Mono',
-                  fontSize: '10px',
-                  color: '#2d3282',
-                })
-                .setOrigin(1, 0)
-                .setDepth(6)
-              this.textPool.set(key, text)
-            }
-          } else {
-            // Room: zone number centered
-            if (this.textPool.has(key)) {
-              const text = this.textPool.get(key)!
-              text.setText(label)
-              text.setPosition(px + ts / 2, py + ts / 2)
-              text.setOrigin(0.5)
-              text.setVisible(true)
-            } else {
-              const text = this.scene.add
-                .text(px + ts / 2, py + ts / 2, label, {
-                  fontFamily: 'JetBrains Mono',
-                  fontSize: '10px',
-                  color: '#2d3282',
-                })
-                .setOrigin(0.5)
-                .setDepth(6)
-              this.textPool.set(key, text)
-            }
-          }
-        }
-      }
-    }
-
-    // Hide text objects that are no longer in the visible/room/seat region
-    for (const [key, text] of this.textPool) {
-      if (!visibleTextKeys.has(key)) {
-        text.setVisible(false)
       }
     }
   }
@@ -366,9 +313,5 @@ export class TildeGrid {
 
   destroy(): void {
     this.graphics.destroy()
-    for (const text of this.textPool.values()) {
-      text.destroy()
-    }
-    this.textPool.clear()
   }
 }

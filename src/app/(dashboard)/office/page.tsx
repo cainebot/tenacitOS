@@ -9,6 +9,7 @@ import { useProjection } from '@/features/office/viewer/hooks/use-projection'
 import { useZoneBindings } from '@/features/office/viewer/hooks/use-zone-bindings'
 import { useOfficeMap } from '@/features/office/viewer/hooks/use-office-map'
 import { useOfficeStore } from '@/features/office/stores/office-store'
+import { ZoneBadgeOverlay } from '@/features/office/viewer/components/zone-badge-overlay'
 
 const PhaserBridge = dynamic(
   () => import('@/game/phaser-bridge').then(m => m.PhaserBridge),
@@ -32,7 +33,7 @@ export default function OfficePage() {
   }, [zoneBindings, setZoneBindings])
 
   // Load map document from Supabase and push to store
-  const { mapDocument } = useOfficeMap()
+  const { mapDocument, loading: mapLoading } = useOfficeMap()
   const setMapDocument = useOfficeStore((s) => s.setMapDocument)
   const setPois = useOfficeStore((s) => s.setPois)
 
@@ -66,10 +67,21 @@ export default function OfficePage() {
     }
   }, [])
 
+  // Gate: don't mount Phaser until DB map data is loaded (avoids race condition
+  // where OfficeScene reads empty fallback zones before Supabase fetch completes)
+  if (mapLoading) {
+    return (
+      <div className="flex flex-1 w-full items-center justify-center">
+        <p className="text-sm text-tertiary">Loading office...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-row flex-1 w-full overflow-hidden p-2" style={{ minHeight: 0 }}>
       <div className="relative flex-1 min-w-0 h-full rounded-3xl overflow-hidden">
         <PhaserBridge />
+        <ZoneBadgeOverlay />
         <MiniMap />
       </div>
 

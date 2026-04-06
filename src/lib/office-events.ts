@@ -33,6 +33,10 @@ export type OfficeEventMap = {
 
   // Phase 85 binding overlays
   'bindings:update': ZoneBinding[]
+
+  // Zone presence (player enters/exits a zone area)
+  'zone:enter': { zoneId: string; label: string; badgeWorldX: number; badgeWorldY: number }
+  'zone:exit': { zoneId: string }
 }
 
 type Listener<T> = (payload: T) => void

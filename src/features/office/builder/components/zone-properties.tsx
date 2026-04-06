@@ -43,6 +43,9 @@ export function ZoneProperties({ zoneId, onClose }: ZonePropertiesProps) {
   }
 
   const handleDelete = () => {
+    // Clear painted cells from Phaser grid before removing zone from store
+    const grid = (globalThis as any).__circos_builder_grid
+    if (grid) grid.clearZoneCells(zoneId)
     deleteZone(zoneId)
     onClose()
   }

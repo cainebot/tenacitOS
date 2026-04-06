@@ -172,11 +172,20 @@ export class BuilderScene extends Phaser.Scene {
   shutdown() {
     this._unsubToolChange?.()
     delete (globalThis as any).__circos_builder_grid
+    delete (globalThis as any).__circos_builder_cam
   }
 
   update() {
     this.inputHandler?.update()
     const { zones, activeTool } = useBuilderStore.getState()
     this.tildeGrid?.update(zones, activeTool)
+
+    // Expose camera state for React HTML overlays (zone label badges)
+    const cam = this.cameras.main
+    ;(globalThis as any).__circos_builder_cam = {
+      worldViewX: cam.worldView.x,
+      worldViewY: cam.worldView.y,
+      zoom: cam.zoom,
+    }
   }
 }
