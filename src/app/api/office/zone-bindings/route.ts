@@ -8,7 +8,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
-  const { zoneId, agentId, projectId } = await request.json()
+  const { zoneId, agentId, projectId, zoneType, boardId, roomCapability } = await request.json()
   if (!zoneId) {
     return NextResponse.json({ message: 'Missing zoneId' }, { status: 400 })
   }
@@ -17,6 +17,9 @@ export async function PATCH(request: NextRequest) {
   const update: Record<string, unknown> = {}
   if (agentId !== undefined) update.agent_id = agentId
   if (projectId !== undefined) update.project_id = projectId
+  if (zoneType !== undefined) update.zone_type = zoneType
+  if (boardId !== undefined) update.board_id = boardId
+  if (roomCapability !== undefined) update.room_capability = roomCapability
 
   const { error } = await supabase
     .from('office_zone_bindings')
