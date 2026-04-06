@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import officeEvents from '@/lib/office-events'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
-import { useRealtimeTasks } from '@/hooks/useRealtimeTasks'
+import { useEnrichedTasks } from './use-enriched-tasks'
 import { useOfficeStore } from '../../stores/office-store'
-import { resolveAgentState } from '../../projection/projection-service'
+import { resolveDurable } from '../../projection/projection-service'
 import { IdleScheduler, pickRandomPOI, pickFlavorText } from '../../projection/idle-scheduler'
 import { subscribe, getSnapshot } from '@/game/state-snapshot'
 import type { AgentSpatialState } from '../../types'
@@ -14,12 +14,15 @@ import type { AgentSpatialState } from '../../types'
  * Wires Supabase Realtime (agents + tasks) through ProjectionService
  * to officeEvents 'projection:update'. Must be mounted in the office page.
  *
+ * Uses resolveDurable() for board_id-aware projection (Phase 87 v2 pipeline).
+ * Idle agents wander continuously — no return-to-desk pattern.
+ *
  * Only emits when Phaser scene lifecycle is 'ready' (prevents race condition
  * where events fire before AgentManager has spawned agents).
  */
 export function useProjection(): void {
   const { agents } = useRealtimeAgents()
-  const { tasks } = useRealtimeTasks()
+  const { enrichedTasks } = useEnrichedTasks()
   const zoneBindings = useOfficeStore((s) => s.zoneBindings)
   const pois = useOfficeStore((s) => s.pois)
 
@@ -51,22 +54,20 @@ export function useProjection(): void {
     const scheduler = idleSchedulerRef.current!
 
     for (const agent of agents) {
-      // Find home desk binding
+      // Find home desk binding using v2 canonical lookup (zone_type === 'desk')
       const homeDesk = zoneBindings.find(
-        (b) => b.agent_id === agent.agent_id && b.binding_type === 'agent_desk'
-      )
-      if (!homeDesk) continue  // skip agent without desk binding
+        (b) => b.agent_id === agent.agent_id && b.zone_type === 'desk'
+      ) ?? null  // resolveDurable handles null homeDesk with {x:0,y:0} fallback
 
-      // Filter active tasks for this agent
-      const activeTasks = tasks.filter((t) => t.target_agent_id === agent.agent_id)
+      // Filter active enriched tasks for this agent
+      const activeTasks = enrichedTasks.filter((t) => t.target_agent_id === agent.agent_id)
 
-      // Resolve spatial state
-      const state: AgentSpatialState = resolveAgentState({
+      // Resolve spatial state via v2 durable projection pipeline
+      const state = resolveDurable({
         agent,
         homeDesk,
         activeTasks,
         zoneBindings,
-        mapZones: [],  // MVP: no map zones parsed
       })
 
       // Emit projection event to Phaser
@@ -90,28 +91,15 @@ export function useProjection(): void {
             animationState: 'emote',
             emote: null,
             chatBubble: pickFlavorText(poi),
+            publicState: 'idle',      // wandering is still idle public state
+            badge: null,
+            source: 'durable',
           }
           officeEvents.emit('projection:update', {
             agentId: agent.agent_id,
             state: wanderState,
           })
-
-          // After POI visit (10-20s), return to desk
-          const returnDelay = 10_000 + Math.random() * 10_000
-          setTimeout(() => {
-            const deskState: AgentSpatialState = {
-              agentId: agent.agent_id,
-              targetZoneId: homeDesk.zone_id,
-              targetGridPos: { x: homeDesk.grid_x, y: homeDesk.grid_y },
-              animationState: 'idle',
-              emote: null,
-              chatBubble: null,
-            }
-            officeEvents.emit('projection:update', {
-              agentId: agent.agent_id,
-              state: deskState,
-            })
-          }, returnDelay)
+          // No return-to-desk setTimeout — idle scheduler re-triggers next wander on cycle
         })
       } else {
         // Non-idle state: cancel any pending wander
@@ -123,5 +111,5 @@ export function useProjection(): void {
     return () => {
       scheduler.cancelAll()
     }
-  }, [agents, tasks, zoneBindings, pois, lifecycle])
+  }, [agents, enrichedTasks, zoneBindings, pois, lifecycle])
 }

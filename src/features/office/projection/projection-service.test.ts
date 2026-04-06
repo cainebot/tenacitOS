@@ -512,7 +512,7 @@ describe('resolveDurable', () => {
 
   describe('P2: Executing task — office zone routing', () => {
     it('routes to office zone by board_id when executing task matches zone binding', () => {
-      const agent = makeAgent({ status: 'in_progress' })
+      const agent = makeAgent({ status: 'working' })
       const homeDesk = makeDesk(agent.agent_id)
       const officeBinding = makeOfficeBinding('board-42')
       const task = makeEnrichedTask({ status: 'in_progress', board_id: 'board-42' })
@@ -530,7 +530,7 @@ describe('resolveDurable', () => {
     })
 
     it('returns publicState=overloaded when 2+ executing tasks have different board_ids', () => {
-      const agent = makeAgent({ status: 'in_progress' })
+      const agent = makeAgent({ status: 'working' })
       const homeDesk = makeDesk(agent.agent_id)
       const task1 = makeEnrichedTask({ task_id: 't1', status: 'in_progress', board_id: 'board-1' })
       const task2 = makeEnrichedTask({ task_id: 't2', status: 'in_progress', board_id: 'board-2' })
@@ -547,7 +547,7 @@ describe('resolveDurable', () => {
     })
 
     it('falls back to desk when executing task has no matching office zone binding', () => {
-      const agent = makeAgent({ status: 'in_progress' })
+      const agent = makeAgent({ status: 'working' })
       const homeDesk = makeDesk(agent.agent_id)
       const task = makeEnrichedTask({ status: 'in_progress', board_id: 'unknown-board' })
       const input = makeDurableInput({
@@ -562,7 +562,7 @@ describe('resolveDurable', () => {
     })
 
     it('slices chatBubble to 60 chars (not 40)', () => {
-      const agent = makeAgent({ status: 'in_progress' })
+      const agent = makeAgent({ status: 'working' })
       const longDescription = 'A'.repeat(80)
       const task = makeEnrichedTask({ status: 'in_progress', board_id: null, description: longDescription })
       const input = makeDurableInput({
