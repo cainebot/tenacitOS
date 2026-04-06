@@ -97,20 +97,23 @@ export class PlayerSprite {
       let nextY = this.sprite.y + vy * speed
 
       // Collision check against navGrid blocked cells
+      // Check feet cell AND body cell (1 tile above feet) to prevent
+      // the character from visually overlapping blocked areas.
       if (this.navGrid) {
-        const gridX = Math.floor(nextX / this.tileSize)
-        const gridY = Math.floor(nextY / this.tileSize)
+        const ts = this.tileSize
+        const canWalk = (x: number, y: number) => {
+          const footCol = Math.floor(x / ts)
+          const footRow = Math.floor(y / ts)
+          const bodyRow = footRow - 1 // torso = 1 tile above feet
+          return this.navGrid!.isWalkable(footCol, footRow)
+            && this.navGrid!.isWalkable(footCol, bodyRow)
+        }
 
-        if (!this.navGrid.isWalkable(gridX, gridY)) {
+        if (!canWalk(nextX, nextY)) {
           // Try sliding along axes individually
-          const gridXOnly = Math.floor(nextX / this.tileSize)
-          const gridYOnly = Math.floor(this.sprite.y / this.tileSize)
-          const gridXCur = Math.floor(this.sprite.x / this.tileSize)
-          const gridYNew = Math.floor(nextY / this.tileSize)
-
-          if (this.navGrid.isWalkable(gridXOnly, gridYOnly)) {
+          if (canWalk(nextX, this.sprite.y)) {
             nextY = this.sprite.y // block Y, allow X
-          } else if (this.navGrid.isWalkable(gridXCur, gridYNew)) {
+          } else if (canWalk(this.sprite.x, nextY)) {
             nextX = this.sprite.x // block X, allow Y
           } else {
             nextX = this.sprite.x // block both

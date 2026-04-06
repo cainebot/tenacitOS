@@ -4,6 +4,11 @@ import { commandHistory, type PaintCommand } from '@/features/office/builder/sto
 import { isTempHandActive } from './builder-flags'
 import type { TildeGrid, TildeCell } from './tilde-grid'
 
+/** Edge panning: how close to viewport edge (in screen px) to trigger scroll */
+const EDGE_MARGIN = 60
+/** Edge panning: pixels per frame to scroll the camera */
+const EDGE_SCROLL_SPEED = 8
+
 export class BuilderInputHandler {
   private scene: Phaser.Scene
   private tildeGrid: TildeGrid
@@ -13,6 +18,8 @@ export class BuilderInputHandler {
   private isDragging = false
   private dragBatch: Array<{ row: number; col: number; prev: TildeCell; next: TildeCell }> = []
   private lastPaintedCell: { row: number; col: number } | null = null
+  private dragStartCell: { row: number; col: number } | null = null
+  private isRectMode = false
 
   constructor(scene: Phaser.Scene, tildeGrid: TildeGrid, tileSize: number, cols: number, rows: number) {
     this.scene = scene
@@ -38,9 +45,13 @@ export class BuilderInputHandler {
       this.isDragging = true
       this.dragBatch = []
       this.lastPaintedCell = null
+      this.isRectMode = ptr.event.shiftKey
 
       const cell = this.pixelToCell(ptr)
-      if (cell) {
+      this.dragStartCell = cell ? { row: cell.row, col: cell.col } : null
+
+      // In rect mode, don't paint the first cell — wait for pointerup
+      if (!this.isRectMode && cell) {
         this.processCell(cell.row, cell.col)
       }
     })
@@ -49,8 +60,11 @@ export class BuilderInputHandler {
       const cell = this.pixelToCell(ptr)
 
       if (this.isDragging && ptr.isDown) {
-        // Paint during drag
-        if (cell) {
+        if (this.isRectMode && this.dragStartCell && cell) {
+          // Shift held: show rectangle preview, don't paint individual cells
+          this.tildeGrid.setHoverRect(this.dragStartCell.row, this.dragStartCell.col, cell.row, cell.col)
+        } else if (cell) {
+          // Normal drag: paint cell by cell
           this.processCell(cell.row, cell.col)
         }
       } else {
@@ -63,7 +77,25 @@ export class BuilderInputHandler {
       }
     })
 
-    this.scene.input.on('pointerup', () => {
+    this.scene.input.on('pointerup', (ptr: Phaser.Input.Pointer) => {
+      // Rect mode: fill the entire rectangle on release
+      if (this.isRectMode && this.dragStartCell) {
+        const endCell = this.pixelToCell(ptr)
+        if (endCell) {
+          const minRow = Math.min(this.dragStartCell.row, endCell.row)
+          const maxRow = Math.max(this.dragStartCell.row, endCell.row)
+          const minCol = Math.min(this.dragStartCell.col, endCell.col)
+          const maxCol = Math.max(this.dragStartCell.col, endCell.col)
+
+          for (let r = minRow; r <= maxRow; r++) {
+            for (let c = minCol; c <= maxCol; c++) {
+              this.processCell(r, c)
+            }
+          }
+        }
+        this.tildeGrid.clearHoverRect()
+      }
+
       this.isDragging = false
 
       // Commit drag batch as a single undo-able command
@@ -80,6 +112,8 @@ export class BuilderInputHandler {
       }
       this.dragBatch = []
       this.lastPaintedCell = null
+      this.dragStartCell = null
+      this.isRectMode = false
     })
 
     // Clear hover when pointer leaves canvas
@@ -96,6 +130,43 @@ export class BuilderInputHandler {
     if (col < 0 || col >= this.cols || row < 0 || row >= this.rows) return null
 
     return { row, col }
+  }
+
+  /** Called every frame from BuilderScene.update() — handles edge panning during drag */
+  update(): void {
+    if (!this.isDragging) return
+
+    const pointer = this.scene.input.activePointer
+    if (!pointer.isDown) return
+
+    const cam = this.scene.cameras.main
+    const sx = pointer.x  // screen-space x
+    const sy = pointer.y  // screen-space y
+    const w = cam.width
+    const h = cam.height
+
+    let dx = 0
+    let dy = 0
+
+    if (sx < EDGE_MARGIN) dx = -EDGE_SCROLL_SPEED
+    else if (sx > w - EDGE_MARGIN) dx = EDGE_SCROLL_SPEED
+
+    if (sy < EDGE_MARGIN) dy = -EDGE_SCROLL_SPEED
+    else if (sy > h - EDGE_MARGIN) dy = EDGE_SCROLL_SPEED
+
+    if (dx === 0 && dy === 0) return
+
+    // Scroll camera
+    cam.scrollX += dx / cam.zoom
+    cam.scrollY += dy / cam.zoom
+
+    // Update rect preview to follow the new world position under the pointer
+    if (this.isRectMode && this.dragStartCell) {
+      const cell = this.pixelToCell(pointer)
+      if (cell) {
+        this.tildeGrid.setHoverRect(this.dragStartCell.row, this.dragStartCell.col, cell.row, cell.col)
+      }
+    }
   }
 
   private processCell(row: number, col: number): void {

@@ -43,10 +43,11 @@ export class BuilderScene extends Phaser.Scene {
     }
     groundLayer.setDepth(0)
 
-    // ── Camera: bounds, zoom, NO player follow ──
+    // ── Camera: zoom 42/64 so 64px tiles appear at 42px visual ──
+    const PAD = 500 // world-space padding around map edges
     const cam = this.cameras.main
-    cam.setBounds(0, 0, map.widthInPixels, map.heightInPixels)
-    cam.setZoom(1.5)
+    cam.setBounds(-PAD, -PAD, map.widthInPixels + PAD * 2, map.heightInPixels + PAD * 2)
+    cam.setZoom(42 / 64) // 0.65625 — both tilemap and grid scale equally
     cam.centerOn(map.widthInPixels / 2, map.heightInPixels / 2)
 
     // ── Cursor helper (Phaser-native default cursor) ──
@@ -98,8 +99,10 @@ export class BuilderScene extends Phaser.Scene {
       }
     })
 
-    // ── Space key: temporary hand mode ──
+    // ── Space key: temporary hand mode (skip when typing in HTML inputs) ──
     this.input.keyboard?.on('keydown-SPACE', (e: KeyboardEvent) => {
+      const tag = (document.activeElement as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
       e.preventDefault()
       if (this.tempHand) return // already in temp hand
       this.tempHand = true
@@ -168,6 +171,7 @@ export class BuilderScene extends Phaser.Scene {
   }
 
   update() {
+    this.inputHandler?.update()
     const { zones } = useBuilderStore.getState()
     this.tildeGrid?.update(zones)
   }

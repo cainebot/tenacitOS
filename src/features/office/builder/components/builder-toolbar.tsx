@@ -53,7 +53,11 @@ export function BuilderToolbar() {
                 iconOnly
                 iconLeading={tool.icon}
                 aria-label={tool.label}
-                onPress={() => handleToolSwitch(tool.id)}
+                onPress={(e) => {
+                  handleToolSwitch(tool.id)
+                  ;(e.target as HTMLElement)?.blur()
+                }}
+                excludeFromTabOrder
               />
             </div>
           </Tooltip>

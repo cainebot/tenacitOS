@@ -20,6 +20,7 @@ export class TildeGrid {
   private graphics: Phaser.GameObjects.Graphics
   private textPool: Map<string, Phaser.GameObjects.Text> = new Map()
   private hoverCell: { row: number; col: number } | null = null
+  private hoverRect: { startRow: number; startCol: number; endRow: number; endCol: number } | null = null
   private dirty = true
   private cols: number
   private rows: number
@@ -57,6 +58,16 @@ export class TildeGrid {
 
   clearHover(): void {
     this.hoverCell = null
+    this.dirty = true
+  }
+
+  setHoverRect(startRow: number, startCol: number, endRow: number, endCol: number): void {
+    this.hoverRect = { startRow, startCol, endRow, endCol }
+    this.dirty = true
+  }
+
+  clearHoverRect(): void {
+    this.hoverRect = null
     this.dirty = true
   }
 
@@ -146,10 +157,18 @@ export class TildeGrid {
         const py = row * ts
 
         // Determine render state: hover overlay on non-blocked cells
+        const isInHoverRect = this.hoverRect &&
+          row >= Math.min(this.hoverRect.startRow, this.hoverRect.endRow) &&
+          row <= Math.max(this.hoverRect.startRow, this.hoverRect.endRow) &&
+          col >= Math.min(this.hoverRect.startCol, this.hoverRect.endCol) &&
+          col <= Math.max(this.hoverRect.startCol, this.hoverRect.endCol)
+
         const renderState =
-          this.hoverCell?.row === row && this.hoverCell?.col === col && cell.state !== 'blocked'
+          isInHoverRect
             ? 'hover'
-            : cell.state
+            : this.hoverCell?.row === row && this.hoverCell?.col === col && cell.state !== 'blocked'
+              ? 'hover'
+              : cell.state
 
         const colors = TILDE_COLORS[renderState]
 
