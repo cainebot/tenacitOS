@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { resolveAgentState, mergeProjection } from './projection-service'
+import { resolveAgentState, mergeProjection, resolveDurable } from './projection-service'
 import type { AgentRow, TaskRow } from '@/types/supabase'
-import type { ProjectionInput, ZoneBinding, AgentSpatialState, EphemeralOverride } from '../types'
+import type { ProjectionInput, ZoneBinding, AgentSpatialState, EphemeralOverride, DurableInput, EnrichedTask } from '../types'
 
 // ── Factory helpers ──
 
@@ -27,11 +27,32 @@ function makeDesk(agentId: string): ZoneBinding {
     binding_id: 'desk-' + agentId,
     zone_id: 'zone-' + agentId + '-desk',
     binding_type: 'agent_desk',
+    zone_type: 'desk',
+    room_capability: null,
     agent_id: agentId,
     project_id: null,
     board_id: null,
     grid_x: 10,
     grid_y: 10,
+    label: null,
+    color: null,
+  }
+}
+
+function makeOfficeBinding(boardId: string): ZoneBinding {
+  return {
+    binding_id: 'office-' + boardId,
+    zone_id: 'zone-office-' + boardId,
+    binding_type: 'project_board',
+    zone_type: 'office',
+    room_capability: null,
+    agent_id: null,
+    project_id: null,
+    board_id: boardId,
+    grid_x: 50,
+    grid_y: 30,
+    label: null,
+    color: null,
   }
 }
 
@@ -60,6 +81,48 @@ function makeTask(overrides: Partial<TaskRow> = {}): TaskRow {
     labels: [],
     due_date: null,
     comments: [],
+    ...overrides,
+  }
+}
+
+function makeEnrichedTask(overrides: Partial<EnrichedTask> = {}): EnrichedTask {
+  return {
+    task_id: 'task-1',
+    source_agent_id: null,
+    target_agent_id: 'test-1',
+    title: 'Test Task',
+    type: 'general',
+    status: 'pending',
+    priority: 1,
+    payload: {},
+    result: null,
+    error_message: null,
+    card_id: null,
+    max_retries: 3,
+    retry_count: 0,
+    created_at: '2026-01-01T00:00:00Z',
+    claimed_at: null,
+    started_at: null,
+    completed_at: null,
+    updated_at: '2026-01-01T00:00:00Z',
+    required_skills: [],
+    description: null,
+    labels: [],
+    due_date: null,
+    comments: [],
+    board_id: null,
+    ...overrides,
+  }
+}
+
+function makeDurableInput(overrides: Partial<DurableInput> = {}): DurableInput {
+  const agent = overrides.agent ?? makeAgent()
+  const homeDesk = overrides.homeDesk !== undefined ? overrides.homeDesk : makeDesk(agent.agent_id)
+  return {
+    agent,
+    homeDesk,
+    activeTasks: [],
+    zoneBindings: homeDesk ? [homeDesk] : [],
     ...overrides,
   }
 }
@@ -99,18 +162,24 @@ describe('resolveAgentState', () => {
   })
 
   describe('Priority 2: Working on task', () => {
-    it('targets board zone when executing task has matching project_board binding', () => {
+    it('falls back to desk when executing task has no board_id (legacy adapter strips board_id)', () => {
+      // The deprecated resolveAgentState adapter always sets board_id=null on tasks.
+      // This means routing to office zone requires using resolveDurable directly.
       const agent = makeAgent({ status: 'working' })
       const homeDesk = makeDesk(agent.agent_id)
       const boardBinding: ZoneBinding = {
         binding_id: 'board-1',
         zone_id: 'zone-board-1',
         binding_type: 'project_board',
+        zone_type: 'office',
+        room_capability: null,
         agent_id: null,
         project_id: 'proj-1',
         board_id: 'board-1',
         grid_x: 50,
         grid_y: 30,
+        label: null,
+        color: null,
       }
       const executingTask = makeTask({ status: 'in_progress' })
       const input = makeInput({
@@ -120,21 +189,23 @@ describe('resolveAgentState', () => {
         zoneBindings: [homeDesk, boardBinding],
       })
       const result = resolveAgentState(input)
-      expect(result.targetZoneId).toBe(boardBinding.zone_id)
-      expect(result.targetGridPos).toEqual({ x: boardBinding.grid_x, y: boardBinding.grid_y })
+      // Adapter strips board_id -> no office zone match -> falls to desk
+      expect(result.targetZoneId).toBe(homeDesk.zone_id)
       expect(result.animationState).toBe('working')
     })
 
-    it('includes truncated task description as chatBubble (max 40 chars)', () => {
+    it('includes truncated task description as chatBubble (max 60 chars via adapter)', () => {
+      // Adapter delegates to resolveDurable. Even in desk-fallback path, chatBubble is set
+      // from task description (sliced to 60 chars).
       const agent = makeAgent({ status: 'working' })
-      const longDescription = 'This is a very long task description that exceeds 40 characters'
+      const longDescription = 'This is a very long task description that exceeds 60 characters in total length here'
       const executingTask = { ...makeTask(), status: 'in_progress' as TaskRow['status'], description: longDescription }
       const input = makeInput({
         agent,
         activeTasks: [executingTask],
       })
       const result = resolveAgentState(input)
-      expect(result.chatBubble).toBe(longDescription.slice(0, 40))
+      expect(result.chatBubble).toBe(longDescription.slice(0, 60))
     })
 
     it('targets home desk when executing task has no board zone binding', () => {
@@ -206,11 +277,15 @@ describe('resolveAgentState', () => {
         binding_id: 'board-1',
         zone_id: 'zone-board-1',
         binding_type: 'project_board',
+        zone_type: 'office',
+        room_capability: null,
         agent_id: null,
         project_id: 'proj-1',
         board_id: 'board-1',
         grid_x: 50,
         grid_y: 30,
+        label: null,
+        color: null,
       }
       const executingTask = { ...makeTask(), status: 'in_progress' as TaskRow['status'] }
       const input = makeInput({
@@ -399,6 +474,156 @@ describe('mergeProjection', () => {
       expect(result.targetZoneId).toBe('zone-room-5')
       expect(result.publicState).toBe('focused')
       expect(result.source).toBe('ephemeral')
+    })
+  })
+})
+
+// ── resolveDurable tests ──
+
+describe('resolveDurable', () => {
+  describe('P1: Error state', () => {
+    it('returns publicState=error and source=durable when agent status is error', () => {
+      const input = makeDurableInput({ agent: makeAgent({ status: 'error' }) })
+      const result = resolveDurable(input)
+      expect(result.publicState).toBe('error')
+      expect(result.animationState).toBe('error')
+      expect(result.emote).toBe('error')
+      expect(result.source).toBe('durable')
+    })
+
+    it('targets home desk zone when error with homeDesk', () => {
+      const agent = makeAgent({ status: 'error' })
+      const homeDesk = makeDesk(agent.agent_id)
+      const input = makeDurableInput({ agent, homeDesk })
+      const result = resolveDurable(input)
+      expect(result.targetZoneId).toBe(homeDesk.zone_id)
+      expect(result.targetGridPos).toEqual({ x: homeDesk.grid_x, y: homeDesk.grid_y })
+    })
+
+    it('returns targetZoneId=null and targetGridPos={x:0,y:0} when error with null homeDesk', () => {
+      const agent = makeAgent({ status: 'error' })
+      const input = makeDurableInput({ agent, homeDesk: null })
+      const result = resolveDurable(input)
+      expect(result.targetZoneId).toBeNull()
+      expect(result.targetGridPos).toEqual({ x: 0, y: 0 })
+      expect(result.publicState).toBe('error')
+    })
+  })
+
+  describe('P2: Executing task — office zone routing', () => {
+    it('routes to office zone by board_id when executing task matches zone binding', () => {
+      const agent = makeAgent({ status: 'in_progress' })
+      const homeDesk = makeDesk(agent.agent_id)
+      const officeBinding = makeOfficeBinding('board-42')
+      const task = makeEnrichedTask({ status: 'in_progress', board_id: 'board-42' })
+      const input = makeDurableInput({
+        agent,
+        homeDesk,
+        activeTasks: [task],
+        zoneBindings: [homeDesk, officeBinding],
+      })
+      const result = resolveDurable(input)
+      expect(result.targetZoneId).toBe(officeBinding.zone_id)
+      expect(result.targetGridPos).toEqual({ x: officeBinding.grid_x, y: officeBinding.grid_y })
+      expect(result.publicState).toBe('working')
+      expect(result.source).toBe('durable')
+    })
+
+    it('returns publicState=overloaded when 2+ executing tasks have different board_ids', () => {
+      const agent = makeAgent({ status: 'in_progress' })
+      const homeDesk = makeDesk(agent.agent_id)
+      const task1 = makeEnrichedTask({ task_id: 't1', status: 'in_progress', board_id: 'board-1' })
+      const task2 = makeEnrichedTask({ task_id: 't2', status: 'in_progress', board_id: 'board-2' })
+      const input = makeDurableInput({
+        agent,
+        homeDesk,
+        activeTasks: [task1, task2],
+        zoneBindings: [homeDesk],
+      })
+      const result = resolveDurable(input)
+      expect(result.publicState).toBe('overloaded')
+      expect(result.badge).toContain('multiple boards')
+      expect(result.source).toBe('durable')
+    })
+
+    it('falls back to desk when executing task has no matching office zone binding', () => {
+      const agent = makeAgent({ status: 'in_progress' })
+      const homeDesk = makeDesk(agent.agent_id)
+      const task = makeEnrichedTask({ status: 'in_progress', board_id: 'unknown-board' })
+      const input = makeDurableInput({
+        agent,
+        homeDesk,
+        activeTasks: [task],
+        zoneBindings: [homeDesk], // no office binding for this board
+      })
+      const result = resolveDurable(input)
+      expect(result.targetZoneId).toBe(homeDesk.zone_id)
+      expect(result.publicState).toBe('working')
+    })
+
+    it('slices chatBubble to 60 chars (not 40)', () => {
+      const agent = makeAgent({ status: 'in_progress' })
+      const longDescription = 'A'.repeat(80)
+      const task = makeEnrichedTask({ status: 'in_progress', board_id: null, description: longDescription })
+      const input = makeDurableInput({
+        agent,
+        activeTasks: [task],
+      })
+      const result = resolveDurable(input)
+      expect(result.chatBubble).toBe(longDescription.slice(0, 60))
+      expect(result.chatBubble?.length).toBe(60)
+    })
+  })
+
+  describe('P3: Thinking / queued', () => {
+    it('returns publicState=waiting and animationState=thinking for status thinking', () => {
+      const input = makeDurableInput({ agent: makeAgent({ status: 'thinking' }) })
+      const result = resolveDurable(input)
+      expect(result.publicState).toBe('waiting')
+      expect(result.animationState).toBe('thinking')
+      expect(result.emote).toBe('thinking')
+      expect(result.source).toBe('durable')
+    })
+
+    it('returns publicState=waiting for status queued', () => {
+      const input = makeDurableInput({ agent: makeAgent({ status: 'queued' }) })
+      const result = resolveDurable(input)
+      expect(result.publicState).toBe('waiting')
+    })
+
+    it('returns targetZoneId=null and targetGridPos={x:0,y:0} for thinking with null homeDesk', () => {
+      const agent = makeAgent({ status: 'thinking' })
+      const input = makeDurableInput({ agent, homeDesk: null })
+      const result = resolveDurable(input)
+      expect(result.targetZoneId).toBeNull()
+      expect(result.targetGridPos).toEqual({ x: 0, y: 0 })
+    })
+  })
+
+  describe('P4: Idle — wander', () => {
+    it('returns targetZoneId=null for idle agent (WANDER, not desk)', () => {
+      const input = makeDurableInput({ agent: makeAgent({ status: 'idle' }) })
+      const result = resolveDurable(input)
+      expect(result.targetZoneId).toBeNull()
+      expect(result.publicState).toBe('idle')
+      expect(result.source).toBe('durable')
+    })
+
+    it('returns targetZoneId=null for any unrecognized status (fallthrough)', () => {
+      const input = makeDurableInput({ agent: makeAgent({ status: 'offline' }) })
+      const result = resolveDurable(input)
+      expect(result.targetZoneId).toBeNull()
+      expect(result.publicState).toBe('idle')
+    })
+  })
+
+  describe('source field', () => {
+    it('all branches return source=durable', () => {
+      const statuses = ['error', 'thinking', 'queued', 'idle'] as const
+      for (const status of statuses) {
+        const result = resolveDurable(makeDurableInput({ agent: makeAgent({ status }) }))
+        expect(result.source).toBe('durable')
+      }
     })
   })
 })
