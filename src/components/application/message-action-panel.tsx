@@ -1,15 +1,16 @@
 'use client'
 
 import { cx } from '@circos/ui'
-import { Stars02, Edit04, RefreshCcw02, Copy01 } from '@untitledui/icons'
+import { Button as AriaButton } from 'react-aria-components'
+import { RefreshCcw02, Copy01, CornerUpLeft } from '@untitledui/icons'
 import type { FC, SVGProps } from 'react'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type MessageAction = 'ai' | 'edit' | 'retry' | 'copy'
+export type MessageAction = 'copy' | 'retry' | 'reply'
 
 export interface MessageActionPanelProps {
-  /** Actions to display (default: all four) */
+  /** Actions to display (default: all three) */
   actions?: MessageAction[]
   /** Callback when any action is clicked */
   onAction?: (action: MessageAction) => void
@@ -19,13 +20,12 @@ export interface MessageActionPanelProps {
 // ── Action config ────────────────────────────────────────────────────────────
 
 const actionConfig: Record<MessageAction, { icon: FC<SVGProps<SVGSVGElement>>; label: string }> = {
-  ai: { icon: Stars02, label: 'AI assist' },
-  edit: { icon: Edit04, label: 'Edit message' },
-  retry: { icon: RefreshCcw02, label: 'Retry' },
   copy: { icon: Copy01, label: 'Copy' },
+  retry: { icon: RefreshCcw02, label: 'Retry' },
+  reply: { icon: CornerUpLeft, label: 'Reply' },
 }
 
-const defaultActions: MessageAction[] = ['ai', 'edit', 'retry', 'copy']
+const defaultActions: MessageAction[] = ['copy', 'retry', 'reply']
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ export function MessageActionPanel({
   return (
     <div
       className={cx(
-        'bg-[#13161b] flex items-center gap-1.5 px-2 py-1.5 rounded-lg shadow-xl',
+        'bg-primary flex items-center gap-1.5 px-2 py-1.5 rounded-lg shadow-xl',
         className
       )}
       role="toolbar"
@@ -46,15 +46,14 @@ export function MessageActionPanel({
       {actions.map((action) => {
         const { icon: Icon, label } = actionConfig[action]
         return (
-          <button
+          <AriaButton
             key={action}
-            type="button"
             className="p-0.5 rounded-sm hover:bg-secondary_hover transition-colors"
             aria-label={label}
-            onClick={() => onAction?.(action)}
+            onPress={() => onAction?.(action)}
           >
             <Icon className="size-4 text-fg-white" />
-          </button>
+          </AriaButton>
         )
       })}
     </div>
