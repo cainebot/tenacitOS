@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { createBrowserClient } from '@/lib/supabase'
 import { createChannel } from '@/lib/chat'
 import { toast } from 'sonner'
 
@@ -24,17 +23,12 @@ export function useChannelCreation(
   const [selectedMembers, setSelectedMembers] = useState<Agent[]>([])
   const [creating, setCreating] = useState(false)
 
-  // Load agent list on mount
+  // Load agent list on mount (service role bypasses RLS)
   useEffect(() => {
-    const supabase = createBrowserClient()
-    supabase
-      .from('chat_participants')
-      .select('participant_id, display_name, avatar_url')
-      .eq('participant_type', 'agent')
-      .order('display_name')
-      .then(({ data }) => {
-        if (data) setAgents(data as Agent[])
-      })
+    fetch('/api/chat-participants?type=agent')
+      .then((res) => res.json())
+      .then((data) => { if (Array.isArray(data)) setAgents(data) })
+      .catch(() => {})
   }, [])
 
   // Validation

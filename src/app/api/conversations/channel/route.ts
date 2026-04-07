@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
+import { createServiceRoleClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
 // POST /api/conversations/channel
 // Body: { name: string, memberParticipantIds: string[] }
 // Creates a group conversation with Joan as owner and given members
-// Per CHAT-UI-04
+// Uses service_role (middleware already verifies mc_auth cookie for auth)
 export async function POST(request: NextRequest) {
-  const supabase = createServerClient()
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const supabase = createServiceRoleClient()
 
   let body: { name?: string; memberParticipantIds?: string[] }
   try {
@@ -31,12 +26,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'memberParticipantIds must be a non-empty array' }, { status: 400 })
   }
 
-  // Step 1: Resolve Joan's participant_id
+  // Step 1: Resolve Joan's participant_id (single human participant)
   const { data: joanRow, error: joanError } = await supabase
     .from('chat_participants')
     .select('participant_id')
     .eq('participant_type', 'human')
-    .eq('external_id', user.id)
+    .limit(1)
     .single()
 
   if (joanError || !joanRow) {

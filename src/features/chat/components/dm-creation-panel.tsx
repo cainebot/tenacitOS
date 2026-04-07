@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Button, Select } from '@circos/ui'
-import { createBrowserClient } from '@/lib/supabase'
 import { getOrCreateDirectConversation } from '@/lib/chat'
 import { toast } from 'sonner'
 
@@ -27,17 +26,12 @@ export function DmCreationPanel({ onBack, onConversationCreated }: DmCreationPan
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
 
-  // Load agent participants on mount
+  // Load agent participants on mount (service role bypasses RLS)
   useEffect(() => {
-    const supabase = createBrowserClient()
-    supabase
-      .from('chat_participants')
-      .select('participant_id, display_name, avatar_url, role')
-      .eq('participant_type', 'agent')
-      .order('display_name')
-      .then(({ data }) => {
-        if (data) setAgents(data as Agent[])
-      })
+    fetch('/api/chat-participants?type=agent')
+      .then((res) => res.json())
+      .then((data) => { if (Array.isArray(data)) setAgents(data) })
+      .catch(() => {})
   }, [])
 
   const handleCreate = async () => {
