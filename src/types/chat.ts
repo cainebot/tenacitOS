@@ -152,6 +152,7 @@ export function deriveStatusIcon(
   recipientIds: string[]
 ): MessageStatus {
   if (receipts.some(r => r.status === 'failed')) return 'failed'
+  if (recipientIds.length === 0) return 'sent'
 
   for (const recipientId of recipientIds) {
     const recipientReceipts = receipts.filter(r => r.participant_id === recipientId)
