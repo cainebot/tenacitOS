@@ -1,7 +1,11 @@
+/**
+ * @deprecated Phase 89: Legacy compatibility shim.
+ * GET redirects to /api/conversations/{id}/messages
+ * POST resolves direct conversation and inserts into messages table.
+ * Will be removed at end of v4.0 per D-06.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, createServiceRoleClient } from '@/lib/supabase'
-import { validateAgentKey } from '@/lib/agent-auth'
-import type { AgentMessageRow } from '@/types/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,117 +13,92 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
+  const { id: agentId } = await params
   const { searchParams } = new URL(request.url)
-  const topic = searchParams.get('topic') || 'general'
-  const cursor = searchParams.get('cursor')
-  const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100)
 
   const supabase = createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let query = supabase
-    .from('agent_messages')
-    .select('*')
-    .or(`recipient_agent_id.eq.${id},and(sender_type.eq.agent,sender_id.eq.${id})`)
-    .eq('topic', topic)
-    .order('created_at', { ascending: false })
-    .limit(limit)
+  // Resolve agent's participant_id
+  const { data: agentParticipant } = await supabase
+    .from('chat_participants')
+    .select('participant_id')
+    .eq('participant_type', 'agent')
+    .eq('external_id', agentId)
+    .single()
 
-  if (cursor) {
-    // Fetch cursor's created_at for keyset pagination
-    const { data: cursorRow } = await supabase
-      .from('agent_messages')
-      .select('created_at')
-      .eq('message_id', cursor)
-      .single()
-
-    if (cursorRow) {
-      query = query.lt('created_at', cursorRow.created_at)
-    }
+  if (!agentParticipant) {
+    return NextResponse.json({ error: 'Agent not found in chat_participants' }, { status: 404 })
   }
 
-  const { data, error } = await query
+  // Resolve conversation
+  const { data: convId } = await supabase.rpc('get_or_create_direct_conversation', {
+    p_human_id: user.id,
+    p_agent_id: agentParticipant.participant_id,
+  })
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!convId) {
+    return NextResponse.json({ error: 'Could not resolve conversation' }, { status: 500 })
   }
 
-  const messages = (data as AgentMessageRow[]) ?? []
-  const next_cursor = messages.length === limit ? messages[messages.length - 1].message_id : null
-
-  return NextResponse.json({ data: messages, next_cursor })
+  // 307 redirect to new endpoint (preserves query params)
+  const newUrl = new URL(`/api/conversations/${convId}/messages`, request.url)
+  searchParams.forEach((val, key) => {
+    if (key !== 'topic') newUrl.searchParams.set(key, val)
+  })
+  return NextResponse.redirect(newUrl, 307)
 }
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
+  const { id: agentId } = await params
+  const supabase = createServerClient()
 
-  // Validate agent key if request comes from an agent (x-agent-key header)
-  const agentKey = request.headers.get('x-agent-key')
-  if (agentKey) {
-    const { valid } = await validateAgentKey(agentKey)
-    if (!valid) {
-      return NextResponse.json({ error: 'Invalid agent key' }, { status: 401 })
-    }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Resolve agent participant
+  const { data: agentParticipant } = await supabase
+    .from('chat_participants')
+    .select('participant_id')
+    .eq('participant_type', 'agent')
+    .eq('external_id', agentId)
+    .single()
+
+  if (!agentParticipant) {
+    return NextResponse.json({ error: 'Agent not found in chat_participants' }, { status: 404 })
   }
 
+  // Resolve conversation
+  const { data: convId } = await supabase.rpc('get_or_create_direct_conversation', {
+    p_human_id: user.id,
+    p_agent_id: agentParticipant.participant_id,
+  })
+
+  if (!convId) {
+    return NextResponse.json({ error: 'Could not resolve conversation' }, { status: 500 })
+  }
+
+  // Per D-04: POST delegates internally (NOT redirect)
   const body = await request.json()
-
   const text = body.text?.trim()
-  if (!text) {
-    return NextResponse.json({ error: 'text is required' }, { status: 400 })
-  }
+  if (!text) return NextResponse.json({ error: 'text is required' }, { status: 400 })
 
-  const topic = body.topic || 'general'
-  const sender_type = body.sender_type || 'user'
-  const sender_id = body.sender_id || 'joan'
-  const channel = body.channel || 'web'
-
-  // Parse @mentions from message text
-  const mentionRegex = /@(\w+)/g
-  const mentionUsernames: string[] = []
-  let match
-  while ((match = mentionRegex.exec(text)) !== null) {
-    mentionUsernames.push(match[1])
-  }
-
-  let mentions: Array<{ agent_id: string; username: string }> = []
-  if (mentionUsernames.length > 0) {
-    const supabaseRead = createServerClient()
-    const { data: agents } = await supabaseRead
-      .from('agents')
-      .select('agent_id, name')
-      .in('name', mentionUsernames)
-
-    if (agents) {
-      mentions = agents.map((a: { agent_id: string; name: string }) => ({
-        agent_id: a.agent_id,
-        username: a.name,
-      }))
-    }
-  }
-
-  const supabase = createServiceRoleClient()
-
-  const { data, error } = await supabase
-    .from('agent_messages')
+  const serviceClient = createServiceRoleClient()
+  const { data, error } = await serviceClient
+    .from('messages')
     .insert({
-      sender_type,
-      sender_id,
-      recipient_agent_id: id,
-      topic,
+      conversation_id: convId,
+      sender_id: user.id,
+      content_type: 'text',
       text,
-      channel,
-      mentions,
     })
     .select()
     .single()
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data, { status: 201 })
 }
