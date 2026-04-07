@@ -59,12 +59,16 @@ export class PlayerSprite {
   }
 
   setupInput(scene: Phaser.Scene): void {
+    // Disable Phaser's global key capture so keys reach HTML inputs (chat, search)
+    scene.input.keyboard!.disableGlobalCapture()
+
     this.cursors = scene.input.keyboard!.createCursorKeys()
+    // enableCapture=false so WASD keys don't preventDefault
     this.wasd = {
-      W: scene.input.keyboard!.addKey('W'),
-      A: scene.input.keyboard!.addKey('A'),
-      S: scene.input.keyboard!.addKey('S'),
-      D: scene.input.keyboard!.addKey('D'),
+      W: scene.input.keyboard!.addKey('W', false),
+      A: scene.input.keyboard!.addKey('A', false),
+      S: scene.input.keyboard!.addKey('S', false),
+      D: scene.input.keyboard!.addKey('D', false),
     }
   }
 
