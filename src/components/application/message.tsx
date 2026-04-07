@@ -2,10 +2,18 @@
 
 import { type ReactNode, useState } from 'react'
 import { Avatar, FileTypeIcon, cx } from '@circos/ui'
+import { Button as AriaButton } from 'react-aria-components'
 import { Link03, Play, PlayCircle, PauseCircle, VolumeMax, Maximize01 } from '@untitledui/icons'
+import Picker from '@emoji-mart/react'
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+import emojiData from '@emoji-mart/data'
 import { MessageReaction } from './message-reaction'
 import { MessageActionPanel, type MessageAction } from './message-action-panel'
 import { MessageStatusIcon, type MessageStatus } from './message-status-icon'
+
+// ── Quick reaction preset ────────────────────────────────────────────────────
+
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '✅', '🚀'] as const
 
 // ── File type → color mapping ───────────────────────────────────────────────
 
@@ -77,6 +85,8 @@ interface MessageBase {
   reactions?: ReactionData[]
   actions?: MessageAction[]
   onAction?: (action: MessageAction) => void
+  /** Callback when user selects an emoji reaction from the quick picker */
+  onReact?: (emoji: string) => void
   className?: string
 }
 
@@ -150,6 +160,45 @@ export type MessageProps =
   | MessageLinkPreviewProps
   | MessageLinkMinimalProps
   | MessageWritingProps
+
+// ── QuickReactionPicker ─────────────────────────────────────────────────────
+
+function QuickReactionPicker({ onReact }: { onReact: (emoji: string) => void }) {
+  const [showFullPicker, setShowFullPicker] = useState(false)
+
+  return (
+    <div className="flex items-center gap-0.5 bg-primary border border-secondary rounded-lg shadow-xl px-1 py-0.5">
+      {QUICK_REACTIONS.map((emoji) => (
+        <AriaButton
+          key={emoji}
+          onPress={() => onReact(emoji)}
+          className="p-1 rounded-sm hover:bg-secondary_hover transition duration-100 ease-linear text-sm leading-none"
+          aria-label={`React with ${emoji}`}
+        >
+          {emoji}
+        </AriaButton>
+      ))}
+      <AriaButton
+        onPress={() => setShowFullPicker((prev) => !prev)}
+        className="p-1 rounded-sm hover:bg-secondary_hover transition duration-100 ease-linear"
+        aria-label="More reactions"
+      >
+        <span className="text-sm text-fg-quaternary leading-none">+</span>
+      </AriaButton>
+      {showFullPicker && (
+        <div className="absolute bottom-full right-0 mb-1 z-20">
+          <Picker
+            data={emojiData}
+            onEmojiSelect={(e: { native: string }) => { onReact(e.native); setShowFullPicker(false) }}
+            theme="dark"
+            previewPosition="none"
+            skinTonePosition="none"
+          />
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ── Bubble radius helper ────────────────────────────────────────────────────
 
@@ -579,6 +628,13 @@ export function Message(props: MessageProps) {
               actions={(props as MessageBase).actions}
               onAction={(props as MessageBase).onAction}
             />
+          </div>
+        )}
+
+        {/* Quick reaction picker on hover (D-08) */}
+        {!isWriting && 'onReact' in props && props.onReact && isHovered && (
+          <div className="absolute -top-8 left-0 z-10">
+            <QuickReactionPicker onReact={props.onReact} />
           </div>
         )}
       </div>
