@@ -23,7 +23,7 @@ import { useMyParticipant } from '@/contexts/my-participant-context'
 
 interface UseAgentChatOptions {
   conversationId: string | null
-  agentParticipantId: string
+  recipientIds: string[]  // DM: [agentParticipantId], channel: all member IDs, announcement: all agent IDs
 }
 
 interface UseAgentChatResult {
@@ -107,7 +107,7 @@ function enrichMessage(
 
 export function useAgentChat({
   conversationId,
-  agentParticipantId,
+  recipientIds,
 }: UseAgentChatOptions): UseAgentChatResult {
   const { participant } = useMyParticipant()
   const myParticipantId = participant?.participant_id ?? ''
@@ -118,7 +118,6 @@ export function useAgentChat({
   const [hasMore, setHasMore] = useState(false)
 
   const cursorRef = useRef<string | null>(null)
-  const recipientIds = agentParticipantId ? [agentParticipantId] : []
 
   // ── Initial fetch ──────────────────────────────────────────────────────────
 

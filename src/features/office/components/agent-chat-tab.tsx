@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { Message, type MessageProps } from '@/components/application/message'
 import { AgentPanelSection, AgentPanelDivider } from '@/components/application/agent-panel'
@@ -8,11 +8,11 @@ import { useDirectConversation } from '@/hooks/use-direct-conversation'
 import { useAgentChat } from '@/hooks/use-agent-chat'
 import { useAgentSkills } from '@/hooks/use-agent-skills'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
+import { useChatSend } from '@/features/chat/hooks/use-chat-send'
 import type { EnrichedMessage, MessageAttachmentRow } from '@/types/chat'
 import type { MessageAction } from '@/components/application/message-action-panel'
 import type { MessageStatus } from '@/components/application/message-status-icon'
-import { ChatInput, type ChatInputPayload, type ChatShortcut } from '@/components/application/chat-input'
-import { sendMessageWithAttachments } from '@/lib/chat'
+import { ChatInput, type ChatInputPayload } from '@/components/application/chat-input'
 import { formatBytes } from '@/lib/format'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -174,84 +174,21 @@ export function AgentChatTab({
 }: AgentChatTabProps) {
   const { conversationId, loading: conversationLoading } = useDirectConversation(agentParticipantId)
 
-  const chat = useAgentChat({ conversationId, agentParticipantId })
+  const chat = useAgentChat({ conversationId, recipientIds: [agentParticipantId] })
   const { shortcuts } = useAgentSkills(agentId)
 
   const { agents } = useRealtimeAgents()
   const agent = agents.find((a) => a.agent_id === agentId)
   const isAgentTyping = agent?.status === 'thinking'
 
-  // ── Reply state (D-12) ────────────────────────────────────────────────────
-  const [replyToMessage, setReplyToMessage] = useState<EnrichedMessage | null>(null)
-  const replyToRef = useRef<string | null>(null)
-
-  // Keep shortcutsRef current for skill_id lookup inside handleSend
-  const shortcutsRef = useRef<ChatShortcut[]>([])
-  useEffect(() => { shortcutsRef.current = shortcuts }, [shortcuts])
+  // ── Send adapter (D-05/D-12) — files, audio, skills, reply threading ─────
+  const { handleSend, replyToMessage, setReplyTo, clearReply } = useChatSend({
+    conversationId,
+    sendMessage: chat.sendMessage,
+    shortcuts,
+  })
 
   // ── Send ref pattern: write handleSend to onSendRef so parent can call it ──
-  const handleSend = useCallback(
-    async (payload: ChatInputPayload) => {
-      if (!conversationId) return
-
-      // Collect all files: images + non-image files + audio blob
-      const allFiles: File[] = [
-        ...payload.images,
-        ...(payload.files ?? []),
-      ]
-
-      // Convert audioBlob to File if present (D-05)
-      if (payload.audioBlob) {
-        const ext = payload.audioBlob.type.includes('mp4') ? 'mp4' : 'webm'
-        const audioFile = new File(
-          [payload.audioBlob],
-          `recording-${Date.now()}.${ext}`,
-          { type: payload.audioBlob.type }
-        )
-        allFiles.push(audioFile)
-      }
-
-      // Capture reply threading before any async ops
-      const parentMessageId = replyToRef.current
-
-      // Route: multipart (files) or text-only (JSON)
-      if (allFiles.length > 0) {
-        try {
-          await sendMessageWithAttachments(conversationId, {
-            text: payload.text,
-            files: allFiles,
-            ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
-          })
-        } catch {
-          toast.error('Failed to send attachment')
-        }
-      } else if (payload.text.trim()) {
-        // Text-only path. D-06 URL detection + link-preview firing is handled
-        // in use-agent-chat.ts Realtime INSERT handler, not here.
-        const isSkill = !!payload.command
-        const matchedShortcut = isSkill
-          ? shortcutsRef.current.find((s) => s.id === payload.command)
-          : null
-
-        await chat.sendMessage({
-          text: payload.text,
-          ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
-          ...(isSkill && matchedShortcut ? {
-            content_type: 'skill_invocation',
-            skill_id: payload.command!,
-            skill_command: `/${matchedShortcut.label}`,
-          } : {}),
-        })
-      }
-
-      // Clear reply state after send
-      replyToRef.current = null
-      setReplyToMessage(null)
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [conversationId, chat.sendMessage]
-  )
-
   useEffect(() => {
     onSendRef.current = handleSend
     return () => {
@@ -430,8 +367,7 @@ export function AgentChatTab({
                             })
                             break
                           case 'reply':
-                            replyToRef.current = msg.message_id
-                            setReplyToMessage(msg)
+                            setReplyTo(msg)
                             break
                         }
                       },
@@ -473,10 +409,7 @@ export function AgentChatTab({
                   : replyToMessage.text)
               : ''
           } : undefined}
-          onClearReply={() => {
-            replyToRef.current = null
-            setReplyToMessage(null)
-          }}
+          onClearReply={clearReply}
         />
       </div>
     </div>
