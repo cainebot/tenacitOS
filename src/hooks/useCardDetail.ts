@@ -15,6 +15,7 @@ interface UseCardDetailReturn {
   deleteCard: () => Promise<void>
   reorderField: (fieldId: string, newPosition: number, type: 'core' | 'custom') => Promise<void>
   refetch: () => Promise<void>
+  appendComment: (author: string, text: string) => void
 }
 
 export function useCardDetail(cardId: string | null): UseCardDetailReturn {
@@ -26,8 +27,8 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
   // Track in-flight field updates to implement last-write-wins
   const updateTimestamps = useRef<Record<string, number>>({})
 
-  const fetchCard = useCallback(async (id: string) => {
-    setLoading(true)
+  const fetchCard = useCallback(async (id: string, silent = false) => {
+    if (!silent) setLoading(true)
     setError(null)
     try {
       const res = await fetch(`/api/cards/${id}`)
@@ -108,7 +109,7 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
 
   const refetch = useCallback(async () => {
     if (cardId) {
-      await fetchCard(cardId)
+      await fetchCard(cardId, true)
     }
   }, [cardId, fetchCard])
 
@@ -271,6 +272,20 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
     [card, fieldDefs, fetchCard]
   )
 
+  const appendComment = useCallback((author: string, text: string) => {
+    setCard(prev => {
+      if (!prev) return prev
+      const optimistic: CardDetail['comments'][number] = {
+        comment_id: `optimistic-${Date.now()}`,
+        card_id: prev.card_id,
+        author,
+        text,
+        created_at: new Date().toISOString(),
+      }
+      return { ...prev, comments: [...prev.comments, optimistic] }
+    })
+  }, [])
+
   return {
     card,
     fieldDefs,
@@ -282,5 +297,6 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
     deleteCard,
     reorderField,
     refetch,
+    appendComment,
   }
 }

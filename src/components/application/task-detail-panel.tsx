@@ -2133,7 +2133,7 @@ function SectionComments({
         </div>
 
         <TabPanel id="comments">
-          <div className="flex flex-col gap-0.5 pt-3">
+          <div className="flex flex-col gap-4 pt-3">
             {sortedComments.map((event) => (
               <ActivityFeedEntry
                 key={event.id}

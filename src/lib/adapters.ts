@@ -147,11 +147,12 @@ export function cardDetailToTaskDetailPanelProps(
   // Map comments: enrich author string with agent data
   const comments: TaskComment[] = detail.comments.map(c => {
     const agent = agents.find(a => a.name === c.author || a.agent_id === c.author)
+    const isHuman = c.author === 'user' || c.author === 'human'
     return {
       id: c.comment_id,
       author: agent
         ? { id: agent.agent_id, name: agent.name, avatarUrl: undefined, role: agent.role }
-        : { id: c.author, name: c.author },
+        : { id: c.author, name: isHuman ? 'You' : c.author },
       content: c.text,
       createdAt: c.created_at,
     }
@@ -234,9 +235,10 @@ export function cardActivityToActivityEvents(
 ): ActivityEvent[] {
   return rows.map((row) => {
     const agent = agents.find(a => a.name === row.actor || a.agent_id === row.actor)
+    const isHuman = row.actor === 'user' || row.actor === 'human'
     const actor: TaskUser = agent
       ? { id: agent.agent_id, name: agent.name, avatarUrl: undefined, role: agent.role }
-      : { id: row.actor, name: row.actor }
+      : { id: row.actor, name: isHuman ? 'You' : row.actor }
 
     const type = activityActionMap[row.action] ?? 'field_update'
     const oldVal = row.old_value as Record<string, string> | null

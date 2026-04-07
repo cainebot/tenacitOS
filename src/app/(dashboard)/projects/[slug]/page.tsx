@@ -234,6 +234,20 @@ export default function ProjectBoardPage() {
   // Flatten all cards from store columns for filter/search
   const allCards = useMemo(() => storeColumns.flatMap(col => col.items), [storeColumns])
 
+  // Pre-compute subtask counts per parent card (children with done state vs total)
+  const doneStateIds = useMemo(() => new Set(projectStates.filter(s => s.category === 'done').map(s => s.state_id)), [projectStates])
+  const subtaskCountMap = useMemo(() => {
+    const map = new Map<string, { done: number; total: number }>()
+    for (const c of allCards) {
+      if (!c.parent_card_id) continue
+      const entry = map.get(c.parent_card_id) ?? { done: 0, total: 0 }
+      entry.total++
+      if (doneStateIds.has(c.state_id)) entry.done++
+      map.set(c.parent_card_id, entry)
+    }
+    return map
+  }, [allCards, doneStateIds])
+
   // Client-side search + DynamicFilter (used only to derive filteredCards for display)
   const filteredCards = useMemo(() => {
     let result = allCards
@@ -278,7 +292,8 @@ export default function ProjectBoardPage() {
           return true
         })
         .map(c => {
-          const props = cardRowToKanbanCardProps(c, agents, undefined, projectStates)
+          const childCount = subtaskCountMap.get(c.card_id)
+          const props = cardRowToKanbanCardProps(c, agents, childCount ? { childrenCount: childCount } : undefined, projectStates)
           return {
             id: c.card_id,
             cardId: c.card_id,
@@ -289,7 +304,7 @@ export default function ProjectBoardPage() {
           }
         }),
     }))
-  }, [board, storeColumns, agents, projectStates, search, filters])
+  }, [board, storeColumns, agents, projectStates, search, filters, subtaskCountMap])
 
   // Ref to track current effectiveColumns for handleColumnsChange comparison
   const effectiveColumnsRef = useRef(effectiveColumns)
@@ -542,7 +557,7 @@ export default function ProjectBoardPage() {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
 
   // --- Task Detail Panel: live data via useCardDetail ---
-  const { card: detailCard, loading: detailLoading, updateField: detailUpdateField, moveCard: detailMoveCard, refetch: detailRefetch } = useCardDetail(selectedCardId)
+  const { card: detailCard, loading: detailLoading, updateField: detailUpdateField, moveCard: detailMoveCard, refetch: detailRefetch, appendComment: detailAppendComment } = useCardDetail(selectedCardId)
 
   // Signed URLs for attachments
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({})
@@ -630,9 +645,20 @@ export default function ProjectBoardPage() {
   }, [detailUpdateField])
 
   // State change: direct state_id from project states dropdown
+  // Route through sync engine so kanban board updates optimistically
   const handlePanelStateIdChange = useCallback((stateId: string) => {
-    detailMoveCard(stateId)
-  }, [detailMoveCard])
+    if (!detailCard) return
+    const targetCol = storeColumns.find(col => col.stateId === stateId)
+    const items = targetCol?.items ?? []
+    const lastItem = items[items.length - 1]
+    const sortOrder = sortKeyBetween(lastItem?.sort_order ?? null, null)
+    syncEngine.moveSyncCard({
+      cardId: detailCard.card_id,
+      toStateId: stateId,
+      sortOrder,
+      boardId,
+    })
+  }, [detailCard, storeColumns, syncEngine, boardId])
 
   // Toggle complete: move to done or first to-do state
   // D-06: Route through sync engine — single source of truth for all card moves
@@ -693,18 +719,22 @@ export default function ProjectBoardPage() {
     detailUpdateField('priority', p)
   }, [selectedCardId, detailUpdateField])
 
-  // Add comment
+  // Add comment (optimistic — no skeleton flash)
   const handlePanelAddComment = useCallback(async (content: string) => {
     if (!detailCard) return
-    await fetch(`/api/cards/${detailCard.card_id}/comments`, {
+    // Optimistic: append comment instantly
+    detailAppendComment('user', content)
+    // Persist in background
+    fetch(`/api/cards/${detailCard.card_id}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ author: 'user', text: content }),
-    }).catch((err) => { console.error('[add-comment] Failed:', err) })
-    await detailRefetch()
+    })
+      .then(() => detailRefetch())
+      .catch((err) => { console.error('[add-comment] Failed:', err) })
     refetchActivities()
     refetch()
-  }, [detailCard, detailRefetch, refetchActivities, refetch])
+  }, [detailCard, detailAppendComment, detailRefetch, refetchActivities, refetch])
 
   // Upload attachment (called by onFilesSelected from FileUpload component)
   const handlePanelFilesSelected = useCallback(async (files: File[]) => {
@@ -760,18 +790,9 @@ export default function ProjectBoardPage() {
   // Update subtask field: PATCH for title/priority/assignee, /move for status/stateId
   const handleSubtaskUpdate = useCallback(async (subtaskId: string, updates: Partial<Pick<Subtask, 'title' | 'priority' | 'assignee' | 'status' | 'stateId'>>) => {
     try {
-      // Handle stateId change directly — no category lookup needed
-      if (updates.stateId) {
-        await fetch(`/api/cards/${subtaskId}/move`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            state_id: updates.stateId,
-            moved_by: 'user',
-          }),
-        })
-      } else if (updates.status) {
-        // Fallback: Handle status change via category lookup — requires /move endpoint
+      // Handle stateId change — route through sync engine for optimistic kanban update
+      const resolvedStateId = updates.stateId ?? (() => {
+        if (!updates.status) return undefined
         const targetState = projectStates.find(s => {
           const cat = s.category
           if (updates.status === 'todo') return cat === 'to-do'
@@ -779,16 +800,20 @@ export default function ProjectBoardPage() {
           if (updates.status === 'cancelled') return cat === 'done'
           return cat === 'in_progress'
         })
-        if (targetState) {
-          await fetch(`/api/cards/${subtaskId}/move`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              state_id: targetState.state_id,
-              moved_by: 'user',
-            }),
-          })
-        }
+        return targetState?.state_id
+      })()
+
+      if (resolvedStateId) {
+        const targetCol = storeColumns.find(col => col.stateId === resolvedStateId)
+        const items = targetCol?.items ?? []
+        const lastItem = items[items.length - 1]
+        const sortOrder = sortKeyBetween(lastItem?.sort_order ?? null, null)
+        syncEngine.moveSyncCard({
+          cardId: subtaskId,
+          toStateId: resolvedStateId,
+          sortOrder,
+          boardId,
+        })
       }
 
       // Handle field updates (title, priority, assignee) via PATCH
@@ -812,7 +837,7 @@ export default function ProjectBoardPage() {
     }
     await detailRefetch()
     refetch()
-  }, [projectStates, detailRefetch, refetch])
+  }, [projectStates, detailRefetch, refetch, storeColumns, syncEngine, boardId])
 
   // Subtask click: navigate panel to that subtask
   const handleSubtaskClick = useCallback((sub: Subtask) => {
