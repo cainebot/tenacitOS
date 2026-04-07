@@ -25,7 +25,7 @@ import {
   XClose,
 } from '@untitledui/icons'
 import Picker from '@emoji-mart/react'
-// @ts-expect-error — @emoji-mart/data ships CJS without proper TS default export
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import data from '@emoji-mart/data'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -113,6 +113,10 @@ interface ChatInputProps {
   /** For Advanced variant — user display name */
   userName?: string
   className?: string
+  /** Reply context — shown as a dismissible banner above the input */
+  replyTo?: { senderName: string; text: string } | null
+  /** Called when user dismisses the reply banner */
+  onClearReply?: () => void
 }
 
 // ── ChatInput ────────────────────────────────────────────────────────────────
@@ -126,6 +130,8 @@ export function ChatInput({
   avatarSrc,
   userName = 'User',
   className,
+  replyTo,
+  onClearReply,
 }: ChatInputProps) {
   const [text, setText] = useState('')
   const [images, setImages] = useState<AttachedImage[]>([])
@@ -849,6 +855,23 @@ export function ChatInput({
 
         {/* Main input container */}
         <div className="relative flex min-h-[160px] flex-col items-center rounded-xl border border-secondary bg-secondary">
+          {replyTo && (
+            <div className="flex items-center gap-2 w-full px-3 py-2 border-b border-secondary bg-secondary rounded-t-xl">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-brand-secondary truncate">
+                  Replying to {replyTo.senderName}
+                </p>
+                <p className="text-xs text-tertiary truncate">{replyTo.text}</p>
+              </div>
+              <AriaButton
+                onPress={onClearReply}
+                className="shrink-0 p-0.5 rounded-sm hover:bg-primary_hover transition duration-100 ease-linear"
+                aria-label="Cancel reply"
+              >
+                <XClose className="size-3.5 text-fg-quaternary" />
+              </AriaButton>
+            </div>
+          )}
           {/* Inner textarea area — grows independently, never shrinks */}
           <div className="relative flex w-full flex-1 flex-col">
             <textarea
@@ -949,6 +972,23 @@ export function ChatInput({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {replyTo && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-secondary bg-secondary rounded-t-md">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-brand-secondary truncate">
+              Replying to {replyTo.senderName}
+            </p>
+            <p className="text-xs text-tertiary truncate">{replyTo.text}</p>
+          </div>
+          <AriaButton
+            onPress={onClearReply}
+            className="shrink-0 p-0.5 rounded-sm hover:bg-primary_hover transition duration-100 ease-linear"
+            aria-label="Cancel reply"
+          >
+            <XClose className="size-3.5 text-fg-quaternary" />
+          </AriaButton>
+        </div>
+      )}
       {imagePreviews}
 
       {/* Command chip — shown above textarea text when a shortcut is active */}
