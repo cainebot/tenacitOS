@@ -69,19 +69,19 @@ export class PlayerSprite {
       D: kb.addKey('D'),
     }
 
-    // Disable Phaser keyboard entirely when ANY HTML input is focused.
-    // This covers ALL keys (WASD, E, space, arrows, etc.) in one place.
-    const isInputElement = (el: EventTarget | null): boolean => {
-      if (!el || !(el instanceof HTMLElement)) return false
-      return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable
+    // ── Robust keyboard isolation ──────────────────────────────────────────
+    // Phaser listens on `window` (bubbling phase). When an HTML input is
+    // focused, we stop key events at `document` so they never reach `window`.
+    // The input still works because the event already fired on the target
+    // element during the target phase (before bubbling).
+    const blockPhaserWhenInputFocused = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) {
+        e.stopPropagation()
+      }
     }
-
-    document.addEventListener('focusin', (e) => {
-      if (isInputElement(e.target)) kb.enabled = false
-    })
-    document.addEventListener('focusout', () => {
-      kb.enabled = true
-    })
+    document.addEventListener('keydown', blockPhaserWhenInputFocused)
+    document.addEventListener('keyup', blockPhaserWhenInputFocused)
   }
 
   update(delta: number): void {
