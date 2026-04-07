@@ -10,6 +10,7 @@ import {
   type ChangeEvent,
   type DragEvent,
 } from 'react'
+import { toast } from 'sonner'
 import { Avatar, ButtonUtility, cx } from '@circos/ui'
 import { Button as AriaButton } from 'react-aria-components'
 import {
@@ -31,6 +32,7 @@ import data from '@emoji-mart/data'
 
 const MAX_IMAGES = 10
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+const MAX_FILE_SIZE = 25 * 1024 * 1024 // 25MB per D-01
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,7 +52,52 @@ export interface ChatShortcut {
 export interface ChatInputPayload {
   text: string
   images: File[]
+  files?: File[]          // Non-image attachments (PDFs, docs, etc.)
+  audioBlob?: Blob        // Audio recording from MediaRecorder
   command?: string
+}
+
+/** D-02: Resize image to max 800px on longest side using Canvas. Returns original if already within bounds. */
+function resizeImageToMax800(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const maxDim = 800
+      let { width, height } = img
+      // Skip resize if already within bounds
+      if (width <= maxDim && height <= maxDim) {
+        URL.revokeObjectURL(url)
+        resolve(file)
+        return
+      }
+      const ratio = Math.min(maxDim / width, maxDim / height)
+      width = Math.round(width * ratio)
+      height = Math.round(height * ratio)
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(url)
+          if (blob) {
+            // Wrap blob back into File to preserve .name and .type
+            resolve(new File([blob], file.name, { type: file.type }))
+          } else {
+            reject(new Error('Canvas toBlob failed'))
+          }
+        },
+        file.type,
+        0.9
+      )
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Image load failed'))
+    }
+    img.src = url
+  })
 }
 
 interface ChatInputProps {
@@ -82,6 +129,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const [text, setText] = useState('')
   const [images, setImages] = useState<AttachedImage[]>([])
+  const [nonImageFiles, setNonImageFiles] = useState<File[]>([])
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
@@ -102,8 +150,10 @@ export function ChatInput({
   const shortcutPanelRef = useRef<HTMLDivElement>(null)
   const mirrorRef = useRef<HTMLDivElement>(null)
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
 
-  const hasContent = text.trim().length > 0 || images.length > 0 || activeCommand != null
+  const hasContent = text.trim().length > 0 || images.length > 0 || nonImageFiles.length > 0 || activeCommand != null
   const supportsShortcuts = type !== 'minimal' && shortcuts.length > 0
 
   const defaultPlaceholder =
@@ -278,20 +328,42 @@ export function ChatInput({
 
   // ── Image helpers ──────────────────────────────────────────────────────
 
-  const addImages = useCallback((files: FileList | File[]) => {
+  const addFiles = useCallback(async (fileList: FileList | File[]) => {
+    const fileArray = Array.from(fileList)
     const newImages: AttachedImage[] = []
-    const fileArray = Array.from(files)
+    const newFiles: File[] = []
+
     for (const file of fileArray) {
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) continue
-      if (images.length + newImages.length >= MAX_IMAGES) break
-      newImages.push({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        file,
-        preview: URL.createObjectURL(file),
-      })
+      // D-01: Client-side 25MB limit
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`"${file.name}" exceeds 25MB limit`)
+        continue
+      }
+
+      if (ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+        if (images.length + newImages.length >= MAX_IMAGES) continue
+        // D-02: Resize image to max 800px before preview and upload
+        let resizedFile = file
+        try {
+          resizedFile = await resizeImageToMax800(file)
+        } catch {
+          // If resize fails, use original file
+        }
+        newImages.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          file: resizedFile,
+          preview: URL.createObjectURL(resizedFile),
+        })
+      } else {
+        newFiles.push(file)
+      }
     }
+
     if (newImages.length > 0) {
       setImages((prev) => [...prev, ...newImages].slice(0, MAX_IMAGES))
+    }
+    if (newFiles.length > 0) {
+      setNonImageFiles((prev) => [...prev, ...newFiles])
     }
   }, [images.length])
 
@@ -303,6 +375,61 @@ export function ChatInput({
     })
   }, [])
 
+  // ── MediaRecorder audio capture ────────────────────────────────────────
+
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : 'audio/mp4',
+      })
+      audioChunksRef.current = []
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
+      }
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setIsRecording(true)
+    } catch {
+      toast.error('Microphone access denied')
+    }
+  }, [])
+
+  const stopRecordingAndSend = useCallback(() => {
+    const recorder = mediaRecorderRef.current
+    if (!recorder) return
+
+    recorder.onstop = () => {
+      const mimeType = recorder.mimeType || 'audio/webm'
+      const blob = new Blob(audioChunksRef.current, { type: mimeType })
+      audioChunksRef.current = []
+
+      // Send immediately via onSend with audioBlob
+      onSend?.({
+        text: '',
+        images: [],
+        audioBlob: blob,
+      })
+    }
+    recorder.stop()
+    recorder.stream.getTracks().forEach((t) => t.stop())
+    setIsRecording(false)
+    mediaRecorderRef.current = null
+  }, [onSend])
+
+  // Cleanup MediaRecorder on unmount
+  useEffect(() => {
+    return () => {
+      const recorder = mediaRecorderRef.current
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop()
+        recorder.stream.getTracks().forEach((t) => t.stop())
+      }
+    }
+  }, [])
+
   // ── Send ───────────────────────────────────────────────────────────────
 
   const handleSend = useCallback(() => {
@@ -310,16 +437,18 @@ export function ChatInput({
     onSend?.({
       text: text.trim(),
       images: images.map((i) => i.file),
+      ...(nonImageFiles.length > 0 ? { files: nonImageFiles } : {}),
       ...(activeCommand ? { command: activeCommand.id } : {}),
     })
     setText('')
     setActiveCommand(null)
     images.forEach((i) => URL.revokeObjectURL(i.preview))
     setImages([])
+    setNonImageFiles([])
     setTimeout(() => {
       if (textareaRef.current) textareaRef.current.style.height = 'auto'
     }, 0)
-  }, [hasContent, isDisabled, onSend, text, images, activeCommand])
+  }, [hasContent, isDisabled, onSend, text, images, nonImageFiles, activeCommand])
 
   // ── Keyboard ───────────────────────────────────────────────────────────
 
@@ -379,10 +508,10 @@ export function ChatInput({
       }
       if (imageFiles.length > 0) {
         e.preventDefault()
-        addImages(imageFiles)
+        void addFiles(imageFiles)
       }
     },
-    [addImages],
+    [addFiles],
   )
 
   // ── Drag & drop ────────────────────────────────────────────────────────
@@ -400,9 +529,9 @@ export function ChatInput({
     (e: DragEvent) => {
       e.preventDefault()
       setIsDragOver(false)
-      if (e.dataTransfer?.files) addImages(e.dataTransfer.files)
+      if (e.dataTransfer?.files) void addFiles(e.dataTransfer.files)
     },
-    [addImages],
+    [addFiles],
   )
 
   // ── File input change ──────────────────────────────────────────────────
@@ -410,11 +539,11 @@ export function ChatInput({
   const handleFileChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       if (e.target.files) {
-        addImages(e.target.files)
+        void addFiles(e.target.files)
         e.target.value = ''
       }
     },
-    [addImages],
+    [addFiles],
   )
 
   // ── Emoji select ───────────────────────────────────────────────────────
@@ -439,7 +568,7 @@ export function ChatInput({
     <input
       ref={fileInputRef}
       type="file"
-      accept={ACCEPTED_IMAGE_TYPES.join(',')}
+      accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"
       multiple
       onChange={handleFileChange}
       className="hidden"
@@ -562,7 +691,16 @@ export function ChatInput({
           icon={XClose}
           size="xs"
           color="tertiary"
-          onClick={() => setIsRecording(false)}
+          onClick={() => {
+            const recorder = mediaRecorderRef.current
+            if (recorder && recorder.state !== 'inactive') {
+              recorder.stop()
+              recorder.stream.getTracks().forEach((t) => t.stop())
+            }
+            audioChunksRef.current = []
+            mediaRecorderRef.current = null
+            setIsRecording(false)
+          }}
         />
 
         <div className="flex flex-1 items-center gap-1">
@@ -589,7 +727,7 @@ export function ChatInput({
         </span>
 
         <AriaButton
-          onPress={() => setIsRecording(false)}
+          onPress={stopRecordingAndSend}
           className="flex items-center justify-center rounded-full bg-error-solid p-1.5 text-white transition duration-100 ease-linear hover:opacity-90"
         >
           <StopCircle className="size-4" />
@@ -736,7 +874,7 @@ export function ChatInput({
                   icon={Microphone02}
                   size="xs"
                   color="tertiary"
-                  onClick={() => setIsRecording(true)}
+                  onClick={startRecording}
                   tooltip="Voice note"
                 />
               </div>
@@ -842,7 +980,7 @@ export function ChatInput({
             icon={Recording02}
             size="xs"
             color="tertiary"
-            onClick={() => setIsRecording(true)}
+            onClick={startRecording}
             tooltip="Voice note"
           />
         </div>
