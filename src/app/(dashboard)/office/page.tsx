@@ -114,7 +114,7 @@ export default function OfficePage() {
       })
   }, [displayAgent])
 
-  // ── Send ref — AgentChatTab writes its sendMessage here so AgentPanel.onSend works ──
+  // ── Send ref — kept for backward compat; AgentChatTab renders its own ChatInput ──
   const sendRef = useRef<((payload: ChatInputPayload) => void) | null>(null)
 
   // Gate: don't mount Phaser until DB map data is loaded (avoids race condition
@@ -151,7 +151,7 @@ export default function OfficePage() {
                   displayAgent.status === 'active' || displayAgent.status === 'working'
                 }
                 onClose={() => setSelectedAgent(null)}
-                onSend={(payload) => sendRef.current?.(payload)}
+                hideInput={!!agentParticipantId}
               >
                 {agentParticipantId && (
                   <AgentChatTab

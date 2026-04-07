@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Message, type MessageProps } from '@/components/application/message'
 import { AgentPanelSection, AgentPanelDivider } from '@/components/application/agent-panel'
@@ -10,7 +10,7 @@ import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import type { EnrichedMessage, MessageAttachmentRow } from '@/types/chat'
 import type { MessageAction } from '@/components/application/message-action-panel'
 import type { MessageStatus } from '@/components/application/message-status-icon'
-import type { ChatInputPayload } from '@/components/application/chat-input'
+import { ChatInput, type ChatInputPayload } from '@/components/application/chat-input'
 import { sendMessageWithAttachments } from '@/lib/chat'
 import { formatBytes } from '@/lib/format'
 
@@ -21,6 +21,10 @@ interface AgentChatTabProps {
   agentParticipantId: string
   agentName: string
   agentAvatar?: string
+  /** User avatar for ChatInput display */
+  userAvatarSrc?: string
+  /** User display name for ChatInput */
+  userName?: string
   onSendRef: React.MutableRefObject<((payload: ChatInputPayload) => void) | null>
 }
 
@@ -78,10 +82,12 @@ function buildMessageProps(
     senderAvatar?: string
     timestamp: string
     status?: MessageStatus
-    reactions: { emoji: string; count: number; isSelected: boolean }[]
+    reactions: { emoji: string; count: number; isSelected: boolean; onPress?: () => void }[]
     actions?: MessageAction[]
     onAction?: (action: MessageAction) => void
-  }
+    onReact?: (emoji: string) => void
+  },
+  allMessages: EnrichedMessage[]
 ): MessageProps {
   const att: MessageAttachmentRow | undefined = msg.attachments[0]
 
@@ -132,12 +138,25 @@ function buildMessageProps(
         imageSrc: msg.og_image_url ?? undefined,
       }
 
-    default:
+    default: {
+      if (msg.parent_message_id) {
+        const parent = allMessages.find((m) => m.message_id === msg.parent_message_id)
+        const replyText = parent?.text
+          ? parent.text.length > 100 ? parent.text.substring(0, 100) + '...' : parent.text
+          : '...'
+        return {
+          ...baseProps,
+          type: 'message-reply' as const,
+          content: msg.text ?? '',
+          replyText,
+        }
+      }
       return {
         ...baseProps,
         type: 'message',
         content: msg.text ?? '',
       }
+    }
   }
 }
 
@@ -148,6 +167,8 @@ export function AgentChatTab({
   agentParticipantId,
   agentName,
   agentAvatar,
+  userAvatarSrc,
+  userName = 'You',
   onSendRef,
 }: AgentChatTabProps) {
   const { conversationId, loading: conversationLoading } = useDirectConversation(agentParticipantId)
@@ -157,6 +178,10 @@ export function AgentChatTab({
   const { agents } = useRealtimeAgents()
   const agent = agents.find((a) => a.agent_id === agentId)
   const isAgentTyping = agent?.status === 'thinking'
+
+  // ── Reply state (D-12) ────────────────────────────────────────────────────
+  const [replyToMessage, setReplyToMessage] = useState<EnrichedMessage | null>(null)
+  const replyToRef = useRef<string | null>(null)
 
   // ── Send ref pattern: write handleSend to onSendRef so parent can call it ──
   const handleSend = useCallback(
@@ -180,12 +205,16 @@ export function AgentChatTab({
         allFiles.push(audioFile)
       }
 
+      // Capture reply threading before any async ops
+      const parentMessageId = replyToRef.current
+
       // Route: multipart (files) or text-only (JSON)
       if (allFiles.length > 0) {
         try {
           await sendMessageWithAttachments(conversationId, {
             text: payload.text,
             files: allFiles,
+            ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
           })
         } catch {
           toast.error('Failed to send attachment')
@@ -193,8 +222,15 @@ export function AgentChatTab({
       } else if (payload.text.trim()) {
         // Text-only path. D-06 URL detection + link-preview firing is handled
         // in use-agent-chat.ts Realtime INSERT handler, not here.
-        await chat.sendMessage({ text: payload.text })
+        await chat.sendMessage({
+          text: payload.text,
+          ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
+        })
       }
+
+      // Clear reply state after send
+      replyToRef.current = null
+      setReplyToMessage(null)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [conversationId, chat.sendMessage]
@@ -343,15 +379,49 @@ export function AgentChatTab({
                         emoji: r.emoji,
                         count: r.count,
                         isSelected: r.selected,
+                        onPress: () => chat.toggleReaction(msg.message_id, r.emoji),
                       })),
-                      actions: msg._failed ? (['retry'] as MessageAction[]) : undefined,
+                      actions: (() => {
+                        if (msg._failed) return ['retry'] as MessageAction[]
+                        if (msg.messageType === 'writing') return undefined
+                        switch (msg.messageType) {
+                          case 'file':
+                          case 'image':
+                          case 'audio':
+                          case 'video':
+                            return ['reply'] as MessageAction[]
+                          case 'link-preview':
+                          case 'link-minimal':
+                            return ['copy', 'reply'] as MessageAction[]
+                          case 'message':
+                          case 'message-reply':
+                          default:
+                            return msg.isMine
+                              ? (['copy'] as MessageAction[])
+                              : (['copy', 'reply'] as MessageAction[])
+                        }
+                      })(),
                       onAction: (action: MessageAction) => {
-                        if (action === 'retry') {
-                          chat.retryMessage(msg.message_id)
+                        switch (action) {
+                          case 'retry':
+                            chat.retryMessage(msg.message_id)
+                            break
+                          case 'copy':
+                            navigator.clipboard.writeText(msg.text ?? '').then(() => {
+                              toast.success('Copied to clipboard')
+                            }).catch(() => {
+                              toast.error('Failed to copy')
+                            })
+                            break
+                          case 'reply':
+                            replyToRef.current = msg.message_id
+                            setReplyToMessage(msg)
+                            break
                         }
                       },
+                      onReact: (emoji: string) => chat.toggleReaction(msg.message_id, emoji),
                     }
-                    const messageProps = buildMessageProps(msg, baseProps)
+                    const messageProps = buildMessageProps(msg, baseProps, chat.messages)
                     return <Message {...messageProps} />
                   })()}
                 </div>
@@ -370,6 +440,28 @@ export function AgentChatTab({
           timestamp=""
         />
       )}
+
+      {/* Chat input — rendered here so replyTo/onClearReply can be wired directly */}
+      <div className="shrink-0 px-0 pb-0">
+        <ChatInput
+          type="advanced"
+          avatarSrc={userAvatarSrc}
+          userName={userName}
+          onSend={handleSend}
+          replyTo={replyToMessage ? {
+            senderName: replyToMessage.senderName,
+            text: replyToMessage.text
+              ? (replyToMessage.text.length > 100
+                  ? replyToMessage.text.substring(0, 100) + '...'
+                  : replyToMessage.text)
+              : ''
+          } : undefined}
+          onClearReply={() => {
+            replyToRef.current = null
+            setReplyToMessage(null)
+          }}
+        />
+      </div>
     </div>
   )
 }

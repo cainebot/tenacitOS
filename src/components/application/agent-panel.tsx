@@ -40,6 +40,11 @@ export interface AgentPanelProps {
   onClose?: () => void
   /** Called when a message is sent from the input */
   onSend?: (payload: ChatInputPayload) => void
+  /**
+   * When true, AgentPanel does NOT render its own ChatInput.
+   * Use this when the consumer (e.g. AgentChatTab) renders ChatInput itself.
+   */
+  hideInput?: boolean
   /** Content rendered in the Profile tab */
   profileTab?: ReactNode
   /** Content rendered in the Skills tab */
@@ -76,6 +81,7 @@ export function AgentPanel({
   onSettingsPress,
   onClose,
   onSend,
+  hideInput = false,
   profileTab,
   skillsTab,
   className,
@@ -169,14 +175,16 @@ export function AgentPanel({
         </div>
 
         {/* Message input — Figma: ChatInput advanced, px-5 pb-4 */}
-        <div className="shrink-0 px-5 pb-4">
-          <ChatInput
-            type="advanced"
-            avatarSrc={avatarSrc}
-            userName={name}
-            onSend={onSend}
-          />
-        </div>
+        {!hideInput && (
+          <div className="shrink-0 px-5 pb-4">
+            <ChatInput
+              type="advanced"
+              avatarSrc={avatarSrc}
+              userName={name}
+              onSend={onSend}
+            />
+          </div>
+        )}
       </TabPanel>
 
       {/* ── Profile tab ──────────────────────────────────────────────── */}

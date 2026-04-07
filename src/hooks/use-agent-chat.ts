@@ -30,7 +30,7 @@ interface UseAgentChatResult {
   messages: EnrichedMessage[]
   loading: boolean
   error: string | null
-  sendMessage: (payload: { text: string; content_type?: string }) => Promise<void>
+  sendMessage: (payload: { text: string; content_type?: string; parent_message_id?: string }) => Promise<void>
   retryMessage: (messageId: string) => Promise<void>
   toggleReaction: (messageId: string, emoji: string) => Promise<void>
   loadMore: () => Promise<void>
@@ -179,7 +179,7 @@ export function useAgentChat({
   // ── Optimistic send ────────────────────────────────────────────────────────
 
   const sendMessage = useCallback(
-    async (payload: { text: string; content_type?: string }) => {
+    async (payload: { text: string; content_type?: string; parent_message_id?: string }) => {
       if (!conversationId || !myParticipantId) return
 
       const optimisticId = crypto.randomUUID()
@@ -194,7 +194,7 @@ export function useAgentChat({
         text: payload.text,
         created_at: now,
         edited_at: null,
-        parent_message_id: null,
+        parent_message_id: payload.parent_message_id ?? null,
         deleted_at: null,
         og_title: null,
         og_description: null,
@@ -219,7 +219,11 @@ export function useAgentChat({
       setMessages((prev) => [...prev, optimistic])
 
       try {
-        await sendMessageApi(conversationId, payload)
+        await sendMessageApi(conversationId, {
+          text: payload.text,
+          content_type: payload.content_type,
+          ...(payload.parent_message_id ? { parent_message_id: payload.parent_message_id } : {}),
+        })
         // Realtime INSERT will arrive and replace the optimistic message via dedup
       } catch (err) {
         // Mark optimistic message as failed (D-08)
