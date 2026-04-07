@@ -31,6 +31,7 @@ export interface GameSnapshot {
     y: number
     facing: string
     moving: boolean
+    zoneId: string | null
   }
 
   agents: ReadonlyArray<AgentSnapshot>
@@ -62,7 +63,7 @@ if (!g[SNAP_KEY]) {
     updatedAt: 0,
     lastError: null,
     world: { width: 0, height: 0 },
-    player: { x: 0, y: 0, facing: 'down', moving: false },
+    player: { x: 0, y: 0, facing: 'down', moving: false, zoneId: null },
     agents: [],
     camera: { x: 0, y: 0, w: 0, h: 0, zoom: 1 },
     nearbyAgentId: null,

@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
+import { motion } from 'motion/react'
 import officeEvents, { type AgentSelectPayload } from '@/lib/office-events'
 import { AgentPanel } from '@/components/application/agent-panel'
 import { MiniMap } from '@/components/application/mini-map'
@@ -49,6 +50,16 @@ export default function OfficePage() {
   useProjection()
 
   const [selectedAgent, setSelectedAgent] = useState<AgentSelectPayload | null>(null)
+  // Keep last agent visible during close animation
+  const [displayAgent, setDisplayAgent] = useState<AgentSelectPayload | null>(null)
+
+  useEffect(() => {
+    if (selectedAgent) setDisplayAgent(selectedAgent)
+  }, [selectedAgent])
+
+  const handleAnimationComplete = useCallback(() => {
+    if (!selectedAgent) setDisplayAgent(null)
+  }, [selectedAgent])
 
   useEffect(() => {
     const handleSelect = (agent: AgentSelectPayload) => {
@@ -85,17 +96,25 @@ export default function OfficePage() {
         <MiniMap />
       </div>
 
-      {selectedAgent && (
-        <div className="w-[400px] shrink-0 h-full">
-          <AgentPanel
-            name={selectedAgent.name}
-            role={selectedAgent.role}
-            isOnline={
-              selectedAgent.status === 'active' || selectedAgent.status === 'working'
-            }
-          />
-        </div>
-      )}
+      <motion.div
+        animate={{ width: selectedAgent ? 400 : 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 200, bounce: 0 }}
+        onAnimationComplete={handleAnimationComplete}
+        className="shrink-0 h-full overflow-hidden"
+      >
+        {displayAgent && (
+          <div className="w-[400px] h-full">
+            <AgentPanel
+              name={displayAgent.name}
+              role={displayAgent.role}
+              isOnline={
+                displayAgent.status === 'active' || displayAgent.status === 'working'
+              }
+              onClose={() => setSelectedAgent(null)}
+            />
+          </div>
+        )}
+      </motion.div>
     </div>
   )
 }

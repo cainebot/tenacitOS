@@ -56,7 +56,10 @@ class OfficeEventEmitter {
     this.listeners.get(event)?.delete(listener)
   }
 
-  emit<K extends keyof OfficeEventMap>(event: K, payload: OfficeEventMap[K]): void {
+  emit<K extends keyof OfficeEventMap>(
+    ...args: OfficeEventMap[K] extends void ? [event: K] : [event: K, payload: OfficeEventMap[K]]
+  ): void {
+    const [event, payload] = args as [K, OfficeEventMap[K]]
     this.listeners.get(event)?.forEach(fn => fn(payload))
   }
 }

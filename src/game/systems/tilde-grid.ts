@@ -192,6 +192,14 @@ export class TildeGrid {
     const cam = this.scene.cameras.main
     const ts = this.tileSize
 
+    // Build zoneId → color lookup from zone data
+    const zoneColorMap = new Map<string, number>()
+    for (const zone of zones) {
+      if (zone.color) {
+        zoneColorMap.set(zone.id, parseInt(zone.color.replace('#', ''), 16))
+      }
+    }
+
     // Viewport culling — only render cells visible in the camera view
     const startCol = Math.max(0, Math.floor(cam.worldView.x / ts))
     const startRow = Math.max(0, Math.floor(cam.worldView.y / ts))
@@ -220,7 +228,14 @@ export class TildeGrid {
               ? 'hover'
               : visualState
 
-        const colors = TILDE_COLORS[renderState]
+        // Use zone-specific color for room/seat cells, fallback to TILDE_COLORS
+        let colors = TILDE_COLORS[renderState]
+        if ((renderState === 'room' || renderState === 'seat') && cell.zoneId) {
+          const zoneColor = zoneColorMap.get(cell.zoneId)
+          if (zoneColor !== undefined) {
+            colors = { bg: zoneColor, alpha: colors.alpha, border: zoneColor }
+          }
+        }
 
         // Fill
         gfx.fillStyle(colors.bg, colors.alpha)

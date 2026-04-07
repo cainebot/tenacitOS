@@ -76,5 +76,6 @@ export const WALK_ROW = 2
 export const SPRITE_SCALE = 2.0
 
 // ── Gameplay ──
-export const PLAYER_SPEED = 360 // pixels per second
+export const PLAYER_SPEED = 540 // pixels per second
 export const INTERACTION_RANGE = 120 // pixels — distance to show "Press E"
+export const DESELECT_RANGE = 200   // pixels — distance to auto-close agent panel

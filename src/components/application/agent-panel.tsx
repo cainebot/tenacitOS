@@ -15,6 +15,7 @@ import {
   UserSquare,
   Data,
   Settings03,
+  LayoutRight,
 } from '@untitledui/icons'
 import { ChatInput, type ChatInputPayload } from './chat-input'
 
@@ -35,6 +36,8 @@ export interface AgentPanelProps {
   children?: ReactNode
   /** Called when the settings gear is pressed */
   onSettingsPress?: () => void
+  /** Called when the collapse/close button is pressed */
+  onClose?: () => void
   /** Called when a message is sent from the input */
   onSend?: (payload: ChatInputPayload) => void
   /** Content rendered in the Profile tab */
@@ -71,6 +74,7 @@ export function AgentPanel({
   isOnline = false,
   children,
   onSettingsPress,
+  onClose,
   onSend,
   profileTab,
   skillsTab,
@@ -119,14 +123,23 @@ export function AgentPanel({
             </div>
           </div>
 
-          {/* Settings — Figma: Button utility, p-2.5, Settings03 size-5 */}
-          <button
-            type="button"
-            onClick={onSettingsPress}
-            className="p-2.5 rounded-lg hover:bg-primary_hover transition duration-100 ease-linear shrink-0"
-          >
-            <Settings03 className="size-5 text-fg-quaternary" />
-          </button>
+          {/* Actions — Settings + Collapse */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={onSettingsPress}
+              className="p-2.5 rounded-lg hover:bg-primary_hover transition duration-100 ease-linear"
+            >
+              <Settings03 className="size-5 text-fg-quaternary" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2.5 rounded-lg hover:bg-primary_hover transition duration-100 ease-linear"
+            >
+              <LayoutRight className="size-5 text-fg-quaternary" />
+            </button>
+          </div>
         </div>
 
         {/* Tabs — Figma: Horizontal tabs, underline, sm, fullWidth */}
