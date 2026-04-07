@@ -20,21 +20,33 @@ const MyParticipantContext = createContext<MyParticipantContextValue>({
  * Bootstrap Supabase Auth session in the browser if missing.
  * Required for Realtime postgres_changes — RLS checks auth.uid()
  * which returns NULL without a session, silently blocking all events.
+ *
+ * WORKAROUND: Supabase JS v2 _handleTokenChanged only calls
+ * realtime.setAuth() for SIGNED_IN and TOKEN_REFRESHED events —
+ * NOT for INITIAL_SESSION (session loaded from localStorage).
+ * We explicitly call setAuth() after verifying/bootstrapping the session.
  */
 async function ensureSupabaseSession(): Promise<void> {
   const supabase = createBrowserClient()
   const { data: { session } } = await supabase.auth.getSession()
-  if (session) return // already authenticated
+
+  if (session) {
+    // Explicitly propagate to Realtime — INITIAL_SESSION doesn't trigger setAuth
+    supabase.realtime.setAuth(session.access_token)
+    return
+  }
 
   const res = await fetch('/api/auth/session')
   if (!res.ok) return // middleware rejected or server error — non-fatal
 
   const tokens = await res.json()
   if (tokens.access_token && tokens.refresh_token) {
+    // setSession fires SIGNED_IN which triggers setAuth, but belt-and-suspenders
     await supabase.auth.setSession({
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
     })
+    supabase.realtime.setAuth(tokens.access_token)
   }
 }
 
