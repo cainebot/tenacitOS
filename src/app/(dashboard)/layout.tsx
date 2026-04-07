@@ -110,12 +110,19 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const handleOpenWorkspace = (conversationId?: string) => {
     setInitialConversationId(conversationId ?? null);
     setChatWorkspaceOpen(true);
-    setActivePanel('none');
+    setActivePanel('none'); // close preview when workspace opens
   };
 
   const handleNewMessage = () => {
     setChatWorkspaceOpen(true);
     setActivePanel('none');
+  };
+
+  const handleSidebarLeave = () => {
+    // Close chat preview when mouse leaves sidebar area
+    if (activePanel === 'chat-preview') {
+      setActivePanel('none');
+    }
   };
 
   // Build Chat unread badge
@@ -149,8 +156,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       icon: MessageCircle01 as FC<{ className?: string }>,
       badge: chatBadge,
       onClick: () => {
-        setActivePanel((prev) => prev === 'chat-preview' ? 'none' : 'chat-preview');
-        setIsCollapsed(true);
+        // Click → open full workspace
+        setChatWorkspaceOpen(true);
+        setActivePanel('none');
+      },
+      onMouseEnter: () => {
+        // Hover → show floating preview panel
+        if (!chatWorkspaceOpen) {
+          setActivePanel('chat-preview');
+          setIsCollapsed(true);
+        }
       },
     },
   ];
@@ -173,6 +188,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         onToggle={handleToggle}
         secondaryPanel={secondaryPanelContent}
         showSecondaryPanel={showSecondaryPanel}
+        onPointerLeave={handleSidebarLeave}
       />
 
       <main className="flex flex-1 flex-col items-start self-stretch gap-8 overflow-auto">

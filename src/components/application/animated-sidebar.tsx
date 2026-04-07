@@ -27,6 +27,8 @@ interface AnimatedSidebarProps {
   onToggle: () => void
   secondaryPanel?: ReactNode
   showSecondaryPanel?: boolean
+  /** Called when pointer leaves the entire sidebar + secondary panel area. */
+  onPointerLeave?: () => void
 }
 
 export function AnimatedSidebar({
@@ -37,6 +39,7 @@ export function AnimatedSidebar({
   onToggle,
   secondaryPanel,
   showSecondaryPanel,
+  onPointerLeave: onPointerLeaveProp,
 }: AnimatedSidebarProps) {
   const [isHovering, setIsHovering] = useState(false)
 
@@ -78,7 +81,7 @@ export function AnimatedSidebar({
         className={`z-50 hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:py-1 lg:pl-1${
           isOverlay ? " shadow-xl" : ""
         }`}
-        onPointerLeave={() => setIsHovering(false)}
+        onPointerLeave={() => { setIsHovering(false); onPointerLeaveProp?.() }}
       >
         {/* Single SideMenu instance — always animated, variant derived from state */}
         {/* onPointerEnter on this wrapper so only the sidebar area triggers hover,

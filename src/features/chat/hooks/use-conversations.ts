@@ -16,7 +16,7 @@ export interface ConversationWithMeta {
 }
 
 export function useConversations() {
-  const { participant } = useMyParticipant()
+  const { participant, loading: participantLoading } = useMyParticipant()
   const [conversations, setConversations] = useState<ConversationWithMeta[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -41,9 +41,13 @@ export function useConversations() {
 
   // Initial fetch when participant is available
   useEffect(() => {
-    if (!participant) return
+    if (participantLoading) return // still resolving participant
+    if (!participant) {
+      setLoading(false) // no participant = empty list, not infinite loading
+      return
+    }
     fetchConversations()
-  }, [participant, fetchConversations])
+  }, [participant, participantLoading, fetchConversations])
 
   // Realtime subscription: re-fetch on conversation UPDATE (last_message_at changes)
   useEffect(() => {

@@ -15,6 +15,8 @@ export type NavItemType = {
     divider?: boolean;
     /** Click handler — when provided, renders as button instead of link. */
     onClick?: () => void;
+    /** Mouse enter handler — for hover-triggered behavior (e.g. preview panels). */
+    onMouseEnter?: () => void;
 };
 
 export type NavItemDividerType = Omit<NavItemType, "icon" | "label" | "divider"> & {
