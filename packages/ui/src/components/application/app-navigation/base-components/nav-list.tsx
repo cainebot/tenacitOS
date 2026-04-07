@@ -89,11 +89,12 @@ export const NavList = ({ activeUrl, items, className }: NavListProps) => {
                 return (
                     <li key={item.label} className="py-0.5">
                         <NavItemBase
-                            type="link"
+                            type={item.onClick ? "button" : "link"}
                             badge={item.badge}
                             icon={item.icon}
-                            href={item.href}
-                            current={activeItem?.href === item.href}
+                            href={item.onClick ? undefined : item.href}
+                            onClick={item.onClick ? () => item.onClick!() : undefined}
+                            current={activeItem?.href === item.href || activeItem?.label === item.label}
                         >
                             {item.label}
                         </NavItemBase>

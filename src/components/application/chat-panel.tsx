@@ -31,6 +31,9 @@ export interface ChatPanelProps {
   /** Input placeholder */
   placeholder?: string
   className?: string
+  /** Custom footer content. When provided, replaces the built-in ChatInput footer.
+      When `false`, suppresses footer entirely. When omitted, renders default minimal ChatInput. */
+  footer?: ReactNode | false
 }
 
 // ── Sub-components ──────────────────────────────────────────────────────────
@@ -63,6 +66,7 @@ export function ChatPanel({
   onClose,
   placeholder = 'Message',
   className,
+  footer,
 }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -133,13 +137,17 @@ export function ChatPanel({
       </div>
 
       {/* ── Footer ───────────────────────────────────────── */}
-      <div className="shrink-0 border-t border-secondary bg-primary px-6 py-4">
-        <ChatInput
-          type="minimal"
-          placeholder={placeholder}
-          onSend={onSendMessage}
-        />
-      </div>
+      {footer !== false && (
+        <div className="shrink-0 border-t border-secondary bg-primary px-6 py-4">
+          {footer ?? (
+            <ChatInput
+              type="minimal"
+              placeholder={placeholder}
+              onSend={onSendMessage}
+            />
+          )}
+        </div>
+      )}
     </div>
   )
 }

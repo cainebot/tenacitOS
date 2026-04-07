@@ -19,7 +19,7 @@ interface NavItemBaseProps {
     /** URL to navigate to when the nav item is clicked. */
     href?: string;
     /** Type of the nav item. */
-    type: "link" | "collapsible" | "collapsible-child";
+    type: "link" | "collapsible" | "collapsible-child" | "button";
     /** Icon component to display. */
     icon?: FC<HTMLAttributes<HTMLOrSVGElement>>;
     /** Badge to display. */
@@ -62,6 +62,16 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, iconTraili
 
     const isExternal = href && href.startsWith("http");
     const externalIcon = isExternal && <Share04 className="size-4 stroke-[2.5px] text-fg-quaternary" />;
+
+    if (type === "button") {
+        return (
+            <button type="button" className={cx("px-3 py-2 text-left", styles.root, current && styles.rootSelected)} onClick={onClick}>
+                {iconElement}
+                {labelElement}
+                {badgeElement}
+            </button>
+        );
+    }
 
     if (type === "collapsible") {
         return (

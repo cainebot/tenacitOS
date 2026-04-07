@@ -13,6 +13,8 @@ export type NavItemType = {
     items?: { label: string; href: string; icon?: FC<{ className?: string }>; badge?: ReactNode; iconTrailing?: FC<{ className?: string }> }[];
     /** Whether this nav item is a divider. */
     divider?: boolean;
+    /** Click handler — when provided, renders as button instead of link. */
+    onClick?: () => void;
 };
 
 export type NavItemDividerType = Omit<NavItemType, "icon" | "label" | "divider"> & {

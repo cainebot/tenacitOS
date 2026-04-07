@@ -11,7 +11,6 @@ import { useZoneBindings } from '@/features/office/viewer/hooks/use-zone-binding
 import { useOfficeMap } from '@/features/office/viewer/hooks/use-office-map'
 import { useOfficeStore } from '@/features/office/stores/office-store'
 import { ZoneBadgeOverlay } from '@/features/office/viewer/components/zone-badge-overlay'
-import { MyParticipantProvider } from '@/contexts/my-participant-context'
 import { AgentChatTab } from '@/features/office/components/agent-chat-tab'
 import { createBrowserClient } from '@/lib/supabase'
 import type { ChatInputPayload } from '@/components/application/chat-input'
@@ -128,44 +127,42 @@ export default function OfficePage() {
   }
 
   return (
-    <MyParticipantProvider>
-      <div className="flex flex-row flex-1 w-full overflow-hidden p-2" style={{ minHeight: 0 }}>
-        <div className="relative flex-1 min-w-0 h-full rounded-3xl overflow-hidden">
-          <PhaserBridge />
-          <ZoneBadgeOverlay />
-          <MiniMap />
-        </div>
-
-        <motion.div
-          animate={{ width: selectedAgent ? 400 : 0 }}
-          transition={{ type: 'spring', damping: 28, stiffness: 200, bounce: 0 }}
-          onAnimationComplete={handleAnimationComplete}
-          className="shrink-0 h-full overflow-hidden"
-        >
-          {displayAgent && (
-            <div className="w-[400px] h-full">
-              <AgentPanel
-                name={displayAgent.name}
-                role={displayAgent.role}
-                isOnline={
-                  displayAgent.status === 'active' || displayAgent.status === 'working'
-                }
-                onClose={() => setSelectedAgent(null)}
-                hideInput={!!agentParticipantId}
-              >
-                {agentParticipantId && (
-                  <AgentChatTab
-                    agentId={displayAgent.agent_id}
-                    agentParticipantId={agentParticipantId}
-                    agentName={displayAgent.name}
-                    onSendRef={sendRef}
-                  />
-                )}
-              </AgentPanel>
-            </div>
-          )}
-        </motion.div>
+    <div className="flex flex-row flex-1 w-full overflow-hidden p-2" style={{ minHeight: 0 }}>
+      <div className="relative flex-1 min-w-0 h-full rounded-3xl overflow-hidden">
+        <PhaserBridge />
+        <ZoneBadgeOverlay />
+        <MiniMap />
       </div>
-    </MyParticipantProvider>
+
+      <motion.div
+        animate={{ width: selectedAgent ? 400 : 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 200, bounce: 0 }}
+        onAnimationComplete={handleAnimationComplete}
+        className="shrink-0 h-full overflow-hidden"
+      >
+        {displayAgent && (
+          <div className="w-[400px] h-full">
+            <AgentPanel
+              name={displayAgent.name}
+              role={displayAgent.role}
+              isOnline={
+                displayAgent.status === 'active' || displayAgent.status === 'working'
+              }
+              onClose={() => setSelectedAgent(null)}
+              hideInput={!!agentParticipantId}
+            >
+              {agentParticipantId && (
+                <AgentChatTab
+                  agentId={displayAgent.agent_id}
+                  agentParticipantId={agentParticipantId}
+                  agentName={displayAgent.name}
+                  onSendRef={sendRef}
+                />
+              )}
+            </AgentPanel>
+          </div>
+        )}
+      </motion.div>
+    </div>
   )
 }
