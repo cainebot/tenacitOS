@@ -62,3 +62,39 @@ export async function sendMessage(
   }
   return res.json()
 }
+
+/** Send a message with file/image/audio attachments (multipart/form-data) */
+export async function sendMessageWithAttachments(
+  conversationId: string,
+  payload: {
+    text: string
+    files: File[]
+    parent_message_id?: string
+  }
+): Promise<unknown> {
+  const form = new FormData()
+  form.append('text', payload.text)
+  if (payload.parent_message_id) {
+    form.append('parent_message_id', payload.parent_message_id)
+  }
+  for (const file of payload.files) {
+    form.append('files', file, file.name)
+  }
+
+  const res = await fetch(
+    `/api/conversations/${conversationId}/messages`,
+    {
+      method: 'POST',
+      body: form,
+      // No Content-Type header — browser sets multipart boundary automatically
+    }
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Network error' }))
+    throw new Error(err.error || `Failed to send message (${res.status})`)
+  }
+  return res.json()
+}
+
+/** Regex to detect HTTP/HTTPS URLs in message text */
+export const URL_REGEX = /https?:\/\/[^\s]+/
