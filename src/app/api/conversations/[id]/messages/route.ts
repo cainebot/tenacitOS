@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, createServiceRoleClient } from '@/lib/supabase'
+import { createServiceRoleClient } from '@/lib/supabase'
 import { mimeToContentType } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
+// Helper: resolve Joan's participant_id (single human participant)
+async function getJoanParticipantId(supabase: ReturnType<typeof createServiceRoleClient>) {
+  const { data } = await supabase
+    .from('chat_participants')
+    .select('participant_id')
+    .eq('participant_type', 'human')
+    .limit(1)
+    .single()
+  return data?.participant_id ?? null
+}
+
 // GET /api/conversations/{id}/messages?cursor={created_at}&limit={50}
 // Returns paginated messages with sender info, newest-first
+// Uses service_role (middleware mc_auth already verifies auth)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,13 +27,7 @@ export async function GET(
   const cursor = searchParams.get('cursor')
   const limit = Math.min(parseInt(searchParams.get('limit') || '30', 10), 100)
 
-  const supabase = createServerClient()
-
-  // Verify user is participant (RLS handles this, but explicit check for 404)
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const supabase = createServiceRoleClient()
 
   // Fetch messages with sender info via join
   let query = supabase
@@ -96,11 +102,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: conversationId } = await params
-  const supabase = createServerClient()
+  const supabase = createServiceRoleClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const senderId = await getJoanParticipantId(supabase)
+  if (!senderId) {
+    return NextResponse.json({ error: 'Human participant not found' }, { status: 404 })
   }
 
   const contentTypeHeader = request.headers.get('content-type') ?? ''
@@ -190,7 +196,7 @@ export async function POST(
       .insert({
         message_id: messageId,
         conversation_id: conversationId,
-        sender_id: user.id,
+        sender_id: senderId,
         content_type: contentType,
         text: text || null,
         parent_message_id: parentMessageId || null,
@@ -237,12 +243,11 @@ export async function POST(
     // Use service role to INSERT (messages INSERT policy is service_role only per RLS)
     const serviceClient = createServiceRoleClient()
 
-    // Per D-02: sender_id = auth.uid() which is the human participant_id
     const { data, error } = await serviceClient
       .from('messages')
       .insert({
         conversation_id: conversationId,
-        sender_id: user.id,
+        sender_id: senderId,
         content_type,
         text,
         parent_message_id: body.parent_message_id || null,

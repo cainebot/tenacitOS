@@ -1,24 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, createServiceRoleClient } from '@/lib/supabase'
+import { createServiceRoleClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
 type RouteContext = { params: Promise<{ id: string; messageId: string }> }
 
+// Helper: resolve Joan's participant_id (single human participant)
+async function getJoanParticipantId(supabase: ReturnType<typeof createServiceRoleClient>) {
+  const { data } = await supabase
+    .from('chat_participants')
+    .select('participant_id')
+    .eq('participant_type', 'human')
+    .limit(1)
+    .single()
+  return data?.participant_id ?? null
+}
+
 // POST /api/conversations/{id}/messages/{messageId}/reactions
 // Body: { emoji: string }
-// Returns 201 with the inserted row, 409 on duplicate, 400 on missing emoji, 401 on auth failure
+// Returns 201 with the inserted row, 409 on duplicate, 400 on missing emoji
+// Uses service_role (middleware mc_auth already verifies auth)
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const { id: conversationId, messageId } = await params
 
-  const serverClient = createServerClient()
-  const {
-    data: { user },
-    error: authErr,
-  } = await serverClient.auth.getUser()
-
-  if (authErr || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const serviceClient = createServiceRoleClient()
+  const participantId = await getJoanParticipantId(serviceClient)
+  if (!participantId) {
+    return NextResponse.json({ error: 'Human participant not found' }, { status: 404 })
   }
 
   let body: { emoji?: string }
@@ -33,14 +41,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: 'emoji is required' }, { status: 400 })
   }
 
-  const serviceClient = createServiceRoleClient()
-
   const { data, error } = await serviceClient
     .from('message_reactions')
     .insert({
       message_id: messageId,
       conversation_id: conversationId,
-      participant_id: user.id,
+      participant_id: participantId,
       emoji,
     })
     .select()
@@ -59,18 +65,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
 // DELETE /api/conversations/{id}/messages/{messageId}/reactions
 // Body: { emoji: string }
-// Returns 204 on success, 400 on missing emoji, 401 on auth failure
+// Returns 204 on success, 400 on missing emoji
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const { id: conversationId, messageId } = await params
 
-  const serverClient = createServerClient()
-  const {
-    data: { user },
-    error: authErr,
-  } = await serverClient.auth.getUser()
-
-  if (authErr || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const serviceClient = createServiceRoleClient()
+  const participantId = await getJoanParticipantId(serviceClient)
+  if (!participantId) {
+    return NextResponse.json({ error: 'Human participant not found' }, { status: 404 })
   }
 
   let body: { emoji?: string }
@@ -85,14 +87,12 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: 'emoji is required' }, { status: 400 })
   }
 
-  const serviceClient = createServiceRoleClient()
-
   const { error } = await serviceClient
     .from('message_reactions')
     .delete()
     .eq('message_id', messageId)
     .eq('conversation_id', conversationId)
-    .eq('participant_id', user.id)
+    .eq('participant_id', participantId)
     .eq('emoji', emoji)
 
   if (error) {
