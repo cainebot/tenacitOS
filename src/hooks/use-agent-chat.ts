@@ -6,6 +6,7 @@ import { createBrowserClient } from '@/lib/supabase'
 import {
   fetchMessages as fetchMessagesApi,
   sendMessage as sendMessageApi,
+  toggleReactionApi,
   URL_REGEX,
 } from '@/lib/chat'
 import {
@@ -31,6 +32,7 @@ interface UseAgentChatResult {
   error: string | null
   sendMessage: (payload: { text: string; content_type?: string }) => Promise<void>
   retryMessage: (messageId: string) => Promise<void>
+  toggleReaction: (messageId: string, emoji: string) => Promise<void>
   loadMore: () => Promise<void>
   hasMore: boolean
   markMessagesRead: (messageIds: string[]) => Promise<void>
@@ -271,6 +273,58 @@ export function useAgentChat({
     [conversationId, messages]
   )
 
+  // ── Toggle emoji reaction (optimistic + API + revert on error) ───────────
+
+  const toggleReaction = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!conversationId || !myParticipantId) return
+
+      // Determine if this is an add or remove by checking current selected state
+      const message = messages.find((m) => m.message_id === messageId)
+      const existing = message?.reactions.find((r) => r.emoji === emoji)
+      const isRemoving = existing?.selected === true
+
+      // Apply optimistic update — matches applyOptimisticReaction logic in Wave 0 tests
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.message_id !== messageId) return m
+          const updated = m.reactions.map((r) => {
+            if (r.emoji !== emoji) return r
+            return { ...r, count: r.count + (isRemoving ? -1 : 1), selected: !r.selected }
+          })
+          if (!isRemoving && !m.reactions.some((r) => r.emoji === emoji)) {
+            updated.push({ emoji, count: 1, selected: true })
+          }
+          return { ...m, reactions: updated.filter((r) => r.count > 0) }
+        })
+      )
+
+      try {
+        await toggleReactionApi(conversationId, messageId, emoji, isRemoving)
+      } catch {
+        // Revert: apply the inverse transformation
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.message_id !== messageId) return m
+            const reverted = m.reactions.map((r) => {
+              if (r.emoji !== emoji) return r
+              // Inverse: if we were removing (so we added back +1), now remove again (-1)
+              // If we were adding (so we decremented to remove), now add back (+1)
+              return { ...r, count: r.count + (isRemoving ? 1 : -1), selected: isRemoving }
+            })
+            // If we were adding and it was new (count went to 0 after revert), filter it out
+            // If count somehow went to 0, remove it
+            const filtered = reverted.filter((r) => r.count > 0)
+            // If we were adding and no existing reaction existed before, and revert removed it, that's fine
+            return { ...m, reactions: filtered }
+          })
+        )
+        toast.error('Failed to update reaction')
+      }
+    },
+    [conversationId, myParticipantId, messages]
+  )
+
   // ── Realtime subscription (D-12) ──────────────────────────────────────────
 
   useEffect(() => {
@@ -391,8 +445,16 @@ export function useAgentChat({
         },
         (payload) => {
           const reaction = payload.new as MessageReactionRow
-          setMessages((prev) =>
-            prev.map((m) => {
+          setMessages((prev) => {
+            // Skip if this is our own reaction and already optimistically applied
+            if (reaction.participant_id === myParticipantId) {
+              const msg = prev.find((m) => m.message_id === reaction.message_id)
+              if (msg) {
+                const existing = msg.reactions.find((r) => r.emoji === reaction.emoji)
+                if (existing?.selected) return prev // already applied optimistically
+              }
+            }
+            return prev.map((m) => {
               if (m.message_id !== reaction.message_id) return m
               // Reconstruct raw reactions from current ReactionData + new row.
               // ReactionData is aggregated so we approximate from counts.
@@ -409,7 +471,7 @@ export function useAgentChat({
               const allRaw = [...existingRaw, reaction]
               return { ...m, reactions: groupReactions(allRaw, myParticipantId) }
             })
-          )
+          })
         }
       )
       .on(
@@ -422,8 +484,16 @@ export function useAgentChat({
         },
         (payload) => {
           const deleted = payload.old as Partial<MessageReactionRow>
-          setMessages((prev) =>
-            prev.map((m) => {
+          setMessages((prev) => {
+            // Skip if this is our own un-reaction and already optimistically removed
+            if (deleted.participant_id === myParticipantId) {
+              const msg = prev.find((m) => m.message_id === deleted.message_id)
+              if (msg) {
+                const existing = msg.reactions.find((r) => r.emoji === deleted.emoji)
+                if (!existing || !existing.selected) return prev // already removed optimistically
+              }
+            }
+            return prev.map((m) => {
               if (m.message_id !== deleted.message_id) return m
               // Remove one reaction of matching emoji + participant
               const existingRaw = m.reactions.flatMap((rd) =>
@@ -442,7 +512,7 @@ export function useAgentChat({
               )
               return { ...m, reactions: groupReactions(filtered, myParticipantId) }
             })
-          )
+          })
         }
       )
       .subscribe()
@@ -479,6 +549,7 @@ export function useAgentChat({
     error,
     sendMessage,
     retryMessage,
+    toggleReaction,
     loadMore,
     hasMore,
     markMessagesRead,

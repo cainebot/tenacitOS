@@ -96,5 +96,26 @@ export async function sendMessageWithAttachments(
   return res.json()
 }
 
+/** Toggle (add or remove) an emoji reaction on a message */
+export async function toggleReactionApi(
+  conversationId: string,
+  messageId: string,
+  emoji: string,
+  isRemoving: boolean
+): Promise<void> {
+  const res = await fetch(
+    `/api/conversations/${conversationId}/messages/${messageId}/reactions`,
+    {
+      method: isRemoving ? 'DELETE' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emoji }),
+    }
+  )
+  if (!res.ok && res.status !== 409 && res.status !== 204) {
+    const err = await res.json().catch(() => ({ error: 'Network error' }))
+    throw new Error(err.error || `Reaction failed (${res.status})`)
+  }
+}
+
 /** Regex to detect HTTP/HTTPS URLs in message text */
 export const URL_REGEX = /https?:\/\/[^\s]+/
