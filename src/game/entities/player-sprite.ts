@@ -69,6 +69,17 @@ export class PlayerSprite {
   }
 
   update(delta: number): void {
+    // Skip movement when a text input is focused (chat, search, etc.)
+    const active = document.activeElement
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) {
+      const idleKey = `${PLAYER_SPRITE.key}_idle_${this._facing}`
+      if (this.sprite.anims.currentAnim?.key !== idleKey) {
+        this.sprite.play(idleKey)
+      }
+      this._moving = false
+      return
+    }
+
     const speed = PLAYER_SPEED * (delta / 1000)
 
     const left = this.cursors.left.isDown || this.wasd.A.isDown

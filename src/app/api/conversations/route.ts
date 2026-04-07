@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
+import { createServiceRoleClient } from '@/lib/supabase'
 import type { ConversationType } from '@/types/chat'
 
 export const dynamic = 'force-dynamic'
@@ -16,22 +16,18 @@ export interface ConversationWithMeta {
 }
 
 // GET /api/conversations
-// Returns the authenticated user's conversations sorted by last_message_at DESC
-// with unread counts and last message preview
+// Returns Joan's conversations sorted by last_message_at DESC
+// with unread counts and last message preview.
+// Uses service_role — middleware mc_auth cookie already verifies auth.
 export async function GET() {
-  const supabase = createServerClient()
+  const supabase = createServiceRoleClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Resolve Joan's participant_id — human participant linked to auth user
+  // Resolve Joan's participant_id (single human participant)
   const { data: joanRow, error: joanError } = await supabase
     .from('chat_participants')
     .select('participant_id')
     .eq('participant_type', 'human')
-    .eq('external_id', user.id)
+    .limit(1)
     .single()
 
   if (joanError || !joanRow) {

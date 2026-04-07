@@ -1,7 +1,6 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { createBrowserClient } from '@/lib/supabase'
 import type { ChatParticipantRow } from '@/types/chat'
 
 interface MyParticipantContextValue {
@@ -22,37 +21,28 @@ export function MyParticipantProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const supabase = createBrowserClient()
     let cancelled = false
 
-    async function fetchParticipant() {
-      // Per D-02: auth.uid() IS participant_id (Phase 88 seed uses Auth UUID)
-      const { data: { user }, error: authErr } = await supabase.auth.getUser()
-      if (authErr || !user) {
+    // Fetch Joan's participant via API (service_role bypasses RLS,
+    // middleware mc_auth cookie already verifies authentication)
+    fetch('/api/my-participant')
+      .then((res) => {
+        if (!res.ok) throw new Error('Participant not found')
+        return res.json()
+      })
+      .then((data) => {
         if (!cancelled) {
-          setError('Not authenticated')
+          setParticipant(data as ChatParticipantRow)
           setLoading(false)
         }
-        return
-      }
-
-      const { data, error: fetchErr } = await supabase
-        .from('chat_participants')
-        .select('*')
-        .eq('participant_id', user.id)
-        .single()
-
-      if (!cancelled) {
-        if (fetchErr) {
-          setError(fetchErr.message)
-        } else {
-          setParticipant(data as ChatParticipantRow)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err.message)
+          setLoading(false)
         }
-        setLoading(false)
-      }
-    }
+      })
 
-    fetchParticipant()
     return () => { cancelled = true }
   }, [])
 
