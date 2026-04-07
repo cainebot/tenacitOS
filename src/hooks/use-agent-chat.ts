@@ -119,6 +119,12 @@ export function useAgentChat({
 
   const cursorRef = useRef<string | null>(null)
 
+  // Stable ref for recipientIds — avoids stale closure in Realtime callbacks
+  // (the subscription useEffect depends on [conversationId, myParticipantId] only;
+  //  recipientIds can change async after the effect runs)
+  const recipientIdsRef = useRef(recipientIds)
+  recipientIdsRef.current = recipientIds
+
   // ── Initial fetch ──────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -355,7 +361,7 @@ export function useAgentChat({
             if (prev.some((m) => m.message_id === raw.message_id && !m._optimistic)) {
               return prev
             }
-            const enriched = enrichMessage(raw, myParticipantId, recipientIds)
+            const enriched = enrichMessage(raw, myParticipantId, recipientIdsRef.current)
             // Replace optimistic with real message if same text + mine, else append
             const optimisticIdx = prev.findIndex(
               (m) =>
@@ -399,7 +405,7 @@ export function useAgentChat({
               if (m.message_id !== updated.message_id) return m
               // Only re-enrich if content_type actually changed (avoid noisy re-renders)
               if (m.content_type === updated.content_type && !updated.og_title) return m
-              return enrichMessage(updated, myParticipantId, recipientIds)
+              return enrichMessage(updated, myParticipantId, recipientIdsRef.current)
             })
           )
         }
@@ -423,11 +429,16 @@ export function useAgentChat({
                 ...m,
                 receipts: updatedReceipts,
                 statusIcon: m.isMine
-                  ? deriveStatusIcon(updatedReceipts, recipientIds)
+                  ? deriveStatusIcon(updatedReceipts, recipientIdsRef.current)
                   : m.statusIcon,
               }
             })
           )
+
+          // Show error toast when agent reports delivery failure
+          if (receipt.status === 'failed' && receipt.error_message) {
+            toast.error(`Agent error: ${receipt.error_message}`)
+          }
         }
       )
       // message_reactions INSERT/DELETE — re-run groupReactions
@@ -511,13 +522,51 @@ export function useAgentChat({
           })
         }
       )
-      .subscribe()
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error(`[realtime] Channel ${conversationId}: ${status}`, err)
+        }
+      })
 
     return () => {
       supabase.removeChannel(channel)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, myParticipantId])
+
+  // ── Fallback: refetch receipts when Realtime misses events ────────────────
+  // After sending a message, if the status stays 'sent' for 5s, refetch to catch
+  // receipts that Realtime may have dropped (e.g. auth token expired).
+
+  useEffect(() => {
+    if (!conversationId || !myParticipantId) return
+
+    const sentMessages = messages.filter((m) => m.isMine && m.statusIcon === 'sent' && !m._failed && !m._optimistic)
+    if (sentMessages.length === 0) return
+
+    const timer = setTimeout(() => {
+      // Re-fetch latest messages to sync receipt status
+      fetchMessagesApi(conversationId)
+        .then(({ data }) => {
+          const raw = data as RawApiMessage[]
+          setMessages((prev) => {
+            const apiMap = new Map(raw.map((m) => [m.message_id, m]))
+            return prev.map((msg) => {
+              const fresh = apiMap.get(msg.message_id)
+              if (!fresh) return msg
+              // Only update if the API has more receipts than local state
+              const freshReceipts = fresh.receipts ?? []
+              if (freshReceipts.length <= msg.receipts.length) return msg
+              return enrichMessage(fresh, myParticipantId, recipientIdsRef.current)
+            })
+          })
+        })
+        .catch(() => {}) // best-effort
+    }, 5000)
+
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, myParticipantId, messages.length])
 
   // ── Batch mark messages as read (viewport-based, called by AgentChatTab) ────
 
