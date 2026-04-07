@@ -104,3 +104,78 @@ export const CONTENT_TYPE_TO_MESSAGE_TYPE: Record<ContentType, string> = {
   system: 'message',
   skill_invocation: 'message',
 }
+
+// ── Phase 89: Enriched message types + utility functions ─────────────────────
+
+export type { MessageStatus } from '@/components/application/message-status-icon'
+export type { MessageType } from '@/components/application/message'
+
+import type { MessageStatus } from '@/components/application/message-status-icon'
+
+export interface EnrichedMessage {
+  message_id: string
+  conversation_id: string
+  sender_id: string
+  content_type: ContentType
+  text: string | null
+  created_at: string
+  edited_at: string | null
+  parent_message_id: string | null
+  deleted_at: string | null
+  // OG link preview fields
+  og_title: string | null
+  og_description: string | null
+  og_image_url: string | null
+  og_site_name: string | null
+  og_url: string | null
+  // Skill invocation
+  skill_id: string | null
+  skill_command: string | null
+  // Joined
+  senderName: string
+  senderAvatar: string | null
+  isMine: boolean
+  attachments: MessageAttachmentRow[]
+  receipts: MessageReceiptRow[]
+  reactions: ReactionData[]
+  parentMessage: { text: string | null; senderName: string } | null
+  // Derived
+  statusIcon: MessageStatus
+  messageType: string  // from CONTENT_TYPE_TO_MESSAGE_TYPE
+  // Optimistic state
+  _optimistic?: boolean
+  _failed?: boolean
+}
+
+export function deriveStatusIcon(
+  receipts: MessageReceiptRow[],
+  recipientIds: string[]
+): MessageStatus {
+  if (receipts.some(r => r.status === 'failed')) return 'failed'
+
+  for (const recipientId of recipientIds) {
+    const recipientReceipts = receipts.filter(r => r.participant_id === recipientId)
+    const statuses = new Set(recipientReceipts.map(r => r.status))
+
+    if (statuses.has('processed')) continue
+    if (statuses.has('read')) continue
+    if (statuses.has('delivered')) return 'delivered'
+    return 'sent'
+  }
+
+  return 'read'
+}
+
+export function groupReactions(
+  reactions: MessageReactionRow[],
+  myParticipantId: string
+): ReactionData[] {
+  const map = new Map<string, { count: number; selected: boolean }>()
+  for (const r of reactions) {
+    const entry = map.get(r.emoji) ?? { count: 0, selected: false }
+    entry.count++
+    if (r.participant_id === myParticipantId) entry.selected = true
+    map.set(r.emoji, entry)
+  }
+  return Array.from(map, ([emoji, { count, selected }]) => ({ emoji, count, selected }))
+}
