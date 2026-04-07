@@ -32,6 +32,7 @@ interface UseAgentChatResult {
   retryMessage: (messageId: string) => Promise<void>
   loadMore: () => Promise<void>
   hasMore: boolean
+  markMessagesRead: (messageIds: string[]) => Promise<void>
 }
 
 // ── Raw API message shape (joined rows from API) ──────────────────────────────
@@ -310,6 +311,17 @@ export function useAgentChat({
             }
             return [...prev, enriched]
           })
+
+          // Insert 'delivered' receipt when an agent message arrives via Realtime.
+          // Fire-and-forget — receipt insertion is best-effort, don't block UI.
+          if (raw.sender_id !== myParticipantId && conversationId && myParticipantId) {
+            supabase.from('message_receipts').upsert({
+              message_id: raw.message_id,
+              conversation_id: conversationId,
+              participant_id: myParticipantId,
+              status: 'delivered',
+            }, { onConflict: 'message_id,participant_id,status' }).then(() => {})
+          }
         }
       )
       // message_receipts INSERT — update receipt + re-derive statusIcon
@@ -411,6 +423,26 @@ export function useAgentChat({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, myParticipantId])
 
+  // ── Batch mark messages as read (viewport-based, called by AgentChatTab) ────
+
+  const markMessagesRead = useCallback(async (messageIds: string[]) => {
+    if (!conversationId || !myParticipantId || messageIds.length === 0) return
+
+    const supabase = createBrowserClient()
+
+    // Batch upsert — one receipt row per message
+    const receipts = messageIds.map((mid) => ({
+      message_id: mid,
+      conversation_id: conversationId,
+      participant_id: myParticipantId,
+      status: 'read' as const,
+    }))
+
+    await supabase.from('message_receipts').upsert(receipts, {
+      onConflict: 'message_id,participant_id,status',
+    }).then(() => {})
+  }, [conversationId, myParticipantId])
+
   return {
     messages,
     loading,
@@ -419,5 +451,6 @@ export function useAgentChat({
     retryMessage,
     loadMore,
     hasMore,
+    markMessagesRead,
   }
 }
