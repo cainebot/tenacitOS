@@ -95,7 +95,7 @@ export default function ProjectBoardPage() {
       title: col.name,
       stateId: col.state_ids[0] ?? '',
       items: cards
-        .filter(c => col.state_ids.includes(c.state_id) && c.card_type !== 'epic')
+        .filter(c => col.state_ids.includes(c.state_id) && c.card_type !== 'epic' && c.card_type !== 'subtask')
         .sort((a, b) => (a.sort_order < b.sort_order ? -1 : 1)),
     }))
   }, [board, cards])
@@ -213,7 +213,7 @@ export default function ProjectBoardPage() {
       title: col.name,
       stateId: col.state_ids[0] ?? '',
       items: cards
-        .filter(c => col.state_ids.includes(c.state_id) && c.card_type !== 'epic')
+        .filter(c => col.state_ids.includes(c.state_id) && c.card_type !== 'epic' && c.card_type !== 'subtask')
         .sort((a, b) => (a.sort_order < b.sort_order ? -1 : 1)),
     }))
     storeLoadBoard(boardId, columns)

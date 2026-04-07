@@ -781,13 +781,13 @@ function MetadataAssignee({
       <AriaButton aria-label="Select assignee" className="flex w-fit cursor-pointer items-center gap-2 rounded-md pl-1.5 pr-3 py-1 -ml-1.5 outline-none transition hover:bg-primary_hover">
         {assignee ? (
           <>
-            <Avatar size="xs" src={assignee.avatarUrl} alt={assignee.name} />
+            <Avatar size="sm" src={assignee.avatarUrl} alt={assignee.name} />
             <span className="text-sm text-primary">{assignee.name}</span>
           </>
         ) : (
           <>
-            <div className="flex size-5 items-center justify-center rounded-full bg-tertiary">
-              <User01 className="size-3 text-fg-quaternary" />
+            <div className="flex size-6 items-center justify-center rounded-full bg-tertiary">
+              <User01 className="size-3.5 text-fg-quaternary" />
             </div>
             <span className="text-sm text-quaternary">Unassigned</span>
           </>

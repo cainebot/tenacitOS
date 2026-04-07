@@ -58,6 +58,9 @@ export async function getCards(
 
     let cards = data as CardRow[]
 
+    // Exclude subtasks from board view — they only appear inside their parent's detail panel
+    cards = cards.filter((c) => c.card_type !== 'subtask')
+
     // Apply remaining filters client-side (RPC already handles board visibility)
     if (card_type) cards = cards.filter((c) => c.card_type === card_type)
     if (assigned_agent_id)

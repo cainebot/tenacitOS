@@ -85,7 +85,8 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
               prev.assigned_agent_id === storeCard.assigned_agent_id &&
               prev.due_date === storeCard.due_date &&
               JSON.stringify(prev.labels) === JSON.stringify(storeCard.labels) &&
-              prev.description === storeCard.description
+              prev.description === storeCard.description &&
+              prev.state_id === storeCard.state_id
             ) {
               return prev // no change
             }
@@ -97,6 +98,7 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
               due_date: storeCard.due_date,
               labels: storeCard.labels,
               description: storeCard.description ?? prev.description,
+              state_id: storeCard.state_id,
             }
           })
           return
