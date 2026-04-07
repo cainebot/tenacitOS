@@ -1,14 +1,18 @@
 'use client'
 
 import { useCallback, useEffect, useRef } from 'react'
-import { Message, type MessageType } from '@/components/application/message'
+import { toast } from 'sonner'
+import { Message, type MessageProps } from '@/components/application/message'
 import { AgentPanelSection, AgentPanelDivider } from '@/components/application/agent-panel'
 import { useDirectConversation } from '@/hooks/use-direct-conversation'
 import { useAgentChat } from '@/hooks/use-agent-chat'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
-import type { EnrichedMessage } from '@/types/chat'
+import type { EnrichedMessage, MessageAttachmentRow } from '@/types/chat'
 import type { MessageAction } from '@/components/application/message-action-panel'
+import type { MessageStatus } from '@/components/application/message-status-icon'
 import type { ChatInputPayload } from '@/components/application/chat-input'
+import { sendMessageWithAttachments } from '@/lib/chat'
+import { formatBytes } from '@/lib/format'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -57,6 +61,86 @@ function hasReadReceipt(msg: EnrichedMessage): boolean {
   return msg.receipts.some((r) => r.status === 'read')
 }
 
+function extname(filename: string): string {
+  const idx = filename.lastIndexOf('.')
+  return idx > 0 ? filename.substring(idx) : ''
+}
+
+const VIDEO_THUMBNAIL_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" fill="%23525866"><rect width="320" height="180" rx="8"/><text x="160" y="98" text-anchor="middle" fill="%23999" font-size="14">Video</text></svg>'
+)
+
+function buildMessageProps(
+  msg: EnrichedMessage,
+  baseProps: {
+    sent: boolean
+    senderName: string
+    senderAvatar?: string
+    timestamp: string
+    status?: MessageStatus
+    reactions: { emoji: string; count: number; isSelected: boolean }[]
+    actions?: MessageAction[]
+    onAction?: (action: MessageAction) => void
+  }
+): MessageProps {
+  const att: MessageAttachmentRow | undefined = msg.attachments[0]
+
+  switch (msg.messageType) {
+    case 'file':
+      return {
+        ...baseProps,
+        type: 'file',
+        fileName: att?.filename ?? 'file',
+        fileSize: att ? formatBytes(att.size_bytes) : '0 B',
+        fileExtension: att ? extname(att.filename) : '',
+        onDownload: att?.url ? () => window.open(att.url, '_blank') : undefined,
+      }
+
+    case 'image':
+      return {
+        ...baseProps,
+        type: 'image',
+        src: att?.url ?? '',
+        alt: att?.filename ?? 'Image',
+        fileName: att?.filename,
+        fileSize: att ? formatBytes(att.size_bytes) : undefined,
+      }
+
+    case 'audio':
+      return {
+        ...baseProps,
+        type: 'audio',
+        duration: att?.duration_seconds
+          ? `${Math.floor(att.duration_seconds / 60)}:${Math.floor(att.duration_seconds % 60).toString().padStart(2, '0')}`
+          : '0:00',
+      }
+
+    case 'video':
+      return {
+        ...baseProps,
+        type: 'video',
+        thumbnailSrc: att?.thumbnail_storage_path
+          ? (att.url ?? VIDEO_THUMBNAIL_PLACEHOLDER)
+          : VIDEO_THUMBNAIL_PLACEHOLDER,
+      }
+
+    case 'link-preview':
+      return {
+        ...baseProps,
+        type: 'link-preview',
+        url: msg.og_url ?? msg.text ?? '',
+        imageSrc: msg.og_image_url ?? undefined,
+      }
+
+    default:
+      return {
+        ...baseProps,
+        type: 'message',
+        content: msg.text ?? '',
+      }
+  }
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function AgentChatTab({
@@ -77,11 +161,43 @@ export function AgentChatTab({
   // ── Send ref pattern: write handleSend to onSendRef so parent can call it ──
   const handleSend = useCallback(
     async (payload: ChatInputPayload) => {
-      if (!payload.text.trim()) return
-      await chat.sendMessage({ text: payload.text })
+      if (!conversationId) return
+
+      // Collect all files: images + non-image files + audio blob
+      const allFiles: File[] = [
+        ...payload.images,
+        ...(payload.files ?? []),
+      ]
+
+      // Convert audioBlob to File if present (D-05)
+      if (payload.audioBlob) {
+        const ext = payload.audioBlob.type.includes('mp4') ? 'mp4' : 'webm'
+        const audioFile = new File(
+          [payload.audioBlob],
+          `recording-${Date.now()}.${ext}`,
+          { type: payload.audioBlob.type }
+        )
+        allFiles.push(audioFile)
+      }
+
+      // Route: multipart (files) or text-only (JSON)
+      if (allFiles.length > 0) {
+        try {
+          await sendMessageWithAttachments(conversationId, {
+            text: payload.text,
+            files: allFiles,
+          })
+        } catch {
+          toast.error('Failed to send attachment')
+        }
+      } else if (payload.text.trim()) {
+        // Text-only path. D-06 URL detection + link-preview firing is handled
+        // in use-agent-chat.ts Realtime INSERT handler, not here.
+        await chat.sendMessage({ text: payload.text })
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chat.sendMessage]
+    [conversationId, chat.sendMessage]
   )
 
   useEffect(() => {
@@ -216,26 +332,28 @@ export function AgentChatTab({
                     }
                   }}
                 >
-                  <Message
-                    type={msg.messageType as MessageType}
-                    sent={msg.isMine}
-                    senderName={msg.senderName}
-                    senderAvatar={msg.senderAvatar ?? undefined}
-                    timestamp={formatTime(msg.created_at)}
-                    status={msg.isMine ? msg.statusIcon : undefined}
-                    content={msg.text ?? ''}
-                    reactions={msg.reactions.map((r) => ({
-                      emoji: r.emoji,
-                      count: r.count,
-                      isSelected: r.selected,
-                    }))}
-                    actions={msg._failed ? ['retry' as MessageAction] : undefined}
-                    onAction={(action: MessageAction) => {
-                      if (action === 'retry') {
-                        chat.retryMessage(msg.message_id)
-                      }
-                    }}
-                  />
+                  {(() => {
+                    const baseProps = {
+                      sent: msg.isMine,
+                      senderName: msg.senderName,
+                      senderAvatar: msg.senderAvatar ?? undefined,
+                      timestamp: formatTime(msg.created_at),
+                      status: msg.isMine ? msg.statusIcon : undefined,
+                      reactions: msg.reactions.map((r) => ({
+                        emoji: r.emoji,
+                        count: r.count,
+                        isSelected: r.selected,
+                      })),
+                      actions: msg._failed ? (['retry'] as MessageAction[]) : undefined,
+                      onAction: (action: MessageAction) => {
+                        if (action === 'retry') {
+                          chat.retryMessage(msg.message_id)
+                        }
+                      },
+                    }
+                    const messageProps = buildMessageProps(msg, baseProps)
+                    return <Message {...messageProps} />
+                  })()}
                 </div>
               )
             })}

@@ -6,6 +6,7 @@ import { createBrowserClient } from '@/lib/supabase'
 import {
   fetchMessages as fetchMessagesApi,
   sendMessage as sendMessageApi,
+  URL_REGEX,
 } from '@/lib/chat'
 import {
   deriveStatusIcon,
@@ -322,6 +323,35 @@ export function useAgentChat({
               status: 'delivered',
             }, { onConflict: 'message_id,participant_id,status' }).then(() => {})
           }
+
+          // D-06: Fire link-preview for own messages containing URLs
+          if (raw.sender_id === myParticipantId && raw.text && URL_REGEX.test(raw.text) && raw.content_type === 'text') {
+            fetch(
+              `/api/conversations/${conversationId}/messages/${raw.message_id}/link-preview`,
+              { method: 'POST' }
+            ).catch(() => {}) // fire-and-forget
+          }
+        }
+      )
+      // messages UPDATE — handle link-preview transition (D-06 Pitfall 4)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updated = payload.new as RawApiMessage
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m.message_id !== updated.message_id) return m
+              // Only re-enrich if content_type actually changed (avoid noisy re-renders)
+              if (m.content_type === updated.content_type && !updated.og_title) return m
+              return enrichMessage(updated, myParticipantId, recipientIds)
+            })
+          )
         }
       )
       // message_receipts INSERT — update receipt + re-derive statusIcon
