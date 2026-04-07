@@ -240,8 +240,7 @@ export function ChatInput({
 
   const filteredShortcuts = shortcuts.filter((s) =>
     shortcutQuery
-      ? s.label.toLowerCase().includes(shortcutQuery.toLowerCase()) ||
-        s.id.toLowerCase().includes(shortcutQuery.toLowerCase())
+      ? s.label.toLowerCase().startsWith(shortcutQuery.toLowerCase())
       : true,
   )
 

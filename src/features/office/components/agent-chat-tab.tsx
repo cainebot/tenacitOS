@@ -6,11 +6,12 @@ import { Message, type MessageProps } from '@/components/application/message'
 import { AgentPanelSection, AgentPanelDivider } from '@/components/application/agent-panel'
 import { useDirectConversation } from '@/hooks/use-direct-conversation'
 import { useAgentChat } from '@/hooks/use-agent-chat'
+import { useAgentSkills } from '@/hooks/use-agent-skills'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import type { EnrichedMessage, MessageAttachmentRow } from '@/types/chat'
 import type { MessageAction } from '@/components/application/message-action-panel'
 import type { MessageStatus } from '@/components/application/message-status-icon'
-import { ChatInput, type ChatInputPayload } from '@/components/application/chat-input'
+import { ChatInput, type ChatInputPayload, type ChatShortcut } from '@/components/application/chat-input'
 import { sendMessageWithAttachments } from '@/lib/chat'
 import { formatBytes } from '@/lib/format'
 
@@ -174,6 +175,7 @@ export function AgentChatTab({
   const { conversationId, loading: conversationLoading } = useDirectConversation(agentParticipantId)
 
   const chat = useAgentChat({ conversationId, agentParticipantId })
+  const { shortcuts } = useAgentSkills(agentId)
 
   const { agents } = useRealtimeAgents()
   const agent = agents.find((a) => a.agent_id === agentId)
@@ -182,6 +184,10 @@ export function AgentChatTab({
   // ── Reply state (D-12) ────────────────────────────────────────────────────
   const [replyToMessage, setReplyToMessage] = useState<EnrichedMessage | null>(null)
   const replyToRef = useRef<string | null>(null)
+
+  // Keep shortcutsRef current for skill_id lookup inside handleSend
+  const shortcutsRef = useRef<ChatShortcut[]>([])
+  useEffect(() => { shortcutsRef.current = shortcuts }, [shortcuts])
 
   // ── Send ref pattern: write handleSend to onSendRef so parent can call it ──
   const handleSend = useCallback(
@@ -222,9 +228,19 @@ export function AgentChatTab({
       } else if (payload.text.trim()) {
         // Text-only path. D-06 URL detection + link-preview firing is handled
         // in use-agent-chat.ts Realtime INSERT handler, not here.
+        const isSkill = !!payload.command
+        const matchedShortcut = isSkill
+          ? shortcutsRef.current.find((s) => s.id === payload.command)
+          : null
+
         await chat.sendMessage({
           text: payload.text,
           ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
+          ...(isSkill && matchedShortcut ? {
+            content_type: 'skill_invocation',
+            skill_id: payload.command!,
+            skill_command: `/${matchedShortcut.label}`,
+          } : {}),
         })
       }
 
@@ -448,6 +464,7 @@ export function AgentChatTab({
           avatarSrc={userAvatarSrc}
           userName={userName}
           onSend={handleSend}
+          shortcuts={shortcuts}
           replyTo={replyToMessage ? {
             senderName: replyToMessage.senderName,
             text: replyToMessage.text

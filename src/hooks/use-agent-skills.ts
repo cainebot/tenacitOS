@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
 import type { AgentSkillRow, SkillRow, SkillVersionRow } from '@/types/supabase'
+import type { ChatShortcut } from '@/components/application/chat-input'
 
 export interface AgentSkillWithDetails extends AgentSkillRow {
   skills: Pick<SkillRow, 'id' | 'name' | 'description' | 'icon' | 'origin'> | null
@@ -14,6 +15,18 @@ export interface UseAgentSkillsResult {
   loading: boolean
   error: string | null
   refetch: () => Promise<void>
+  shortcuts: ChatShortcut[]
+}
+
+/** Map installed agent_skills to ChatShortcut[] for ChatInput.shortcuts prop */
+export function mapToShortcuts(skills: AgentSkillWithDetails[]): ChatShortcut[] {
+  return skills
+    .filter((s) => s.status === 'installed')
+    .map((s) => ({
+      id: s.skill_id,           // UUID from skills table — NOT s.id (agent_skills PK). Per Pitfall 1.
+      label: s.skills?.name ?? 'unknown',
+      description: s.skills?.description ?? undefined,
+    }))
 }
 
 export function useAgentSkills(id: string): UseAgentSkillsResult {
@@ -60,5 +73,5 @@ export function useAgentSkills(id: string): UseAgentSkillsResult {
     }
   }, [fetchSkills, supabase, id])
 
-  return { skills, loading, error, refetch: fetchSkills }
+  return { skills, loading, error, refetch: fetchSkills, shortcuts: mapToShortcuts(skills) }
 }
