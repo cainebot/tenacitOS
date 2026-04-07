@@ -372,16 +372,7 @@ export function useAgentChat({
             return [...prev, enriched]
           })
 
-          // Insert 'delivered' receipt when an agent message arrives via Realtime.
-          // Fire-and-forget — receipt insertion is best-effort, don't block UI.
-          if (raw.sender_id !== myParticipantId && conversationId && myParticipantId) {
-            supabase.from('message_receipts').upsert({
-              message_id: raw.message_id,
-              conversation_id: conversationId,
-              participant_id: myParticipantId,
-              status: 'delivered',
-            }, { onConflict: 'message_id,participant_id,status' }).then(() => {})
-          }
+          // Delivered receipts handled by agent daemon (message-responder.sh insert_receipt)
 
           // D-06: Fire link-preview for own messages containing URLs
           if (raw.sender_id === myParticipantId && raw.text && URL_REGEX.test(raw.text) && raw.content_type === 'text') {
@@ -533,19 +524,16 @@ export function useAgentChat({
   const markMessagesRead = useCallback(async (messageIds: string[]) => {
     if (!conversationId || !myParticipantId || messageIds.length === 0) return
 
-    const supabase = createBrowserClient()
-
-    // Batch upsert — one receipt row per message
-    const receipts = messageIds.map((mid) => ({
-      message_id: mid,
-      conversation_id: conversationId,
-      participant_id: myParticipantId,
-      status: 'read' as const,
-    }))
-
-    await supabase.from('message_receipts').upsert(receipts, {
-      onConflict: 'message_id,participant_id,status',
-    }).then(() => {})
+    // Route through API to bypass RLS (browser has no auth session)
+    fetch(`/api/conversations/${conversationId}/receipts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message_ids: messageIds,
+        participant_id: myParticipantId,
+        status: 'read',
+      }),
+    }).catch(() => {}) // fire-and-forget — receipt insertion is best-effort
   }, [conversationId, myParticipantId])
 
   return {

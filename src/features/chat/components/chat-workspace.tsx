@@ -12,7 +12,6 @@ import { useConversations } from '../hooks/use-conversations'
 import { useAgentChat } from '@/hooks/use-agent-chat'
 import { useChatSend } from '../hooks/use-chat-send'
 import { conversationUiType } from '@/lib/chat'
-import { createBrowserClient } from '@/lib/supabase'
 import { useMyParticipant } from '@/contexts/my-participant-context'
 import { ChatPanel, ChatPanelSection, ChatPanelDivider } from '@/components/application/chat-panel'
 import { ChatInput } from '@/components/application/chat-input'
@@ -168,17 +167,19 @@ function WorkspaceConversationView({ conversationId, conversation }: WorkspaceCo
   const [recipientIds, setRecipientIds] = useState<string[]>([])
 
   // Fetch all participants for the conversation (excluding self)
+  // Routes through API to bypass RLS (browser has no auth session)
   useEffect(() => {
     if (!conversationId || !myParticipantId) return
-    const supabase = createBrowserClient()
-    supabase
-      .from('conversation_participants')
-      .select('participant_id')
-      .eq('conversation_id', conversationId)
-      .neq('participant_id', myParticipantId)
-      .then(({ data }) => {
-        setRecipientIds(data?.map(d => d.participant_id) ?? [])
+    fetch(`/api/conversations/${conversationId}/participants`)
+      .then(res => res.ok ? res.json() : [])
+      .then((data: Array<{ participant_id: string }>) => {
+        setRecipientIds(
+          data
+            .map(d => d.participant_id)
+            .filter(id => id !== myParticipantId)
+        )
       })
+      .catch(() => setRecipientIds([]))
   }, [conversationId, myParticipantId])
 
   const chat = useAgentChat({ conversationId, recipientIds })
