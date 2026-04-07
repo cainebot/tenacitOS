@@ -59,31 +59,32 @@ export class PlayerSprite {
   }
 
   setupInput(scene: Phaser.Scene): void {
-    // Disable Phaser's global key capture so keys reach HTML inputs (chat, search)
-    scene.input.keyboard!.disableGlobalCapture()
+    const kb = scene.input.keyboard!
 
-    this.cursors = scene.input.keyboard!.createCursorKeys()
-    // enableCapture=false so WASD keys don't preventDefault
+    this.cursors = kb.createCursorKeys()
     this.wasd = {
-      W: scene.input.keyboard!.addKey('W', false),
-      A: scene.input.keyboard!.addKey('A', false),
-      S: scene.input.keyboard!.addKey('S', false),
-      D: scene.input.keyboard!.addKey('D', false),
+      W: kb.addKey('W'),
+      A: kb.addKey('A'),
+      S: kb.addKey('S'),
+      D: kb.addKey('D'),
     }
+
+    // Disable Phaser keyboard entirely when ANY HTML input is focused.
+    // This covers ALL keys (WASD, E, space, arrows, etc.) in one place.
+    const isInputElement = (el: EventTarget | null): boolean => {
+      if (!el || !(el instanceof HTMLElement)) return false
+      return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable
+    }
+
+    document.addEventListener('focusin', (e) => {
+      if (isInputElement(e.target)) kb.enabled = false
+    })
+    document.addEventListener('focusout', () => {
+      kb.enabled = true
+    })
   }
 
   update(delta: number): void {
-    // Skip movement when a text input is focused (chat, search, etc.)
-    const active = document.activeElement
-    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) {
-      const idleKey = `${PLAYER_SPRITE.key}_idle_${this._facing}`
-      if (this.sprite.anims.currentAnim?.key !== idleKey) {
-        this.sprite.play(idleKey)
-      }
-      this._moving = false
-      return
-    }
-
     const speed = PLAYER_SPEED * (delta / 1000)
 
     const left = this.cursors.left.isDown || this.wasd.A.isDown

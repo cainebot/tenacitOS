@@ -18,9 +18,6 @@ export class InteractionManager {
   /** Call once after scene.create() */
   setupInput(): void {
     this.scene.input.keyboard!.on('keydown-E', () => {
-      // Skip when a text input is focused (chat, search, etc.)
-      const active = document.activeElement
-      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) return
       if (!this.nearestAgent) return
       const agent = this.nearestAgent.agentData
       this.selectedAgentId = agent.agent_id
