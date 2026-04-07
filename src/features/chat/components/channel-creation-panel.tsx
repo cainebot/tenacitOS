@@ -1,6 +1,6 @@
 'use client'
 
-import { Avatar, BadgeWithButton, Button, Input, Select } from '@circos/ui'
+import { BadgeWithButton, Button, Input, Select } from '@circos/ui'
 import { useChannelCreation } from '../hooks/use-channel-creation'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -81,16 +81,11 @@ export function ChannelCreationPanel({
           }}
         >
           {(item) => (
-            <Select.Item id={item.id} textValue={item.label}>
-              <div className="flex items-center gap-2">
-                {item.avatarUrl ? (
-                  <Avatar size="sm" src={item.avatarUrl} alt={item.label ?? ''} />
-                ) : (
-                  <Avatar size="sm" alt={item.label ?? ''} />
-                )}
-                <span className="text-sm text-secondary">{item.label}</span>
-              </div>
-            </Select.Item>
+            <Select.Item
+              id={item.id}
+              label={item.label}
+              avatarUrl={item.avatarUrl}
+            />
           )}
         </Select.ComboBox>
       </div>

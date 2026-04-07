@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Avatar, Button, Select } from '@circos/ui'
+import { Button, Select } from '@circos/ui'
 import { createBrowserClient } from '@/lib/supabase'
 import { getOrCreateDirectConversation } from '@/lib/chat'
 import { toast } from 'sonner'
@@ -67,21 +67,12 @@ export function DmCreationPanel({ onBack, onConversationCreated }: DmCreationPan
           onSelectionChange={(key) => setSelectedAgentId(key as string)}
         >
           {(item) => (
-            <Select.Item id={item.id} textValue={item.label}>
-              <div className="flex items-center gap-2">
-                {item.avatarUrl ? (
-                  <Avatar size="sm" src={item.avatarUrl} alt={item.label ?? ''} />
-                ) : (
-                  <Avatar size="sm" alt={item.label ?? ''} />
-                )}
-                <div className="flex flex-col">
-                  <span className="text-sm font-normal text-secondary">{item.label}</span>
-                  {item.supportingText && (
-                    <span className="text-xs text-tertiary">{item.supportingText}</span>
-                  )}
-                </div>
-              </div>
-            </Select.Item>
+            <Select.Item
+              id={item.id}
+              label={item.label}
+              avatarUrl={item.avatarUrl}
+              supportingText={item.supportingText}
+            />
           )}
         </Select.ComboBox>
       </div>
