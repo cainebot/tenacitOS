@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { FC } from "react";
 import {
   Building06,
@@ -31,7 +31,6 @@ import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
 import { PROJECT_COVER_COLORS, PROJECT_COVER_ICONS, type ProjectCoverColorId, type ProjectCoverIcon } from "@/components/application/project-cover/project-cover";
 import { useConversations } from "@/features/chat/hooks/use-conversations";
 import { ChatHoverMenu } from "@/features/chat/components/chat-hover-menu";
-import { ChatWorkspace } from "@/features/chat/components/chat-workspace";
 import officeEvents from "@/lib/office-events";
 
 /** Tiny display-only project icon for the sidebar (no picker). */
@@ -66,14 +65,13 @@ type ActivePanel = 'chat-preview' | 'agents' | 'none'
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { agentBoardActive, setAgentBoardActive } = useAgentBoard();
   const { nodes } = useRealtimeNodes();
   const { totalUnread, channels, dms, loading, error, refetch } = useConversations();
 
   // Chat state
-  const [chatWorkspaceOpen, setChatWorkspaceOpen] = useState(false);
-  const [initialConversationId, setInitialConversationId] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<ActivePanel>('none');
   const [chatHoverOpen, setChatHoverOpen] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -121,16 +119,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     setIsCollapsed((prev) => !prev);
   };
 
-  const handleOpenWorkspace = (conversationId?: string) => {
-    setInitialConversationId(conversationId ?? null);
-    setChatWorkspaceOpen(true);
-    setActivePanel('none'); // close preview when workspace opens
-  };
-
-  const handleNewMessage = () => {
-    setChatWorkspaceOpen(true);
-    setActivePanel('none');
-  };
+  const handleOpenWorkspace = useCallback((conversationId?: string) => {
+    if (conversationId) {
+      router.push(`/chat?conversation=${conversationId}`)
+    } else {
+      router.push('/chat')
+    }
+    setChatHoverOpen(false)
+  }, [router]);
 
   const handleSelectAgent = (agentId: string, agentName: string) => {
     officeEvents.emit('agent:select', {
@@ -160,14 +156,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       label: "Chat",
       icon: MessageChatCircle as FC<{ className?: string }>,
       badge: chatBadge,
-      onClick: () => {
-        // Click → open full workspace
-        setChatWorkspaceOpen(true);
-        setChatHoverOpen(false);
-      },
+      href: "/chat",
       onMouseEnter: () => {
         cancelHoverClose();
-        if (!chatWorkspaceOpen) {
+        if (pathname !== '/chat' && !pathname.startsWith('/chat/')) {
           setChatHoverOpen(true);
         }
       },
@@ -217,23 +209,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {chatHoverOpen && !chatWorkspaceOpen && (
+      {chatHoverOpen && pathname !== '/chat' && !pathname.startsWith('/chat/') && (
         <ChatHoverMenu
           channels={channels}
           dms={dms}
-          onSelectConversation={(id) => { handleOpenWorkspace(id); setChatHoverOpen(false); }}
+          onSelectConversation={(id) => handleOpenWorkspace(id)}
           onSelectAgent={handleSelectAgent}
-          onOpenWorkspace={() => { handleOpenWorkspace(); setChatHoverOpen(false); }}
+          onOpenWorkspace={() => handleOpenWorkspace()}
           onHoverEnter={cancelHoverClose}
           onHoverLeave={startHoverClose}
           onClose={() => setChatHoverOpen(false)}
-        />
-      )}
-
-      {chatWorkspaceOpen && (
-        <ChatWorkspace
-          onClose={() => setChatWorkspaceOpen(false)}
-          initialConversationId={initialConversationId}
         />
       )}
 
