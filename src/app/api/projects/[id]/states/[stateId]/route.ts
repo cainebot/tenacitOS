@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updateState, deleteState } from '@/lib/projects'
+import { createServiceRoleClient } from '@/lib/supabase'
 import type { StateCategory } from '@/types/project'
 
 type RouteParams = { params: Promise<{ id: string; stateId: string }> }
@@ -19,7 +20,7 @@ function errorResponse(
 // PATCH /api/projects/[id]/states/[stateId] — update a state
 // Body: { name?: string, category?: StateCategory, color?: string, position?: number }
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  const { stateId } = await params
+  const { id, stateId } = await params
 
   let body: Record<string, unknown>
   try {
@@ -53,6 +54,46 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       undefined,
       'VALIDATION_ERROR'
     )
+  }
+
+  // DB-05: Category coverage validation — cannot leave a category empty
+  if (category) {
+    const client = createServiceRoleClient()
+
+    // Get current state's category
+    const { data: currentState, error: fetchErr } = await client
+      .from('project_states')
+      .select('category')
+      .eq('state_id', stateId)
+      .single()
+
+    if (fetchErr) {
+      return errorResponse(404, 'State not found', undefined, undefined, 'NOT_FOUND')
+    }
+
+    // Only validate if category is actually changing
+    if (currentState.category !== category) {
+      const { count, error: countErr } = await client
+        .from('project_states')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', id)
+        .eq('category', currentState.category)
+        .neq('state_id', stateId)
+
+      if (countErr) {
+        return errorResponse(500, 'Failed to validate category coverage', countErr.message)
+      }
+
+      if (count === 0) {
+        return errorResponse(
+          409,
+          `Cannot change category: '${currentState.category}' would have no remaining states`,
+          `State '${stateId}' is the last state in category '${currentState.category}'`,
+          'Add another state to this category first, or delete the state instead',
+          'CATEGORY_EMPTY'
+        )
+      }
+    }
   }
 
   const updateData: Partial<{
