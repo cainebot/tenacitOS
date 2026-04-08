@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import type { FC } from "react";
 import {
-  BarChartSquare02,
   Building06,
   Calendar,
   ChevronRight,
+  Clipboard,
   Data,
-  MessageCircle01,
-  Rows01,
+  Map01,
+  MessageChatCircle,
   Server01,
 } from "@untitledui/icons";
 import {
@@ -30,7 +30,7 @@ import { BotIcon } from "@/components/icons/bot-icon";
 import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
 import { PROJECT_COVER_COLORS, PROJECT_COVER_ICONS, type ProjectCoverColorId, type ProjectCoverIcon } from "@/components/application/project-cover/project-cover";
 import { useConversations } from "@/features/chat/hooks/use-conversations";
-import { ChatPreviewPanel } from "@/features/chat/components/chat-preview-panel";
+import { ChatHoverMenu } from "@/features/chat/components/chat-hover-menu";
 import { ChatWorkspace } from "@/features/chat/components/chat-workspace";
 
 /** Tiny display-only project icon for the sidebar (no picker). */
@@ -74,6 +74,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [chatWorkspaceOpen, setChatWorkspaceOpen] = useState(false);
   const [initialConversationId, setInitialConversationId] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<ActivePanel>('none');
+  const [chatHoverOpen, setChatHoverOpen] = useState(false);
 
   const nodeCards: FeaturedCardData[] = nodes.map((node) => {
     const ramPct = node.ram_total_mb > 0
@@ -119,10 +120,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   };
 
   const handleSidebarLeave = () => {
-    // Close chat preview when mouse leaves sidebar area
-    if (activePanel === 'chat-preview') {
-      setActivePanel('none');
-    }
+    // Chat hover menu manages its own close via onMouseLeave — don't close here
+    // (the fixed overlay would trigger pointerleave on the sidebar immediately)
   };
 
   // Build Chat unread badge
@@ -133,10 +132,26 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   // Navigation items — built inside component to support onClick for Chat
   const navItems: (NavItemType | NavItemDividerType)[] = [
     { divider: true, label: "General" },
-    { label: "Dashboard", href: "/", icon: BarChartSquare02 },
+    { label: "Office", href: "/office", icon: Map01 },
+    {
+      label: "Chat",
+      icon: MessageChatCircle as FC<{ className?: string }>,
+      badge: chatBadge,
+      onClick: () => {
+        // Click → open full workspace
+        setChatWorkspaceOpen(true);
+        setChatHoverOpen(false);
+      },
+      onMouseEnter: () => {
+        // Hover → show floating chat menu
+        if (!chatWorkspaceOpen) {
+          setChatHoverOpen(true);
+        }
+      },
+    },
     {
       label: "Projects",
-      icon: Rows01,
+      icon: Clipboard,
       href: "/projects",
       items: [
         { label: "Sales Pipeline", icon: ProjectIcon({ color: "orange", icon: "rocket" }), badge: <Badge color="gray" type="modern" size="sm">4</Badge>, href: "/projects/sales-pipeline" },
@@ -150,31 +165,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     { label: "Agents", href: "/agents", icon: BotIcon },
     { label: "Skills", href: "/skills", icon: Data },
     { label: "Workspaces", href: "/workspaces", icon: Server01 },
-    { divider: true, label: "Communication" },
-    {
-      label: "Chat",
-      icon: MessageCircle01 as FC<{ className?: string }>,
-      badge: chatBadge,
-      onClick: () => {
-        // Click → open full workspace
-        setChatWorkspaceOpen(true);
-        setActivePanel('none');
-      },
-      onMouseEnter: () => {
-        // Hover → show floating preview panel
-        if (!chatWorkspaceOpen) {
-          setActivePanel('chat-preview');
-          setIsCollapsed(true);
-        }
-      },
-    },
   ];
 
-  // Determine secondary panel content and visibility
-  const showSecondaryPanel = activePanel !== 'none';
-  const secondaryPanelContent = activePanel === 'chat-preview'
-    ? <ChatPreviewPanel onOpenWorkspace={handleOpenWorkspace} onNewMessage={handleNewMessage} />
-    : activePanel === 'agents'
+  // Determine secondary panel content and visibility (agents only — chat uses hover menu)
+  const showSecondaryPanel = activePanel === 'agents';
+  const secondaryPanelContent = activePanel === 'agents'
     ? <AgentBoardContent />
     : null;
 
@@ -194,6 +189,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <main className="flex flex-1 flex-col items-start self-stretch gap-8 overflow-auto">
         {children}
       </main>
+
+      {chatHoverOpen && !chatWorkspaceOpen && (
+        <ChatHoverMenu
+          onSelectConversation={(id) => { handleOpenWorkspace(id); setChatHoverOpen(false); }}
+          onOpenWorkspace={() => { handleOpenWorkspace(); setChatHoverOpen(false); }}
+          onClose={() => setChatHoverOpen(false)}
+        />
+      )}
 
       {chatWorkspaceOpen && (
         <ChatWorkspace

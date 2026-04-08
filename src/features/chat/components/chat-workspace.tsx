@@ -10,6 +10,7 @@ import { ChannelCreationPanel } from './channel-creation-panel'
 import { AnnouncementNotice } from './announcement-notice'
 import { useConversations } from '../hooks/use-conversations'
 import { useAgentChat } from '@/hooks/use-agent-chat'
+import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import { useChatSend } from '../hooks/use-chat-send'
 import { conversationUiType } from '@/lib/chat'
 import { useMyParticipant } from '@/contexts/my-participant-context'
@@ -184,6 +185,13 @@ function WorkspaceConversationView({ conversationId, conversation }: WorkspaceCo
 
   const chat = useAgentChat({ conversationId, recipientIds })
 
+  // Agent typing indicator — match agent by conversation's agent_name
+  const { agents } = useRealtimeAgents()
+  const agent = conversation?.agent_name
+    ? agents.find((a) => a.name === conversation.agent_name)
+    : undefined
+  const isAgentTyping = agent?.status === 'thinking'
+
   const { handleSend, replyToMessage, setReplyTo, clearReply } = useChatSend({
     conversationId,
     sendMessage: chat.sendMessage,
@@ -281,6 +289,14 @@ function WorkspaceConversationView({ conversationId, conversation }: WorkspaceCo
             })}
           </ChatPanelSection>
         ))
+      )}
+      {isAgentTyping && (
+        <Message
+          type="writing"
+          senderName={conversation?.agent_name ?? 'Agent'}
+          senderAvatar={conversation?.agent_avatar}
+          timestamp=""
+        />
       )}
     </ChatPanel>
   )

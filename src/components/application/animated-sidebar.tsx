@@ -57,10 +57,9 @@ export function AnimatedSidebar({
   const isOverlay = isSlim && isHovering
 
   // Placeholder width: only accounts for the fixed (non-hover) layout
+  // Secondary panel always overlays — never pushes main content
   const baseWidth = isSlim ? SIDEBAR.SLIM_WIDTH : SIDEBAR.EXPANDED_WITH_PAD
-  const placeholderWidth = showSecondaryPanel
-    ? baseWidth + SIDEBAR.PANEL_WIDTH
-    : baseWidth
+  const placeholderWidth = baseWidth
 
   // ── Toggle handler ──
   // When expanding from hover, just consolidate the state — the SideMenu

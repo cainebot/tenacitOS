@@ -518,7 +518,7 @@ export function Message(props: MessageProps) {
   return (
     <div
       className={cx(
-        'flex gap-3 items-start relative group',
+        'flex gap-3 items-start relative group w-fit',
         sent ? 'ml-auto max-w-[70%]' : 'max-w-[80%]',
         props.className,
       )}

@@ -36,6 +36,8 @@ interface UseAgentChatResult {
   loadMore: () => Promise<void>
   hasMore: boolean
   markMessagesRead: (messageIds: string[]) => Promise<void>
+  /** True after user sends a message, until agent responds or send fails */
+  waitingForReply: boolean
 }
 
 // ── Raw API message shape (joined rows from API) ──────────────────────────────
@@ -116,14 +118,40 @@ export function useAgentChat({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
+  const [waitingForReply, setWaitingForReply] = useState(false)
 
   const cursorRef = useRef<string | null>(null)
+
+  // Sender info cache — Realtime INSERT/UPDATE only has raw columns, no joins.
+  // Populated from API responses to resolve senderName for Realtime payloads.
+  const senderCacheRef = useRef<Map<string, { display_name: string; avatar_url: string | null }>>(new Map())
 
   // Stable ref for recipientIds — avoids stale closure in Realtime callbacks
   // (the subscription useEffect depends on [conversationId, myParticipantId] only;
   //  recipientIds can change async after the effect runs)
   const recipientIdsRef = useRef(recipientIds)
   recipientIdsRef.current = recipientIds
+
+  // ── Re-derive statusIcon when recipientIds arrives late ───────────────────
+  // WorkspaceConversationView loads recipientIds async AFTER the initial fetch.
+  // deriveStatusIcon(receipts, []) returns 'sent' — so all messages show single
+  // gray check until this effect re-derives with the real recipientIds.
+  const recipientIdsKey = recipientIds.join(',')
+  useEffect(() => {
+    if (recipientIds.length === 0) return
+    setMessages((prev) => {
+      let changed = false
+      const next = prev.map((m) => {
+        if (!m.isMine) return m
+        const newStatus = deriveStatusIcon(m.receipts, recipientIds)
+        if (newStatus === m.statusIcon) return m
+        changed = true
+        return { ...m, statusIcon: newStatus }
+      })
+      return changed ? next : prev
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipientIdsKey])
 
   // ── Initial fetch ──────────────────────────────────────────────────────────
 
@@ -139,10 +167,14 @@ export function useAgentChat({
       .then(({ data, next_cursor }) => {
         if (cancelled) return
         const raw = data as RawApiMessage[]
+        // Populate sender cache from joined API data
+        for (const m of raw) {
+          if (m.sender) senderCacheRef.current.set(m.sender_id, m.sender)
+        }
         // API returns newest-first; reverse for ascending display (oldest at top)
         const enriched = raw
           .reverse()
-          .map((msg) => enrichMessage(msg, myParticipantId, recipientIds))
+          .map((msg) => enrichMessage(msg, myParticipantId, recipientIdsRef.current))
         setMessages(enriched)
         cursorRef.current = next_cursor
         setHasMore(next_cursor !== null)
@@ -169,9 +201,12 @@ export function useAgentChat({
         cursorRef.current
       )
       const raw = data as RawApiMessage[]
+      for (const m of raw) {
+        if (m.sender) senderCacheRef.current.set(m.sender_id, m.sender)
+      }
       const older = raw
         .reverse()
-        .map((msg) => enrichMessage(msg, myParticipantId, recipientIds))
+        .map((msg) => enrichMessage(msg, myParticipantId, recipientIdsRef.current))
       setMessages((prev) => [...older, ...prev])
       cursorRef.current = next_cursor
       setHasMore(next_cursor !== null)
@@ -220,8 +255,9 @@ export function useAgentChat({
         _optimistic: true,
       }
 
-      // Append optimistic message immediately
+      // Append optimistic message immediately + show typing indicator
       setMessages((prev) => [...prev, optimistic])
+      setWaitingForReply(true)
 
       try {
         await sendMessageApi(conversationId, {
@@ -241,6 +277,7 @@ export function useAgentChat({
               : m
           )
         )
+        setWaitingForReply(false)
         toast.error('Failed to send message')
       }
     },
@@ -356,6 +393,14 @@ export function useAgentChat({
         },
         (payload) => {
           const raw = payload.new as RawApiMessage
+          // Realtime INSERT lacks JOIN data — resolve sender from cache
+          if (!raw.sender && senderCacheRef.current.has(raw.sender_id)) {
+            raw.sender = senderCacheRef.current.get(raw.sender_id)!
+          }
+          // Clear optimistic typing when agent responds
+          if (raw.sender_id !== myParticipantId) {
+            setWaitingForReply(false)
+          }
           setMessages((prev) => {
             // Skip if already present (handles dedup of optimistic messages)
             if (prev.some((m) => m.message_id === raw.message_id && !m._optimistic)) {
@@ -400,6 +445,10 @@ export function useAgentChat({
         },
         (payload) => {
           const updated = payload.new as RawApiMessage
+          // Realtime UPDATE lacks JOIN data — resolve sender from cache
+          if (!updated.sender && senderCacheRef.current.has(updated.sender_id)) {
+            updated.sender = senderCacheRef.current.get(updated.sender_id)!
+          }
           setMessages((prev) =>
             prev.map((m) => {
               if (m.message_id !== updated.message_id) return m
@@ -437,6 +486,7 @@ export function useAgentChat({
 
           // Show error toast when agent reports delivery failure
           if (receipt.status === 'failed' && receipt.error_message) {
+            setWaitingForReply(false)
             toast.error(`Agent error: ${receipt.error_message}`)
           }
         }
@@ -568,6 +618,13 @@ export function useAgentChat({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, myParticipantId, messages.length])
 
+  // ── Safety: clear waitingForReply after 60s (daemon crash / no failed receipt) ─
+  useEffect(() => {
+    if (!waitingForReply) return
+    const timer = setTimeout(() => setWaitingForReply(false), 60_000)
+    return () => clearTimeout(timer)
+  }, [waitingForReply])
+
   // ── Batch mark messages as read (viewport-based, called by AgentChatTab) ────
 
   const markMessagesRead = useCallback(async (messageIds: string[]) => {
@@ -595,5 +652,6 @@ export function useAgentChat({
     loadMore,
     hasMore,
     markMessagesRead,
+    waitingForReply,
   }
 }

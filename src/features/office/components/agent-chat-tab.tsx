@@ -196,6 +196,9 @@ export function AgentChatTab({
     }
   }, [handleSend, onSendRef])
 
+  // ── Auto-scroll anchor ────────────────────────────────────────────────────
+  const bottomRef = useRef<HTMLDivElement>(null)
+
   // ── Infinite scroll sentinel ──────────────────────────────────────────────
   const sentinelRef = useRef<HTMLDivElement>(null)
   const scrollObserverRef = useRef<IntersectionObserver | null>(null)
@@ -263,6 +266,23 @@ export function AgentChatTab({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.markMessagesRead])
+
+  // ── Auto-scroll when typing indicator appears or new messages arrive ──────
+  useEffect(() => {
+    const el = bottomRef.current
+    if (!el) return
+
+    // Find parent scroll container (AgentPanel's overflow-y-auto div)
+    const scrollContainer = el.closest('.overflow-y-auto') as HTMLElement | null
+    if (!scrollContainer) return
+
+    // Only auto-scroll if user is near the bottom (within 150px)
+    const gap = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight
+    if (gap < 150) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAgentTyping, chat.messages.length])
 
   // ── Loading state ─────────────────────────────────────────────────────────
   const isLoading = conversationLoading || chat.loading
@@ -392,6 +412,9 @@ export function AgentChatTab({
           timestamp=""
         />
       )}
+
+      {/* Auto-scroll anchor — scrollIntoView target for typing/new messages */}
+      <div ref={bottomRef} aria-hidden />
 
       {/* Chat input — rendered here so replyTo/onClearReply can be wired directly */}
       <div className="shrink-0 px-0 pb-0">
