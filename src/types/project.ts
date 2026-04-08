@@ -90,6 +90,11 @@ export interface BoardColumnStateRow {
   state_id: string
 }
 
+/** Payload for POST /api/projects/[id]/states/[stateId]/reassign */
+export interface ReassignStatePayload {
+  target_state_id: string
+}
+
 export interface CardRow {
   card_id: string
   project_id: string

@@ -185,27 +185,13 @@ export async function updateColumn(
 
   if (error) throw error
 
-  // Replace board_column_states if provided
+  // Replace board_column_states atomically via RPC (Phase 84 — D-02)
   if (state_ids !== undefined) {
-    const { error: delErr } = await client
-      .from('board_column_states')
-      .delete()
-      .eq('column_id', columnId)
-
-    if (delErr) throw delErr
-
-    if (state_ids.length > 0) {
-      const stateEntries = state_ids.map((state_id) => ({
-        column_id: columnId,
-        state_id,
-      }))
-
-      const { error: insErr } = await client
-        .from('board_column_states')
-        .insert(stateEntries)
-
-      if (insErr) throw insErr
-    }
+    const { error: rpcErr } = await client.rpc('set_column_states', {
+      p_column_id: columnId,
+      p_state_ids: state_ids,
+    })
+    if (rpcErr) throw rpcErr
   }
 
   return row as BoardColumnRow
