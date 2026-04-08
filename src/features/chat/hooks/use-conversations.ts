@@ -13,6 +13,7 @@ export interface ConversationWithMeta {
   unread_count: number
   agent_name?: string
   agent_avatar?: string
+  agent_id?: string
 }
 
 /**

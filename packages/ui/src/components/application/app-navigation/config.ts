@@ -17,6 +17,8 @@ export type NavItemType = {
     onClick?: () => void;
     /** Mouse enter handler — for hover-triggered behavior (e.g. preview panels). */
     onMouseEnter?: () => void;
+    /** Mouse leave handler — for hover-triggered behavior (e.g. close preview panels). */
+    onMouseLeave?: () => void;
 };
 
 export type NavItemDividerType = Omit<NavItemType, "icon" | "label" | "divider"> & {

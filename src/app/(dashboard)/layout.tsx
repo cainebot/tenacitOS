@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import type { FC } from "react";
 import {
@@ -32,6 +32,7 @@ import { PROJECT_COVER_COLORS, PROJECT_COVER_ICONS, type ProjectCoverColorId, ty
 import { useConversations } from "@/features/chat/hooks/use-conversations";
 import { ChatHoverMenu } from "@/features/chat/components/chat-hover-menu";
 import { ChatWorkspace } from "@/features/chat/components/chat-workspace";
+import officeEvents from "@/lib/office-events";
 
 /** Tiny display-only project icon for the sidebar (no picker). */
 function ProjectIcon({ color, icon }: { color: ProjectCoverColorId; icon: ProjectCoverIcon }) {
@@ -75,6 +76,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [initialConversationId, setInitialConversationId] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<ActivePanel>('none');
   const [chatHoverOpen, setChatHoverOpen] = useState(false);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startHoverClose = useCallback(() => {
+    hoverTimerRef.current = setTimeout(() => setChatHoverOpen(false), 150);
+  }, []);
+
+  const cancelHoverClose = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+  }, []);
 
   const nodeCards: FeaturedCardData[] = nodes.map((node) => {
     const ramPct = node.ram_total_mb > 0
@@ -119,6 +132,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     setActivePanel('none');
   };
 
+  const handleSelectAgent = (agentId: string, agentName: string) => {
+    officeEvents.emit('agent:select', {
+      agent_id: agentId,
+      name: agentName,
+      role: '',
+      status: 'active',
+    });
+    setChatHoverOpen(false);
+  };
+
   const handleSidebarLeave = () => {
     // Chat hover menu manages its own close via onMouseLeave — don't close here
     // (the fixed overlay would trigger pointerleave on the sidebar immediately)
@@ -143,10 +166,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         setChatHoverOpen(false);
       },
       onMouseEnter: () => {
-        // Hover → show floating chat menu
+        cancelHoverClose();
         if (!chatWorkspaceOpen) {
           setChatHoverOpen(true);
         }
+      },
+      onMouseLeave: () => {
+        startHoverClose();
       },
     },
     {
@@ -183,6 +209,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         onToggle={handleToggle}
         secondaryPanel={secondaryPanelContent}
         showSecondaryPanel={showSecondaryPanel}
+        keepHovering={chatHoverOpen}
         onPointerLeave={handleSidebarLeave}
       />
 
@@ -192,8 +219,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
       {chatHoverOpen && !chatWorkspaceOpen && (
         <ChatHoverMenu
+          channels={channels}
+          dms={dms}
           onSelectConversation={(id) => { handleOpenWorkspace(id); setChatHoverOpen(false); }}
+          onSelectAgent={handleSelectAgent}
           onOpenWorkspace={() => { handleOpenWorkspace(); setChatHoverOpen(false); }}
+          onHoverEnter={cancelHoverClose}
+          onHoverLeave={startHoverClose}
           onClose={() => setChatHoverOpen(false)}
         />
       )}

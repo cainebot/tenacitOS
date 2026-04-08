@@ -87,7 +87,7 @@ export const NavList = ({ activeUrl, items, className }: NavListProps) => {
                 }
 
                 return (
-                    <li key={item.label} className="py-0.5" onMouseEnter={item.onMouseEnter}>
+                    <li key={item.label} className="py-0.5" onMouseEnter={item.onMouseEnter} onMouseLeave={item.onMouseLeave}>
                         <NavItemBase
                             type={item.onClick ? "button" : "link"}
                             badge={item.badge}

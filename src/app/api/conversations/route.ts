@@ -13,6 +13,7 @@ export interface ConversationWithMeta {
   unread_count: number
   agent_name?: string
   agent_avatar?: string
+  agent_id?: string
 }
 
 // GET /api/conversations
@@ -104,9 +105,10 @@ export async function GET() {
         unreadCount = msgIds.filter((id) => !readIds.has(id)).length
       }
 
-      // For direct conversations, resolve the other participant's name + avatar
+      // For direct conversations, resolve the other participant's name, avatar + agent_id
       let agentName: string | undefined
       let agentAvatar: string | undefined
+      let agentId: string | undefined
 
       if (conv.conversation_type === 'direct') {
         const { data: otherParticipants } = await supabase
@@ -119,13 +121,14 @@ export async function GET() {
         if (otherParticipants && otherParticipants.length > 0) {
           const { data: otherProfile } = await supabase
             .from('chat_participants')
-            .select('display_name, avatar_url')
+            .select('display_name, avatar_url, external_id')
             .eq('participant_id', otherParticipants[0].participant_id)
             .maybeSingle()
 
           if (otherProfile) {
             agentName = otherProfile.display_name
             agentAvatar = otherProfile.avatar_url ?? undefined
+            agentId = otherProfile.external_id ?? undefined
           }
         }
       }
@@ -139,6 +142,7 @@ export async function GET() {
         unread_count: unreadCount,
         ...(agentName ? { agent_name: agentName } : {}),
         ...(agentAvatar ? { agent_avatar: agentAvatar } : {}),
+        ...(agentId ? { agent_id: agentId } : {}),
       }
     })
   )
