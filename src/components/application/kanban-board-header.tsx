@@ -30,6 +30,7 @@ const sortItems = [
 
 export interface KanbanBoardHeaderProps {
   onAddTask?: () => void
+  onSettings?: () => void
   filterFields: FilterFieldDefinition[]
   filters?: FilterRow[]
   onFiltersChange?: (filters: FilterRow[]) => void
@@ -42,6 +43,7 @@ export interface KanbanBoardHeaderProps {
 
 export function KanbanBoardHeader({
   onAddTask,
+  onSettings,
   filterFields,
   filters,
   onFiltersChange,
@@ -132,12 +134,12 @@ export function KanbanBoardHeader({
           </Dropdown.Popover>
         </Dropdown.Root>
 
-        {/* Settings (placeholder for future) */}
+        {/* Settings — navigates to board-setting page */}
         <Button
           color="tertiary"
           size="sm"
           iconLeading={Settings04}
-          isDisabled
+          onClick={onSettings}
         >
           Settings
         </Button>

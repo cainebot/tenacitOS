@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { KanbanCard, type KanbanCardProps, type KanbanCardTag, type KanbanCardUser, type Priority } from "@/components/application/kanban-card"
 import { KanbanBoard, type KanbanBoardColumn } from "@/components/application/kanban-board"
 import { KanbanBoardHeader } from "@/components/application/kanban-board-header"
@@ -52,6 +52,7 @@ interface LiveCardData {
 
 export default function ProjectBoardPage() {
   const params = useParams<{ slug: string }>()
+  const router = useRouter()
   const slug = params.slug
 
   // Board discovery chain: slug → project_id → boardId (D-11)
@@ -996,6 +997,7 @@ export default function ProjectBoardPage() {
           onFiltersChange={setFilters}
           search={search}
           onSearchChange={setSearch}
+          onSettings={() => router.push(`/projects/${slug}/settings`)}
         />
         <div
           className="flex-1 overflow-hidden"

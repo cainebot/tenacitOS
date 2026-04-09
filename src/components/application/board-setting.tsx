@@ -622,16 +622,19 @@ export function BoardSetting({
   // ---- Render ----
 
   return (
-    <div className="flex h-full flex-col gap-8 pt-4">
-      {/* Header */}
-      <div className="px-8">
+    <div className="flex h-full w-full min-w-0 flex-col gap-8 overflow-hidden pt-4">
+      {/* Header — fixed, never scrolls horizontally */}
+      <div className="shrink-0 px-8">
         <PageHeader
           title="Board setting"
           breadcrumbs={[
-            { label: 'Home', icon: HomeLine, href: '/' },
+            { icon: HomeLine, href: '/' },
+            { label: 'Dashboard', href: '/' },
+            { label: 'Projects', href: '/projects' },
             { label: projectName, href: `/projects/${projectSlug}` },
             { label: 'Board setting' },
           ]}
+          bordered={false}
           actions={
             <Button size="sm" color="link-gray" iconLeading={ArrowNarrowLeft} onClick={onBack}>
               Back to board
@@ -640,7 +643,8 @@ export function BoardSetting({
         />
       </div>
 
-      {/* Single DndContext wrapping sidebar + columns (same pattern as kanban-board) */}
+      {/* Scrollable board area — independent horizontal scroll (same pattern as kanban-board) */}
+      <div className="flex-1 min-w-0 overflow-auto">
       <DndContext
         sensors={sensors}
         collisionDetection={stableCollisionDetection}
@@ -651,7 +655,7 @@ export function BoardSetting({
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="flex flex-1 items-stretch gap-4 overflow-x-auto px-8 pb-12">
+        <div className="flex items-stretch gap-4 min-h-full w-fit px-8 pb-12">
           {/* SIDEBAR — unassigned states */}
           <SidebarDropZone
             unassignedStates={unassignedStates}
@@ -728,6 +732,7 @@ export function BoardSetting({
           ) : null}
         </DragOverlay>
       </DndContext>
+      </div>
 
       {/* Delete Modal */}
       <DeleteStateModal

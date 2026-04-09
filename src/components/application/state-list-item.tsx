@@ -35,7 +35,7 @@ const CATEGORY_LABEL: Record<StateCategory, string> = {
 
 const CATEGORY_BADGE_COLOR: Record<StateCategory, BadgeColor> = {
   'to-do': 'gray',
-  in_progress: 'warning',
+  in_progress: 'blue',
   done: 'success',
 }
 
