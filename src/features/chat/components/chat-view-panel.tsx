@@ -174,7 +174,7 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
       </header>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 px-6 py-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 py-4">
         {chat.loading ? (
           <div className="flex items-center justify-center py-8">
             <p className="text-sm text-tertiary">Loading messages...</p>

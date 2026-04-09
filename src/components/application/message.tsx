@@ -665,7 +665,7 @@ export function Message(props: MessageProps) {
 
         {/* Quick reaction picker on hover (D-08) */}
         {!isWriting && 'onReact' in props && props.onReact && isHovered && (
-          <div className="absolute -top-8 left-0 z-10">
+          <div className={cx('absolute -top-8 z-10', sent ? 'right-0' : 'left-0')}>
             <QuickReactionPicker onReact={props.onReact} />
           </div>
         )}
