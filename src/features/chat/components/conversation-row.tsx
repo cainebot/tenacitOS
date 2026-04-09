@@ -48,7 +48,7 @@ export function ConversationRow({ conversation, isActive, onPress }: Conversatio
 
   return (
     <AriaButton
-      className={cx('flex w-full items-center px-1.5')}
+      className={cx('flex w-full items-center px-1.5 text-left')}
       onPress={onPress}
       aria-label={ariaLabel}
       aria-current={isActive || undefined}
