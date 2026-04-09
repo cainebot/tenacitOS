@@ -64,6 +64,7 @@ export function StateCreateInline({ onCreateState }: StateCreateInlineProps) {
   if (!isExpanded) {
     return (
       <button
+        type="button"
         onClick={() => setIsExpanded(true)}
         className={cx(
           'flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-tertiary',
