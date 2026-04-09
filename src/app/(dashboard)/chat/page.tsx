@@ -38,7 +38,7 @@ function ChatPageInner() {
   }, [])
 
   return (
-    <div className="flex h-full w-full gap-2 p-2">
+    <div className="flex flex-1 self-stretch w-full gap-2 p-2">
       {/* Left panel — conversation list */}
       <aside className="w-[290px] shrink-0 overflow-hidden rounded-xl bg-primary shadow-lg">
         <ChatListPanel
