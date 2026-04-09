@@ -85,6 +85,9 @@ export function buildMessageProps(
         alt: att?.filename ?? 'Image',
         fileName: att?.filename,
         fileSize: att ? formatBytes(att.size_bytes) : undefined,
+        caption: msg.text || undefined,
+        attachmentId: att?.attachment_id,
+        createdAt: msg.created_at,
       }
     case 'audio':
       return {
