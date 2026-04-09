@@ -205,17 +205,17 @@ export function StateListItem({
               <Dropdown.Item
                 id="category-to-do"
                 label="To Do"
-                isDisabled={state.category === 'to-do'}
+                isDisabled={state.category === 'to-do' || isLastOfCategory}
               />
               <Dropdown.Item
                 id="category-in_progress"
                 label="In Progress"
-                isDisabled={state.category === 'in_progress'}
+                isDisabled={state.category === 'in_progress' || isLastOfCategory}
               />
               <Dropdown.Item
                 id="category-done"
                 label="Done"
-                isDisabled={state.category === 'done'}
+                isDisabled={state.category === 'done' || isLastOfCategory}
               />
               <Dropdown.Separator />
               <Dropdown.Item
