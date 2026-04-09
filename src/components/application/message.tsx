@@ -359,6 +359,7 @@ function VideoBubble({
       <img
         src={thumbnailSrc}
         alt="Video thumbnail"
+        loading="lazy"
         className={cx('size-full object-cover', bubbleRadius(sent))}
       />
       {/* Play overlay */}
@@ -401,6 +402,28 @@ function ImageBubble({
   sent: boolean
   onClick?: () => void
 }) {
+  const [imgError, setImgError] = useState(false)
+
+  // Guard: if src is empty/invalid, render as file fallback instead of broken img
+  if (!src) {
+    return (
+      <div className="flex flex-col gap-1.5 w-full">
+        <div className={cx(
+          'bg-primary border border-secondary overflow-clip p-3 w-full',
+          'rounded-bl-md rounded-br-md rounded-tr-md',
+        )}>
+          <div className="flex gap-3 items-start w-full">
+            <FileTypeIcon fileType={fileName?.split('.').pop()?.toUpperCase() ?? 'IMG'} color="bg-purple-600" size="md" />
+            <div className="flex flex-col flex-1 min-w-0">
+              <p className="text-sm font-medium text-secondary truncate">{fileName ?? 'Image'}</p>
+              {fileSize && <p className="text-sm text-tertiary">{fileSize}</p>}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-1.5 w-full">
       <button
@@ -411,11 +434,19 @@ function ImageBubble({
           onClick ? 'cursor-pointer hover:opacity-95 transition duration-100 ease-linear' : 'cursor-default',
         )}
       >
-        <img
-          src={src}
-          alt={alt ?? fileName ?? 'Image'}
-          className="size-full object-cover rounded-md"
-        />
+        {imgError ? (
+          <div className="flex items-center justify-center size-full bg-secondary rounded-md">
+            <FileTypeIcon fileType={fileName?.split('.').pop()?.toUpperCase() ?? 'IMG'} color="bg-purple-600" size="md" />
+          </div>
+        ) : (
+          <img
+            src={src}
+            alt={alt ?? fileName ?? 'Image'}
+            loading="lazy"
+            className="size-full object-cover rounded-md"
+            onError={() => setImgError(true)}
+          />
+        )}
       </button>
       {(fileName || fileSize) && (
         <div className="flex gap-1 items-start w-full whitespace-nowrap">
@@ -449,6 +480,7 @@ function LinkPreviewBubble({ url, imageSrc, sent }: { url: string; imageSrc?: st
           <img
             src={imageSrc}
             alt="Link preview"
+            loading="lazy"
             className="size-full object-cover rounded-md"
           />
         </div>
