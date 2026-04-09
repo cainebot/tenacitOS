@@ -117,6 +117,12 @@ export async function POST(
     const text = (formData.get('text') as string | null)?.trim() ?? ''
     const files = formData.getAll('files') as File[]
     const parentMessageId = formData.get('parent_message_id') as string | null
+    // T-99-05: Parse attachment_metadata JSON (waveform data for audio attachments)
+    let attachmentMetadata: Record<string, unknown> | null = null
+    const metaRaw = formData.get('attachment_metadata') as string | null
+    if (metaRaw) {
+      try { attachmentMetadata = JSON.parse(metaRaw) as Record<string, unknown> } catch { /* invalid JSON — ignore */ }
+    }
 
     // Server-side 25MB limit per file
     const MAX_FILE_SIZE = 25 * 1024 * 1024
@@ -152,9 +158,11 @@ export async function POST(
       filename: string
       size_bytes: number
       mime_type: string
+      metadata?: Record<string, unknown>
     }> = []
 
-    for (const file of files) {
+    for (let fileIdx = 0; fileIdx < files.length; fileIdx++) {
+      const file = files[fileIdx]
       const storagePath = `${conversationId}/${messageId}/${file.name}`
 
       const { error: uploadError } = await serviceClient.storage
@@ -180,14 +188,19 @@ export async function POST(
         .from('chat-attachments')
         .createSignedUrl(storagePath, 3600)
 
-      attachmentRows.push({
+      // T-99-05: Attach metadata (waveform) to the first file only
+      const row: (typeof attachmentRows)[0] = {
         message_id: messageId,
         storage_path: storagePath,
         url: signedData?.signedUrl ?? '',
         filename: file.name,
         size_bytes: file.size,
         mime_type: file.type || 'application/octet-stream',
-      })
+      }
+      if (fileIdx === 0 && attachmentMetadata) {
+        row.metadata = attachmentMetadata
+      }
+      attachmentRows.push(row)
     }
 
     // INSERT message row with explicit message_id

@@ -47,6 +47,8 @@ export function useChatSend({ conversationId, sendMessage, shortcuts = [] }: Use
             text: payload.text,
             files: allFiles,
             ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
+            // T-99-05: Pass waveform snapshot for audio attachments
+            ...(payload.waveformData ? { waveformData: payload.waveformData } : {}),
           })
         } catch {
           toast.error('Failed to send attachment')

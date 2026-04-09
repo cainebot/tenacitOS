@@ -113,14 +113,20 @@ export function buildMessageProps(
         attachmentId: att?.attachment_id,
         createdAt: msg.created_at,
       }
-    case 'audio':
+    case 'audio': {
+      // T-99-05: Extract waveformData from metadata.waveform (number[] persisted at send time)
+      const rawWaveform = att?.metadata?.waveform
+      const waveformData = Array.isArray(rawWaveform) ? (rawWaveform as number[]) : undefined
       return {
         ...baseProps,
         type: 'audio',
+        src: att?.url,
+        waveformData,
         duration: att?.duration_seconds
           ? `${Math.floor(att.duration_seconds / 60)}:${Math.floor(att.duration_seconds % 60).toString().padStart(2, '0')}`
           : '0:00',
       }
+    }
     case 'video':
       return {
         ...baseProps,

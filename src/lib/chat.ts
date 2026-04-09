@@ -71,12 +71,18 @@ export async function sendMessageWithAttachments(
     text: string
     files: File[]
     parent_message_id?: string
+    /** T-99-05: Normalized frequency bars [0..1] captured from AnalyserNode during recording */
+    waveformData?: number[]
   }
 ): Promise<unknown> {
   const form = new FormData()
   form.append('text', payload.text)
   if (payload.parent_message_id) {
     form.append('parent_message_id', payload.parent_message_id)
+  }
+  // T-99-05: Persist waveform snapshot as JSON metadata for the first audio attachment
+  if (payload.waveformData && payload.waveformData.length > 0) {
+    form.append('attachment_metadata', JSON.stringify({ waveform: payload.waveformData }))
   }
   for (const file of payload.files) {
     form.append('files', file, file.name)
