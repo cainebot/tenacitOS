@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useCallback, useRef } from 'react'
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -10,13 +10,13 @@ import {
   MeasuringStrategy,
   closestCenter,
   closestCorners,
-  rectIntersection,
 } from '@dnd-kit/core'
 import type {
   CollisionDetection,
   DragStartEvent,
   DragOverEvent,
   DragEndEvent,
+  Modifier,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -26,12 +26,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { Modifier } from '@dnd-kit/core'
-
-const restrictToHorizontalAxis: Modifier = ({ transform }) => ({
-  ...transform,
-  y: 0,
-})
 import { Button, PageHeader, cx } from '@circos/ui'
 import { ArrowNarrowLeft, HomeLine, Plus } from '@untitledui/icons'
 import { SmartPointerSensor } from '@/lib/smart-pointer-sensor'
@@ -43,37 +37,35 @@ import type { ProjectStateRow, StateCategory } from '@/types/project'
 import type { ColumnWithStates } from '@/hooks/use-board-settings'
 
 // ---------------------------------------------------------------------------
-// Module-level drag flag — suppresses Realtime patches during drag
-// (same pattern as isBoardDragActive in kanban-board.tsx)
+// Lock drag movement to X axis (columns only) — from kanban-board.tsx
 // ---------------------------------------------------------------------------
 
-let _boardSettingDragActive = false
-export function isBoardSettingDragActive() { return _boardSettingDragActive }
+const restrictToHorizontalAxis: Modifier = ({ transform }) => ({
+  ...transform,
+  y: 0,
+})
 
-// ---------------------------------------------------------------------------
-// Measuring config — re-measures droppable rects after every DOM change
-// Prevents stale cached rects causing jumpy repositioning on second+ drags
-// ---------------------------------------------------------------------------
-
+// Re-measure droppable rects after every DOM change during drag —
+// prevents stale cached rects from causing jumpless repositioning
+// on second+ cross-column moves. (from kanban-board.tsx)
 const measuringConfig = {
   droppable: { strategy: MeasuringStrategy.Always },
 }
+
+// Module-level drag flag — read by useStoreSyncRealtime to suppress patches during drag
+let _boardSettingDragActive = false
+export function isBoardSettingDragActive() { return _boardSettingDragActive }
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface BoardSettingProps {
-  /** Board columns with their assigned state IDs */
   columns: ColumnWithStates[]
-  /** All project states */
   states: ProjectStateRow[]
-  /** Card count per state_id */
   cardCounts: Record<string, number>
-  /** Breadcrumb info */
   projectName: string
   projectSlug: string
-  /** Callbacks */
   onBack?: () => void
   onCreateState?: (data: { name: string; category: StateCategory; color?: string }) => Promise<unknown>
   onDeleteState?: (stateId: string, targetStateId?: string) => Promise<boolean>
@@ -86,10 +78,8 @@ export interface BoardSettingProps {
 }
 
 // ---------------------------------------------------------------------------
-// SortableColumnWrapper
-// Makes a column draggable horizontally via grip-vertical handle only.
-// Passes dragHandleListeners/dragHandleAttributes DOWN to BoardSettingColumnHeader
-// — NOT spread on the wrapper div (prevents accidental column drag on state card click).
+// SortableColumnWrapper — adapted from kanban-board.tsx SortableColumnWrapper
+// Passes drag handle props to children (grip icon only) instead of whole column
 // ---------------------------------------------------------------------------
 
 function SortableColumnWrapper({
@@ -111,14 +101,14 @@ function SortableColumnWrapper({
 
   if (isDragging) {
     return (
-      <div ref={setNodeRef} style={style} className="flex flex-col gap-3.5 w-[272px] shrink-0">
-        <div className="rounded-lg bg-tertiary h-10" />
+      <div ref={setNodeRef} style={style} className="flex w-[288px] shrink-0 flex-col gap-3.5">
+        <div className="h-10 rounded-lg bg-tertiary" />
       </div>
     )
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="shrink-0">
+    <div ref={setNodeRef} style={style} className="shrink-0" data-board-column>
       {children({
         dragHandleListeners: listeners as unknown as Record<string, unknown>,
         dragHandleAttributes: attributes as unknown as Record<string, unknown>,
@@ -128,62 +118,126 @@ function SortableColumnWrapper({
 }
 
 // ---------------------------------------------------------------------------
-// SortableStateCard
-// Makes a state card draggable vertically in sidebar + cross-container to/from columns.
-// Ghost placeholder (bg-tertiary silhouette) at source position during drag (D-09).
+// SortableStateCard — wraps StateCard for drag in sidebar + columns
+// Same pattern as SortableCard in kanban-column.tsx
 // ---------------------------------------------------------------------------
 
 function SortableStateCard({
   id,
+  containerId,
+  activeCardId,
   children,
 }: {
   id: string
-  children: React.ReactElement<Record<string, unknown>>
+  containerId: string
+  activeCardId?: string | null
+  children: React.ReactNode
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
-    data: { type: 'state', stateId: id },
+    data: { type: 'state', stateId: id, containerId },
   })
+
+  const isBeingDragged = isDragging || id === activeCardId
 
   const style = { transform: CSS.Transform.toString(transform), transition }
 
-  if (isDragging) {
-    return (
-      <div ref={setNodeRef} style={style} className="relative">
-        <div className="invisible">{children}</div>
-        <div className="absolute inset-0 rounded-xl bg-tertiary" />
-      </div>
-    )
-  }
-
   return (
-    <div ref={setNodeRef} style={style}>
-      {React.cloneElement(children, {
-        dragAttributes: attributes as unknown as Record<string, unknown>,
-        dragListeners: listeners as unknown as Record<string, unknown>,
-      })}
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      suppressHydrationWarning
+      className={isBeingDragged ? 'cursor-grabbing' : 'cursor-grab'}
+    >
+      {isBeingDragged ? (
+        <div className="relative">
+          <div className="invisible">{children}</div>
+          <div className="absolute inset-0 rounded-xl bg-tertiary" />
+        </div>
+      ) : (
+        children
+      )}
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// UnassignedSidebar
-// Dual DnD role: (1) its states are vertically sortable via SortableContext,
-// (2) the sidebar itself is a droppable target (useDroppable) for states from columns.
+// ColumnBody — droppable zone + sortable state cards within a column
+// Same pattern as KanbanColumn's droppable zone
 // ---------------------------------------------------------------------------
 
-function UnassignedSidebar({
+function ColumnBody({
+  columnId,
+  stateIds,
+  states,
+  cardCounts,
+  onDeleteClick,
+  isDragActive,
+  activeId,
+}: {
+  columnId: string
+  stateIds: string[]
+  states: ProjectStateRow[]
+  cardCounts: Record<string, number>
+  onDeleteClick: (state: ProjectStateRow) => void
+  isDragActive: boolean
+  activeId: string | null
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `column-drop-${columnId}`,
+    data: { type: 'column-drop', columnId },
+  })
+
+  return (
+    <SortableContext items={stateIds} strategy={verticalListSortingStrategy}>
+      <div
+        ref={setNodeRef}
+        className={cx(
+          'flex flex-col gap-2 rounded-lg',
+          isDragActive ? 'min-h-[60px]' : 'min-h-0',
+          isOver && isDragActive && stateIds.length === 0 && 'bg-secondary',
+        )}
+      >
+        {stateIds.map((stateId) => {
+          const state = states.find((s) => s.state_id === stateId)
+          if (!state) return null
+          return (
+            <SortableStateCard key={stateId} id={stateId} containerId={columnId} activeCardId={activeId}>
+              <StateCard
+                state={state}
+                taskCount={cardCounts[stateId] ?? 0}
+                onDeleteClick={onDeleteClick}
+              />
+            </SortableStateCard>
+          )
+        })}
+      </div>
+    </SortableContext>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// SidebarDropZone — unassigned states with SortableContext + useDroppable
+// ---------------------------------------------------------------------------
+
+function SidebarDropZone({
   unassignedStates,
   unassignedStateIds,
   cardCounts,
   onDeleteClick,
   onCreateState,
+  isDragActive,
+  activeId,
 }: {
   unassignedStates: ProjectStateRow[]
   unassignedStateIds: string[]
   cardCounts: Record<string, number>
   onDeleteClick: (state: ProjectStateRow) => void
   onCreateState?: BoardSettingProps['onCreateState']
+  isDragActive: boolean
+  activeId: string | null
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: 'unassigned-sidebar',
@@ -195,7 +249,7 @@ function UnassignedSidebar({
       ref={setNodeRef}
       className={cx(
         'flex w-[288px] shrink-0 flex-col gap-2 rounded-lg bg-secondary_alt p-2',
-        isOver && 'ring-2 ring-brand-solid',
+        isOver && isDragActive && 'ring-2 ring-brand-solid',
       )}
     >
       <div className="flex flex-col">
@@ -204,12 +258,15 @@ function UnassignedSidebar({
       </div>
 
       <SortableContext items={unassignedStateIds} strategy={verticalListSortingStrategy}>
-        <div className="flex flex-col gap-2">
+        <div className={cx(
+          'flex flex-col gap-2',
+          isDragActive && unassignedStates.length === 0 && 'min-h-[60px]',
+        )}>
           {unassignedStateIds.map((stateId) => {
             const state = unassignedStates.find((s) => s.state_id === stateId)
             if (!state) return null
             return (
-              <SortableStateCard key={stateId} id={stateId}>
+              <SortableStateCard key={stateId} id={stateId} containerId="sidebar" activeCardId={activeId}>
                 <StateCard
                   state={state}
                   taskCount={cardCounts[stateId] ?? 0}
@@ -221,7 +278,7 @@ function UnassignedSidebar({
         </div>
       </SortableContext>
 
-      {unassignedStates.length === 0 && (
+      {unassignedStates.length === 0 && !isDragActive && (
         <div className="flex flex-col items-center gap-1 py-4 text-center">
           <p className="text-md font-semibold text-secondary">Sin estados</p>
           <p className="text-xs text-tertiary">Crea un estado usando el boton de abajo.</p>
@@ -238,37 +295,8 @@ function UnassignedSidebar({
 }
 
 // ---------------------------------------------------------------------------
-// ColumnDropTarget
-// Droppable zone within a column body — allows states to be dropped into it.
-// ---------------------------------------------------------------------------
-
-function ColumnDropTarget({
-  columnId,
-  children,
-}: {
-  columnId: string
-  children: React.ReactNode
-}) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `column-drop-${columnId}`,
-    data: { type: 'column', columnId },
-  })
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={cx(
-        'flex flex-col gap-2 min-h-[60px] rounded-lg p-1',
-        isOver && 'bg-secondary',
-      )}
-    >
-      {children}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // BoardSetting — main component
+// DnD patterns ported from kanban-board.tsx, adapted for state assignment model
 // ---------------------------------------------------------------------------
 
 export function BoardSetting({
@@ -287,24 +315,36 @@ export function BoardSetting({
   assignState,
   unassignState,
 }: BoardSettingProps) {
-  // ---- Drag state ----
   const [dragType, setDragType] = useState<'column' | 'state' | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [dragColumns, setDragColumns] = useState<ColumnWithStates[] | null>(null)
-  const [dragUnassignedOrder, setDragUnassignedOrder] = useState<string[] | null>(null)
+  const [dragColumnState, setDragColumnState] = useState<Map<string, string[]> | null>(null)
+  const [dragSidebarOrder, setDragSidebarOrder] = useState<string[] | null>(null)
   const [rejectedColumnId, setRejectedColumnId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ProjectStateRow | null>(null)
 
+  const sensors = useSensors(
+    useSensor(SmartPointerSensor, { activationConstraint: { distance: 5 } }),
+  )
+
   // ---- Computed values ----
-  const effectiveColumns = dragColumns ?? columns
+
+  const columnIds = useMemo(() => columns.map((c) => c.column_id), [columns])
+
+  // Container→stateIds map: uses drag snapshot during drag, otherwise live columns
+  const containerStateMap = useMemo(() => {
+    if (dragColumnState) return dragColumnState
+    const map = new Map<string, string[]>()
+    for (const col of columns) map.set(col.column_id, [...col.state_ids])
+    return map
+  }, [columns, dragColumnState])
 
   const assignedStateIds = useMemo(() => {
     const ids = new Set<string>()
-    for (const col of effectiveColumns) {
-      for (const id of col.state_ids) ids.add(id)
+    for (const stateIds of containerStateMap.values()) {
+      for (const id of stateIds) ids.add(id)
     }
     return ids
-  }, [effectiveColumns])
+  }, [containerStateMap])
 
   const unassignedStates = useMemo(
     () => states.filter((s) => !assignedStateIds.has(s.state_id)),
@@ -312,38 +352,50 @@ export function BoardSetting({
   )
 
   const unassignedStateIds = useMemo(() => {
-    if (dragUnassignedOrder) return dragUnassignedOrder
+    if (dragSidebarOrder) return dragSidebarOrder
     return unassignedStates.map((s) => s.state_id)
-  }, [unassignedStates, dragUnassignedOrder])
+  }, [unassignedStates, dragSidebarOrder])
 
-  const columnIds = useMemo(() => effectiveColumns.map((c) => c.column_id), [effectiveColumns])
-
-  // ---- Sensors ----
-  const sensors = useSensors(
-    useSensor(SmartPointerSensor, { activationConstraint: { distance: 8 } }),
-  )
-
-  // ---- Modifiers — horizontal lock for column drags only (D-01) ----
+  // ---- Modifiers — horizontal lock for column drags only ----
   const modifiers = useMemo(
     () => (dragType === 'column' ? [restrictToHorizontalAxis] : []),
     [dragType],
   )
 
-  // ---- rAF ref for throttled dragOver (CRITICAL — prevents oscillation) ----
+  // ---- rAF throttle ref for handleDragOver (from kanban-board) ----
   const dragOverRafRef = useRef<number | null>(null)
+  useEffect(() => {
+    return () => {
+      if (dragOverRafRef.current !== null) cancelAnimationFrame(dragOverRafRef.current)
+    }
+  }, [])
 
-  // ---- Collision detection (CRITICAL — stable ref prevents infinite render loop) ----
+  // ---- Collision detection — ported from kanban-board.tsx ----
+  // Filter droppable containers by drag type to prevent interference
   const collisionDetection: CollisionDetection = useCallback(
     (args) => {
-      if (dragType === 'column') return closestCenter(args)
-      // For state drags: closestCorners for better cross-container detection
-      const cornerCollisions = closestCorners(args)
-      if (cornerCollisions.length > 0) return cornerCollisions
-      return rectIntersection(args)
+      if (dragType === 'column') {
+        // For columns: only consider other column sortable IDs
+        const columnContainers = args.droppableContainers.filter((c) =>
+          columnIds.includes(String(c.id)),
+        )
+        return closestCenter({ ...args, droppableContainers: columnContainers })
+      }
+
+      // For states: filter OUT column sortable IDs (those are for column reorder).
+      // Keep: state cards, column-drop-* zones, unassigned-sidebar
+      const stateContainers = args.droppableContainers.filter((c) => {
+        const id = String(c.id)
+        if (columnIds.includes(id)) return false
+        return true
+      })
+      return closestCorners({ ...args, droppableContainers: stateContainers })
     },
-    [dragType],
+    [dragType, columnIds],
   )
 
+  // Stable ref wrapper — prevents DndContext from re-evaluating collisions when
+  // deps change mid-drag (infinite render loop prevention, from kanban-board.tsx)
   const collisionDetectionRef = useRef(collisionDetection)
   collisionDetectionRef.current = collisionDetection
   const stableCollisionDetection: CollisionDetection = useCallback(
@@ -351,28 +403,45 @@ export function BoardSetting({
     [],
   )
 
+  // ---- Find which container (column_id or 'sidebar') a state is currently in ----
+  const findContainerOfState = useCallback((stateId: string): string | null => {
+    for (const [containerId, sIds] of containerStateMap.entries()) {
+      if (sIds.includes(stateId)) return containerId
+    }
+    if (unassignedStateIds.includes(stateId)) return 'sidebar'
+    return null
+  }, [containerStateMap, unassignedStateIds])
+
   // ---- Handlers ----
 
-  function handleDragStart(event: DragStartEvent) {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     _boardSettingDragActive = true
     const type = event.active.data.current?.type as 'column' | 'state' | null
     setDragType(type)
     setActiveId(String(event.active.id))
-    if (type === 'state') {
-      setDragColumns([...columns])
-      setDragUnassignedOrder(unassignedStates.map((s) => s.state_id))
-    }
-    if (type === 'column') {
-      setDragColumns([...columns])
-    }
-  }
 
-  function handleDragOver(event: DragOverEvent) {
+    // Snapshot state internally — parent won't re-render during drag (from kanban-board pattern)
+    if (type === 'state') {
+      const map = new Map<string, string[]>()
+      for (const col of columns) map.set(col.column_id, [...col.state_ids])
+      setDragColumnState(map)
+      setDragSidebarOrder(unassignedStates.map((s) => s.state_id))
+    }
+  }, [columns, unassignedStates])
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
     if (dragType !== 'state') return
     const { active, over } = event
-    if (!over) return
+    if (!over) {
+      setRejectedColumnId(null)
+      return
+    }
 
-    // Cancel any pending rAF — only the latest dragOver per frame is processed
+    const activeStateId = String(active.id)
+    const overId = String(over.id)
+    const overData = over.data.current
+
+    // Cancel pending rAF — only the latest dragOver per frame matters (from kanban-board)
     if (dragOverRafRef.current !== null) {
       cancelAnimationFrame(dragOverRafRef.current)
     }
@@ -380,32 +449,78 @@ export function BoardSetting({
     dragOverRafRef.current = requestAnimationFrame(() => {
       dragOverRafRef.current = null
 
-      const activeStateId = String(active.id)
-      const overId = String(over.id)
-      const overData = over.data.current
+      // Resolve target container
+      let targetContainerId: string | null = null
+      if (overId === 'unassigned-sidebar' || overData?.type === 'sidebar') {
+        targetContainerId = 'sidebar'
+      } else if (overId.startsWith('column-drop-')) {
+        targetContainerId = overId.replace('column-drop-', '')
+      } else if (overData?.containerId) {
+        targetContainerId = overData.containerId as string
+      }
 
-      // Detect if hovering directly over a column container or its drop target
-      const isOverColumn = overData?.type === 'column'
-      const targetColumnId = isOverColumn
-        ? (overData?.columnId as string | undefined) ?? overId
-        : null
+      if (!targetContainerId) {
+        setRejectedColumnId(null)
+        return
+      }
 
       // 1-state-per-column rejection (D-07)
-      if (targetColumnId) {
-        const targetCol = (dragColumns ?? columns).find((c) => c.column_id === targetColumnId)
-        const isOccupied =
-          targetCol &&
-          targetCol.state_ids.length > 0 &&
-          !targetCol.state_ids.includes(activeStateId)
-        setRejectedColumnId(isOccupied ? targetColumnId : null)
+      if (targetContainerId !== 'sidebar') {
+        const currentStates = dragColumnState?.get(targetContainerId) ?? []
+        const isOccupied = currentStates.length > 0 && !currentStates.includes(activeStateId)
+        setRejectedColumnId(isOccupied ? targetContainerId : null)
+        if (isOccupied) return // Don't move to occupied column
       } else {
         setRejectedColumnId(null)
       }
-    })
-  }
 
-  function handleDragEnd(event: DragEndEvent) {
-    // Cancel any pending rAF
+      // Find source container
+      const sourceContainer = findContainerOfState(activeStateId)
+      if (!sourceContainer || sourceContainer === targetContainerId) return
+
+      // Move state between containers in drag snapshot
+      setDragColumnState((prev) => {
+        if (!prev) return prev
+        const next = new Map(prev)
+
+        // Remove from source column (if source is a column)
+        if (sourceContainer !== 'sidebar') {
+          const sourceStates = [...(next.get(sourceContainer) ?? [])]
+          next.set(sourceContainer, sourceStates.filter((id) => id !== activeStateId))
+        }
+
+        // Add to target column (if target is a column)
+        if (targetContainerId !== 'sidebar') {
+          const targetStates = [...(next.get(targetContainerId!) ?? [])]
+          if (!targetStates.includes(activeStateId)) {
+            targetStates.push(activeStateId)
+            next.set(targetContainerId!, targetStates)
+          }
+        }
+
+        return next
+      })
+
+      // Update sidebar order
+      if (sourceContainer !== 'sidebar' && targetContainerId === 'sidebar') {
+        // Moving to sidebar: add to sidebar list
+        setDragSidebarOrder((prev) => {
+          if (!prev) return [activeStateId]
+          if (prev.includes(activeStateId)) return prev
+          return [...prev, activeStateId]
+        })
+      } else if (sourceContainer === 'sidebar' && targetContainerId !== 'sidebar') {
+        // Moving from sidebar: remove from sidebar list
+        setDragSidebarOrder((prev) => {
+          if (!prev) return prev
+          return prev.filter((id) => id !== activeStateId)
+        })
+      }
+    })
+  }, [dragType, dragColumnState, findContainerOfState])
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    // Cancel pending rAF (from kanban-board)
     if (dragOverRafRef.current !== null) {
       cancelAnimationFrame(dragOverRafRef.current)
       dragOverRafRef.current = null
@@ -415,104 +530,97 @@ export function BoardSetting({
     const { active, over } = event
 
     if (!over) {
-      setDragType(null)
-      setActiveId(null)
-      setDragColumns(null)
-      setDragUnassignedOrder(null)
-      setRejectedColumnId(null)
+      resetDragState()
       return
     }
 
     const activeType = active.data.current?.type
     const activeItemId = String(active.id)
     const overId = String(over.id)
-    const overData = over.data.current
 
     if (activeType === 'column') {
-      // Column reorder (D-01)
+      // Column reorder (same as kanban-board)
       if (activeItemId !== overId) {
         const oldIndex = columnIds.indexOf(activeItemId)
         const newIndex = columnIds.indexOf(overId)
         if (oldIndex !== -1 && newIndex !== -1) {
-          const newOrder = arrayMove(columnIds, oldIndex, newIndex)
-          onColumnsReorder?.(newOrder)
+          onColumnsReorder?.(arrayMove(columnIds, oldIndex, newIndex))
         }
       }
     } else if (activeType === 'state') {
-      const isDropOnColumn = overData?.type === 'column'
-      const isDropOnSidebar =
-        overId === 'unassigned-sidebar' || overData?.type === 'sidebar'
-      const isDropOnUnassignedState =
-        unassignedStateIds.includes(overId) && overId !== activeItemId
-
-      // Determine actual target column for column drops
-      const targetColumnId = isDropOnColumn
-        ? (overData?.columnId as string | undefined) ?? overId
-        : null
-
-      // Rejection guard (D-07) — snap back without API call
-      if (isDropOnColumn && targetColumnId && rejectedColumnId === targetColumnId) {
-        setDragColumns(null)
-        setDragUnassignedOrder(null)
-        setDragType(null)
-        setActiveId(null)
-        setRejectedColumnId(null)
-        return
-      }
-
-      if (isDropOnColumn && targetColumnId) {
-        // Assign state to column (D-06 sidebar->column)
-        const sourceCol = (dragColumns ?? columns).find((c) =>
-          c.state_ids.includes(activeItemId),
-        )
-        if (sourceCol) {
-          unassignState?.(sourceCol.column_id, activeItemId)
+      // Find where the state was BEFORE the drag started
+      const originalContainer = (() => {
+        for (const col of columns) {
+          if (col.state_ids.includes(activeItemId)) return col.column_id
         }
-        assignState?.(targetColumnId, activeItemId)
-      } else if (isDropOnSidebar || isDropOnUnassignedState) {
-        // Unassign from column (D-06 column->sidebar)
-        const sourceCol = (dragColumns ?? columns).find((c) =>
-          c.state_ids.includes(activeItemId),
-        )
-        if (sourceCol) {
-          unassignState?.(sourceCol.column_id, activeItemId)
-        }
+        return 'sidebar'
+      })()
 
-        // Reorder within sidebar (D-10) if dropped on another unassigned state
-        if (isDropOnUnassignedState && dragUnassignedOrder) {
-          const oldIdx = dragUnassignedOrder.indexOf(activeItemId)
-          const newIdx = dragUnassignedOrder.indexOf(overId)
-          if (oldIdx !== -1 && newIdx !== -1) {
-            // Sidebar reorder is visual-only (no persistence yet)
-            setDragUnassignedOrder(arrayMove(dragUnassignedOrder, oldIdx, newIdx))
+      // Find where the state is NOW (after dragOver moves)
+      const currentContainer = (() => {
+        if (dragColumnState) {
+          for (const [colId, sIds] of dragColumnState.entries()) {
+            if (sIds.includes(activeItemId)) return colId
           }
         }
+        if (dragSidebarOrder?.includes(activeItemId)) return 'sidebar'
+        return originalContainer
+      })()
+
+      // Execute actual assignment/unassignment if container changed
+      if (currentContainer !== originalContainer) {
+        // Unassign from source column
+        if (originalContainer !== 'sidebar') {
+          unassignState?.(originalContainer, activeItemId)
+        }
+        // Assign to target column
+        if (currentContainer !== 'sidebar') {
+          assignState?.(currentContainer, activeItemId)
+        }
+      }
+
+      // Sidebar reorder (visual only)
+      if (currentContainer === 'sidebar' && originalContainer === 'sidebar') {
+        if (overId !== activeItemId && unassignedStateIds.includes(overId)) {
+          // Reorder is visual-only; no persistence
+        }
       }
     }
 
-    setDragType(null)
-    setActiveId(null)
-    setDragColumns(null)
-    if (!(activeType === 'state' && (unassignedStateIds.includes(overId) && overId !== activeItemId))) {
-      setDragUnassignedOrder(null)
-    }
-    setRejectedColumnId(null)
-  }
+    resetDragState()
+  }, [dragType, dragColumnState, dragSidebarOrder, columns, columnIds, unassignedStateIds, onColumnsReorder, assignState, unassignState])
 
-  function handleDragCancel() {
+  const handleDragCancel = useCallback(() => {
     if (dragOverRafRef.current !== null) {
       cancelAnimationFrame(dragOverRafRef.current)
       dragOverRafRef.current = null
     }
     _boardSettingDragActive = false
+    resetDragState()
+  }, [])
+
+  function resetDragState() {
     setDragType(null)
     setActiveId(null)
-    setDragColumns(null)
-    setDragUnassignedOrder(null)
+    setDragColumnState(null)
+    setDragSidebarOrder(null)
     setRejectedColumnId(null)
   }
 
+  // ---- Active items for DragOverlay ----
+
+  const activeState = useMemo(() => {
+    if (dragType !== 'state' || !activeId) return null
+    return states.find((s) => s.state_id === activeId) ?? null
+  }, [dragType, activeId, states])
+
+  const activeColumn = useMemo(() => {
+    if (dragType !== 'column' || !activeId) return null
+    return columns.find((c) => c.column_id === activeId) ?? null
+  }, [dragType, activeId, columns])
+
   // ---- Render ----
+
   return (
     <div className="flex h-full flex-col gap-8 pt-4">
       {/* Header */}
@@ -525,19 +633,14 @@ export function BoardSetting({
             { label: 'Board setting' },
           ]}
           actions={
-            <Button
-              size="sm"
-              color="link-gray"
-              iconLeading={ArrowNarrowLeft}
-              onClick={onBack}
-            >
+            <Button size="sm" color="link-gray" iconLeading={ArrowNarrowLeft} onClick={onBack}>
               Back to board
             </Button>
           }
         />
       </div>
 
-      {/* Single DndContext wrapping BOTH sidebar and columns */}
+      {/* Single DndContext wrapping sidebar + columns (same pattern as kanban-board) */}
       <DndContext
         sensors={sensors}
         collisionDetection={stableCollisionDetection}
@@ -548,102 +651,85 @@ export function BoardSetting({
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="flex flex-1 gap-4 overflow-x-auto px-8 pb-12">
-          {/* SIDEBAR — unassigned states (D-06, D-10) */}
-          <UnassignedSidebar
+        <div className="flex flex-1 items-stretch gap-4 overflow-x-auto px-8 pb-12">
+          {/* SIDEBAR — unassigned states */}
+          <SidebarDropZone
             unassignedStates={unassignedStates}
             unassignedStateIds={unassignedStateIds}
             cardCounts={cardCounts}
             onDeleteClick={setDeleteTarget}
             onCreateState={onCreateState}
+            isDragActive={dragType === 'state'}
+            activeId={activeId}
           />
 
-          {/* COLUMNS — sortable horizontally (D-01) */}
+          {/* COLUMNS — sortable horizontally via grip handle */}
           <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-            <div className="flex gap-6">
-              {effectiveColumns.map((col) => {
-                const assignedState =
-                  col.state_ids.length > 0
-                    ? states.find((s) => s.state_id === col.state_ids[0])
-                    : null
-                const isRejected = rejectedColumnId === col.column_id
+            {columns.map((col) => {
+              const colStateIds = containerStateMap.get(col.column_id) ?? col.state_ids
+              const isRejected = rejectedColumnId === col.column_id
 
-                return (
-                  <SortableColumnWrapper key={col.column_id} id={col.column_id}>
-                    {({ dragHandleListeners, dragHandleAttributes }) => (
-                      <div
-                        className={cx(
-                          'flex w-[272px] shrink-0 flex-col gap-2 rounded-lg border-2 p-2',
-                          isRejected ? 'border-error' : 'border-transparent',
-                          'transition-colors duration-150',
-                        )}
-                      >
-                        <BoardSettingColumnHeader
-                          title={col.name}
-                          onTitleChange={(name) => onColumnRename?.(col.column_id, name)}
-                          onDelete={() => onColumnDelete?.(col.column_id)}
-                          dragHandleListeners={dragHandleListeners}
-                          dragHandleAttributes={dragHandleAttributes}
-                        />
+              return (
+                <SortableColumnWrapper key={col.column_id} id={col.column_id}>
+                  {({ dragHandleListeners, dragHandleAttributes }) => (
+                    <div
+                      className={cx(
+                        'flex w-[288px] flex-col gap-3.5 rounded-lg p-2',
+                        isRejected && 'ring-2 ring-error',
+                        'transition-all duration-150',
+                      )}
+                    >
+                      <BoardSettingColumnHeader
+                        title={col.name}
+                        onTitleChange={(name) => onColumnRename?.(col.column_id, name)}
+                        onDelete={() => onColumnDelete?.(col.column_id)}
+                        dragHandleListeners={dragHandleListeners}
+                        dragHandleAttributes={dragHandleAttributes}
+                      />
 
-                        {/* Column body — single state slot (1-state-per-column D-07) */}
-                        <ColumnDropTarget columnId={col.column_id}>
-                          {assignedState && (
-                            <StateCard
-                              state={assignedState}
-                              taskCount={cardCounts[assignedState.state_id] ?? 0}
-                              onDeleteClick={setDeleteTarget}
-                            />
-                          )}
-                        </ColumnDropTarget>
-                      </div>
-                    )}
-                  </SortableColumnWrapper>
-                )
-              })}
-            </div>
+                      <ColumnBody
+                        columnId={col.column_id}
+                        stateIds={colStateIds}
+                        states={states}
+                        cardCounts={cardCounts}
+                        onDeleteClick={setDeleteTarget}
+                        isDragActive={dragType === 'state'}
+                        activeId={activeId}
+                      />
+                    </div>
+                  )}
+                </SortableColumnWrapper>
+              )
+            })}
           </SortableContext>
 
-          {/* Add section button (D-03) */}
-          <div className="flex shrink-0 items-start pt-0">
-            <Button
-              size="sm"
-              color="secondary"
-              iconLeading={Plus}
-              onClick={onColumnAdd}
-            >
-              Add section
-            </Button>
-          </div>
+          {/* Add section button — same style as kanban-board.tsx */}
+          <button
+            type="button"
+            onClick={onColumnAdd}
+            className="flex shrink-0 cursor-pointer items-center gap-1 self-start rounded-lg px-3.5 py-2.5 text-sm font-semibold text-tertiary whitespace-nowrap transition-colors hover:bg-secondary_hover"
+          >
+            <Plus className="size-5" />
+            <span className="px-0.5">Add section</span>
+          </button>
         </div>
 
-        {/* DragOverlay (D-08) — rotate/scale/shadow for state, static for column */}
+        {/* DragOverlay — same pattern as kanban-board.tsx */}
         <DragOverlay dropAnimation={null}>
-          {activeId && dragType === 'state' && (() => {
-            const activeState = states.find((s) => s.state_id === activeId)
-            if (!activeState) return null
-            return (
-              <div className="rotate-[1deg] scale-[1.02] shadow-lg cursor-grabbing">
-                <StateCard
-                  state={activeState}
-                  taskCount={cardCounts[activeState.state_id] ?? 0}
-                />
-              </div>
-            )
-          })()}
-          {activeId && dragType === 'column' && (() => {
-            const activeCol = columns.find((c) => c.column_id === activeId)
-            if (!activeCol) return null
-            return (
-              <div className="w-[272px] rounded-lg bg-secondary p-2 shadow-lg cursor-grabbing">
-                <BoardSettingColumnHeader title={activeCol.name} />
-              </div>
-            )
-          })()}
+          {activeState ? (
+            <div className="rotate-[1deg] scale-[1.02] shadow-lg cursor-grabbing">
+              <StateCard state={activeState} taskCount={cardCounts[activeState.state_id] ?? 0} />
+            </div>
+          ) : null}
+          {activeColumn ? (
+            <div className="w-[288px] rounded-lg bg-secondary p-2 opacity-90 shadow-lg">
+              <BoardSettingColumnHeader title={activeColumn.name} />
+            </div>
+          ) : null}
         </DragOverlay>
       </DndContext>
 
-      {/* Delete Modal — unchanged */}
+      {/* Delete Modal */}
       <DeleteStateModal
         state={deleteTarget}
         states={states}
