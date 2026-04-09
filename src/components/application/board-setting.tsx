@@ -25,8 +25,13 @@ import {
   horizontalListSortingStrategy,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
 import { CSS } from '@dnd-kit/utilities'
+import type { Modifier } from '@dnd-kit/core'
+
+const restrictToHorizontalAxis: Modifier = ({ transform }) => ({
+  ...transform,
+  y: 0,
+})
 import { Button, PageHeader, cx } from '@circos/ui'
 import { ArrowNarrowLeft, HomeLine, Plus } from '@untitledui/icons'
 import { SmartPointerSensor } from '@/lib/smart-pointer-sensor'
@@ -133,7 +138,7 @@ function SortableStateCard({
   children,
 }: {
   id: string
-  children: React.ReactElement
+  children: React.ReactElement<Record<string, unknown>>
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
