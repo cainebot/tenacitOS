@@ -19,7 +19,7 @@ export async function GET(
   // Fetch agent with department join
   const { data: agent, error: agentError } = await supabase
     .from('agents')
-    .select('*, departments(display_name, color, icon, objective)')
+    .select('agent_id, node_id, name, emoji, status, current_task_id, avatar_model, last_activity, metadata, created_at, updated_at, department_id, role, skills, about, badge, soul_dirty, departments(display_name, color, icon, objective)')
     .eq('agent_id', id)
     .single()
 
@@ -94,7 +94,7 @@ export async function PUT(
     .from('agents')
     .update(finalUpdates)
     .eq('agent_id', id)
-    .select('*, departments(display_name, color, icon)')
+    .select('agent_id, node_id, name, emoji, status, current_task_id, avatar_model, last_activity, metadata, created_at, updated_at, department_id, role, skills, about, badge, soul_dirty, departments(display_name, color, icon)')
     .single()
 
   if (error) {
