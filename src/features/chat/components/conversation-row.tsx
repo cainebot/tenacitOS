@@ -37,18 +37,19 @@ export function ConversationRow({ conversation, isActive, onPress }: Conversatio
       aria-current={isActive || undefined}
     >
       <div className={cx(
-        'flex flex-1 items-center gap-2 overflow-clip p-2 rounded-sm',
+        'flex flex-1 items-center gap-3 overflow-clip p-2 rounded-sm',
         isActive ? 'bg-active' : 'hover:bg-primary_hover',
         'transition duration-100 ease-linear',
       )}>
-        {/* Icon/Avatar area */}
-        <div className="shrink-0">
+        {/* Icon and text — Figma gap-md (8px) */}
+        <div className="flex flex-1 items-center gap-2 min-w-0">
           {uiType === 'dm' ? (
             <Avatar
               size="xs"
               src={conversation.agent_avatar}
               alt={conversation.agent_name ?? ''}
               status="online"
+              className="!size-5 shrink-0"
               initials={
                 conversation.agent_name
                   ? conversation.agent_name.slice(0, 2).toUpperCase()
@@ -56,16 +57,14 @@ export function ConversationRow({ conversation, isActive, onPress }: Conversatio
               }
             />
           ) : uiType === 'announcement' ? (
-            <Announcement03 className="size-5 text-fg-quaternary" />
+            <Announcement03 className="size-5 shrink-0 text-fg-quaternary" />
           ) : (
-            <Hash02 className="size-5 text-fg-quaternary" />
+            <Hash02 className="size-5 shrink-0 text-fg-quaternary" />
           )}
+          <span className="flex-1 truncate text-sm font-semibold text-secondary">{label}</span>
         </div>
 
-        {/* Label */}
-        <span className="flex-1 truncate text-sm font-semibold text-secondary">{label}</span>
-
-        {/* Unread badge — raw span, NOT UUI Badge */}
+        {/* Unread badge — Figma gap-lg (12px) from icon+text group */}
         {isUnread && (
           <span className="shrink-0 rounded border border-secondary px-1 py-px text-xs font-medium text-tertiary">
             {conversation.unread_count}

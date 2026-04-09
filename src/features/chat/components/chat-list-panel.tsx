@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { cx, Input, Skeleton } from '@circos/ui'
-import { ChevronDown, SearchMd } from '@untitledui/icons'
+import { cx, Input, Skeleton, ButtonUtility, Dropdown } from '@circos/ui'
+import { ChevronDown, Edit05, Hash01, SearchMd, User01 } from '@untitledui/icons'
 import { ConversationRow } from './conversation-row'
-import { NewMessageMenu } from './new-message-menu'
 import type { ConversationWithMeta } from '../hooks/use-conversations'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -91,10 +90,24 @@ export function ChatListPanel({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
+      {/* Header — Figma: px-xl py-md gap-md */}
       <div className="flex items-center gap-2 px-4 py-2 shrink-0">
         <h2 className="flex-1 text-lg font-semibold text-primary">Chat</h2>
-        <NewMessageMenu onSelectDm={onNewDm} onSelectChannel={onNewChannel} />
+        <Dropdown.Root>
+          <ButtonUtility icon={Edit05} size="sm" color="tertiary" />
+          <Dropdown.Popover>
+            <Dropdown.Menu
+              className="min-w-[160px]"
+              onAction={(key) => {
+                if (key === 'dm') onNewDm()
+                else if (key === 'channel') onNewChannel()
+              }}
+            >
+              <Dropdown.Item id="dm" icon={User01} label="Direct message" />
+              <Dropdown.Item id="channel" icon={Hash01} label="Channel" />
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown.Root>
       </div>
 
       {/* Search */}
