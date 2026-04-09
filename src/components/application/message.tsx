@@ -1,9 +1,9 @@
 'use client'
 
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useState, useRef, useCallback, useEffect } from 'react'
 import { Avatar, FileTypeIcon, cx } from '@circos/ui'
 import { Button as AriaButton } from 'react-aria-components'
-import { Link03, Play, PlayCircle, PauseCircle, VolumeMax, Maximize01 } from '@untitledui/icons'
+import { Link03, Play, PlayCircle, PauseCircle, VolumeMax, Maximize01, XClose } from '@untitledui/icons'
 import Picker from '@emoji-mart/react'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import emojiData from '@emoji-mart/data'
@@ -14,6 +14,37 @@ import { MessageStatusIcon, type MessageStatus } from './message-status-icon'
 // ── Quick reaction preset ────────────────────────────────────────────────────
 
 const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '✅', '🚀'] as const
+
+// ── D-01: Module-level session cache for refreshed signed URLs ───────────────
+// Key: attachmentId, Value: { url: fresh signed URL, fetchedAt: timestamp }
+const signedUrlCache = new Map<string, { url: string; fetchedAt: number }>()
+
+// D-01: Detect URLs near expiration — >50min old relative to message creation time
+function isUrlNearExpiry(createdAt: string): boolean {
+  const ageMs = Date.now() - new Date(createdAt).getTime()
+  return ageMs > 50 * 60 * 1000 // 50 minutes
+}
+
+// D-01: Fetch fresh URL with cache — at most one network request per attachment per 50-min window
+async function fetchFreshSignedUrl(attachmentId: string): Promise<string | null> {
+  // Check cache first — reuse if fetched within last 50 minutes
+  const cached = signedUrlCache.get(attachmentId)
+  if (cached && (Date.now() - cached.fetchedAt) < 50 * 60 * 1000) {
+    return cached.url
+  }
+
+  try {
+    const res = await fetch(`/api/attachments/${attachmentId}/signed-url`)
+    if (res.ok) {
+      const { url } = await res.json() as { url: string }
+      signedUrlCache.set(attachmentId, { url, fetchedAt: Date.now() })
+      return url
+    }
+  } catch {
+    // Swallow — caller handles null
+  }
+  return null
+}
 
 // ── File type → color mapping ───────────────────────────────────────────────
 
@@ -130,6 +161,9 @@ type MessageImageProps = MessageBase & {
   alt?: string
   fileName?: string
   fileSize?: string
+  caption?: string           // D-03: text content for text+image messages
+  attachmentId?: string      // D-01: for on-demand signed URL refresh
+  createdAt?: string         // D-01: message timestamp for proactive expiry detection
   onClick?: () => void
 }
 
@@ -393,19 +427,88 @@ function ImageBubble({
   alt,
   fileName,
   fileSize,
-  onClick,
+  caption,
+  attachmentId,
+  createdAt,
+  sent,
 }: {
   src: string
   alt?: string
   fileName?: string
   fileSize?: string
+  caption?: string
+  attachmentId?: string
+  createdAt?: string
   sent: boolean
   onClick?: () => void
 }) {
   const [imgError, setImgError] = useState(false)
+  const [imgLoaded, setImgLoaded] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [activeSrc, setActiveSrc] = useState(src)
+  const [refreshing, setRefreshing] = useState(false)
+  const refreshAttemptedRef = useRef(false)
+  const dialogRef = useRef<HTMLDialogElement>(null)
 
-  // Guard: if src is empty/invalid, render as file fallback instead of broken img
-  if (!src) {
+  // D-01: Proactive expiry check on mount — if URL is >50min old, refresh immediately
+  useEffect(() => {
+    if (!attachmentId || !createdAt || refreshAttemptedRef.current) return
+    if (!isUrlNearExpiry(createdAt)) return
+
+    // Check session cache first
+    const cached = signedUrlCache.get(attachmentId)
+    if (cached && (Date.now() - cached.fetchedAt) < 50 * 60 * 1000) {
+      setActiveSrc(cached.url)
+      refreshAttemptedRef.current = true
+      return
+    }
+
+    refreshAttemptedRef.current = true
+    setRefreshing(true)
+    void fetchFreshSignedUrl(attachmentId).then((freshUrl) => {
+      if (freshUrl) {
+        setActiveSrc(freshUrl)
+      }
+      setRefreshing(false)
+    })
+  }, [attachmentId, createdAt])
+
+  // D-01: On-demand signed URL refresh when image fails to load (fallback)
+  const handleImgError = useCallback(async () => {
+    if (refreshing) return
+    if (!attachmentId) {
+      setImgError(true)
+      return
+    }
+    setRefreshing(true)
+    const freshUrl = await fetchFreshSignedUrl(attachmentId)
+    if (freshUrl) {
+      setActiveSrc(freshUrl)
+      setImgError(false)
+    } else {
+      setImgError(true)
+    }
+    setRefreshing(false)
+  }, [attachmentId, refreshing])
+
+  // Lightbox open/close — useEffect calls showModal() after dialog mounts in DOM
+  useEffect(() => {
+    if (lightboxOpen && dialogRef.current && !dialogRef.current.open) {
+      dialogRef.current.showModal()
+    }
+  }, [lightboxOpen])
+
+  const openLightbox = useCallback(() => {
+    setLightboxOpen(true)
+  }, [])
+
+  const closeLightbox = useCallback(() => {
+    dialogRef.current?.close()
+    setLightboxOpen(false)
+  }, [])
+
+  // Guard: empty src — FileBubble fallback
+  if (!src && !activeSrc) {
     return (
       <div className="flex flex-col gap-1.5 w-full">
         <div className={cx(
@@ -415,8 +518,8 @@ function ImageBubble({
           <div className="flex gap-3 items-start w-full">
             <FileTypeIcon fileType={fileName?.split('.').pop()?.toUpperCase() ?? 'IMG'} color="bg-purple-600" size="md" />
             <div className="flex flex-col flex-1 min-w-0">
-              <p className="text-sm font-medium text-secondary truncate">{fileName ?? 'Image'}</p>
-              {fileSize && <p className="text-sm text-tertiary">{fileSize}</p>}
+              <p className="text-sm font-semibold text-primary truncate">{fileName ?? 'Image'}</p>
+              {fileSize && <p className="text-xs text-tertiary">{fileSize}</p>}
             </div>
           </div>
         </div>
@@ -425,40 +528,91 @@ function ImageBubble({
   }
 
   return (
-    <div className="flex flex-col gap-1.5 w-full">
-      <button
-        type="button"
-        onClick={onClick}
-        className={cx(
-          'relative aspect-[4/3] w-full overflow-clip border-[0.5px] border-[rgba(0,0,0,0.1)] rounded-md',
-          onClick ? 'cursor-pointer hover:opacity-95 transition duration-100 ease-linear' : 'cursor-default',
-        )}
-      >
-        {imgError ? (
-          <div className="flex items-center justify-center size-full bg-secondary rounded-md">
-            <FileTypeIcon fileType={fileName?.split('.').pop()?.toUpperCase() ?? 'IMG'} color="bg-purple-600" size="md" />
+    <>
+      <div className={cx('flex flex-col w-full', caption ? '' : 'gap-1.5')}>
+        <button
+          type="button"
+          onClick={openLightbox}
+          className={cx(
+            'relative max-w-[280px] overflow-clip border border-secondary cursor-pointer hover:opacity-95 transition duration-100 ease-linear',
+            caption ? 'rounded-t-md' : bubbleRadius(sent),
+          )}
+        >
+          {/* Loading placeholder */}
+          {!imgLoaded && !imgError && !refreshing && (
+            <div className="w-[280px] h-[180px] bg-tertiary" />
+          )}
+
+          {/* Refreshing spinner */}
+          {refreshing && (
+            <div className="flex items-center justify-center w-[280px] h-[180px] bg-tertiary">
+              <div className="size-4 border-2 border-fg-brand-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+
+          {/* Error fallback */}
+          {imgError && (
+            <div className="flex items-center justify-center w-[280px] h-[120px] bg-secondary rounded-md">
+              <FileTypeIcon fileType={fileName?.split('.').pop()?.toUpperCase() ?? 'IMG'} color="bg-purple-600" size="md" />
+            </div>
+          )}
+
+          {/* Actual image */}
+          {!imgError && !refreshing && (
+            <img
+              src={activeSrc}
+              alt={alt ?? fileName ?? 'Image'}
+              loading="lazy"
+              className={cx(
+                'max-w-[280px] max-h-[320px] object-contain',
+                imgLoaded ? 'block' : 'hidden',
+              )}
+              onLoad={() => setImgLoaded(true)}
+              onError={handleImgError}
+            />
+          )}
+        </button>
+
+        {/* D-03: Caption below image — WhatsApp/Telegram style */}
+        {caption && (
+          <div className={cx(
+            'max-w-[280px] border border-secondary border-t-0 px-3 py-2',
+            'rounded-b-md',
+          )}>
+            <p className="text-sm text-secondary">{caption}</p>
           </div>
-        ) : (
-          <img
-            src={src}
-            alt={alt ?? fileName ?? 'Image'}
-            loading="lazy"
-            className="size-full object-cover rounded-md"
-            onError={() => setImgError(true)}
-          />
         )}
-      </button>
-      {(fileName || fileSize) && (
-        <div className="flex gap-1 items-start w-full whitespace-nowrap">
-          {fileName && (
-            <p className="text-sm font-medium text-secondary truncate flex-1 min-w-0">{fileName}</p>
-          )}
-          {fileSize && (
-            <p className="text-sm text-tertiary shrink-0">{fileSize}</p>
-          )}
-        </div>
+      </div>
+
+      {/* Lightbox dialog — native <dialog> with accessibility attributes.
+          UUI CLI `npx untitledui@latest add dialog` returned "No components found",
+          so using native <dialog> with aria-label and showModal() for focus trap. */}
+      {lightboxOpen && (
+        <dialog
+          ref={dialogRef}
+          className="fixed inset-0 z-50 bg-overlay p-0 m-0 w-screen h-screen flex items-center justify-center backdrop:bg-transparent"
+          onClick={(e) => { if (e.target === e.currentTarget) closeLightbox() }}
+          onCancel={closeLightbox}
+          aria-label="Image lightbox"
+        >
+          <div className="relative flex items-center justify-center w-full h-full">
+            <button
+              type="button"
+              onClick={closeLightbox}
+              className="absolute top-4 right-4 p-2 rounded-full bg-primary border border-secondary hover:bg-secondary transition duration-150 ease-linear z-10"
+              aria-label="Close"
+            >
+              <XClose className="size-5 text-fg-primary" />
+            </button>
+            <img
+              src={activeSrc}
+              alt={alt ?? fileName ?? 'Image'}
+              className="max-w-[90vw] max-h-[90vh] object-contain transition-opacity duration-150"
+            />
+          </div>
+        </dialog>
       )}
-    </div>
+    </>
   )
 }
 
@@ -621,6 +775,9 @@ export function Message(props: MessageProps) {
             alt={props.alt}
             fileName={props.fileName}
             fileSize={props.fileSize}
+            caption={props.caption}
+            attachmentId={props.attachmentId}
+            createdAt={props.createdAt}
             sent={sent}
             onClick={props.onClick}
           />
