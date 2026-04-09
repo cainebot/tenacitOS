@@ -295,17 +295,6 @@ export function AgentChatTab({
     )
   }
 
-  // ── Empty state ───────────────────────────────────────────────────────────
-  if (chat.messages.length === 0 && !isAgentTyping) {
-    return (
-      <div className="flex flex-1 items-center justify-center py-8">
-        <p className="text-sm text-tertiary text-center px-4">
-          Send a message to start chatting with {agentName}
-        </p>
-      </div>
-    )
-  }
-
   // ── Group messages by date ────────────────────────────────────────────────
   const groups: Map<string, { label: string; messages: EnrichedMessage[] }> = new Map()
 
@@ -317,107 +306,119 @@ export function AgentChatTab({
     groups.get(key)!.messages.push(msg)
   }
 
+  const isEmpty = chat.messages.length === 0 && !isAgentTyping
+
   return (
-    <div className="flex flex-col gap-4 w-full">
-      {/* Infinite scroll sentinel — top sentinel triggers loadMore when scrolled up */}
-      <div ref={sentinelRef} className="h-1" />
-
-      {Array.from(groups.entries()).map(([dateKey, group]) => (
-        <div key={dateKey} className="flex flex-col gap-4 w-full">
-          <AgentPanelDivider label={group.label} />
-          <AgentPanelSection>
-            {group.messages.map((msg) => {
-              const isAgentMessage = !msg.isMine
-              const shouldObserveForRead =
-                isAgentMessage && !hasReadReceipt(msg) && !msg._failed
-
-              return (
-                <div
-                  key={msg.message_id}
-                  data-message-id={shouldObserveForRead ? msg.message_id : undefined}
-                  ref={(el) => {
-                    if (el && shouldObserveForRead && readObserverRef.current) {
-                      readObserverRef.current.observe(el)
-                    }
-                  }}
-                >
-                  {(() => {
-                    const baseProps = {
-                      sent: msg.isMine,
-                      senderName: msg.senderName,
-                      senderAvatar: msg.senderAvatar ?? undefined,
-                      timestamp: formatTime(msg.created_at),
-                      status: msg.isMine ? msg.statusIcon : undefined,
-                      reactions: msg.reactions.map((r) => ({
-                        emoji: r.emoji,
-                        count: r.count,
-                        isSelected: r.selected,
-                        onPress: () => chat.toggleReaction(msg.message_id, r.emoji),
-                      })),
-                      actions: (() => {
-                        if (msg._failed) return ['retry'] as MessageAction[]
-                        if (msg.messageType === 'writing') return undefined
-                        switch (msg.messageType) {
-                          case 'file':
-                          case 'image':
-                          case 'audio':
-                          case 'video':
-                            return ['reply'] as MessageAction[]
-                          case 'link-preview':
-                          case 'link-minimal':
-                            return ['copy', 'reply'] as MessageAction[]
-                          case 'message':
-                          case 'message-reply':
-                          default:
-                            return msg.isMine
-                              ? (['copy'] as MessageAction[])
-                              : (['copy', 'reply'] as MessageAction[])
-                        }
-                      })(),
-                      onAction: (action: MessageAction) => {
-                        switch (action) {
-                          case 'retry':
-                            chat.retryMessage(msg.message_id)
-                            break
-                          case 'copy':
-                            navigator.clipboard.writeText(msg.text ?? '').then(() => {
-                              toast.success('Copied to clipboard')
-                            }).catch(() => {
-                              toast.error('Failed to copy')
-                            })
-                            break
-                          case 'reply':
-                            setReplyTo(msg)
-                            break
-                        }
-                      },
-                      onReact: (emoji: string) => chat.toggleReaction(msg.message_id, emoji),
-                    }
-                    const messageProps = buildMessageProps(msg, baseProps, chat.messages)
-                    return <Message {...messageProps} />
-                  })()}
-                </div>
-              )
-            })}
-          </AgentPanelSection>
+    <div className="flex flex-col gap-4 w-full flex-1">
+      {isEmpty ? (
+        <div className="flex flex-1 items-center justify-center py-8">
+          <p className="text-sm text-tertiary text-center px-4">
+            Send a message to start chatting with {agentName}
+          </p>
         </div>
-      ))}
+      ) : (
+        <>
+          {/* Infinite scroll sentinel — top sentinel triggers loadMore when scrolled up */}
+          <div ref={sentinelRef} className="h-1" />
 
-      {/* Typing indicator — shown when agent.status === 'thinking' (D-11) */}
-      {isAgentTyping && (
-        <Message
-          type="writing"
-          senderName={agentName}
-          senderAvatar={agentAvatar}
-          timestamp=""
-        />
+          {Array.from(groups.entries()).map(([dateKey, group]) => (
+            <div key={dateKey} className="flex flex-col gap-4 w-full">
+              <AgentPanelDivider label={group.label} />
+              <AgentPanelSection>
+                {group.messages.map((msg) => {
+                  const isAgentMessage = !msg.isMine
+                  const shouldObserveForRead =
+                    isAgentMessage && !hasReadReceipt(msg) && !msg._failed
+
+                  return (
+                    <div
+                      key={msg.message_id}
+                      data-message-id={shouldObserveForRead ? msg.message_id : undefined}
+                      ref={(el) => {
+                        if (el && shouldObserveForRead && readObserverRef.current) {
+                          readObserverRef.current.observe(el)
+                        }
+                      }}
+                    >
+                      {(() => {
+                        const baseProps = {
+                          sent: msg.isMine,
+                          senderName: msg.senderName,
+                          senderAvatar: msg.senderAvatar ?? undefined,
+                          timestamp: formatTime(msg.created_at),
+                          status: msg.isMine ? msg.statusIcon : undefined,
+                          reactions: msg.reactions.map((r) => ({
+                            emoji: r.emoji,
+                            count: r.count,
+                            isSelected: r.selected,
+                            onPress: () => chat.toggleReaction(msg.message_id, r.emoji),
+                          })),
+                          actions: (() => {
+                            if (msg._failed) return ['retry'] as MessageAction[]
+                            if (msg.messageType === 'writing') return undefined
+                            switch (msg.messageType) {
+                              case 'file':
+                              case 'image':
+                              case 'audio':
+                              case 'video':
+                                return ['reply'] as MessageAction[]
+                              case 'link-preview':
+                              case 'link-minimal':
+                                return ['copy', 'reply'] as MessageAction[]
+                              case 'message':
+                              case 'message-reply':
+                              default:
+                                return msg.isMine
+                                  ? (['copy'] as MessageAction[])
+                                  : (['copy', 'reply'] as MessageAction[])
+                            }
+                          })(),
+                          onAction: (action: MessageAction) => {
+                            switch (action) {
+                              case 'retry':
+                                chat.retryMessage(msg.message_id)
+                                break
+                              case 'copy':
+                                navigator.clipboard.writeText(msg.text ?? '').then(() => {
+                                  toast.success('Copied to clipboard')
+                                }).catch(() => {
+                                  toast.error('Failed to copy')
+                                })
+                                break
+                              case 'reply':
+                                setReplyTo(msg)
+                                break
+                            }
+                          },
+                          onReact: (emoji: string) => chat.toggleReaction(msg.message_id, emoji),
+                        }
+                        const messageProps = buildMessageProps(msg, baseProps, chat.messages)
+                        return <Message {...messageProps} />
+                      })()}
+                    </div>
+                  )
+                })}
+              </AgentPanelSection>
+            </div>
+          ))}
+
+          {/* Typing indicator — shown when agent.status === 'thinking' (D-11) */}
+          {isAgentTyping && (
+            <Message
+              type="writing"
+              senderName={agentName}
+              senderAvatar={agentAvatar}
+              timestamp=""
+            />
+          )}
+
+          {/* Auto-scroll anchor — scrollIntoView target for typing/new messages */}
+          <div ref={bottomRef} aria-hidden />
+        </>
       )}
 
-      {/* Auto-scroll anchor — scrollIntoView target for typing/new messages */}
-      <div ref={bottomRef} aria-hidden />
-
-      {/* Chat input — rendered here so replyTo/onClearReply can be wired directly */}
-      <div className="shrink-0 px-0 pb-0">
+      {/* Chat input — always rendered so user can start new conversations */}
+      <div className="shrink-0 px-0 pb-0 mt-auto">
         <ChatInput
           type="advanced"
           avatarSrc={userAvatarSrc}
