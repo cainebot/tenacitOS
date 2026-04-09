@@ -227,15 +227,17 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
               </ChatPanelSection>
             ))}
 
-            {isAgentTyping && (
-              <Message
-                type="writing"
-                senderName={conversation?.agent_name ?? 'Agent'}
-                senderAvatar={conversation?.agent_avatar}
-                timestamp=""
-              />
-            )}
           </>
+        )}
+
+        {/* Typing indicator — OUTSIDE conditional, always renders when agent is typing */}
+        {isAgentTyping && (
+          <Message
+            type="writing"
+            senderName={conversation?.agent_name ?? 'Agent'}
+            senderAvatar={conversation?.agent_avatar}
+            timestamp=""
+          />
         )}
       </div>
 
