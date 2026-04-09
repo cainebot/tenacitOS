@@ -121,6 +121,7 @@ export function useAgentChat({
   const [waitingForReply, setWaitingForReply] = useState(false)
 
   const cursorRef = useRef<string | null>(null)
+  const isLoadingMoreRef = useRef(false)
 
   // Sender info cache — Realtime INSERT/UPDATE only has raw columns, no joins.
   // Populated from API responses to resolve senderName for Realtime payloads.
@@ -194,7 +195,9 @@ export function useAgentChat({
 
   const loadMore = useCallback(async () => {
     if (!conversationId || !cursorRef.current || !myParticipantId) return
+    if (isLoadingMoreRef.current) return  // in-flight guard
 
+    isLoadingMoreRef.current = true
     try {
       const { data, next_cursor } = await fetchMessagesApi(
         conversationId,
@@ -212,6 +215,8 @@ export function useAgentChat({
       setHasMore(next_cursor !== null)
     } catch {
       // silently fail on load-more; user can retry by scrolling
+    } finally {
+      isLoadingMoreRef.current = false  // always reset
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, myParticipantId])
