@@ -40,7 +40,7 @@ function ChatPageInner() {
   return (
     <div className="flex h-full w-full gap-2 p-2">
       {/* Left panel — conversation list */}
-      <aside className="w-[290px] shrink-0 overflow-hidden rounded-xl bg-secondary shadow-lg">
+      <aside className="w-[290px] shrink-0 overflow-hidden rounded-xl bg-primary shadow-lg">
         <ChatListPanel
           channels={channels}
           dms={dms}
@@ -55,7 +55,7 @@ function ChatPageInner() {
       </aside>
 
       {/* Right panel — active conversation */}
-      <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-secondary">
+      <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-primary">
         <ChatViewPanel
           activeConversationId={activeConversationId}
           conversation={activeConversation}
