@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { BoardSetting, type StateCardItem } from '@/components/application/board-setting'
+import { BoardSetting } from '@/components/application/board-setting'
 import { useBoardSettings } from '@/hooks/use-board-settings'
 import { createBrowserClient } from '@/lib/supabase'
 import type { BoardRow, ProjectRow, StateCategory } from '@/types/project'
-import type { KanbanBoardColumn } from '@/components/application/kanban-board'
 
 export default function BoardSettingPage() {
   const params = useParams<{ slug: string }>()
@@ -50,7 +49,10 @@ export default function BoardSettingPage() {
   }, [slug])
 
   // ---- Board settings data ----
-  const { columns, states, loading, refetch, assignState } = useBoardSettings(boardId, projectId)
+  const { columns, states, loading, refetch, assignState, unassignState } = useBoardSettings(
+    boardId,
+    projectId,
+  )
 
   // ---- Card counts per state ----
   const [cardCounts, setCardCounts] = useState<Record<string, number>>({})
@@ -62,7 +64,6 @@ export default function BoardSettingPage() {
     async function fetchCounts() {
       const supabase = createBrowserClient()
 
-      // Single query: group by state_id
       const { data, error } = await supabase
         .from('cards')
         .select('state_id')
@@ -75,11 +76,9 @@ export default function BoardSettingPage() {
       }
 
       const counts: Record<string, number> = {}
-      // Count occurrences
       for (const row of data ?? []) {
         counts[row.state_id] = (counts[row.state_id] ?? 0) + 1
       }
-      // Ensure all states have an entry
       for (const s of states) {
         if (!(s.state_id in counts)) counts[s.state_id] = 0
       }
@@ -132,79 +131,57 @@ export default function BoardSettingPage() {
     [projectId, refetch],
   )
 
-  const handleColumnsChange = useCallback(
-    async (newBoardColumns: KanbanBoardColumn<StateCardItem>[]) => {
-      // Build a map of stateId -> columnId for the new state
-      const newStateToCol = new Map<string, string>()
-      for (const col of newBoardColumns) {
-        for (const item of col.items) {
-          newStateToCol.set(item.id, col.id)
-        }
-      }
+  const handleColumnRename = useCallback(
+    (columnId: string, name: string) => {
+      fetch(`/api/boards/${boardId}/columns/${columnId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      }).catch(() => refetch())
+    },
+    [boardId, refetch],
+  )
 
-      // Build a map of stateId -> columnId for the old state
-      const oldStateToCol = new Map<string, string>()
-      for (const col of columns) {
+  const handleColumnDelete = useCallback(
+    async (columnId: string) => {
+      // Find any assigned state and unassign it first (state returns to sidebar per D-02)
+      const col = columns.find((c) => c.column_id === columnId)
+      if (col) {
         for (const stateId of col.state_ids) {
-          oldStateToCol.set(stateId, col.column_id)
+          await unassignState(columnId, stateId)
         }
       }
-
-      // Find states that changed columns — call assignState for each
-      for (const [stateId, newColId] of newStateToCol) {
-        const oldColId = oldStateToCol.get(stateId)
-        if (oldColId !== newColId) {
-          await assignState(newColId, stateId)
-        }
-      }
-
-      // Handle column reorder: check if column order changed
-      const oldOrder = columns.map((c) => c.column_id)
-      const newOrder = newBoardColumns.map((c) => c.id)
-      const orderChanged =
-        oldOrder.length !== newOrder.length ||
-        oldOrder.some((id, i) => id !== newOrder[i])
-
-      if (orderChanged) {
-        for (let i = 0; i < newOrder.length; i++) {
-          const colId = newOrder[i]
-          const oldCol = columns.find((c) => c.column_id === colId)
-          if (oldCol && oldCol.position !== i) {
-            await fetch(`/api/boards/${boardId}/columns/${colId}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ position: i }),
-            })
-          }
-        }
-      }
-
-      // Handle new columns (from "Add section")
-      for (const col of newBoardColumns) {
-        if (!columns.find((c) => c.column_id === col.id) && col.id.startsWith('col-')) {
-          await fetch(`/api/boards/${boardId}/columns`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: col.title,
-              position: newBoardColumns.indexOf(col),
-            }),
-          })
-        }
-      }
-
-      // Handle deleted columns
-      for (const oldCol of columns) {
-        if (!newBoardColumns.find((c) => c.id === oldCol.column_id)) {
-          await fetch(`/api/boards/${boardId}/columns/${oldCol.column_id}`, {
-            method: 'DELETE',
-          })
-        }
-      }
-
+      await fetch(`/api/boards/${boardId}/columns/${columnId}`, { method: 'DELETE' })
       await refetch()
     },
-    [columns, boardId, assignState, refetch],
+    [columns, boardId, unassignState, refetch],
+  )
+
+  const handleColumnAdd = useCallback(async () => {
+    const position = columns.length
+    await fetch(`/api/boards/${boardId}/columns`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'New section', position }),
+    })
+    await refetch()
+  }, [boardId, columns.length, refetch])
+
+  const handleColumnsReorder = useCallback(
+    async (columnIds: string[]) => {
+      // Update position for each column in new order
+      await Promise.all(
+        columnIds.map((colId, i) =>
+          fetch(`/api/boards/${boardId}/columns/${colId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ position: i }),
+          }),
+        ),
+      )
+      await refetch()
+    },
+    [boardId, refetch],
   )
 
   // ---- Loading ----
@@ -226,7 +203,12 @@ export default function BoardSettingPage() {
       onBack={handleBack}
       onCreateState={handleCreateState}
       onDeleteState={handleDeleteState}
-      onColumnsChange={handleColumnsChange}
+      onColumnRename={handleColumnRename}
+      onColumnDelete={handleColumnDelete}
+      onColumnAdd={handleColumnAdd}
+      onColumnsReorder={handleColumnsReorder}
+      assignState={assignState}
+      unassignState={unassignState}
     />
   )
 }
