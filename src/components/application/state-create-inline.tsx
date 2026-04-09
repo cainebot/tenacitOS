@@ -24,15 +24,19 @@ export function StateCreateInline({ onCreateState }: StateCreateInlineProps) {
   const [name, setName] = useState('')
   const [category, setCategory] = useState<StateCategory | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = useCallback(async () => {
     if (!name.trim() || !category) return
     setIsSubmitting(true)
+    setError(null)
     try {
       await onCreateState({ name: name.trim(), category, color: '#667085' })
       // On success: reset name and category, keep form expanded for rapid creation
       setName('')
       setCategory(null)
+    } catch {
+      setError('Failed to create state. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -113,6 +117,7 @@ export function StateCreateInline({ onCreateState }: StateCreateInlineProps) {
           Cancel
         </Button>
       </div>
+      {error && <p className="text-sm text-error-primary mt-1">{error}</p>}
     </div>
   )
 }
