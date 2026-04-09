@@ -183,13 +183,13 @@ function ExpandedContent({
 
       <NavList activeUrl={activeUrl} items={items} className="mt-5 pb-5 lg:flex-1 lg:overflow-y-auto" />
 
-      <div className="mt-auto flex flex-col gap-5 border-t border-secondary px-2 py-4 lg:shrink-0 lg:gap-6 lg:px-4 lg:py-4">
+      <div className="mt-auto flex flex-col gap-4 border-t border-secondary px-2 pb-4 lg:shrink-0 lg:px-4 lg:pb-6">
         <div className="flex flex-col gap-0.5">
           <NavItemBase type="link" href="/settings" icon={Settings01} current={activeUrl === "/settings"}>
             Settings
           </NavItemBase>
         </div>
-        <div className="-mx-2 px-2 lg:-mx-4 lg:px-4 flex gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-2 px-2 lg:-mx-4 lg:px-4 flex gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {(featuredCards ?? []).map((card) => (
             <FeaturedCardProgressBar
               key={card.title}

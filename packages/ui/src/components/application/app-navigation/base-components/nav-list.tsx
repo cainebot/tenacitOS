@@ -42,8 +42,8 @@ export const NavList = ({ activeUrl, items, className }: NavListProps) => {
                 if (item.divider) {
                     if (item.label) {
                         return (
-                            <li key={index} className="px-3 pb-1 pt-5 first:pt-1">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-quaternary">{item.label}</span>
+                            <li key={index} className="px-1 pb-1 pt-3 first:pt-0">
+                                <span className="text-xs font-bold uppercase text-quaternary">{item.label}</span>
                             </li>
                         );
                     }

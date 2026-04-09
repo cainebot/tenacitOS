@@ -88,7 +88,7 @@ export function AnimatedSidebar({
     <>
       {/* Single sidebar container — fixed position, grows with SideMenu */}
       <div
-        className={`z-50 hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:py-1 lg:pl-1${
+        className={`z-50 hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex py-2 pl-2${
           isOverlay ? " shadow-xl" : ""
         }`}
         onPointerLeave={() => { pointerOverRef.current = false; if (!keepHovering) setIsHovering(false); onPointerLeaveProp?.() }}

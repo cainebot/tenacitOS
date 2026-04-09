@@ -205,7 +205,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         onPointerLeave={handleSidebarLeave}
       />
 
-      <main className="flex flex-1 flex-col items-start self-stretch gap-8 overflow-auto">
+      <main className="flex flex-1 flex-col self-stretch overflow-auto">
         {children}
       </main>
 
