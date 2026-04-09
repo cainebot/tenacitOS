@@ -7,7 +7,6 @@ import {
   DndContext,
   closestCenter,
   closestCorners,
-  PointerSensor,
   useSensor,
   useSensors,
   DragOverlay,
@@ -18,21 +17,7 @@ import {
   type Modifier,
   type CollisionDetection,
 } from "@dnd-kit/core"
-
-/** PointerSensor that ignores drags starting inside contentEditable or input/textarea */
-class SmartPointerSensor extends PointerSensor {
-  static activators = PointerSensor.activators.map((activator) => ({
-    ...activator,
-    eventName: activator.eventName,
-    handler: (event: PointerEvent, ...args: unknown[]) => {
-      const target = event.target as HTMLElement | null
-      if (target?.isContentEditable || target?.closest("[contenteditable]") || target?.closest("input, textarea, select")) {
-        return false
-      }
-      return (activator.handler as (event: PointerEvent, ...args: unknown[]) => boolean)(event, ...args)
-    },
-  }))
-}
+import { SmartPointerSensor } from '@/lib/smart-pointer-sensor'
 import {
   SortableContext,
   horizontalListSortingStrategy,
