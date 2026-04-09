@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Avatar, ButtonUtility } from '@circos/ui'
 import { DotsHorizontal } from '@untitledui/icons'
 import { useAgentChat } from '@/hooks/use-agent-chat'
@@ -70,6 +70,69 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
     shortcuts: [],
   })
 
+  // ── Scroll management (per D-02, D-03, D-04) ──────────────────────────
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const hasInitialScrolled = useRef(false)
+  const prevMessageCountRef = useRef(0)
+
+  // ── Infinite scroll sentinel (per D-05) ────────────────────────────────
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const scrollObserverRef = useRef<IntersectionObserver | null>(null)
+
+  // Reset scroll state when switching conversations
+  useEffect(() => {
+    hasInitialScrolled.current = false
+    prevMessageCountRef.current = 0
+  }, [conversationId])
+
+  // D-04: Initial load always scrolls to bottom
+  // D-02: Use scrollRef + direct scrollTop (ChatPanel pattern)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    if (!hasInitialScrolled.current && chat.messages.length > 0 && !chat.loading) {
+      el.scrollTop = el.scrollHeight
+      hasInitialScrolled.current = true
+    }
+  }, [chat.messages.length, chat.loading])
+
+  // D-03: Auto-scroll on new messages only if within 150px of bottom
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || !hasInitialScrolled.current) return
+    // Only trigger for new messages (count increase), not loadMore (which prepends)
+    if (chat.messages.length > prevMessageCountRef.current && prevMessageCountRef.current > 0) {
+      const gap = el.scrollHeight - el.scrollTop - el.clientHeight
+      if (gap < 150) {
+        el.scrollTop = el.scrollHeight
+      }
+    }
+    prevMessageCountRef.current = chat.messages.length
+  }, [chat.messages.length])
+
+  // Infinite scroll — IntersectionObserver on sentinel at top of messages
+  useEffect(() => {
+    if (!sentinelRef.current) return
+
+    scrollObserverRef.current = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && chat.hasMore) {
+            void chat.loadMore()
+          }
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    scrollObserverRef.current.observe(sentinelRef.current)
+
+    return () => {
+      scrollObserverRef.current?.disconnect()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat.hasMore, chat.loadMore])
+
   const uiType = conversation ? conversationUiType(conversation.conversation_type) : null
   const isAnnouncement = uiType === 'announcement'
 
@@ -111,7 +174,7 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 px-6 py-4">
         {chat.loading ? (
           <div className="flex items-center justify-center py-8">
             <p className="text-sm text-tertiary">Loading messages...</p>
@@ -121,47 +184,58 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
             <p className="text-sm text-tertiary">No messages yet. Say hello!</p>
           </div>
         ) : (
-          groupedMessages.map((group) => (
-            <ChatPanelSection key={group.dateKey}>
-              <ChatPanelDivider label={group.dateLabel} />
-              {group.messages.map((msg) => {
-                const baseProps = {
-                  sent: msg.isMine,
-                  senderName: msg.senderName,
-                  senderAvatar: msg.senderAvatar ?? undefined,
-                  timestamp: formatTime(msg.created_at),
-                  status: msg.statusIcon,
-                  reactions: msg.reactions.map((r) => ({
-                    emoji: r.emoji,
-                    count: r.count,
-                    isSelected: r.selected,
-                    onPress: () => chat.toggleReaction(msg.message_id, r.emoji),
-                  })),
-                  actions: messageActions,
-                  onAction: (action: MessageAction) => {
-                    if (action === 'copy') {
-                      void navigator.clipboard.writeText(msg.text ?? '')
-                    } else if (action === 'reply' && !isAnnouncement) {
-                      setReplyTo(msg)
-                    } else if (action === 'retry' && msg._failed) {
-                      void chat.retryMessage(msg.message_id)
-                    }
-                  },
-                  onReact: (emoji: string) => chat.toggleReaction(msg.message_id, emoji),
-                }
-                const msgProps = buildMessageProps(msg, baseProps, chat.messages)
-                return <Message key={msg.message_id} {...msgProps} />
-              })}
-            </ChatPanelSection>
-          ))
-        )}
-        {isAgentTyping && (
-          <Message
-            type="writing"
-            senderName={conversation?.agent_name ?? 'Agent'}
-            senderAvatar={conversation?.agent_avatar}
-            timestamp=""
-          />
+          <>
+            {/* Infinite scroll sentinel — triggers loadMore when user scrolls to top */}
+            <div ref={sentinelRef} className="h-1 shrink-0" />
+            {chat.hasMore && (
+              <div className="flex items-center justify-center py-2">
+                <p className="text-xs text-quaternary">Loading older messages...</p>
+              </div>
+            )}
+
+            {groupedMessages.map((group) => (
+              <ChatPanelSection key={group.dateKey}>
+                <ChatPanelDivider label={group.dateLabel} />
+                {group.messages.map((msg) => {
+                  const baseProps = {
+                    sent: msg.isMine,
+                    senderName: msg.senderName,
+                    senderAvatar: msg.senderAvatar ?? undefined,
+                    timestamp: formatTime(msg.created_at),
+                    status: msg.statusIcon,
+                    reactions: msg.reactions.map((r) => ({
+                      emoji: r.emoji,
+                      count: r.count,
+                      isSelected: r.selected,
+                      onPress: () => chat.toggleReaction(msg.message_id, r.emoji),
+                    })),
+                    actions: messageActions,
+                    onAction: (action: MessageAction) => {
+                      if (action === 'copy') {
+                        void navigator.clipboard.writeText(msg.text ?? '')
+                      } else if (action === 'reply' && !isAnnouncement) {
+                        setReplyTo(msg)
+                      } else if (action === 'retry' && msg._failed) {
+                        void chat.retryMessage(msg.message_id)
+                      }
+                    },
+                    onReact: (emoji: string) => chat.toggleReaction(msg.message_id, emoji),
+                  }
+                  const msgProps = buildMessageProps(msg, baseProps, chat.messages)
+                  return <Message key={msg.message_id} {...msgProps} />
+                })}
+              </ChatPanelSection>
+            ))}
+
+            {isAgentTyping && (
+              <Message
+                type="writing"
+                senderName={conversation?.agent_name ?? 'Agent'}
+                senderAvatar={conversation?.agent_avatar}
+                timestamp=""
+              />
+            )}
+          </>
         )}
       </div>
 
