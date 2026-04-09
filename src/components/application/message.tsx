@@ -3,7 +3,7 @@
 import { type ReactNode, useState, useRef, useCallback, useEffect } from 'react'
 import { Avatar, FileTypeIcon, cx } from '@circos/ui'
 import { Button as AriaButton } from 'react-aria-components'
-import { Link03, Play, PlayCircle, PauseCircle, VolumeMax, Maximize01, XClose } from '@untitledui/icons'
+import { AlertCircle, Link03, Play, PlayCircle, PauseCircle, VolumeMax, Maximize01, XClose } from '@untitledui/icons'
 import Picker from '@emoji-mart/react'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import emojiData from '@emoji-mart/data'
@@ -98,6 +98,7 @@ export type MessageType =
   | 'link-preview'
   | 'link-minimal'
   | 'writing'
+  | 'system-error'
 
 export interface ReactionData {
   emoji: ReactNode
@@ -184,6 +185,15 @@ type MessageWritingProps = Pick<MessageBase, 'senderName' | 'senderAvatar' | 'se
   type: 'writing'
 }
 
+type MessageSystemErrorProps = MessageBase & {
+  type: 'system-error'
+  errorCode: string
+  errorHeading: string
+  errorBody: string
+  onRetry?: () => void
+  onReauth?: () => void
+}
+
 export type MessageProps =
   | MessageTextProps
   | MessageReplyProps
@@ -194,6 +204,94 @@ export type MessageProps =
   | MessageLinkPreviewProps
   | MessageLinkMinimalProps
   | MessageWritingProps
+  | MessageSystemErrorProps
+
+// ── D-08: Error code → Spanish user-facing strings ──────────────────────────
+
+const ERROR_CODE_MAP: Record<string, { heading: string; body: string; actionType: 'retry' | 'reauth' }> = {
+  oauth_expired: {
+    heading: 'Autenticacion expirada',
+    body: 'El token de acceso del agente vencio.',
+    actionType: 'reauth',
+  },
+  rate_limited: {
+    heading: 'Limite de solicitudes',
+    body: 'El agente alcanzo el limite de la API. Intenta en unos minutos.',
+    actionType: 'retry',
+  },
+  agent_offline: {
+    heading: 'Agente desconectado',
+    body: 'El agente no esta respondiendo. Puede estar reiniciandose.',
+    actionType: 'retry',
+  },
+  model_unavailable: {
+    heading: 'Modelo no disponible',
+    body: 'El modelo del agente no esta disponible en este momento.',
+    actionType: 'retry',
+  },
+  gateway_timeout: {
+    heading: 'Tiempo de espera agotado',
+    body: 'El agente tardo demasiado en responder.',
+    actionType: 'retry',
+  },
+  unknown: {
+    heading: 'Error del agente',
+    body: 'Ocurrio un error inesperado.',
+    actionType: 'retry',
+  },
+}
+
+function SystemErrorBubble({
+  errorCode,
+  errorHeading,
+  errorBody,
+  onRetry,
+  onReauth,
+}: {
+  errorCode: string
+  errorHeading: string
+  errorBody: string
+  onRetry?: () => void
+  onReauth?: () => void
+}) {
+  const mapped = ERROR_CODE_MAP[errorCode] ?? ERROR_CODE_MAP.unknown
+
+  return (
+    <div
+      className={cx(
+        'bg-primary border border-secondary border-l-4 border-l-error',
+        'rounded-bl-md rounded-br-md rounded-tr-md',
+        'p-3 max-w-[70%]',
+      )}
+    >
+      <div className="flex gap-2 items-start">
+        <AlertCircle className="size-4 text-fg-error-primary shrink-0 mt-0.5" />
+        <div className="flex flex-col gap-1 flex-1 min-w-0">
+          <p className="text-sm font-semibold text-error-primary">{errorHeading}</p>
+          <p className="text-sm text-tertiary">{errorBody}</p>
+          <div className="flex gap-2 mt-2">
+            {mapped.actionType === 'reauth' && onReauth && (
+              <AriaButton
+                onPress={onReauth}
+                className="inline-flex items-center px-3 py-1.5 text-sm font-semibold rounded-md bg-error-solid text-white hover:opacity-90 transition duration-100 ease-linear"
+              >
+                Re-autenticar
+              </AriaButton>
+            )}
+            {onRetry && (
+              <AriaButton
+                onPress={onRetry}
+                className="inline-flex items-center px-3 py-1.5 text-sm font-semibold rounded-md border border-secondary bg-primary text-secondary hover:bg-secondary transition duration-100 ease-linear"
+              >
+                Reintentar
+              </AriaButton>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ── QuickReactionPicker ─────────────────────────────────────────────────────
 
@@ -794,6 +892,15 @@ export function Message(props: MessageProps) {
           />
         )}
         {props.type === 'writing' && <WritingBubble />}
+        {props.type === 'system-error' && (
+          <SystemErrorBubble
+            errorCode={props.errorCode}
+            errorHeading={props.errorHeading}
+            errorBody={props.errorBody}
+            onRetry={props.onRetry}
+            onReauth={props.onReauth}
+          />
+        )}
 
         {/* Reactions row */}
         {!isWriting && 'reactions' in props && props.reactions && props.reactions.length > 0 && (

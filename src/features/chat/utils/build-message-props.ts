@@ -50,6 +50,15 @@ export const VIDEO_THUMBNAIL_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComp
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
+const ERROR_CODE_LABELS: Record<string, { heading: string; body: string }> = {
+  oauth_expired: { heading: 'Autenticacion expirada', body: 'El token de acceso del agente vencio.' },
+  rate_limited: { heading: 'Limite de solicitudes', body: 'El agente alcanzo el limite de la API. Intenta en unos minutos.' },
+  agent_offline: { heading: 'Agente desconectado', body: 'El agente no esta respondiendo. Puede estar reiniciandose.' },
+  model_unavailable: { heading: 'Modelo no disponible', body: 'El modelo del agente no esta disponible en este momento.' },
+  gateway_timeout: { heading: 'Tiempo de espera agotado', body: 'El agente tardo demasiado en responder.' },
+  unknown: { heading: 'Error del agente', body: 'Ocurrio un error inesperado.' },
+}
+
 export function buildMessageProps(
   msg: EnrichedMessage,
   baseProps: {
@@ -62,10 +71,25 @@ export function buildMessageProps(
     actions?: MessageAction[]
     onAction?: (action: MessageAction) => void
     onReact?: (emoji: string) => void
+    onRetry?: () => void
+    onReauth?: () => void
   },
   allMessages: EnrichedMessage[]
 ): MessageProps {
   const att: MessageAttachmentRow | undefined = msg.attachments[0]
+
+  // D-08: Detect failed messages with error_code — render as SystemErrorBubble
+  const failedReceipt = msg.receipts.find(r => r.status === 'failed' && r.error_code)
+  if (failedReceipt) {
+    const entry = ERROR_CODE_LABELS[failedReceipt.error_code ?? 'unknown'] ?? ERROR_CODE_LABELS.unknown
+    return {
+      ...baseProps,
+      type: 'system-error' as const,
+      errorCode: failedReceipt.error_code ?? 'unknown',
+      errorHeading: entry.heading,
+      errorBody: failedReceipt.error_message ?? entry.body,
+    }
+  }
 
   switch (msg.messageType) {
     case 'file':

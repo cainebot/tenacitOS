@@ -220,6 +220,8 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                       }
                     },
                     onReact: (emoji: string) => chat.toggleReaction(msg.message_id, emoji),
+                    onRetry: () => { void chat.retryMessage(msg.message_id) },
+                    onReauth: () => { window.open('/api/oauth/reauth', '_blank') },
                   }
                   const msgProps = buildMessageProps(msg, baseProps, chat.messages)
                   return <Message key={msg.message_id} {...msgProps} />
