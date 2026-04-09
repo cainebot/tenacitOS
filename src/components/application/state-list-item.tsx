@@ -78,12 +78,17 @@ export function StateListItem({
     }
   }, [state.name, isEditing])
 
-  function handleBlur() {
+  async function handleBlur() {
     const trimmed = editValue.trim()
-    if (trimmed && trimmed !== state.name) {
-      onUpdateState(state.state_id, { name: trimmed })
+    if (!trimmed || trimmed === state.name) {
+      setIsEditing(false)
+      return
     }
-    setIsEditing(false)
+    const result = await onUpdateState(state.state_id, { name: trimmed })
+    if (result) {
+      setIsEditing(false)
+    }
+    // If result is null (update failed), keep edit mode open so user can retry
   }
 
   function handleKeyDown(e: AriaKeyboardEvent) {
