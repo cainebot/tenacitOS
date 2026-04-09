@@ -646,6 +646,7 @@ function ImageBubble({
   const [activeSrc, setActiveSrc] = useState(src)
   const [refreshing, setRefreshing] = useState(false)
   const refreshAttemptedRef = useRef(false)
+  const hasRefreshedRef = useRef(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   // D-01: Proactive expiry check on mount — if URL is >50min old, refresh immediately
@@ -672,22 +673,24 @@ function ImageBubble({
   }, [attachmentId, createdAt])
 
   // D-01: On-demand signed URL refresh when image fails to load (fallback)
+  // WR-01: hasRefreshedRef guards against infinite refresh — at most one retry per mount
   const handleImgError = useCallback(async () => {
     if (refreshing) return
-    if (!attachmentId) {
+    if (!attachmentId || hasRefreshedRef.current) {
       setImgError(true)
       return
     }
+    hasRefreshedRef.current = true
     setRefreshing(true)
     const freshUrl = await fetchFreshSignedUrl(attachmentId)
-    if (freshUrl) {
+    if (freshUrl && freshUrl !== activeSrc) {
       setActiveSrc(freshUrl)
       setImgError(false)
     } else {
       setImgError(true)
     }
     setRefreshing(false)
-  }, [attachmentId, refreshing])
+  }, [attachmentId, refreshing, activeSrc])
 
   // Lightbox open/close — useEffect calls showModal() after dialog mounts in DOM
   useEffect(() => {
