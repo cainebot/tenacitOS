@@ -54,6 +54,7 @@ export interface ChatInputPayload {
   images: File[]
   files?: File[]          // Non-image attachments (PDFs, docs, etc.)
   audioBlob?: Blob        // Audio recording from MediaRecorder
+  waveformData?: number[] // Normalized frequency bars [0..1], 40 samples captured at stop
   command?: string
 }
 
@@ -140,6 +141,7 @@ export function ChatInput({
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [waveformBars, setWaveformBars] = useState<number[]>(Array(32).fill(4))
 
   // Slash commands state
   const [activeCommand, setActiveCommand] = useState<ChatShortcut | null>(null)
@@ -158,6 +160,10 @@ export function ChatInput({
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
+  const waveformDataRef = useRef<number[]>([])
 
   const hasContent = text.trim().length > 0 || images.length > 0 || nonImageFiles.length > 0 || activeCommand != null
   const supportsShortcuts = type !== 'minimal' && shortcuts.length > 0
@@ -391,11 +397,33 @@ export function ChatInput({
           : 'audio/mp4',
       })
       audioChunksRef.current = []
+      waveformDataRef.current = []
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data)
       }
       recorder.start()
       mediaRecorderRef.current = recorder
+
+      // ── AnalyserNode: real-time frequency waveform ─────────────────────
+      const audioCtx = new AudioContext()
+      audioContextRef.current = audioCtx
+      const analyser = audioCtx.createAnalyser()
+      analyser.fftSize = 64  // 32 frequency bins
+      analyserRef.current = analyser
+      audioCtx.createMediaStreamSource(stream).connect(analyser)
+
+      const freqData = new Uint8Array(analyser.frequencyBinCount) // 32 bins
+
+      const tick = () => {
+        analyser.getByteFrequencyData(freqData)
+        const bars = Array.from(freqData).map((v) => Math.max(4, (v / 255) * 28 + 4))
+        setWaveformBars(bars)
+        // Snapshot for persistence: normalize to [0..1]
+        waveformDataRef.current = Array.from(freqData).map((v) => v / 255)
+        animationFrameRef.current = requestAnimationFrame(tick)
+      }
+      animationFrameRef.current = requestAnimationFrame(tick)
+
       setIsRecording(true)
     } catch {
       toast.error('Microphone access denied')
@@ -406,16 +434,31 @@ export function ChatInput({
     const recorder = mediaRecorderRef.current
     if (!recorder) return
 
+    // Cancel RAF and close AudioContext
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+    audioContextRef.current?.close().catch(() => {})
+    audioContextRef.current = null
+    analyserRef.current = null
+
+    // Capture waveform snapshot before clearing
+    const capturedWaveform = waveformDataRef.current.slice()
+    waveformDataRef.current = []
+    setWaveformBars(Array(32).fill(4))
+
     recorder.onstop = () => {
       const mimeType = recorder.mimeType || 'audio/webm'
       const blob = new Blob(audioChunksRef.current, { type: mimeType })
       audioChunksRef.current = []
 
-      // Send immediately via onSend with audioBlob
+      // Send immediately via onSend with audioBlob + waveformData snapshot
       onSend?.({
         text: '',
         images: [],
         audioBlob: blob,
+        waveformData: capturedWaveform.length > 0 ? capturedWaveform : undefined,
       })
     }
     recorder.stop()
@@ -424,9 +467,13 @@ export function ChatInput({
     mediaRecorderRef.current = null
   }, [onSend])
 
-  // Cleanup MediaRecorder on unmount
+  // Cleanup MediaRecorder + AudioContext + RAF on unmount
   useEffect(() => {
     return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+      audioContextRef.current?.close().catch(() => {})
       const recorder = mediaRecorderRef.current
       if (recorder && recorder.state !== 'inactive') {
         recorder.stop()
@@ -697,6 +744,16 @@ export function ChatInput({
           size="xs"
           color="tertiary"
           onClick={() => {
+            // Cancel RAF and close AudioContext before stopping recorder
+            if (animationFrameRef.current !== null) {
+              cancelAnimationFrame(animationFrameRef.current)
+              animationFrameRef.current = null
+            }
+            audioContextRef.current?.close().catch(() => {})
+            audioContextRef.current = null
+            analyserRef.current = null
+            waveformDataRef.current = []
+            setWaveformBars(Array(32).fill(4))
             const recorder = mediaRecorderRef.current
             if (recorder && recorder.state !== 'inactive') {
               recorder.stop()
@@ -714,13 +771,13 @@ export function ChatInput({
             <span className="relative inline-flex size-2 rounded-full bg-error-solid" />
           </span>
           <div className="flex flex-1 items-center gap-px px-2">
-            {Array.from({ length: 32 }).map((_, i) => (
+            {waveformBars.map((h, i) => (
               <div
                 key={i}
                 className="w-[3px] rounded-full bg-brand-solid"
                 style={{
-                  height: `${Math.max(4, Math.sin((i + recordingTime) * 0.5) * 12 + Math.random() * 8 + 8)}px`,
-                  transition: 'height 0.15s ease',
+                  height: `${h}px`,
+                  transition: 'height 0.1s ease',
                 }}
               />
             ))}

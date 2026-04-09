@@ -145,6 +145,9 @@ type MessageFileProps = MessageBase & {
 type MessageAudioProps = MessageBase & {
   type: 'audio'
   duration: string
+  src?: string             // T-99-05: audio file URL for real playback
+  waveformData?: number[]  // T-99-05: normalized frequency bars [0..1], 32 samples
+  /** @deprecated Pass src + waveformData instead. Kept for legacy callers. */
   isPlaying?: boolean
   onPlayPause?: () => void
   waveform?: ReactNode
@@ -413,15 +416,24 @@ function FileBubble({
   )
 }
 
-function AudioWaveformPlaceholder() {
+// T-99-05: Render waveform bars from real frequency data or static fallback
+function AudioWaveform({ data, progress = 0 }: { data?: number[]; progress?: number }) {
+  const bars = data && data.length > 0
+    ? data
+    : Array.from({ length: 32 }, (_, i) => Math.max(0.15, Math.abs(Math.sin(i * 0.4) * 0.75 + Math.cos(i * 0.7) * 0.25)))
+
   return (
-    <div className="flex items-center gap-px h-8">
-      {Array.from({ length: 40 }, (_, i) => {
-        const h = Math.max(4, Math.abs(Math.sin(i * 0.4) * 24 + Math.cos(i * 0.7) * 8))
+    <div className="flex items-center gap-px h-8" aria-hidden="true">
+      {bars.map((v, i) => {
+        const h = Math.max(3, v * 28 + 3)
+        const filled = i / bars.length < progress
         return (
           <div
             key={i}
-            className="w-[3px] rounded-full bg-brand-solid opacity-40"
+            className={cx(
+              'w-[3px] rounded-full transition-colors duration-100',
+              filled ? 'bg-brand-solid' : 'bg-brand-solid opacity-35',
+            )}
             style={{ height: `${h}px` }}
           />
         )
@@ -430,20 +442,79 @@ function AudioWaveformPlaceholder() {
   )
 }
 
+// T-99-05: Rebuilt AudioBubble with real <audio> playback + progress tracking
 function AudioBubble({
   duration,
-  isPlaying,
-  onPlayPause,
-  waveform,
+  src,
+  waveformData,
   sent,
+  // Legacy props — kept for compatibility but ignored when src is provided
+  isPlaying: _isPlaying,
+  onPlayPause: _onPlayPause,
+  waveform,
 }: {
   duration: string
+  src?: string
+  waveformData?: number[]
+  sent: boolean
   isPlaying?: boolean
   onPlayPause?: () => void
   waveform?: ReactNode
-  sent: boolean
 }) {
-  const Icon = isPlaying ? PauseCircle : PlayCircle
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [playing, setPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [audioDuration, setAudioDuration] = useState<number | null>(null)
+
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio || !src) return
+    if (playing) {
+      audio.pause()
+    } else {
+      audio.play().catch(() => {})
+    }
+  }, [playing, src])
+
+  const handleTimeUpdate = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    const dur = audio.duration || 0
+    setCurrentTime(audio.currentTime)
+    setProgress(dur > 0 ? audio.currentTime / dur : 0)
+  }, [])
+
+  const handleEnded = useCallback(() => {
+    setPlaying(false)
+    setProgress(0)
+    setCurrentTime(0)
+    if (audioRef.current) audioRef.current.currentTime = 0
+  }, [])
+
+  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current
+    if (!audio || !src) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    const dur = audio.duration || 0
+    if (dur > 0) {
+      audio.currentTime = ratio * dur
+      setProgress(ratio)
+    }
+  }, [src])
+
+  // Format seconds as m:ss
+  const fmtTime = (s: number) => {
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
+  const displayDuration = audioDuration != null ? fmtTime(audioDuration) : duration
+  const displayTime = playing || progress > 0 ? fmtTime(currentTime) : displayDuration
+
+  const Icon = playing ? PauseCircle : PlayCircle
 
   return (
     <div
@@ -452,19 +523,48 @@ function AudioBubble({
         bubbleRadius(sent),
       )}
     >
+      {src && (
+        <audio
+          ref={audioRef}
+          src={src}
+          preload="metadata"
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleEnded}
+          onLoadedMetadata={() => {
+            if (audioRef.current) setAudioDuration(audioRef.current.duration)
+          }}
+          className="hidden"
+        />
+      )}
       <div className="flex gap-2 items-center w-full">
         <button
           type="button"
-          onClick={onPlayPause}
-          className="shrink-0 text-fg-brand-primary hover:opacity-80 transition duration-100 ease-linear"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
+          onClick={src ? togglePlay : undefined}
+          className={cx(
+            'shrink-0 text-fg-brand-primary transition duration-100 ease-linear',
+            src ? 'hover:opacity-80 cursor-pointer' : 'opacity-40 cursor-default',
+          )}
+          aria-label={playing ? 'Pause audio' : 'Play audio'}
+          disabled={!src}
         >
           <Icon className="size-8" />
         </button>
-        <div className="flex-1 min-w-0 overflow-clip px-px">
-          {waveform ?? <AudioWaveformPlaceholder />}
+        <div
+          className="flex-1 min-w-0 overflow-clip px-px cursor-pointer"
+          onClick={src ? handleSeek : undefined}
+          role={src ? 'slider' : undefined}
+          aria-label={src ? 'Audio progress' : undefined}
+          aria-valuenow={src ? Math.round(progress * 100) : undefined}
+          aria-valuemin={src ? 0 : undefined}
+          aria-valuemax={src ? 100 : undefined}
+        >
+          {waveform ?? <AudioWaveform data={waveformData} progress={progress} />}
         </div>
-        <span className="text-xs text-tertiary shrink-0 whitespace-nowrap">{duration}</span>
+        <span className="text-xs text-tertiary shrink-0 whitespace-nowrap tabular-nums">
+          {displayTime}
+        </span>
       </div>
     </div>
   )
@@ -854,6 +954,8 @@ export function Message(props: MessageProps) {
         {props.type === 'audio' && (
           <AudioBubble
             duration={props.duration}
+            src={props.src}
+            waveformData={props.waveformData}
             isPlaying={props.isPlaying}
             onPlayPause={props.onPlayPause}
             waveform={props.waveform}

@@ -65,6 +65,8 @@ export interface MessageAttachmentRow {
   width_px: number | null
   height_px: number | null
   thumbnail_storage_path: string | null
+  /** T-99-05: Arbitrary attachment metadata. For audio: { waveform: number[] } */
+  metadata: Record<string, unknown> | null
   created_at: string
 }
 
