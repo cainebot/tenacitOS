@@ -176,22 +176,47 @@ export async function updateColumn(
   const client = createServiceRoleClient()
   const { state_ids, ...columnData } = data
 
-  const { data: row, error } = await client
-    .from('board_columns')
-    .update(columnData)
-    .eq('column_id', columnId)
-    .select()
-    .single()
+  // When only state_ids is provided, columnData is {} — PostgREST cannot
+  // generate UPDATE...SET with zero columns and returns 0 rows (PGRST116→404).
+  // Skip the update and just fetch the row instead.
+  const hasColumnFields = Object.keys(columnData).length > 0
+
+  const { data: row, error } = hasColumnFields
+    ? await client
+        .from('board_columns')
+        .update(columnData)
+        .eq('column_id', columnId)
+        .select()
+        .single()
+    : await client
+        .from('board_columns')
+        .select()
+        .eq('column_id', columnId)
+        .single()
 
   if (error) throw error
 
-  // Replace board_column_states atomically via RPC (Phase 84 — D-02)
+  // Replace board_column_states: delete existing + insert new
   if (state_ids !== undefined) {
-    const { error: rpcErr } = await client.rpc('set_column_states', {
-      p_column_id: columnId,
-      p_state_ids: state_ids,
-    })
-    if (rpcErr) throw rpcErr
+    const { error: delErr } = await client
+      .from('board_column_states')
+      .delete()
+      .eq('column_id', columnId)
+
+    if (delErr) throw delErr
+
+    if (state_ids.length > 0) {
+      const stateEntries = state_ids.map((state_id) => ({
+        column_id: columnId,
+        state_id,
+      }))
+
+      const { error: insErr } = await client
+        .from('board_column_states')
+        .insert(stateEntries)
+
+      if (insErr) throw insErr
+    }
   }
 
   return row as BoardColumnRow

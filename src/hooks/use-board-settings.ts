@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   BoardColumnRow,
   ProjectStateRow,
@@ -35,8 +35,11 @@ export function useBoardSettings(
     }, {})
   }, [columns])
 
+  const hasLoadedOnce = useRef(false)
+
   const fetchData = useCallback(async () => {
-    setLoading(true)
+    // Only show loading spinner on initial fetch, not on refetch after mutations
+    if (!hasLoadedOnce.current) setLoading(true)
     setError(null)
     try {
       const [columnsRes, statesRes] = await Promise.all([
@@ -65,6 +68,7 @@ export function useBoardSettings(
         err instanceof Error ? err.message : 'Failed to fetch board settings'
       )
     } finally {
+      hasLoadedOnce.current = true
       setLoading(false)
     }
   }, [boardId, projectId])
