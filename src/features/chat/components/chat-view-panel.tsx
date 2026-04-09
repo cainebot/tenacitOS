@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Avatar } from '@circos/ui'
+import { Avatar, ButtonUtility } from '@circos/ui'
+import { DotsHorizontal } from '@untitledui/icons'
 import { useAgentChat } from '@/hooks/use-agent-chat'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import { useChatSend } from '../hooks/use-chat-send'
@@ -99,11 +100,14 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <header className="flex items-center gap-2 border-b border-secondary px-4 py-3 shrink-0">
-        <Avatar size="sm" src={conversation?.agent_avatar} alt={conversationTitle} status="online"
-          initials={conversationTitle.slice(0, 2).toUpperCase()} />
-        <span className="flex-1 truncate text-lg font-semibold text-primary">{conversationTitle}</span>
+      {/* Header — Figma: bg-primary, px-xl py-md gap-md, avatar 32px + name + dots button */}
+      <header className="flex items-center gap-2 bg-primary px-4 py-2 shrink-0">
+        <div className="flex flex-1 items-center gap-2 overflow-clip p-2 rounded-sm">
+          <Avatar size="sm" src={conversation?.agent_avatar} alt={conversationTitle} status="online"
+            initials={conversationTitle.slice(0, 2).toUpperCase()} />
+          <span className="flex-1 truncate text-lg font-semibold text-primary">{conversationTitle}</span>
+        </div>
+        <ButtonUtility icon={DotsHorizontal} size="sm" color="secondary" />
       </header>
 
       {/* Messages */}

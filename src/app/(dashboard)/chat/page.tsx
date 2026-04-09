@@ -55,7 +55,7 @@ function ChatPageInner() {
       </aside>
 
       {/* Right panel — active conversation */}
-      <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-primary">
+      <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[rgba(0,0,0,0.08)] bg-secondary shadow-lg">
         <ChatViewPanel
           activeConversationId={activeConversationId}
           conversation={activeConversation}
