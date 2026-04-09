@@ -110,14 +110,12 @@ export function DeleteStateModal({
           if (!open) onClose()
         }}
       >
-        <div>
-          <ModalHeader>{`Delete state "${state?.name}"?`}</ModalHeader>
-          <ModalBody>
-            <div className="flex items-center justify-center py-8">
-              <div className="size-6 animate-spin rounded-full border-2 border-secondary border-t-brand-solid" />
-            </div>
-          </ModalBody>
-        </div>
+        <ModalHeader>{`Delete state "${state?.name}"?`}</ModalHeader>
+        <ModalBody>
+          <div className="flex items-center justify-center py-8">
+            <div className="size-6 animate-spin rounded-full border-2 border-secondary border-t-brand-solid" />
+          </div>
+        </ModalBody>
       </Modal>
     )
   }
@@ -150,54 +148,52 @@ export function DeleteStateModal({
           if (!open) onClose()
         }}
       >
-        <div>
-          <ModalHeader>{`Delete state "${state?.name}"?`}</ModalHeader>
-          <ModalBody>
-            <p className="text-sm text-secondary mb-4">
-              There are {cardCount} cards with this state.
-            </p>
-            <Select
-              label="Move cards to"
-              placeholder="Select a state"
-              selectedKey={targetStateId}
-              onSelectionChange={(key) => setTargetStateId(key as string)}
-              items={targetStates.map((s) => ({
-                id: s.state_id,
-                label: s.name,
-              }))}
-              isDisabled={isDeleting}
-              size="sm"
-            >
-              {(item) => (
-                <Select.Item id={item.id}>{item.label}</Select.Item>
-              )}
-            </Select>
-            <p className="mt-3 text-sm text-warning-primary">
-              This action cannot be undone.
-            </p>
-            {error && (
-              <p className="mt-2 text-sm text-error-primary">{error}</p>
+        <ModalHeader>{`Delete state "${state?.name}"?`}</ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-secondary mb-4">
+            There are {cardCount} cards with this state.
+          </p>
+          <Select
+            label="Move cards to"
+            placeholder="Select a state"
+            selectedKey={targetStateId}
+            onSelectionChange={(key) => setTargetStateId(key as string)}
+            items={targetStates.map((s) => ({
+              id: s.state_id,
+              label: s.name,
+            }))}
+            isDisabled={isDeleting}
+            size="sm"
+          >
+            {(item) => (
+              <Select.Item id={item.id}>{item.label}</Select.Item>
             )}
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              color="secondary"
-              onClick={onClose}
-              isDisabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              color="primary-destructive"
-              isDisabled={!targetStateId || isDeleting}
-              isLoading={isDeleting}
-              showTextWhileLoading
-              onClick={handleReassignDelete}
-            >
-              Delete and reassign {cardCount} cards
-            </Button>
-          </ModalFooter>
-        </div>
+          </Select>
+          <p className="mt-3 text-sm text-warning-primary">
+            This action cannot be undone.
+          </p>
+          {error && (
+            <p className="mt-2 text-sm text-error-primary">{error}</p>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            color="secondary"
+            onClick={onClose}
+            isDisabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="primary-destructive"
+            isDisabled={!targetStateId || isDeleting}
+            isLoading={isDeleting}
+            showTextWhileLoading
+            onClick={handleReassignDelete}
+          >
+            Delete and reassign {cardCount} cards
+          </Button>
+        </ModalFooter>
       </Modal>
     )
   }
