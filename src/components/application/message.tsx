@@ -18,6 +18,7 @@ const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏', '✅'
 // ── D-01: Module-level session cache for refreshed signed URLs ───────────────
 // Key: attachmentId, Value: { url: fresh signed URL, fetchedAt: timestamp }
 const signedUrlCache = new Map<string, { url: string; fetchedAt: number }>()
+const MAX_SIGNED_URL_CACHE = 500
 
 // D-01: Detect URLs near expiration — >50min old relative to message creation time
 function isUrlNearExpiry(createdAt: string): boolean {
@@ -27,6 +28,24 @@ function isUrlNearExpiry(createdAt: string): boolean {
 
 // D-01: Fetch fresh URL with cache — at most one network request per attachment per 50-min window
 async function fetchFreshSignedUrl(attachmentId: string): Promise<string | null> {
+  // Evict expired entries when cache exceeds size bound
+  if (signedUrlCache.size > MAX_SIGNED_URL_CACHE) {
+    const cutoff = Date.now() - 55 * 60 * 1000
+    for (const [key, entry] of signedUrlCache) {
+      if (entry.fetchedAt < cutoff) signedUrlCache.delete(key)
+    }
+    // If still over limit after expiry eviction, drop oldest entries
+    if (signedUrlCache.size > MAX_SIGNED_URL_CACHE) {
+      const excess = signedUrlCache.size - MAX_SIGNED_URL_CACHE
+      let removed = 0
+      for (const key of signedUrlCache.keys()) {
+        if (removed >= excess) break
+        signedUrlCache.delete(key)
+        removed += 1
+      }
+    }
+  }
+
   // Check cache first — reuse if fetched within last 50 minutes
   const cached = signedUrlCache.get(attachmentId)
   if (cached && (Date.now() - cached.fetchedAt) < 50 * 60 * 1000) {
