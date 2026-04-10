@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Users01, LayoutLeft, LayoutRight } from '@untitledui/icons'
-import { Avatar, Badge, StatusBadge, Tooltip, TooltipTrigger, cx, type StatusType, type BadgeVariant } from '@openclaw/ui'
+import { Avatar, Badge, StatusBadge, Tooltip, TooltipTrigger, cx, type StatusType, type BadgeVariant } from '@circos/ui'
 import { useAgentFilter } from '@/contexts/AgentFilterContext'
 import { AttentionBadge } from '@/components/atoms/AttentionBadge'
 
