@@ -43,6 +43,10 @@ interface UseAgentChatResult {
   streamingMessageId: string | null
   streamingMessages: Map<string, string>  // message_id -> displayed text
   processingState: string | null          // current processing_state value
+  /** Phase 102 D-08/D-09: Sends abort signal to stop active generation */
+  abortStream: () => Promise<void>
+  /** Phase 102 D-11: Adds optimistic image preview message before upload completes */
+  addOptimisticImageMessage: (localUrls: string[], senderName: string, senderAvatar: string | null) => void
 }
 
 // ── Raw API message shape (joined rows from API) ──────────────────────────────
@@ -312,6 +316,9 @@ export function useAgentChat({
     [conversationId, myParticipantId, participant]
   )
 
+  // ── Phase 102: Local preview URL tracking (D-11, Pitfall 2) ─────────────────
+  const localPreviewUrlsRef = useRef<Map<string, string[]>>(new Map()) // message_id -> [objectURLs]
+
   // ── Retry failed message ───────────────────────────────────────────────────
 
   const retryMessage = useCallback(
@@ -348,6 +355,86 @@ export function useAgentChat({
     },
     [conversationId, messages]
   )
+
+  // ── Abort streaming (Phase 102 — D-08, D-09) ─────────────────────────────
+
+  const abortStream = useCallback(async () => {
+    if (!streamingMessageId) return
+
+    try {
+      const res = await fetch(
+        `/api/messages/${streamingMessageId}/abort`,
+        { method: 'POST' }
+      )
+      if (!res.ok) {
+        toast.error('Could not stop generation.')
+      }
+    } catch {
+      toast.error('Could not stop generation.')
+    }
+    // D-10: Don't clean up streaming state here — wait for the daemon's final UPDATE
+    // with receipt 'processed' which triggers cleanup in the receipt handler
+  }, [streamingMessageId])
+
+  // ── Optimistic image preview (Phase 102 — D-11, D-12) ────────────────────
+
+  const addOptimisticImageMessage = useCallback((
+    localUrls: string[],
+    senderName: string,
+    senderAvatar: string | null,
+  ) => {
+    const tempId = crypto.randomUUID()
+    const localUrlsCopy = [...localUrls]
+    localPreviewUrlsRef.current.set(tempId, localUrlsCopy)
+
+    const optimisticAttachments: MessageAttachmentRow[] = localUrlsCopy.map((url, i) => ({
+      attachment_id: `local-${tempId}-${i}`,
+      message_id: tempId,
+      storage_path: '',
+      url,
+      filename: `image-${i}.jpg`,
+      size_bytes: 0,
+      mime_type: 'image/jpeg',
+      duration_seconds: null,
+      width_px: null,
+      height_px: null,
+      thumbnail_storage_path: null,
+      metadata: null,
+      created_at: new Date().toISOString(),
+    }))
+
+    const optimisticMsg: EnrichedMessage = {
+      message_id: tempId,
+      conversation_id: conversationId ?? '',
+      sender_id: myParticipantId,
+      content_type: 'image' as ContentType,
+      text: null,
+      parent_message_id: null,
+      skill_id: null,
+      skill_command: null,
+      og_title: null,
+      og_description: null,
+      og_image_url: null,
+      og_site_name: null,
+      og_url: null,
+      deleted_at: null,
+      created_at: new Date().toISOString(),
+      edited_at: null,
+      senderName,
+      senderAvatar,
+      isMine: true,
+      attachments: optimisticAttachments,
+      receipts: [],
+      reactions: [],
+      parentMessage: null,
+      statusIcon: 'sent',
+      messageType: 'image',
+      _optimistic: true,
+      _isLocalPreview: true,
+    }
+
+    setMessages(prev => [...prev, optimisticMsg])
+  }, [conversationId, myParticipantId])
 
   // ── Toggle emoji reaction (optimistic + API + revert on error) ───────────
 
@@ -443,6 +530,18 @@ export function useAgentChat({
                 m.text === raw.text &&
                 m.sender_id === raw.sender_id
             )
+
+            // Phase 102 D-11: Revoke local preview URLs for any _isLocalPreview optimistic messages
+            // that are being replaced by the server INSERT (Pitfall 2 prevention)
+            const localPreviewMessages = prev.filter(m => m._optimistic && m._isLocalPreview)
+            for (const lpm of localPreviewMessages) {
+              const urls = localPreviewUrlsRef.current.get(lpm.message_id)
+              if (urls) {
+                urls.forEach(url => URL.revokeObjectURL(url))
+                localPreviewUrlsRef.current.delete(lpm.message_id)
+              }
+            }
+
             if (optimisticIdx !== -1) {
               const next = [...prev]
               next[optimisticIdx] = enriched
@@ -686,6 +785,11 @@ export function useAgentChat({
       }
       rafIdsRef.current.clear()
       streamingBuffersRef.current.clear()
+      // Phase 102 D-11: Revoke any remaining local preview URLs on unmount (Pitfall 2)
+      for (const urls of localPreviewUrlsRef.current.values()) {
+        urls.forEach(url => URL.revokeObjectURL(url))
+      }
+      localPreviewUrlsRef.current.clear()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, myParticipantId])
@@ -764,5 +868,7 @@ export function useAgentChat({
     streamingMessageId,
     streamingMessages,
     processingState,
+    abortStream,
+    addOptimisticImageMessage,
   }
 }

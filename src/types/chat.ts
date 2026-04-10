@@ -147,6 +147,8 @@ export interface EnrichedMessage {
   // Optimistic state
   _optimistic?: boolean
   _failed?: boolean
+  /** Phase 102 D-11: True when this is an optimistic image preview using a local ObjectURL */
+  _isLocalPreview?: boolean
 }
 
 export function deriveStatusIcon(
