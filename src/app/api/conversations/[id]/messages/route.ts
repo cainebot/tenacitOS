@@ -60,9 +60,8 @@ export async function GET(
   const allAttachments = messages.flatMap((m: any) => m.attachments ?? [])
 
   if (allAttachments.length > 0) {
-    const serviceClient = createServiceRoleClient()
     const paths = allAttachments.map((a: any) => a.storage_path)
-    const { data: signedUrls } = await serviceClient.storage
+    const { data: signedUrls } = await supabase.storage
       .from('chat-attachments')
       .createSignedUrls(paths, 3600)
 
@@ -140,8 +139,6 @@ export async function POST(
       return NextResponse.json({ error: 'text or files required' }, { status: 400 })
     }
 
-    const serviceClient = createServiceRoleClient()
-
     // Pre-generate message_id for Storage path construction
     const messageId = crypto.randomUUID()
 
@@ -165,7 +162,7 @@ export async function POST(
       const file = files[fileIdx]
       const storagePath = `${conversationId}/${messageId}/${file.name}`
 
-      const { error: uploadError } = await serviceClient.storage
+      const { error: uploadError } = await supabase.storage
         .from('chat-attachments')
         .upload(storagePath, file, {
           contentType: file.type,
@@ -175,7 +172,7 @@ export async function POST(
       if (uploadError) {
         // Cleanup already-uploaded files on failure
         for (const prev of attachmentRows) {
-          await serviceClient.storage
+          await supabase.storage
             .from('chat-attachments')
             .remove([prev.storage_path])
             .catch(() => {}) // log but don't throw on cleanup
@@ -184,7 +181,7 @@ export async function POST(
       }
 
       // Generate signed URL (1-hour expiry)
-      const { data: signedData } = await serviceClient.storage
+      const { data: signedData } = await supabase.storage
         .from('chat-attachments')
         .createSignedUrl(storagePath, 3600)
 
@@ -204,7 +201,7 @@ export async function POST(
     }
 
     // INSERT message row with explicit message_id
-    const { data: msgData, error: msgError } = await serviceClient
+    const { data: msgData, error: msgError } = await supabase
       .from('messages')
       .insert({
         message_id: messageId,
@@ -220,7 +217,7 @@ export async function POST(
     if (msgError) {
       // Cleanup Storage objects if DB insert fails
       for (const att of attachmentRows) {
-        await serviceClient.storage
+        await supabase.storage
           .from('chat-attachments')
           .remove([att.storage_path])
           .catch(() => {})
@@ -230,7 +227,7 @@ export async function POST(
 
     // INSERT attachment rows
     if (attachmentRows.length > 0) {
-      const { error: attError } = await serviceClient
+      const { error: attError } = await supabase
         .from('message_attachments')
         .insert(attachmentRows)
 
@@ -253,10 +250,7 @@ export async function POST(
 
     const content_type = body.content_type || 'text'
 
-    // Use service role to INSERT (messages INSERT policy is service_role only per RLS)
-    const serviceClient = createServiceRoleClient()
-
-    const { data, error } = await serviceClient
+    const { data, error } = await supabase
       .from('messages')
       .insert({
         conversation_id: conversationId,
