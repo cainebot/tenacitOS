@@ -89,11 +89,14 @@ export function AgentListPanel() {
     ['working', 'thinking', 'executing_tool', 'paused', 'idle', 'queued'].includes(a.status)
   ).length
 
-  // Sort: Scrum Master (from board FK) sorts first, then alphabetical
+  // Sort: Project Lead (from board FK) sorts first, then alphabetical
   const sortedAgents = [...agents].sort((a, b) => {
-    const aIsSM = a.agent_id === projectLeadAgentId ? -1 : 0
-    const bIsSM = b.agent_id === projectLeadAgentId ? -1 : 0
-    if (aIsSM !== bIsSM) return aIsSM - bIsSM
+    if (projectLeadAgentId) {
+      const aIsLead = a.agent_id === projectLeadAgentId
+      const bIsLead = b.agent_id === projectLeadAgentId
+      if (aIsLead && !bIsLead) return -1
+      if (!aIsLead && bIsLead) return 1
+    }
     return a.name.localeCompare(b.name)
   })
 
