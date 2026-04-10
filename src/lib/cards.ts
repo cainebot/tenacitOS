@@ -261,7 +261,10 @@ export async function getCardBreadcrumb(
       .eq('card_id', currentId)
       .single()
 
-    if (ancestorErr) break
+    if (ancestorErr) {
+      console.warn('[getCardBreadcrumb] Failed to fetch ancestor', currentId, ancestorErr.message)
+      break
+    }
 
     const ancestorRow = ancestor as CardRow & { parent_card_id: string | null }
     breadcrumb.unshift({
