@@ -19,6 +19,21 @@ import { DmCreationPanel } from './dm-creation-panel'
 import { ChannelCreationPanel } from './channel-creation-panel'
 import { AnnouncementNotice } from './announcement-notice'
 
+// ── Processing state strings (D-07) ──────────────────────────────────────────
+const PROCESSING_STATE_STRINGS: Record<string, { en: string; es: string }> = {
+  analyzing_image:    { en: 'Analyzing your image...',    es: 'Analizando tu imagen...' },
+  transcribing_audio: { en: 'Transcribing your audio...', es: 'Transcribiendo tu audio...' },
+  processing_pdf:     { en: 'Reading your document...',   es: 'Leyendo tu documento...' },
+  thinking:           { en: 'Thinking...',                 es: 'Pensando...' },
+}
+const PROCESSING_FALLBACK = { en: 'Processing...', es: 'Procesando...' }
+
+function getProcessingText(state: string, lang: 'en' | 'es' = 'en'): string {
+  const entry = PROCESSING_STATE_STRINGS[state]
+  if (!entry) return PROCESSING_FALLBACK[lang]
+  return entry[lang]
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type ChatView = 'conversations' | 'new-dm' | 'new-channel'
@@ -56,6 +71,8 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
   }, [conversationId, myParticipantId])
 
   const chat = useAgentChat({ conversationId, recipientIds })
+  // Destructure streaming fields for clarity (Phase 102)
+  const { isStreaming, streamingMessages, processingState, streamingMessageId } = chat
 
   // Agent typing indicator
   const { agents } = useRealtimeAgents()
@@ -63,6 +80,15 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
     ? agents.find((a) => a.name === conversation.agent_name)
     : undefined
   const isAgentTyping = agent?.status === 'thinking'
+
+  // Detect language for processing state strings (D-07)
+  const userLang: 'en' | 'es' = (() => {
+    const lastUserMsg = [...chat.messages].reverse().find(m => m.isMine && m.text)
+    if (!lastUserMsg?.text) return 'en'
+    // Simple heuristic: Spanish if common Spanish words present
+    const esPattern = /\b(hola|por favor|gracias|como|imagen|enviar|archivo|documento)\b/i
+    return esPattern.test(lastUserMsg.text) ? 'es' : 'en'
+  })()
 
   const { handleSend, replyToMessage, setReplyTo, clearReply } = useChatSend({
     conversationId,
@@ -132,6 +158,17 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.hasMore, chat.loadMore])
+
+  // Phase 102: Auto-scroll during streaming — keep scroll at bottom as tokens arrive
+  useEffect(() => {
+    if (streamingMessages.size === 0) return
+    const el = scrollRef.current
+    if (!el) return
+    const gap = el.scrollHeight - el.scrollTop - el.clientHeight
+    if (gap < 200) {
+      el.scrollTop = el.scrollHeight
+    }
+  }, [streamingMessages])
 
   const uiType = conversation ? conversationUiType(conversation.conversation_type) : null
   const isAnnouncement = uiType === 'announcement'
@@ -221,9 +258,16 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                     },
                     onReact: (emoji: string) => chat.toggleReaction(msg.message_id, emoji),
                     onRetry: () => { void chat.retryMessage(msg.message_id) },
-                    onReauth: () => { window.open('/api/oauth/reauth', '_blank') },
+                    onReauth: () => { window.open('/api/auth/openai', '_blank') },
                   }
                   const msgProps = buildMessageProps(msg, baseProps, chat.messages)
+
+                  // Phase 102: Override content with streaming buffer text if currently streaming (D-03)
+                  const streamingText = streamingMessages.get(msg.message_id)
+                  if (streamingText !== undefined && 'content' in msgProps) {
+                    (msgProps as { content: string }).content = streamingText
+                  }
+
                   return <Message key={msg.message_id} {...msgProps} />
                 })}
               </ChatPanelSection>
@@ -232,8 +276,22 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
           </>
         )}
 
-        {/* Typing indicator — OUTSIDE conditional, always renders when agent is typing */}
-        {isAgentTyping && (
+        {/* Processing state — renders as a real agent Message bubble per D-05 */}
+        {/* Styling: text-sm italic text-tertiary via [&_p]: Tailwind override */}
+        {processingState && !isStreaming && (
+          <Message
+            type="message"
+            senderName={conversation?.agent_name ?? 'Agent'}
+            senderAvatar={conversation?.agent_avatar}
+            timestamp=""
+            content={getProcessingText(processingState, userLang)}
+            sent={false}
+            className="[&_p]:text-sm [&_p]:italic [&_p]:text-tertiary"
+          />
+        )}
+
+        {/* Typing indicator — hidden when streaming or processing state is active (D-03) */}
+        {isAgentTyping && !isStreaming && !processingState && (
           <Message
             type="writing"
             senderName={conversation?.agent_name ?? 'Agent'}
