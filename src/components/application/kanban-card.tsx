@@ -1,6 +1,6 @@
 "use client"
 
-import { type FC, useRef, useState, useEffect, memo } from "react"
+import { type FC, useRef, useState, useEffect, useLayoutEffect, memo } from "react"
 import { ChevronUpDouble, ChevronUp, ChevronDown, Minus, AlertCircle, Plus, MessageNotificationSquare, GitBranch01, Calendar, XClose, SearchLg, Tag01 } from "@untitledui/icons"
 import type { BadgeColor } from "@circos/ui"
 import { TaskTypeIndicator, type TaskType } from "./task-type-indicator"
@@ -47,6 +47,8 @@ export type KanbanCardSize = "sm" | "md"
 export interface KanbanCardProps {
   title: string
   onTitleChange?: (title: string) => void
+  /** Fires on every keystroke for real-time sync (store only, no API) */
+  onTitleInput?: (title: string) => void
   size?: KanbanCardSize
   taskType?: TaskType
   tags?: KanbanCardTag[]
@@ -80,6 +82,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", { day: "numeric", month: 
 function KanbanCardInner({
   title,
   onTitleChange,
+  onTitleInput,
   size = "sm",
   taskType,
   tags,
@@ -103,6 +106,16 @@ function KanbanCardInner({
   className,
 }: KanbanCardProps) {
   const titleRef = useRef<HTMLParagraphElement>(null)
+  const isTitleFocusedRef = useRef(false)
+
+  // Sync title prop → DOM via ref (avoids contentEditable + React reconciliation conflicts)
+  useLayoutEffect(() => {
+    if (titleRef.current && !isTitleFocusedRef.current) {
+      if (titleRef.current.textContent !== title) {
+        titleRef.current.textContent = title
+      }
+    }
+  }, [title])
 
   useEffect(() => {
     if (autoFocusTitle && titleRef.current) {
@@ -167,7 +180,12 @@ function KanbanCardInner({
           ref={titleRef}
           contentEditable
           suppressContentEditableWarning
-          onBlur={(e) => onTitleChange?.(e.currentTarget.textContent ?? "")}
+          onFocus={() => { isTitleFocusedRef.current = true }}
+          onBlur={(e) => {
+            isTitleFocusedRef.current = false
+            onTitleChange?.(e.currentTarget.textContent ?? "")
+          }}
+          onInput={(e) => onTitleInput?.((e.target as HTMLElement).textContent ?? "")}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault()
@@ -181,9 +199,7 @@ function KanbanCardInner({
             }
           }}
           className="min-h-px min-w-0 flex-1 rounded-sm bg-transparent px-1 -ml-1 text-md font-semibold leading-6 text-primary outline-none transition-colors hover:bg-secondary_hover focus:bg-transparent focus:ring-1 focus:ring-brand-500"
-        >
-          {title}
-        </p>
+        />
         {commentsCount != null && (
           <BadgeWithIcon
             type="color"

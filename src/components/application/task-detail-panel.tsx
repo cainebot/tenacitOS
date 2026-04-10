@@ -1,6 +1,6 @@
 "use client"
 
-import { type FC, type ReactNode, useCallback, useEffect, useRef, useState } from "react"
+import { type FC, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import {
   ChevronRight,
   ChevronUpDouble,
@@ -193,6 +193,8 @@ export interface TaskDetailPanelProps {
   // Section B
   title: string
   onTitleChange?: (title: string) => void
+  /** Fires on every keystroke for real-time sync (store only, no API) */
+  onTitleInput?: (title: string) => void
   taskType?: TaskType
   status?: TaskStatus
   onStatusChange?: (status: TaskStatus) => void
@@ -302,6 +304,7 @@ export function TaskDetailPanel({
   onClose,
   title,
   onTitleChange,
+  onTitleInput,
   taskType,
   status = "in_progress",
   onStatusChange,
@@ -387,6 +390,7 @@ export function TaskDetailPanel({
             onCopyLink={onCopyLink}
             title={title}
             onTitleChange={onTitleChange}
+            onTitleInput={onTitleInput}
             status={status}
             onStatusChange={onStatusChange}
             boardColumns={boardColumns}
@@ -512,6 +516,7 @@ function SectionTaskHeader({
   onCopyLink,
   title,
   onTitleChange,
+  onTitleInput,
   status = "in_progress",
   onStatusChange,
   boardColumns,
@@ -522,12 +527,24 @@ function SectionTaskHeader({
   onCopyLink?: () => void
   title: string
   onTitleChange?: (title: string) => void
+  onTitleInput?: (title: string) => void
   status?: TaskStatus
   onStatusChange?: (status: TaskStatus) => void
   boardColumns?: BoardColumnOption[]
   stateId?: string
   onStateIdChange?: (stateId: string) => void
 }) {
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  const isTitleFocusedRef = useRef(false)
+
+  // Sync title prop → DOM via ref (avoids contentEditable + React reconciliation conflicts)
+  useLayoutEffect(() => {
+    if (titleRef.current && !isTitleFocusedRef.current) {
+      if (titleRef.current.textContent !== title) {
+        titleRef.current.textContent = title
+      }
+    }
+  }, [title])
   return (
     <div className="flex flex-col gap-3 pb-4">
       {/* Breadcrumb */}
@@ -588,16 +605,20 @@ function SectionTaskHeader({
 
       {/* Title */}
       <h2
+        ref={titleRef}
         contentEditable
         suppressContentEditableWarning
-        onBlur={(e) => onTitleChange?.(e.currentTarget.textContent ?? "")}
+        onFocus={() => { isTitleFocusedRef.current = true }}
+        onBlur={(e) => {
+          isTitleFocusedRef.current = false
+          onTitleChange?.(e.currentTarget.textContent ?? "")
+        }}
+        onInput={(e) => onTitleInput?.((e.target as HTMLElement).textContent ?? "")}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); (e.target as HTMLElement).blur() }
         }}
         className="text-display-xs font-semibold text-primary outline-none transition-colors hover:bg-secondary_hover focus:bg-transparent focus:ring-1 focus:ring-brand-500 rounded-sm px-1 -ml-1"
-      >
-        {title}
-      </h2>
+      />
 
       {/* Status select + Add subtask button */}
       <div className="flex items-center gap-2">

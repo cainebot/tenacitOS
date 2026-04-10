@@ -685,7 +685,13 @@ export default function ProjectBoardPage() {
     })
   }, [detailCard, projectStates, todoStateId, doneStateId, storeColumns, syncEngine, boardId])
 
-  // Title change
+  // Title input — fires on every keystroke for real-time visual sync (store only, no API)
+  const handlePanelTitleInput = useCallback((title: string) => {
+    if (!selectedCardId) return
+    useBoardStore.getState().patchCardInStore(selectedCardId, { title })
+  }, [selectedCardId])
+
+  // Title change — fires on blur, commits to API
   const handlePanelTitleChange = useCallback((title: string) => {
     if (!selectedCardId) return
     useBoardStore.getState().patchCardInStore(selectedCardId, { title })
@@ -914,6 +920,7 @@ export default function ProjectBoardPage() {
       >
         <KanbanCard
           title={card.props.title ?? ""}
+          onTitleInput={(title) => useBoardStore.getState().patchCardInStore(card.cardId, { title })}
           onTitleChange={(title) => patchCard(card.cardId, { title })}
           size="md"
           taskType={card.props.taskType}
@@ -1047,6 +1054,7 @@ export default function ProjectBoardPage() {
             onClose={handleClosePanel}
             title={panelDataProps?.title ?? ''}
             onTitleChange={handlePanelTitleChange}
+            onTitleInput={handlePanelTitleInput}
             taskType={panelDataProps?.taskType}
             status={panelDataProps?.status}
             boardColumns={panelBoardColumns}
