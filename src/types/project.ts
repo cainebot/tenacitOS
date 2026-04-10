@@ -32,6 +32,9 @@ export type ActivityAction =
   | 'attachment_add'
   | 'attachment_remove'
   | 'gdpr_anonymize'
+  | 'task_swept'
+  | 'agent_blocked'
+  | 'task_cancelled'
 
 // ---- Row interfaces (matching DB columns exactly) ----
 
