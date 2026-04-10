@@ -4,9 +4,11 @@
 // Renamed from workflow.ts in Phase 62 (API & Types Alignment).
 // ============================================================
 
+import type { CardAgentStatus } from './supabase'
+
 // ---- Enum / Union type aliases ----
 
-export type StateCategory = 'to-do' | 'in_progress' | 'done'
+export type StateCategory = 'to-do' | 'in_progress' | 'done' | 'blocked'
 
 export type CardType = 'epic' | 'story' | 'task' | 'subtask' | 'bug' | 'spike' | 'research'
 
@@ -111,6 +113,7 @@ export interface CardRow {
   code: string | null // JIRA-style code e.g. "SP-42" (null until migration 07 applied)
   created_at: string
   updated_at: string
+  agent_status: CardAgentStatus | null  // Phase 87: agent execution state
 }
 
 export interface CardAttachmentRow {

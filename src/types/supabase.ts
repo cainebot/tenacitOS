@@ -10,7 +10,9 @@ export type NodeStatus = 'online' | 'offline' | 'degraded';
 // 7 states — executing_tool added in Phase 26 for tool-call visibility
 export type AgentStatus = 'idle' | 'working' | 'error' | 'offline' | 'thinking' | 'queued' | 'executing_tool';
 
-export type TaskStatus = 'pending' | 'claimed' | 'in_progress' | 'completed' | 'failed';
+export type TaskStatus = 'pending' | 'claimed' | 'in_progress' | 'completed' | 'failed' | 'blocked' | 'cancelled';
+export type CardAgentStatus = 'idle' | 'working' | 'blocked' | 'failed' | 'completed';
+export type BlockCategory = 'external' | 'internal' | 'technical' | 'human_approval';
 
 export type TaskType = 'general' | 'code-review' | 'deploy' | 'research' | 'build' | 'test' | 'card-bridge';
 
@@ -94,6 +96,9 @@ export interface TaskRow {
   labels: string[];
   due_date: string | null;  // ISO timestamp
   comments: Array<{ author: string; text: string; created_at: string }>;
+  block_reason: string | null;      // Phase 87: reason for blocked status
+  block_category: BlockCategory | null; // Phase 87: classification (per D-04)
+  cancelled_at: string | null;      // Phase 87: ISO timestamp when cancelled
 }
 
 // Phase 25: Chat message channels
