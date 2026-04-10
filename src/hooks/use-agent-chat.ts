@@ -615,12 +615,14 @@ export function useAgentChat({
           }
 
           // ── Link-preview or content_type transition (existing behavior) ──────
-          // Only update the full message if it's NOT currently streaming
-          if (!hasPartialText || updated.processing_state === undefined) {
+          // Only update the full message when NOT actively streaming text.
+          // During streaming, hasPartialText is true and the RAF buffer handles display;
+          // re-enriching here would overwrite the buffer with the partial DB row text.
+          if (!hasPartialText) {
             setMessages((prev) =>
               prev.map((m) => {
                 if (m.message_id !== updated.message_id) return m
-                // Only re-enrich if content_type actually changed (avoid noisy re-renders)
+                // Only re-enrich if content_type actually changed or OG data arrived (avoid noisy re-renders)
                 if (m.content_type === updated.content_type && !updated.og_title) return m
                 return enrichMessage(updated, myParticipantId, recipientIdsRef.current)
               })
