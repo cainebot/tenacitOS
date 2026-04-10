@@ -32,9 +32,9 @@ interface AgentFilterContextValue {
   boardId: string | null
   setBoardId: (id: string | null) => void
 
-  // Scrum Master agent ID for the current board (from boards.scrum_master_agent_id)
-  scrumMasterAgentId: string | null
-  setScrumMasterAgentId: (id: string | null) => void
+  // Project Lead agent ID for the current board (from boards.project_lead_agent_id)
+  projectLeadAgentId: string | null
+  setProjectLeadAgentId: (id: string | null) => void
 }
 
 const defaultValue: AgentFilterContextValue = {
@@ -46,8 +46,8 @@ const defaultValue: AgentFilterContextValue = {
   setAgentPanelOpen: () => {},
   boardId: null,
   setBoardId: () => {},
-  scrumMasterAgentId: null,
-  setScrumMasterAgentId: () => {},
+  projectLeadAgentId: null,
+  setProjectLeadAgentId: () => {},
 }
 
 export const AgentFilterContext = createContext<AgentFilterContextValue>(defaultValue)
@@ -57,7 +57,7 @@ export function AgentFilterProvider({ children }: { children: React.ReactNode })
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [agentPanelOpen, setAgentPanelOpen] = useState(false)
   const [boardId, setBoardId] = useState<string | null>(null)
-  const [scrumMasterAgentId, setScrumMasterAgentId] = useState<string | null>(null)
+  const [projectLeadAgentId, setProjectLeadAgentId] = useState<string | null>(null)
 
   return (
     <AgentFilterContext.Provider
@@ -70,8 +70,8 @@ export function AgentFilterProvider({ children }: { children: React.ReactNode })
         setAgentPanelOpen,
         boardId,
         setBoardId,
-        scrumMasterAgentId,
-        setScrumMasterAgentId,
+        projectLeadAgentId,
+        setProjectLeadAgentId,
       }}
     >
       {children}

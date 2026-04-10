@@ -72,7 +72,7 @@ export interface BoardRow {
   state_filter: string[] | null
   created_at: string
   updated_at: string
-  scrum_master_agent_id: string | null  // FK to agents — board's lead agent
+  project_lead_agent_id: string | null  // FK to agents — board's Project Lead
 }
 
 export interface BoardColumnRow {

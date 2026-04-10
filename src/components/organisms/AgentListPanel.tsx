@@ -64,7 +64,7 @@ function badgeVariant(badge?: string): BadgeVariant {
 }
 
 export function AgentListPanel() {
-  const { agents, selectedAgentId, setSelectedAgentId, setAgentPanelOpen, scrumMasterAgentId } = useAgentFilter()
+  const { agents, selectedAgentId, setSelectedAgentId, setAgentPanelOpen, projectLeadAgentId } = useAgentFilter()
   const [collapsed, setCollapsed] = useState(false)
 
   // Attention counts per agent
@@ -91,8 +91,8 @@ export function AgentListPanel() {
 
   // Sort: Scrum Master (from board FK) sorts first, then alphabetical
   const sortedAgents = [...agents].sort((a, b) => {
-    const aIsSM = a.agent_id === scrumMasterAgentId ? -1 : 0
-    const bIsSM = b.agent_id === scrumMasterAgentId ? -1 : 0
+    const aIsSM = a.agent_id === projectLeadAgentId ? -1 : 0
+    const bIsSM = b.agent_id === projectLeadAgentId ? -1 : 0
     if (aIsSM !== bIsSM) return aIsSM - bIsSM
     return a.name.localeCompare(b.name)
   })
@@ -208,13 +208,13 @@ export function AgentListPanel() {
                       {agent.name}
                     </span>
                     {/* Badge pill -- LEAD for scrum master, or agent's own badge */}
-                    {(agent.agent_id === scrumMasterAgentId || (agent.badge && agent.badge !== 'LEAD')) && (
+                    {(agent.agent_id === projectLeadAgentId || (agent.badge && agent.badge !== 'LEAD')) && (
                       <Badge
-                        variant={agent.agent_id === scrumMasterAgentId ? 'error' : badgeVariant(agent.badge)}
+                        variant={agent.agent_id === projectLeadAgentId ? 'error' : badgeVariant(agent.badge)}
                         size="sm"
                         className="text-[9px] font-bold uppercase tracking-wide"
                       >
-                        {agent.agent_id === scrumMasterAgentId ? 'LEAD' : agent.badge}
+                        {agent.agent_id === projectLeadAgentId ? 'LEAD' : agent.badge}
                       </Badge>
                     )}
                   </div>
