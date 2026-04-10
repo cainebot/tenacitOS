@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
-import type { CardActivityRow } from '@/types/project'
+import type { ActivityLogRow } from '@/types/project'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -10,7 +10,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   const supabase = createServerClient()
 
   const { data, error } = await supabase
-    .from('card_activity')
+    .from('activity_log')
     .select('*')
     .eq('card_id', id)
     .order('created_at', { ascending: true })
@@ -19,5 +19,5 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ message: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(data as CardActivityRow[])
+  return NextResponse.json(data as ActivityLogRow[])
 }

@@ -27,10 +27,10 @@ import { useCardDetail } from "@/hooks/useCardDetail"
 import { useStoreSyncRealtime } from "@/hooks/use-store-sync-realtime"
 import { useBoardSyncEngine } from "@/hooks/use-board-sync-engine"
 import { useBoardStore, type BoardColumn } from "@/stores/board-store"
-import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, cardActivityToActivityEvents } from "@/lib/adapters"
+import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, activityLogToActivityEvents } from "@/lib/adapters"
 import { sortKeyBetween } from "@/lib/fractional-index"
 import { parseDate } from "@internationalized/date"
-import type { CardRow, CardActivityRow, BoardRow, ProjectStateRow } from "@/types/project"
+import type { CardRow, ActivityLogRow, BoardRow, ProjectStateRow } from "@/types/project"
 import type { AgentRow } from "@/types/supabase"
 
 // ---------------------------------------------------------------------------
@@ -580,7 +580,7 @@ export default function ProjectBoardPage() {
   }, [detailCard?.card_id, detailCard?.attachments.length])
 
   // Activity events for the card
-  const [cardActivities, setCardActivities] = useState<CardActivityRow[]>([])
+  const [cardActivities, setCardActivities] = useState<ActivityLogRow[]>([])
   const detailCardId = detailCard?.card_id ?? null
   useEffect(() => {
     if (!detailCardId) {
@@ -589,7 +589,7 @@ export default function ProjectBoardPage() {
     }
     fetch(`/api/cards/${detailCardId}/activity`)
       .then(r => r.ok ? r.json() : [])
-      .then((rows: CardActivityRow[]) => setCardActivities(rows))
+      .then((rows: ActivityLogRow[]) => setCardActivities(rows))
       .catch((err) => { console.error('[card-activity] Failed:', err) })
   }, [detailCardId])
 
@@ -597,12 +597,12 @@ export default function ProjectBoardPage() {
     if (!detailCardId) return
     fetch(`/api/cards/${detailCardId}/activity`)
       .then(r => r.ok ? r.json() : [])
-      .then((rows: CardActivityRow[]) => setCardActivities(rows))
+      .then((rows: ActivityLogRow[]) => setCardActivities(rows))
       .catch((err) => { console.error('[card-activity] Failed:', err) })
   }, [detailCardId])
 
   const activityEvents = useMemo(
-    () => cardActivityToActivityEvents(cardActivities, agents, projectStates),
+    () => activityLogToActivityEvents(cardActivities, agents, projectStates),
     [cardActivities, agents, projectStates],
   )
 

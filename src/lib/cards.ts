@@ -429,7 +429,7 @@ export async function moveCardWithSyncEvent(
  * - Clears PII custom field values (text, email, url types)
  * - Adds 'gdpr-optout' label
  * - Moves card to a done-category state (lost equivalent)
- * - Logs a gdpr_anonymize action to card_activity
+ * - Logs a gdpr_anonymize action to activity_log
  */
 export async function gdprAnonymizeCard(cardId: string): Promise<CardRow> {
   const client = createServiceRoleClient()
@@ -556,15 +556,18 @@ export async function gdprAnonymizeCard(cardId: string): Promise<CardRow> {
 
   if (updateErr) throw updateErr
 
-  // Step 9: Log GDPR anonymization to card_activity
+  // Step 9: Log GDPR anonymization to activity_log
   const { error: activityErr } = await client
-    .from('card_activity')
+    .from('activity_log')
     .insert({
       card_id: cardId,
-      actor: 'system',
+      actor_type: 'system',
+      actor_id: 'system',
       action: 'gdpr_anonymize',
-      old_value: { title: card.title },
-      new_value: { title: '[GDPR Removed]' },
+      details: {
+        old_value: { title: card.title },
+        new_value: { title: '[GDPR Removed]' },
+      },
     })
   if (activityErr) throw activityErr
 

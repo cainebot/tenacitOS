@@ -5,7 +5,7 @@
 // no side effects. Created in Phase 62 Plan 03 (D-14, D-14a).
 // ============================================================
 
-import type { CardRow, CardDetail, CardActivityRow, ProjectStateRow } from '@/types/project'
+import type { CardRow, CardDetail, ActivityLogRow, ProjectStateRow } from '@/types/project'
 import type { AgentRow } from '@/types/supabase'
 import type { KanbanCardProps, KanbanCardTag, KanbanCardUser, Priority as KanbanPriority } from '@/components/application/kanban-card'
 import type {
@@ -213,7 +213,7 @@ export function cardDetailToTaskDetailPanelProps(
 }
 
 // ---------------------------------------------------------------------------
-// cardActivityToActivityEvents (card_activity rows → ActivityEvent[])
+// activityLogToActivityEvents (activity_log rows → ActivityEvent[])
 // ---------------------------------------------------------------------------
 
 const activityActionMap: Record<string, ActivityEventType> = {
@@ -228,24 +228,27 @@ const activityActionMap: Record<string, ActivityEventType> = {
   attachment_remove: 'attachment_remove',
 }
 
-export function cardActivityToActivityEvents(
-  rows: CardActivityRow[],
+export function activityLogToActivityEvents(
+  rows: ActivityLogRow[],
   agents: AgentRow[],
   projectStates: ProjectStateRow[],
 ): ActivityEvent[] {
   return rows.map((row) => {
-    const agent = agents.find(a => a.name === row.actor || a.agent_id === row.actor)
-    const isHuman = row.actor === 'user' || row.actor === 'human'
+    const agent = row.actor_type === 'agent'
+      ? agents.find(a => a.agent_id === row.actor_id)
+      : null
+    const isHuman = row.actor_type === 'human'
     const actor: TaskUser = agent
       ? { id: agent.agent_id, name: agent.name, avatarUrl: undefined, role: agent.role }
-      : { id: row.actor, name: isHuman ? 'You' : row.actor }
+      : { id: row.actor_id ?? row.actor_type, name: isHuman ? 'You' : (row.actor_id ?? row.actor_type) }
 
     const type = activityActionMap[row.action] ?? 'field_update'
-    const oldVal = row.old_value as Record<string, string> | null
-    const newVal = row.new_value as Record<string, string> | null
+    const details = row.details as Record<string, unknown>
+    const oldVal = (details?.old_value ?? null) as Record<string, string> | null
+    const newVal = (details?.new_value ?? null) as Record<string, string> | null
 
     const base: ActivityEvent = {
-      id: row.activity_id,
+      id: row.id,
       actor,
       type,
       createdAt: row.created_at,
@@ -253,12 +256,16 @@ export function cardActivityToActivityEvents(
 
     switch (row.action) {
       case 'state_change': {
-        const oldState = projectStates.find(s => s.state_id === oldVal?.state_id)
-        const newState = projectStates.find(s => s.state_id === newVal?.state_id)
+        // New rows store old_state_id/new_state_id at top level of details.
+        // Migrated rows store them nested inside old_value.state_id / new_value.state_id.
+        const oldStateId = (details?.old_state_id ?? oldVal?.state_id) as string | undefined
+        const newStateId = (details?.new_state_id ?? newVal?.state_id) as string | undefined
+        const oldState = oldStateId ? projectStates.find(s => s.state_id === oldStateId) : null
+        const newState = newStateId ? projectStates.find(s => s.state_id === newStateId) : null
         return {
           ...base,
-          oldValue: oldState?.name ?? oldVal?.state_id ?? 'Unknown',
-          newValue: newState?.name ?? newVal?.state_id ?? 'Unknown',
+          oldValue: oldState?.name ?? oldStateId ?? 'Unknown',
+          newValue: newState?.name ?? newStateId ?? 'Unknown',
         }
       }
       case 'assignment':
