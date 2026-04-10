@@ -38,6 +38,11 @@ interface UseAgentChatResult {
   markMessagesRead: (messageIds: string[]) => Promise<void>
   /** True after user sends a message, until agent responds or send fails */
   waitingForReply: boolean
+  // Phase 102: streaming support
+  isStreaming: boolean
+  streamingMessageId: string | null
+  streamingMessages: Map<string, string>  // message_id -> displayed text
+  processingState: string | null          // current processing_state value
 }
 
 // ── Raw API message shape (joined rows from API) ──────────────────────────────
@@ -63,6 +68,8 @@ interface RawApiMessage {
   attachments?: MessageAttachmentRow[]
   receipts?: MessageReceiptRow[]
   reactions?: MessageReactionRow[]
+  processing_state?: string | null  // Phase 102: daemon processing state
+  abort_requested?: boolean         // Phase 102: abort signal
 }
 
 // ── enrichMessage helper ──────────────────────────────────────────────────────
@@ -123,6 +130,16 @@ export function useAgentChat({
   const cursorRef = useRef<string | null>(null)
   const isLoadingMoreRef = useRef(false)
 
+  // ── Streaming state (Phase 102) ─────────────────────────────────────────────
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
+  const [streamingMessages, setStreamingMessages] = useState<Map<string, string>>(new Map())
+  const [processingState, setProcessingState] = useState<string | null>(null)
+
+  // ── Streaming refs (Phase 102 — RAF buffer, no re-renders per token) ─────────
+  const streamingBuffersRef = useRef<Map<string, string>>(new Map())
+  const rafIdsRef = useRef<Map<string, number>>(new Map())
+
   // Sender info cache — Realtime INSERT/UPDATE only has raw columns, no joins.
   // Populated from API responses to resolve senderName for Realtime payloads.
   const senderCacheRef = useRef<Map<string, { display_name: string; avatar_url: string | null }>>(new Map())
@@ -158,6 +175,12 @@ export function useAgentChat({
 
   useEffect(() => {
     if (!conversationId || !myParticipantId) return
+
+    // Phase 102: Reset streaming state on conversation switch (Pitfall 4)
+    setIsStreaming(false)
+    setStreamingMessageId(null)
+    setStreamingMessages(new Map())
+    setProcessingState(null)
 
     let cancelled = false
     setLoading(true)
@@ -439,7 +462,7 @@ export function useAgentChat({
           }
         }
       )
-      // messages UPDATE — handle link-preview transition (D-06 Pitfall 4)
+      // messages UPDATE — streaming + link-preview (Phase 102 extends D-06 Pitfall 4)
       .on(
         'postgres_changes',
         {
@@ -454,14 +477,56 @@ export function useAgentChat({
           if (!updated.sender && senderCacheRef.current.has(updated.sender_id)) {
             updated.sender = senderCacheRef.current.get(updated.sender_id)!
           }
-          setMessages((prev) =>
-            prev.map((m) => {
-              if (m.message_id !== updated.message_id) return m
-              // Only re-enrich if content_type actually changed (avoid noisy re-renders)
-              if (m.content_type === updated.content_type && !updated.og_title) return m
-              return enrichMessage(updated, myParticipantId, recipientIdsRef.current)
-            })
-          )
+
+          const hasPartialText = !!updated.text && updated.text.length > 0
+          const hasProcessingState = !!updated.processing_state && updated.processing_state !== 'generating'
+
+          // ── Processing state (no real text yet) per D-05, D-06 ──────────────
+          if (hasProcessingState && !hasPartialText) {
+            setWaitingForReply(false)
+            setProcessingState(updated.processing_state!)
+            setStreamingMessageId(updated.message_id)
+            return
+          }
+
+          // ── Streaming text (real tokens arriving) per D-01, D-02 ────────────
+          if (hasPartialText) {
+            // Turn off waitingForReply and processing state — user sees real text now (D-03)
+            setWaitingForReply(false)
+            setProcessingState(null)
+            setIsStreaming(true)
+            setStreamingMessageId(updated.message_id)
+
+            // Accumulate in buffer ref (zero re-renders per UPDATE)
+            streamingBuffersRef.current.set(updated.message_id, updated.text!)
+
+            // Schedule RAF flush only if not already scheduled for this message (D-02, Pitfall 3)
+            if (!rafIdsRef.current.has(updated.message_id)) {
+              const rafId = requestAnimationFrame(() => {
+                rafIdsRef.current.delete(updated.message_id)
+                const currentText = streamingBuffersRef.current.get(updated.message_id) ?? ''
+                setStreamingMessages(prev => {
+                  const next = new Map(prev)
+                  next.set(updated.message_id, currentText)
+                  return next
+                })
+              })
+              rafIdsRef.current.set(updated.message_id, rafId)
+            }
+          }
+
+          // ── Link-preview or content_type transition (existing behavior) ──────
+          // Only update the full message if it's NOT currently streaming
+          if (!hasPartialText || updated.processing_state === undefined) {
+            setMessages((prev) =>
+              prev.map((m) => {
+                if (m.message_id !== updated.message_id) return m
+                // Only re-enrich if content_type actually changed (avoid noisy re-renders)
+                if (m.content_type === updated.content_type && !updated.og_title) return m
+                return enrichMessage(updated, myParticipantId, recipientIdsRef.current)
+              })
+            )
+          }
         }
       )
       // message_receipts INSERT — update receipt + re-derive statusIcon
@@ -493,6 +558,36 @@ export function useAgentChat({
           if (receipt.status === 'failed' && receipt.error_message) {
             setWaitingForReply(false)
             toast.error(`Agent error: ${receipt.error_message}`)
+          }
+
+          // Phase 102: Finalize streaming when receipt transitions to 'processed' or 'failed'
+          if (receipt.status === 'processed' || receipt.status === 'failed') {
+            // Cancel any pending RAF for this message
+            const pendingRaf = rafIdsRef.current.get(receipt.message_id)
+            if (pendingRaf !== undefined) {
+              cancelAnimationFrame(pendingRaf)
+              rafIdsRef.current.delete(receipt.message_id)
+            }
+
+            // Get final text from buffer and update the actual message
+            const finalText = streamingBuffersRef.current.get(receipt.message_id)
+            if (finalText) {
+              setMessages(prev => prev.map(m => {
+                if (m.message_id !== receipt.message_id) return m
+                return { ...m, text: finalText }
+              }))
+            }
+
+            // Clean up streaming state
+            streamingBuffersRef.current.delete(receipt.message_id)
+            setStreamingMessages(prev => {
+              const next = new Map(prev)
+              next.delete(receipt.message_id)
+              return next
+            })
+            setIsStreaming(false)
+            setStreamingMessageId(null)
+            setProcessingState(null)
           }
         }
       )
@@ -585,6 +680,12 @@ export function useAgentChat({
 
     return () => {
       supabase.removeChannel(channel)
+      // Phase 102: Cancel all pending RAFs to prevent leaks on conversation switch (Pitfall 1)
+      for (const rafId of rafIdsRef.current.values()) {
+        cancelAnimationFrame(rafId)
+      }
+      rafIdsRef.current.clear()
+      streamingBuffersRef.current.clear()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, myParticipantId])
@@ -658,5 +759,10 @@ export function useAgentChat({
     hasMore,
     markMessagesRead,
     waitingForReply,
+    // Phase 102: streaming support
+    isStreaming,
+    streamingMessageId,
+    streamingMessages,
+    processingState,
   }
 }
