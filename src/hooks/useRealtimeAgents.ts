@@ -26,11 +26,13 @@ export function useRealtimeAgents(): UseRealtimeAgentsResult {
     setLoading(true)
     setError(null)
     try {
-      const { data, error: fetchError } = await supabase.from('agents').select('*, departments(display_name)')
+      const { data, error: fetchError } = await supabase.from('agents').select(
+        'agent_id, node_id, name, emoji, status, current_task_id, avatar_model, last_activity, metadata, created_at, updated_at, department_id, role, skills, about, badge, soul_dirty, departments(display_name)'
+      )
       if (fetchError) {
         setError(fetchError.message)
       } else {
-        const agentData = (data as AgentRowWithDept[]) ?? []
+        const agentData = (data as unknown as AgentRowWithDept[]) ?? []
         setAgents(agentData)
         // Build dept lookup for Realtime payloads
         const map: Record<string, string> = {}
