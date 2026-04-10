@@ -50,7 +50,11 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const conversationId = (data.messages as any).conversation_id
+  const messages = data.messages as { conversation_id: string } | null
+  if (!messages?.conversation_id) {
+    return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
+  }
+  const conversationId = messages.conversation_id
   const { data: participant } = await supabase
     .from('conversation_participants')
     .select('participant_id')
