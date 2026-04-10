@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Avatar, ButtonUtility } from '@circos/ui'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Avatar, ButtonUtility, LoadingIndicator } from '@circos/ui'
 import { DotsHorizontal } from '@untitledui/icons'
 import { useAgentChat } from '@/hooks/use-agent-chat'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
@@ -11,6 +11,7 @@ import { buildMessageProps, formatTime, formatDate, getDateKey } from '../utils/
 import { conversationUiType } from '@/lib/chat'
 import { ChatPanelSection, ChatPanelDivider } from '@/components/application/chat-panel'
 import { ChatInput } from '@/components/application/chat-input'
+import type { ChatInputPayload } from '@/components/application/chat-input'
 import { Message } from '@/components/application/message'
 import type { MessageAction } from '@/components/application/message-action-panel'
 import type { EnrichedMessage } from '@/types/chat'
@@ -95,6 +96,19 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
     sendMessage: chat.sendMessage,
     shortcuts: [],
   })
+
+  // Phase 102 D-11: Wrap handleSend to add optimistic image preview before upload
+  const handleSendWithPreview = useCallback(async (payload: ChatInputPayload) => {
+    if (payload.images && payload.images.length > 0) {
+      const localUrls = payload.images.map(img => URL.createObjectURL(img))
+      chat.addOptimisticImageMessage(
+        localUrls,
+        participant?.display_name ?? 'You',
+        participant?.avatar_url ?? null,
+      )
+    }
+    await handleSend(payload)
+  }, [handleSend, chat, participant])
 
   // ── Scroll management (per D-02, D-03, D-04) ──────────────────────────
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -268,6 +282,18 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                     (msgProps as { content: string }).content = streamingText
                   }
 
+                  // Phase 102 D-12: Upload overlay for optimistic image preview messages
+                  if (msg._isLocalPreview) {
+                    return (
+                      <div key={msg.message_id} className="relative">
+                        <Message {...msgProps} />
+                        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-overlay opacity-60">
+                          <LoadingIndicator size="sm" />
+                        </div>
+                      </div>
+                    )
+                  }
+
                   return <Message key={msg.message_id} {...msgProps} />
                 })}
               </ChatPanelSection>
@@ -306,7 +332,7 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
         {isAnnouncement && <AnnouncementNotice />}
         <ChatInput
           type="advanced"
-          onSend={handleSend}
+          onSend={handleSendWithPreview}
           isStreaming={isStreaming}
           onAbort={() => { void chat.abortStream() }}
           replyTo={
