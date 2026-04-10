@@ -143,6 +143,9 @@ export function useAgentChat({
   // ── Streaming refs (Phase 102 — RAF buffer, no re-renders per token) ─────────
   const streamingBuffersRef = useRef<Map<string, string>>(new Map())
   const rafIdsRef = useRef<Map<string, number>>(new Map())
+  // Ref mirror of streamingMessageId — accessible inside Realtime callback closures
+  const streamingMessageIdRef = useRef<string | null>(null)
+  streamingMessageIdRef.current = streamingMessageId
 
   // Sender info cache — Realtime INSERT/UPDATE only has raw columns, no joins.
   // Populated from API responses to resolve senderName for Realtime payloads.
@@ -679,16 +682,22 @@ export function useAgentChat({
               }))
             }
 
-            // Clean up streaming state
+            // Clean up per-message streaming data (always safe — keyed by message_id)
             streamingBuffersRef.current.delete(receipt.message_id)
             setStreamingMessages(prev => {
               const next = new Map(prev)
               next.delete(receipt.message_id)
               return next
             })
-            setIsStreaming(false)
-            setStreamingMessageId(null)
-            setProcessingState(null)
+
+            // Only reset global streaming state if this receipt belongs to the
+            // currently active streaming message — prevents premature UI unlock
+            // when a receipt for a different message arrives during active streaming.
+            if (receipt.message_id === streamingMessageIdRef.current) {
+              setIsStreaming(false)
+              setStreamingMessageId(null)
+              setProcessingState(null)
+            }
           }
         }
       )
