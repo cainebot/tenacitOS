@@ -170,6 +170,9 @@ export function ChatInput({
   const analyserRef = useRef<AnalyserNode | null>(null)
   const animationFrameRef = useRef<number | null>(null)
   const waveformDataRef = useRef<number[]>([])
+  // Track mount state to prevent DOM operations after unmount (WR-04: mirror div leak)
+  const isMountedRef = useRef(true)
+  useEffect(() => { return () => { isMountedRef.current = false } }, [])
 
   const hasContent = text.trim().length > 0 || images.length > 0 || nonImageFiles.length > 0 || activeCommand != null
   const supportsShortcuts = type !== 'minimal' && shortcuts.length > 0
@@ -270,8 +273,9 @@ export function ChatInput({
         setShortcutIndex(0)
         setShowShortcutPanel(true)
 
-        // Calculate position for the panel
+        // Calculate position for the panel (guarded: skip if unmounted to prevent mirror div leak)
         requestAnimationFrame(() => {
+          if (!isMountedRef.current) return
           const coords = getCaretCoords()
           setPanelPos(coords)
         })
