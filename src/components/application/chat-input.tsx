@@ -349,6 +349,10 @@ export function ChatInput({
 
   // ── Image helpers ──────────────────────────────────────────────────────
 
+  // Ref tracking current image count — avoids stale closure in addFiles on rapid multi-file selection
+  const imagesCountRef = useRef(images.length)
+  imagesCountRef.current = images.length
+
   const addFiles = useCallback(async (fileList: FileList | File[]) => {
     const fileArray = Array.from(fileList)
     const newImages: AttachedImage[] = []
@@ -362,7 +366,8 @@ export function ChatInput({
       }
 
       if (ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-        if (images.length + newImages.length >= MAX_IMAGES) continue
+        // Use ref for live count to avoid stale closure on rapid multi-file drops
+        if (imagesCountRef.current + newImages.length >= MAX_IMAGES) continue
         // D-02: Resize image to max 800px before preview and upload
         let resizedFile = file
         try {
@@ -381,12 +386,13 @@ export function ChatInput({
     }
 
     if (newImages.length > 0) {
+      // Functional updater ensures correct count even if state changed during async resize
       setImages((prev) => [...prev, ...newImages].slice(0, MAX_IMAGES))
     }
     if (newFiles.length > 0) {
       setNonImageFiles((prev) => [...prev, ...newFiles])
     }
-  }, [images.length])
+  }, []) // No dependency on images.length — reads from imagesCountRef instead
 
   const removeImage = useCallback((id: string) => {
     setImages((prev) => {
