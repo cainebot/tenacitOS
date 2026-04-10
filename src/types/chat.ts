@@ -9,7 +9,7 @@ export type ParticipantType = 'human' | 'agent'
 export type ParticipantRole = 'admin' | 'operator' | 'viewer' | 'agent'
 export type ParticipationRole = 'owner' | 'member' | 'readonly'
 export type ConversationType = 'direct' | 'broadcast' | 'group'
-export type ReceiptStatus = 'delivered' | 'read' | 'processed' | 'failed'
+export type ReceiptStatus = 'delivered' | 'read' | 'processing' | 'processed' | 'failed'
 
 export interface ChatParticipantRow {
   participant_id: string
