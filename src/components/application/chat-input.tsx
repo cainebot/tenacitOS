@@ -118,6 +118,10 @@ interface ChatInputProps {
   replyTo?: { senderName: string; text: string } | null
   /** Called when user dismisses the reply banner */
   onClearReply?: () => void
+  /** Phase 102 D-08: True when agent is streaming a response — send button morphs to stop */
+  isStreaming?: boolean
+  /** Phase 102 D-08: Called when user clicks the stop/abort button */
+  onAbort?: () => void
 }
 
 // ── ChatInput ────────────────────────────────────────────────────────────────
@@ -133,6 +137,8 @@ export function ChatInput({
   className,
   replyTo,
   onClearReply,
+  isStreaming = false,
+  onAbort,
 }: ChatInputProps) {
   const [text, setText] = useState('')
   const [images, setImages] = useState<AttachedImage[]>([])
@@ -852,18 +858,31 @@ export function ChatInput({
           />
         </div>
 
-        {/* Send icon button — Figma: shadow-xs-skeuomorphic, p-3, rounded-md */}
-        <AriaButton
-          onPress={handleSend}
-          isDisabled={!hasContent || isDisabled}
-          className={cx(
-            'flex shrink-0 items-center justify-center rounded-md border border-primary bg-primary p-3 shadow-xs-skeumorphic transition duration-100 ease-linear',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-            'hover:bg-primary_hover',
-          )}
-        >
-          <Send01 className="size-5 text-fg-quaternary" />
-        </AriaButton>
+        {/* Send/Stop icon button — morphs to StopCircle during streaming (Phase 102 D-08) */}
+        {isStreaming ? (
+          <AriaButton
+            onPress={() => onAbort?.()}
+            aria-label="Stop generation"
+            className={cx(
+              'flex shrink-0 items-center justify-center rounded-md border border-primary p-3 shadow-xs-skeumorphic transition duration-100 ease-linear',
+              'bg-tertiary text-fg-secondary hover:bg-error-solid hover:text-white',
+            )}
+          >
+            <StopCircle className="size-5" />
+          </AriaButton>
+        ) : (
+          <AriaButton
+            onPress={handleSend}
+            isDisabled={!hasContent || isDisabled}
+            className={cx(
+              'flex shrink-0 items-center justify-center rounded-md border border-primary bg-primary p-3 shadow-xs-skeumorphic transition duration-100 ease-linear',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+              'hover:bg-primary_hover',
+            )}
+          >
+            <Send01 className="size-5 text-fg-quaternary" />
+          </AriaButton>
+        )}
 
         {hiddenFileInput}
         {emojiPickerPopover}
@@ -973,7 +992,7 @@ export function ChatInput({
               </div>
             </div>
 
-            {/* Right: Shortcuts + Attach */}
+            {/* Right: Shortcuts + Attach + Stop (Phase 102 D-08) */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -990,6 +1009,19 @@ export function ChatInput({
                 <Attachment01 className="size-4 text-fg-tertiary" />
                 Attach
               </button>
+              {/* Stop button — visible only during streaming */}
+              {isStreaming && (
+                <AriaButton
+                  onPress={() => onAbort?.()}
+                  aria-label="Stop generation"
+                  className={cx(
+                    'flex items-center justify-center rounded-full p-1.5 transition duration-100 ease-linear',
+                    'bg-tertiary text-fg-secondary hover:bg-error-solid hover:text-white',
+                  )}
+                >
+                  <StopCircle className="size-4" />
+                </AriaButton>
+              )}
             </div>
           </div>
 
@@ -1103,19 +1135,32 @@ export function ChatInput({
           </div>
         </div>
 
-        {/* Send — Figma: text-sm font-semibold text-brand-secondary */}
-        <AriaButton
-          onPress={handleSend}
-          isDisabled={!hasContent || isDisabled}
-          className={cx(
-            'text-sm font-semibold leading-5 transition duration-100 ease-linear',
-            hasContent
-              ? 'cursor-pointer text-brand-secondary'
-              : 'cursor-default text-disabled',
-          )}
-        >
-          Send
-        </AriaButton>
+        {/* Send/Stop — morphs to StopCircle during streaming (Phase 102 D-08) */}
+        {isStreaming ? (
+          <AriaButton
+            onPress={() => onAbort?.()}
+            aria-label="Stop generation"
+            className={cx(
+              'flex items-center justify-center rounded-full p-1.5 transition duration-100 ease-linear',
+              'bg-tertiary text-fg-secondary hover:bg-error-solid hover:text-white',
+            )}
+          >
+            <StopCircle className="size-4" />
+          </AriaButton>
+        ) : (
+          <AriaButton
+            onPress={handleSend}
+            isDisabled={!hasContent || isDisabled}
+            className={cx(
+              'text-sm font-semibold leading-5 transition duration-100 ease-linear',
+              hasContent
+                ? 'cursor-pointer text-brand-secondary'
+                : 'cursor-default text-disabled',
+            )}
+          >
+            Send
+          </AriaButton>
+        )}
       </div>
 
       {shortcutPanel}

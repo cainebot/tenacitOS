@@ -307,6 +307,8 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
         <ChatInput
           type="advanced"
           onSend={handleSend}
+          isStreaming={isStreaming}
+          onAbort={() => { void chat.abortStream() }}
           replyTo={
             replyToMessage
               ? {
