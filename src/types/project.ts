@@ -132,13 +132,14 @@ export interface CardCommentRow {
   created_at: string
 }
 
-export interface CardActivityRow {
-  activity_id: string
-  card_id: string
-  actor: string
-  action: ActivityAction
-  old_value: unknown | null
-  new_value: unknown | null
+export interface ActivityLogRow {
+  id: string
+  card_id: string | null
+  task_id: string | null
+  actor_type: 'human' | 'agent' | 'system'
+  actor_id: string | null
+  action: string
+  details: Record<string, unknown>
   created_at: string
 }
 
