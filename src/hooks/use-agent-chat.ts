@@ -680,6 +680,22 @@ export function useAgentChat({
                 if (m.message_id !== receipt.message_id) return m
                 return { ...m, text: finalText }
               }))
+            } else if (receipt.message_id === streamingMessageIdRef.current) {
+              // Buffer was empty — the INSERT/UPDATE with text may not have arrived yet
+              // (Supabase Realtime does not guarantee INSERT-before-UPDATE ordering).
+              // Re-fetch latest messages to capture committed text and avoid empty bubble.
+              fetchMessagesApi(conversationId!)
+                .then(({ data }) => {
+                  const raw = data as RawApiMessage[]
+                  const target = raw.find(m => m.message_id === receipt.message_id)
+                  if (target?.text) {
+                    setMessages(prev => prev.map(m => {
+                      if (m.message_id !== receipt.message_id) return m
+                      return { ...m, text: target.text }
+                    }))
+                  }
+                })
+                .catch(() => {}) // best-effort — message will arrive via Realtime eventually
             }
 
             // Clean up per-message streaming data (always safe — keyed by message_id)
