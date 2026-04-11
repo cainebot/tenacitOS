@@ -11,6 +11,7 @@ export default function GoalDetailPage() {
   const router = useRouter()
   const [goal, setGoal] = useState<GoalRow | null>(null)
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!params.id) return
@@ -20,7 +21,10 @@ export default function GoalDetailPage() {
         return r.json()
       })
       .then((data: GoalRow) => setGoal(data))
-      .catch((err) => console.error('[goal-detail] Failed:', err))
+      .catch((err) => {
+        console.error('[goal-detail] Failed:', err)
+        setFetchError('Could not load goal. It may have been deleted or the network is unavailable.')
+      })
       .finally(() => setLoading(false))
   }, [params.id])
 
@@ -28,6 +32,17 @@ export default function GoalDetailPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="animate-pulse h-8 w-48 rounded bg-secondary" />
+      </div>
+    )
+  }
+
+  if (fetchError) {
+    return (
+      <div className="max-w-3xl mx-auto p-8 space-y-4">
+        <Button color="link-gray" size="sm" iconLeading={ArrowNarrowLeft} onClick={() => router.back()}>
+          Back
+        </Button>
+        <p className="text-sm text-error-primary">{fetchError}</p>
       </div>
     )
   }
