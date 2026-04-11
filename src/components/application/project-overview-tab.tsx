@@ -228,7 +228,7 @@ export function ProjectOverviewTab({
   // Goals section
   // ---------------------------------------------------------------------------
 
-  const { departmentGoals, createGoal } = useGoals(projectId)
+  const { departmentGoals, createGoal, deleteGoal } = useGoals(projectId)
 
   const [showGoalForm, setShowGoalForm] = useState(false)
   const [goalInput, setGoalInput] = useState('')
@@ -536,7 +536,10 @@ export function ProjectOverviewTab({
                   <AriaButton
                     aria-label="Delete goal"
                     className="rounded p-0.5 text-fg-error-primary hover:text-error-primary transition-colors"
-                    onPress={() => router.push(`/goals/${goal.goal_id}`)}
+                    onPress={async () => {
+                      const ok = await deleteGoal(goal.goal_id)
+                      if (!ok) toast.error('Failed to delete goal.')
+                    }}
                   >
                     <Trash01 className="size-4" />
                   </AriaButton>
