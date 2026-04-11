@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { KanbanCard, type KanbanCardProps, type KanbanCardTag, type KanbanCardUser, type Priority } from "@/components/application/kanban-card"
 import { KanbanBoard, type KanbanBoardColumn } from "@/components/application/kanban-board"
 import { KanbanBoardHeader } from "@/components/application/kanban-board-header"
@@ -192,7 +192,21 @@ export default function ProjectBoardPage() {
       .then(() => { window.dispatchEvent(new Event("project-cover-changed")) })
       .catch((err) => { console.error('[cover-update] Failed:', err) })
   }, [board?.project_id])
-  const [selectedTab, setSelectedTab] = useState("board")
+  const searchParams = useSearchParams()
+  const tabFromUrl = searchParams.get('tab')
+  const [selectedTab, setSelectedTab] = useState(tabFromUrl ?? "board")
+
+  const handleTabChange = useCallback((tabId: string) => {
+    setSelectedTab(tabId)
+    const params = new URLSearchParams(searchParams.toString())
+    if (tabId === 'board') {
+      params.delete('tab')
+    } else {
+      params.set('tab', tabId)
+    }
+    const newPath = params.toString() ? `?${params.toString()}` : window.location.pathname
+    router.replace(newPath, { scroll: false })
+  }, [searchParams, router])
 
   // Filter fields with live agents
   const filterFields = useMemo(
@@ -1008,7 +1022,7 @@ export default function ProjectBoardPage() {
           avatars={projectAvatars}
           onAddMember={() => {}}
           selectedTab={selectedTab}
-          onTabChange={setSelectedTab}
+          onTabChange={handleTabChange}
         />
         {selectedTab === "overview" ? (
           <div className="flex-1 overflow-y-auto p-6">
