@@ -351,17 +351,24 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
           if (isStreaming && streamingMessageId) {
             const text = streamingMessages.get(streamingMessageId)
             if (text && text.length > 0) {
-              // Real tokens arriving — render as message bubble with live content
-              return (
-                <Message
-                  type="message"
-                  senderName={agentName}
-                  senderAvatar={agentAvatar}
-                  timestamp=""
-                  content={text}
-                  sent={false}
-                />
-              )
+              // If the placeholder INSERT is already in the messages list, the
+              // .map() loop applies the streamingMessages override (line 304) —
+              // rendering a separate bubble here would duplicate the message.
+              const alreadyInList = chat.messages.some(m => m.message_id === streamingMessageId)
+              if (!alreadyInList) {
+                // Rare race: UPDATE arrived before INSERT — render standalone
+                return (
+                  <Message
+                    type="message"
+                    senderName={agentName}
+                    senderAvatar={agentAvatar}
+                    timestamp=""
+                    content={text}
+                    sent={false}
+                  />
+                )
+              }
+              return null
             }
             // streamingMessageId set but no text yet — show animated dots
             return (
