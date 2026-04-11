@@ -73,7 +73,7 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
 
   const chat = useAgentChat({ conversationId, recipientIds })
   // Destructure streaming fields for clarity (Phase 102)
-  const { isStreaming, streamingMessages, processingState, streamingMessageId } = chat
+  const { isStreaming, streamingMessages, processingState, streamingMessageId, waitingForReply } = chat
 
   // Agent typing indicator
   const { agents } = useRealtimeAgents()
@@ -302,29 +302,68 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
           </>
         )}
 
-        {/* Processing state — renders as a real agent Message bubble per D-05 */}
-        {/* Styling: text-sm italic text-tertiary via [&_p]: Tailwind override */}
-        {processingState && !isStreaming && (
-          <Message
-            type="message"
-            senderName={conversation?.agent_name ?? 'Agent'}
-            senderAvatar={conversation?.agent_avatar}
-            timestamp=""
-            content={getProcessingText(processingState, userLang)}
-            sent={false}
-            className="[&_p]:text-sm [&_p]:italic [&_p]:text-tertiary"
-          />
-        )}
+        {/* Unified agent response bubble: dots -> processing state -> streaming text */}
+        {/* All three states render in this same DOM location for seamless in-place transitions */}
+        {(() => {
+          const agentName = conversation?.agent_name ?? 'Agent'
+          const agentAvatar = conversation?.agent_avatar
 
-        {/* Typing indicator — hidden when streaming or processing state is active (D-03) */}
-        {isAgentTyping && !isStreaming && !processingState && (
-          <Message
-            type="writing"
-            senderName={conversation?.agent_name ?? 'Agent'}
-            senderAvatar={conversation?.agent_avatar}
-            timestamp=""
-          />
-        )}
+          // State 1: Processing state (before any tokens)
+          if (processingState && !isStreaming) {
+            return (
+              <Message
+                type="message"
+                senderName={agentName}
+                senderAvatar={agentAvatar}
+                timestamp=""
+                content={getProcessingText(processingState, userLang)}
+                sent={false}
+                className="[&_p]:text-sm [&_p]:italic [&_p]:text-tertiary"
+              />
+            )
+          }
+
+          // State 2: Streaming — check for text or show dots
+          if (isStreaming && streamingMessageId) {
+            const text = streamingMessages.get(streamingMessageId)
+            if (text && text.length > 0) {
+              // Real tokens arriving — render as message bubble with live content
+              return (
+                <Message
+                  type="message"
+                  senderName={agentName}
+                  senderAvatar={agentAvatar}
+                  timestamp=""
+                  content={text}
+                  sent={false}
+                />
+              )
+            }
+            // streamingMessageId set but no text yet — show animated dots
+            return (
+              <Message
+                type="writing"
+                senderName={agentName}
+                senderAvatar={agentAvatar}
+                timestamp=""
+              />
+            )
+          }
+
+          // State 3: Waiting for reply (after user sends, before any UPDATE arrives)
+          if (waitingForReply) {
+            return (
+              <Message
+                type="writing"
+                senderName={agentName}
+                senderAvatar={agentAvatar}
+                timestamp=""
+              />
+            )
+          }
+
+          return null
+        })()}
       </div>
 
       {/* Footer input */}
