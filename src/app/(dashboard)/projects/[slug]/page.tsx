@@ -8,6 +8,7 @@ import { KanbanBoardHeader } from "@/components/application/kanban-board-header"
 import { KanbanBoardSkeleton } from "@/components/application/kanban-board-skeleton"
 import { defaultFilterFields, type FilterRow } from "@/components/application/dynamic-filter"
 import { ProjectHeader } from "@/components/application/project-header/project-header"
+import { TeamChart } from "@/components/application/team-chart"
 import type { ProjectCoverValue } from "@/components/application/project-cover/project-cover"
 import { TaskDetailPanel } from "@/components/application/task-detail-panel"
 import { TaskDetailPanelSkeleton } from "@/components/application/task-detail-panel-skeleton"
@@ -998,33 +999,45 @@ export default function ProjectBoardPage() {
           selectedTab={selectedTab}
           onTabChange={setSelectedTab}
         />
-        <KanbanBoardHeader
-          filterFields={filterFields}
-          filters={filters}
-          onFiltersChange={setFilters}
-          search={search}
-          onSearchChange={setSearch}
-          onSettings={() => router.push(`/projects/${slug}/settings`)}
-        />
-        <div
-          className="flex-1 overflow-hidden"
-          onClick={(e) => {
-            const target = e.target as HTMLElement
-            if (target.closest('button, input, textarea, a, [data-card], [role="dialog"], [role="listbox"], [contenteditable], [data-react-aria-popover]')) return
-            handleClosePanel()
-          }}
-        >
-          <KanbanBoard
-            columns={effectiveColumns}
-            onColumnsChange={handleColumnsChange}
-            onAddCard={handleAddCard}
-            addingColumnId={addingColumnId}
-            renderAddingCard={renderAddingCard}
-            size="md"
-            className="h-full"
-            renderCard={renderCard}
-          />
-        </div>
+        {selectedTab === "team-chart" ? (
+          <div className="flex-1 overflow-auto p-6">
+            <TeamChart
+              projectId={board?.project_id ?? ""}
+              projectLeadAgentId={board?.project_lead_agent_id ?? null}
+              agents={agents}
+            />
+          </div>
+        ) : (
+          <>
+            <KanbanBoardHeader
+              filterFields={filterFields}
+              filters={filters}
+              onFiltersChange={setFilters}
+              search={search}
+              onSearchChange={setSearch}
+              onSettings={() => router.push(`/projects/${slug}/settings`)}
+            />
+            <div
+              className="flex-1 overflow-hidden"
+              onClick={(e) => {
+                const target = e.target as HTMLElement
+                if (target.closest('button, input, textarea, a, [data-card], [role="dialog"], [role="listbox"], [contenteditable], [data-react-aria-popover]')) return
+                handleClosePanel()
+              }}
+            >
+              <KanbanBoard
+                columns={effectiveColumns}
+                onColumnsChange={handleColumnsChange}
+                onAddCard={handleAddCard}
+                addingColumnId={addingColumnId}
+                renderAddingCard={renderAddingCard}
+                size="md"
+                className="h-full"
+                renderCard={renderCard}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Side Panel — full height, shrinks board when open */}
