@@ -50,6 +50,7 @@ export const TeamChart: FC<TeamChartProps> = ({
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showAgentPicker, setShowAgentPicker] = useState(false)
+  const [pendingAgent, setPendingAgent] = useState<AgentRow | null>(null)
 
   // Agents not yet in the project
   const unassignedAgents = useMemo(
@@ -207,7 +208,7 @@ export const TeamChart: FC<TeamChartProps> = ({
             {unassignedAgents.map((agent) => (
               <AriaButton
                 key={agent.agent_id}
-                onPress={() => handleAssignAgent(agent.agent_id)}
+                onPress={() => { setShowAgentPicker(false); setPendingAgent(agent) }}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-primary hover:bg-secondary"
               >
                 <Avatar src={agent.avatar_url ?? undefined} alt={agent.name} size="xs" />
@@ -271,7 +272,7 @@ export const TeamChart: FC<TeamChartProps> = ({
                 {unassignedAgents.map((agent) => (
                   <AriaButton
                     key={agent.agent_id}
-                    onPress={() => handleAssignAgent(agent.agent_id)}
+                    onPress={() => { setShowAgentPicker(false); setPendingAgent(agent) }}
                     className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-primary hover:bg-secondary"
                   >
                     <Avatar src={agent.avatar_url ?? undefined} alt={agent.name} size="xs" />
@@ -298,6 +299,36 @@ export const TeamChart: FC<TeamChartProps> = ({
           isSaving={isSaving}
           error={saveError}
         />
+      )}
+
+      {/* Confirmation dialog — shown when selecting a non-member agent */}
+      {pendingAgent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-overlay" onClick={() => setPendingAgent(null)} />
+          <div className="relative rounded-xl border border-secondary bg-primary p-6 shadow-xl max-w-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <Avatar src={pendingAgent.avatar_url ?? undefined} alt={pendingAgent.name} size="md" />
+              <div>
+                <p className="text-sm font-semibold text-primary">{pendingAgent.name}</p>
+                <p className="text-xs text-tertiary">{pendingAgent.role}</p>
+              </div>
+            </div>
+            <p className="text-sm text-secondary">
+              {pendingAgent.name} is not a member of this project. Do you want to add them?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button color="secondary" size="sm" onClick={() => setPendingAgent(null)}>
+                Cancel
+              </Button>
+              <Button color="primary" size="sm" onClick={async () => {
+                await handleAssignAgent(pendingAgent.agent_id)
+                setPendingAgent(null)
+              }}>
+                Add to project
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
