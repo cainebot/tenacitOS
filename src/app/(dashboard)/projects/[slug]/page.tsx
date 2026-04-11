@@ -62,6 +62,7 @@ export default function ProjectBoardPage() {
   const [discoveryDone, setDiscoveryDone] = useState(false)
   const [projectId, setProjectId] = useState("")
   const [projectDescription, setProjectDescription] = useState<string | null>(null)
+  const [projectGoalId, setProjectGoalId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!slug) return
@@ -74,6 +75,7 @@ export default function ProjectBoardPage() {
         if (!project?.project_id) throw new Error('Project not found')
         setProjectId(project.project_id)
         setProjectDescription(project.description ?? null)
+        setProjectGoalId(project.goal_id ?? null)
         return fetch(`/api/boards?project_id=${project.project_id}`)
       })
       .then((r) => r.json())
@@ -1091,6 +1093,8 @@ export default function ProjectBoardPage() {
             taskType={panelDataProps?.taskType}
             status={panelDataProps?.status}
             boardColumns={panelBoardColumns}
+            goalId={detailCard?.goal_id ?? null}
+            projectGoalId={projectGoalId}
             stateId={detailCard?.state_id}
             onStateIdChange={handlePanelStateIdChange}
             description={panelDataProps?.description}
