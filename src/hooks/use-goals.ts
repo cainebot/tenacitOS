@@ -57,9 +57,14 @@ export function useGoals(projectId?: string): UseGoalsResult {
   // ----- Supabase Realtime subscription -----
   useEffect(() => {
     const supabase = createBrowserClient()
+    // Unique channel per scope prevents sharing/cleanup collision when hook is
+    // mounted in multiple places simultaneously (ProjectOverviewTab + TaskDetailPanel)
+    const channelName = projectId
+      ? `goals-realtime:${projectId}`
+      : 'goals-realtime:global'
 
     const channel = supabase
-      .channel('goals-realtime')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'goals' },
@@ -95,7 +100,7 @@ export function useGoals(projectId?: string): UseGoalsResult {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [projectId])
 
   // ----- Mutations -----
 
