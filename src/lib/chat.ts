@@ -38,6 +38,20 @@ export async function fetchMessages(
   return res.json()
 }
 
+/** Fetch a single message by ID with JOINed attachments + signed URLs */
+export async function fetchSingleMessage(
+  conversationId: string,
+  messageId: string
+): Promise<unknown | null> {
+  const res = await fetch(
+    `/api/conversations/${conversationId}/messages?limit=50`
+  )
+  if (!res.ok) return null
+  const { data } = await res.json()
+  const messages = data as Array<{ message_id: string }>
+  return messages.find(m => m.message_id === messageId) ?? null
+}
+
 /** Send a message in a conversation */
 export async function sendMessage(
   conversationId: string,

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { createBrowserClient } from '@/lib/supabase'
 import {
   fetchMessages as fetchMessagesApi,
+  fetchSingleMessage,
   sendMessage as sendMessageApi,
   toggleReactionApi,
   URL_REGEX,
@@ -75,6 +76,9 @@ interface RawApiMessage {
   processing_state?: string | null  // Phase 102: daemon processing state
   abort_requested?: boolean         // Phase 102: abort signal
 }
+
+// ── Phase 102 gap-closure: Content types that carry attachments ──────────────
+const MEDIA_CONTENT_TYPES: ContentType[] = ['image', 'file', 'audio', 'video']
 
 // ── enrichMessage helper ──────────────────────────────────────────────────────
 
@@ -605,6 +609,27 @@ export function useAgentChat({
             }
             return [...prev, enriched]
           })
+
+          // Phase 102 gap-closure: Realtime INSERT lacks JOINed message_attachments.
+          // For media messages, refetch the full message (with attachments + signed URLs)
+          // and merge into state. This ensures images render correctly immediately.
+          if (MEDIA_CONTENT_TYPES.includes(raw.content_type as ContentType)) {
+            fetchSingleMessage(conversationId!, raw.message_id)
+              .then((fullMsg) => {
+                if (!fullMsg) return
+                const full = fullMsg as RawApiMessage
+                if (!full.attachments || full.attachments.length === 0) return
+                // Resolve sender from cache for consistency
+                if (!full.sender && senderCacheRef.current.has(full.sender_id)) {
+                  full.sender = senderCacheRef.current.get(full.sender_id)!
+                }
+                const enrichedFull = enrichMessage(full, myParticipantId, recipientIdsRef.current)
+                setMessages(prev => prev.map(m =>
+                  m.message_id === raw.message_id ? enrichedFull : m
+                ))
+              })
+              .catch(() => {}) // best-effort — image will render on next refresh
+          }
 
           // Delivered receipts handled by agent daemon (message-responder.sh insert_receipt)
 
