@@ -187,7 +187,7 @@ export const TeamChart: FC<TeamChartProps> = ({
   if (roles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] bg-primary gap-4">
-        <FeaturedIcon icon={Users01} theme="light" size="md" />
+        <FeaturedIcon icon={<Users01 />} variant="light" size="md" />
         <div className="text-center space-y-1">
           <p className="font-display text-base font-semibold text-primary">No agents assigned</p>
           <p className="text-xs text-tertiary">Add agents to this project to see the team chart.</p>
@@ -196,7 +196,7 @@ export const TeamChart: FC<TeamChartProps> = ({
           color="secondary"
           size="sm"
           iconLeading={Plus}
-          onPress={() => setShowAgentPicker((v) => !v)}
+          onClick={() => setShowAgentPicker((v) => !v)}
         >
           Assign agent
         </Button>
@@ -260,7 +260,7 @@ export const TeamChart: FC<TeamChartProps> = ({
               color="secondary"
               size="sm"
               iconLeading={Plus}
-              onPress={() => setShowAgentPicker((v) => !v)}
+              onClick={() => setShowAgentPicker((v) => !v)}
             >
               Assign agent
             </Button>

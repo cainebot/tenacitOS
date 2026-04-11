@@ -69,6 +69,7 @@ export interface AgentRow {
   soul_config?: Record<string, unknown>;
   badge?: AgentBadge;
   soul_dirty?: boolean;
+  avatar_url?: string | null;
 }
 
 export interface TaskRow {
