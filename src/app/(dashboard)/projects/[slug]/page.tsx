@@ -1037,11 +1037,17 @@ export default function ProjectBoardPage() {
           </div>
         ) : selectedTab === "team-chart" ? (
           <div className="flex-1 overflow-auto p-6">
-            <TeamChart
-              projectId={board?.project_id ?? ""}
-              projectLeadAgentId={board?.project_lead_agent_id ?? null}
-              agents={agents}
-            />
+            {board?.project_id ? (
+              <TeamChart
+                projectId={board.project_id}
+                projectLeadAgentId={board.project_lead_agent_id ?? null}
+                agents={agents}
+              />
+            ) : (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <p className="text-sm text-tertiary">Loading project...</p>
+              </div>
+            )}
           </div>
         ) : (
           <>
