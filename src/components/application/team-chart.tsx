@@ -2,7 +2,7 @@
 
 import { type FC, type JSX, useState, useMemo, useCallback } from 'react'
 import { Button as AriaButton } from 'react-aria-components'
-import { cx, Button, FeaturedIcon, Avatar } from '@circos/ui'
+import { cx, Button, FeaturedIcon, Avatar, ModalForm } from '@circos/ui'
 import { Users01, Plus } from '@untitledui/icons'
 import { useAgentProjectRoles } from '@/hooks/use-agent-project-roles'
 import { TeamChartNode, type OrgNode } from './team-chart-node'
@@ -302,10 +302,23 @@ export const TeamChart: FC<TeamChartProps> = ({
       )}
 
       {/* Confirmation dialog — shown when selecting a non-member agent */}
-      {pendingAgent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-overlay" onClick={() => setPendingAgent(null)} />
-          <div className="relative rounded-xl border border-secondary bg-primary p-6 shadow-xl max-w-sm space-y-4">
+      <ModalForm
+        isOpen={!!pendingAgent}
+        onOpenChange={(open) => { if (!open) setPendingAgent(null) }}
+        title="Add agent to project"
+        submitLabel="Add to project"
+        cancelLabel="Cancel"
+        onSubmit={async () => {
+          if (pendingAgent) {
+            await handleAssignAgent(pendingAgent.agent_id)
+            setPendingAgent(null)
+          }
+        }}
+        onCancel={() => setPendingAgent(null)}
+        size="sm"
+      >
+        {pendingAgent && (
+          <div className="space-y-4">
             <div className="flex items-center gap-3">
               <Avatar src={pendingAgent.avatar_url ?? undefined} alt={pendingAgent.name} size="md" />
               <div>
@@ -316,20 +329,9 @@ export const TeamChart: FC<TeamChartProps> = ({
             <p className="text-sm text-secondary">
               {pendingAgent.name} is not a member of this project. Do you want to add them?
             </p>
-            <div className="flex justify-end gap-2">
-              <Button color="secondary" size="sm" onClick={() => setPendingAgent(null)}>
-                Cancel
-              </Button>
-              <Button color="primary" size="sm" onClick={async () => {
-                await handleAssignAgent(pendingAgent.agent_id)
-                setPendingAgent(null)
-              }}>
-                Add to project
-              </Button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalForm>
     </div>
   )
 }
