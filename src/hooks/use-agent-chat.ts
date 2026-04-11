@@ -147,6 +147,10 @@ export function useAgentChat({
   const streamingMessageIdRef = useRef<string | null>(null)
   streamingMessageIdRef.current = streamingMessageId
 
+  // Phase 102 gap-closure T-02: Track locally-aborted message IDs to prevent
+  // streaming state reactivation when daemon UPDATEs continue after local abort.
+  const abortedMessageIdsRef = useRef<Set<string>>(new Set())
+
   // Sender info cache — Realtime INSERT/UPDATE only has raw columns, no joins.
   // Populated from API responses to resolve senderName for Realtime payloads.
   const senderCacheRef = useRef<Map<string, { display_name: string; avatar_url: string | null }>>(new Map())
@@ -188,6 +192,8 @@ export function useAgentChat({
     setStreamingMessageId(null)
     setStreamingMessages(new Map())
     setProcessingState(null)
+    // Phase 102 gap-closure T-02: Clear aborted set on conversation switch
+    abortedMessageIdsRef.current.clear()
 
     let cancelled = false
     setLoading(true)
@@ -362,11 +368,14 @@ export function useAgentChat({
   // ── Abort streaming (Phase 102 — D-08, D-09) ─────────────────────────────
 
   const abortStream = useCallback(async () => {
-    if (!streamingMessageId) return
+    const abortingMessageId = streamingMessageId
+    if (!abortingMessageId) return
 
+    // 1. Fire abort API call (best-effort — bash daemon does not read it yet,
+    //    but the future Node.js daemon will. Phase 101 long-term fix.)
     try {
       const res = await fetch(
-        `/api/messages/${streamingMessageId}/abort`,
+        `/api/messages/${abortingMessageId}/abort`,
         { method: 'POST' }
       )
       if (!res.ok) {
@@ -375,8 +384,42 @@ export function useAgentChat({
     } catch {
       toast.error('Could not stop generation.')
     }
-    // D-10: Don't clean up streaming state here — wait for the daemon's final UPDATE
-    // with receipt 'processed' which triggers cleanup in the receipt handler
+
+    // 2. Frontend-only workaround: immediately clean up streaming state locally.
+    // The daemon will continue generating, but the UI freezes at current text (D-10).
+    // When the daemon's final receipt arrives, the receipt handler sees
+    // streamingMessageIdRef.current is null and skips the redundant cleanup.
+
+    // Track this message as locally aborted to block state reactivation from
+    // subsequent daemon UPDATEs (T-102-10: cleaned up on receipt + conversation switch)
+    abortedMessageIdsRef.current.add(abortingMessageId)
+
+    // Cancel pending RAF for this message
+    const pendingRaf = rafIdsRef.current.get(abortingMessageId)
+    if (pendingRaf !== undefined) {
+      cancelAnimationFrame(pendingRaf)
+      rafIdsRef.current.delete(abortingMessageId)
+    }
+
+    // Freeze current buffer text into the messages array as final content (D-10)
+    const frozenText = streamingBuffersRef.current.get(abortingMessageId) ?? ''
+    if (frozenText) {
+      setMessages(prev => prev.map(m => {
+        if (m.message_id !== abortingMessageId) return m
+        return { ...m, text: frozenText }
+      }))
+    }
+
+    // Clear streaming state — UI returns to idle immediately
+    streamingBuffersRef.current.delete(abortingMessageId)
+    setStreamingMessages(prev => {
+      const next = new Map(prev)
+      next.delete(abortingMessageId)
+      return next
+    })
+    setIsStreaming(false)
+    setStreamingMessageId(null)
+    setProcessingState(null)
   }, [streamingMessageId])
 
   // ── Optimistic image preview (Phase 102 — D-11, D-12) ────────────────────
@@ -603,6 +646,17 @@ export function useAgentChat({
 
           // ── Streaming text (real tokens arriving) per D-01, D-02 ────────────
           if (hasPartialText) {
+            // Phase 102 gap-closure T-02: Skip streaming state reactivation for
+            // messages that were locally aborted. Still update the message text
+            // silently so the final committed text is correct when receipt arrives.
+            if (abortedMessageIdsRef.current.has(updated.message_id)) {
+              setMessages(prev => prev.map(m => {
+                if (m.message_id !== updated.message_id) return m
+                return { ...m, text: updated.text! }
+              }))
+              return
+            }
+
             // Turn off waitingForReply and processing state — user sees real text now (D-03)
             setWaitingForReply(false)
             setProcessingState(null)
@@ -724,6 +778,9 @@ export function useAgentChat({
               setStreamingMessageId(null)
               setProcessingState(null)
             }
+
+            // Phase 102 gap-closure T-02: Clean up aborted set when message is finalized
+            abortedMessageIdsRef.current.delete(receipt.message_id)
           }
         }
       )
