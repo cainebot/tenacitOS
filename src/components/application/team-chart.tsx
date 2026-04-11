@@ -1,7 +1,9 @@
 'use client'
 
 import { type FC, type JSX, useState, useMemo, useCallback } from 'react'
-import { cx } from '@circos/ui'
+import { Button as AriaButton } from 'react-aria-components'
+import { cx, Button, FeaturedIcon, Avatar } from '@circos/ui'
+import { Users01, Plus } from '@untitledui/icons'
 import { useAgentProjectRoles } from '@/hooks/use-agent-project-roles'
 import { TeamChartNode, type OrgNode } from './team-chart-node'
 import { TeamChartSidePanel } from './team-chart-side-panel'
@@ -43,10 +45,27 @@ export const TeamChart: FC<TeamChartProps> = ({
   projectLeadAgentId,
   agents,
 }) => {
-  const { roles, loading, error: hookError, updateRole } = useAgentProjectRoles(projectId)
+  const { roles, loading, error: hookError, createRole, updateRole, deleteRole } = useAgentProjectRoles(projectId)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [showAgentPicker, setShowAgentPicker] = useState(false)
+
+  // Agents not yet in the project
+  const unassignedAgents = useMemo(
+    () => agents.filter((a) => !roles.some((r) => r.agent_id === a.agent_id)),
+    [agents, roles]
+  )
+
+  // Assign agent handler
+  const handleAssignAgent = useCallback(async (agentId: string) => {
+    try {
+      await createRole({ agent_id: agentId, project_id: projectId })
+      setShowAgentPicker(false)
+    } catch (err) {
+      console.error('[team-chart] Failed to assign agent:', err)
+    }
+  }, [createRole, projectId])
 
   // Build org tree from roles + agents data
   const { roots, allNodes } = useMemo(() => {
@@ -167,11 +186,36 @@ export const TeamChart: FC<TeamChartProps> = ({
   // Empty state
   if (roles.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-primary gap-2">
-        <p className="text-lg font-semibold text-primary">Sin agentes asignados</p>
-        <p className="text-sm text-tertiary">
-          Asigna agentes al proyecto para visualizar el organigrama.
-        </p>
+      <div className="flex flex-col items-center justify-center min-h-[400px] bg-primary gap-4">
+        <FeaturedIcon icon={Users01} theme="light" size="md" />
+        <div className="text-center space-y-1">
+          <p className="font-display text-base font-semibold text-primary">No agents assigned</p>
+          <p className="text-xs text-tertiary">Add agents to this project to see the team chart.</p>
+        </div>
+        <Button
+          color="secondary"
+          size="sm"
+          iconLeading={Plus}
+          onPress={() => setShowAgentPicker((v) => !v)}
+        >
+          Assign agent
+        </Button>
+
+        {showAgentPicker && unassignedAgents.length > 0 && (
+          <div className="w-64 rounded-lg border border-secondary bg-primary p-2 shadow-lg">
+            <p className="text-xs text-tertiary px-2 py-1">Select an agent</p>
+            {unassignedAgents.map((agent) => (
+              <AriaButton
+                key={agent.agent_id}
+                onPress={() => handleAssignAgent(agent.agent_id)}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-primary hover:bg-secondary"
+              >
+                <Avatar src={agent.avatar_url ?? undefined} alt={agent.name} size="xs" />
+                {agent.name}
+              </AriaButton>
+            ))}
+          </div>
+        )}
       </div>
     )
   }
@@ -206,6 +250,36 @@ export const TeamChart: FC<TeamChartProps> = ({
                 />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Assign agent button — shown when there are still unassigned agents */}
+        {unassignedAgents.length > 0 && (
+          <div className="flex flex-col items-center gap-2">
+            <Button
+              color="secondary"
+              size="sm"
+              iconLeading={Plus}
+              onPress={() => setShowAgentPicker((v) => !v)}
+            >
+              Assign agent
+            </Button>
+
+            {showAgentPicker && (
+              <div className="w-64 rounded-lg border border-secondary bg-primary p-2 shadow-lg">
+                <p className="text-xs text-tertiary px-2 py-1">Select an agent</p>
+                {unassignedAgents.map((agent) => (
+                  <AriaButton
+                    key={agent.agent_id}
+                    onPress={() => handleAssignAgent(agent.agent_id)}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-primary hover:bg-secondary"
+                  >
+                    <Avatar src={agent.avatar_url ?? undefined} alt={agent.name} size="xs" />
+                    {agent.name}
+                  </AriaButton>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
