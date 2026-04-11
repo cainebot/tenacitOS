@@ -367,7 +367,7 @@ function TextBubble({ content, sent }: { content: string; sent: boolean }) {
   return (
     <div
       className={cx(
-        'border border-secondary overflow-clip px-3 py-2 w-full',
+        'border border-secondary overflow-clip px-3 py-2 w-full min-h-9',
         bubbleRadius(sent),
         'bg-primary',
       )}

@@ -272,6 +272,13 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
               <ChatPanelSection key={group.dateKey}>
                 <ChatPanelDivider label={group.dateLabel} />
                 {group.messages.map((msg) => {
+                  // Hide agent messages with no text and no attachments.
+                  // These are streaming placeholders: either actively streaming (the
+                  // dots/streaming section handles display) or historically unfinalised.
+                  if (!msg.isMine && !msg.text && (!msg.attachments || msg.attachments.length === 0)) {
+                    return null
+                  }
+
                   const baseProps = {
                     sent: msg.isMine,
                     senderName: msg.senderName,

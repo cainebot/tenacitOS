@@ -577,8 +577,10 @@ export function useAgentChat({
           if (!raw.sender && senderCacheRef.current.has(raw.sender_id)) {
             raw.sender = senderCacheRef.current.get(raw.sender_id)!
           }
-          // Clear optimistic typing when agent responds
-          if (raw.sender_id !== myParticipantId) {
+          // Clear optimistic typing when agent responds with actual content.
+          // Streaming placeholders arrive with empty text — keep dots visible
+          // until the first UPDATE with text/processing state clears them.
+          if (raw.sender_id !== myParticipantId && raw.text && raw.text.length > 0) {
             setWaitingForReply(false)
           }
           setMessages((prev) => {
