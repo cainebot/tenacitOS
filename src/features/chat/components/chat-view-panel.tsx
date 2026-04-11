@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { toast } from 'sonner'
 import { Avatar, ButtonUtility, LoadingIndicator } from '@circos/ui'
 import { DotsHorizontal } from '@untitledui/icons'
 import { useAgentChat } from '@/hooks/use-agent-chat'
@@ -97,17 +98,40 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
     shortcuts: [],
   })
 
-  // Phase 102 D-11: Wrap handleSend to add optimistic image preview before upload
+  // Phase 102 D-11 + gap-closure: Wrap handleSend to add optimistic image preview before upload
   const handleSendWithPreview = useCallback(async (payload: ChatInputPayload) => {
+    let tempId: string | null = null
+
     if (payload.images && payload.images.length > 0) {
       const localUrls = payload.images.map(img => URL.createObjectURL(img))
-      chat.addOptimisticImageMessage(
+      tempId = chat.addOptimisticImageMessage(
         localUrls,
         participant?.display_name ?? 'You',
         participant?.avatar_url ?? null,
       )
     }
-    await handleSend(payload)
+
+    // Safety timeout: if optimistic message is still present after 30s, remove it
+    let timeoutHandle: ReturnType<typeof setTimeout> | null = null
+    if (tempId) {
+      const capturedTempId = tempId
+      timeoutHandle = setTimeout(() => {
+        chat.removeOptimisticMessage(capturedTempId)
+        toast.error('Image upload timed out')
+      }, 30_000)
+    }
+
+    try {
+      await handleSend(payload)
+    } catch {
+      // Upload failed — clean up optimistic message immediately
+      if (tempId) {
+        chat.removeOptimisticMessage(tempId)
+      }
+    } finally {
+      // Clear timeout if send completed (success or failure was handled above)
+      if (timeoutHandle) clearTimeout(timeoutHandle)
+    }
   }, [handleSend, chat, participant])
 
   // ── Scroll management (per D-02, D-03, D-04) ──────────────────────────

@@ -47,7 +47,9 @@ interface UseAgentChatResult {
   /** Phase 102 D-08/D-09: Sends abort signal to stop active generation */
   abortStream: () => Promise<void>
   /** Phase 102 D-11: Adds optimistic image preview message before upload completes */
-  addOptimisticImageMessage: (localUrls: string[], senderName: string, senderAvatar: string | null) => void
+  addOptimisticImageMessage: (localUrls: string[], senderName: string, senderAvatar: string | null) => string
+  /** Phase 102 gap-closure: Removes a stuck optimistic message by temp ID */
+  removeOptimisticMessage: (tempId: string) => void
 }
 
 // ── Raw API message shape (joined rows from API) ──────────────────────────────
@@ -484,7 +486,20 @@ export function useAgentChat({
     }
 
     setMessages(prev => [...prev, optimisticMsg])
+    return tempId
   }, [conversationId, myParticipantId])
+
+  /** Phase 102 gap-closure: Remove a stuck optimistic message by temp ID */
+  const removeOptimisticMessage = useCallback((tempId: string) => {
+    // Revoke any ObjectURLs for this message
+    const urls = localPreviewUrlsRef.current.get(tempId)
+    if (urls) {
+      urls.forEach(url => URL.revokeObjectURL(url))
+      localPreviewUrlsRef.current.delete(tempId)
+    }
+    // Remove from messages array
+    setMessages(prev => prev.filter(m => m.message_id !== tempId))
+  }, [])
 
   // ── Toggle emoji reaction (optimistic + API + revert on error) ───────────
 
@@ -989,5 +1004,6 @@ export function useAgentChat({
     processingState,
     abortStream,
     addOptimisticImageMessage,
+    removeOptimisticMessage,
   }
 }
