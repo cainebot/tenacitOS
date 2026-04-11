@@ -84,53 +84,6 @@ export function ProjectOverviewTab({
   }, [])
 
   // ---------------------------------------------------------------------------
-  // Goals section
-  // ---------------------------------------------------------------------------
-
-  const { departmentGoals, createGoal } = useGoals(projectId)
-
-  const [showGoalForm, setShowGoalForm] = useState(false)
-  const [goalInput, setGoalInput] = useState('')
-  const goalInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (showGoalForm) {
-      // Short delay so the input is mounted before focus
-      setTimeout(() => goalInputRef.current?.focus(), 50)
-    }
-  }, [showGoalForm])
-
-  const handleAddGoalClick = useCallback(() => {
-    setShowGoalForm(true)
-    setGoalInput('')
-  }, [])
-
-  const handleGoalSave = useCallback(async () => {
-    const title = goalInput.trim()
-    if (!title) return
-    const result = await createGoal({ title, level: 'department', project_id: projectId })
-    if (!result) {
-      toast.error('Failed to create goal. Try again.')
-      return
-    }
-    setShowGoalForm(false)
-    setGoalInput('')
-  }, [goalInput, createGoal, projectId])
-
-  const handleGoalKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        handleGoalSave()
-      } else if (e.key === 'Escape') {
-        setShowGoalForm(false)
-        setGoalInput('')
-      }
-    },
-    [handleGoalSave]
-  )
-
-  // ---------------------------------------------------------------------------
   // Members section
   // ---------------------------------------------------------------------------
 
@@ -196,6 +149,40 @@ export function ProjectOverviewTab({
     [boardId, localPlAgentId]
   )
 
+  const handleRemoveProjectLead = useCallback(async () => {
+    const previousPl = localPlAgentId
+    setLocalPlAgentId(null) // optimistic
+    try {
+      const res = await fetch(`/api/boards/${boardId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_lead_agent_id: null }),
+      })
+      if (!res.ok) {
+        setLocalPlAgentId(previousPl)
+        toast.error('Failed to remove Project Lead.')
+        return
+      }
+      // Mark old PL as soul_dirty
+      if (previousPl) {
+        try {
+          const supabase = createBrowserClient()
+          await supabase.from('agents').update({ soul_dirty: true }).eq('agent_id', previousPl)
+        } catch {
+          await fetch(`/api/agents/${previousPl}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ soul_dirty: true }),
+          }).catch(() => {})
+        }
+      }
+      toast.success('Project Lead removed.')
+    } catch {
+      setLocalPlAgentId(previousPl)
+      toast.error('Failed to remove Project Lead.')
+    }
+  }, [boardId, localPlAgentId])
+
   const handleRemoveMember = useCallback(
     async (roleId: string, agentName: string) => {
       const success = await deleteRole(roleId)
@@ -237,6 +224,78 @@ export function ProjectOverviewTab({
     [createRole, projectId]
   )
 
+  // ---------------------------------------------------------------------------
+  // Goals section
+  // ---------------------------------------------------------------------------
+
+  const { departmentGoals, createGoal } = useGoals(projectId)
+
+  const [showGoalForm, setShowGoalForm] = useState(false)
+  const [goalInput, setGoalInput] = useState('')
+  const [goalDescInput, setGoalDescInput] = useState('')
+  const goalInputRef = useRef<HTMLInputElement>(null)
+  const goalDescRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (showGoalForm) {
+      // Short delay so the input is mounted before focus
+      setTimeout(() => goalInputRef.current?.focus(), 50)
+    }
+  }, [showGoalForm])
+
+  const handleAddGoalClick = useCallback(() => {
+    setShowGoalForm(true)
+    setGoalInput('')
+    setGoalDescInput('')
+  }, [])
+
+  const handleGoalSave = useCallback(async () => {
+    const title = goalInput.trim()
+    if (!title) return
+    const result = await createGoal({
+      title,
+      description: goalDescInput.trim() || undefined,
+      level: 'department',
+      project_id: projectId,
+    })
+    if (!result) {
+      toast.error('Failed to create goal. Try again.')
+      return
+    }
+    setShowGoalForm(false)
+    setGoalInput('')
+    setGoalDescInput('')
+  }, [goalInput, goalDescInput, createGoal, projectId])
+
+  const handleGoalKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        // Move focus to description field instead of saving immediately
+        goalDescRef.current?.focus()
+      } else if (e.key === 'Escape') {
+        setShowGoalForm(false)
+        setGoalInput('')
+        setGoalDescInput('')
+      }
+    },
+    []
+  )
+
+  const handleGoalDescKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        handleGoalSave()
+      } else if (e.key === 'Escape') {
+        setShowGoalForm(false)
+        setGoalInput('')
+        setGoalDescInput('')
+      }
+    },
+    [handleGoalSave]
+  )
+
   // Helper: get agent initials from name
   const getInitials = (name: string) =>
     name
@@ -251,12 +310,12 @@ export function ProjectOverviewTab({
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-3xl mx-auto space-y-0">
 
       {/* ====================================================================
           Section 1: Description
           ==================================================================== */}
-      <section>
+      <section className="py-6">
         <h3 className="font-display text-base font-semibold text-primary mb-3">
           Description
         </h3>
@@ -267,112 +326,29 @@ export function ProjectOverviewTab({
         />
       </section>
 
-      {/* ====================================================================
-          Section 2: Goals
-          ==================================================================== */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <Target04 className="size-5 text-fg-secondary" />
-          <h3 className="font-display text-base font-semibold text-primary">Goals</h3>
-        </div>
-
-        {/* Goal list or empty state */}
-        {departmentGoals.length === 0 && !showGoalForm ? (
-          <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <FeaturedIcon icon={<Target04 />} variant="light" size="md" />
-            <p className="font-display text-base font-semibold text-primary">No goals yet</p>
-            <p className="text-xs text-tertiary">
-              Create a goal to align this project with team objectives.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-0.5">
-            {departmentGoals.map((goal) => (
-              <div
-                key={goal.goal_id}
-                className="group flex items-center gap-2 py-2 px-2 rounded-md hover:bg-secondary"
-              >
-                <Badge color="gray" size="sm">Department</Badge>
-                <span
-                  className="flex-1 text-sm text-primary cursor-pointer truncate"
-                  onClick={() => router.push(`/goals/${goal.goal_id}`)}
-                >
-                  {goal.title}
-                </span>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <AriaButton
-                    aria-label="Edit goal"
-                    className="rounded p-0.5 text-fg-quaternary hover:text-fg-secondary transition-colors"
-                    onPress={() => router.push(`/goals/${goal.goal_id}`)}
-                  >
-                    <Edit03 className="size-4" />
-                  </AriaButton>
-                  <AriaButton
-                    aria-label="Delete goal"
-                    className="rounded p-0.5 text-fg-error-primary hover:text-error-primary transition-colors"
-                    onPress={() => router.push(`/goals/${goal.goal_id}`)}
-                  >
-                    <Trash01 className="size-4" />
-                  </AriaButton>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Inline goal creation form */}
-        {showGoalForm && (
-          <div className="flex items-center gap-2 mt-2 px-2">
-            <input
-              ref={goalInputRef}
-              type="text"
-              value={goalInput}
-              onChange={(e) => setGoalInput(e.target.value)}
-              onKeyDown={handleGoalKeyDown}
-              placeholder="Goal name..."
-              className={cx(
-                'flex-1 rounded-md border border-primary bg-primary px-3 py-1.5 text-sm text-primary placeholder:text-placeholder',
-                'focus:outline-none focus:ring-1 focus:ring-brand'
-              )}
-            />
-            <Button color="primary" size="sm" onClick={handleGoalSave}>
-              Save Goal
-            </Button>
-            <Button
-              color="secondary"
-              size="sm"
-              onClick={() => {
-                setShowGoalForm(false)
-                setGoalInput('')
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
-        )}
-
-        {/* Add goal button */}
-        {!showGoalForm && (
-          <div className="mt-2 px-2">
-            <Button
-              color="secondary"
-              size="sm"
-              iconLeading={Plus}
-              onClick={handleAddGoalClick}
-            >
-              + Add goal
-            </Button>
-          </div>
-        )}
-      </section>
+      {/* Divider */}
+      <div className="h-px bg-border-secondary" />
 
       {/* ====================================================================
-          Section 3: Members
+          Section 2: Members ("Roles en el proyecto") — moved before Goals
           ==================================================================== */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <Users01 className="size-5 text-fg-secondary" />
-          <h3 className="font-display text-base font-semibold text-primary">Members</h3>
+      <section className="py-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Users01 className="size-5 text-fg-secondary" />
+            <h3 className="font-display text-base font-semibold text-primary">Roles en el proyecto</h3>
+          </div>
+          <Button
+            color="secondary"
+            size="sm"
+            iconLeading={Plus}
+            onClick={() => {
+              setShowAddMemberModal(true)
+              setMemberSearch('')
+            }}
+          >
+            Add member
+          </Button>
         </div>
 
         {/* Member list or empty state */}
@@ -385,18 +361,29 @@ export function ProjectOverviewTab({
             </p>
           </div>
         ) : (
-          <div className="space-y-0.5">
-            {roles.map((role) => {
+          <div>
+            {/* Table header row — Jira Personas style */}
+            <div className="flex items-center gap-3 px-2 py-1.5 border-b border-secondary">
+              <span className="flex-1 text-xs font-medium text-tertiary">Name</span>
+              <span className="text-xs font-medium text-tertiary">Role</span>
+            </div>
+
+            {/* Member rows */}
+            {roles.map((role, index) => {
               const agent = agents.find((a) => a.agent_id === role.agent_id)
               const isProjectLead = role.agent_id === localPlAgentId
               const agentName = agent?.name ?? 'Unknown'
               const agentRole = agent?.role ?? ''
+              const isLast = index === roles.length - 1
 
               return (
                 <div key={role.id}>
                   <Dropdown.Root>
                     <AriaButton className="w-full text-left">
-                      <div className="flex items-center gap-3 py-2 px-2 rounded-md hover:bg-secondary cursor-pointer min-h-[44px]">
+                      <div className={cx(
+                        'flex items-center gap-3 py-2 px-2 hover:bg-secondary cursor-pointer min-h-[44px]',
+                        !isLast && 'border-b border-secondary/50'
+                      )}>
                         <AvatarLabelGroup
                           src={undefined}
                           initials={getInitials(agentName)}
@@ -426,10 +413,17 @@ export function ProjectOverviewTab({
                             setRoleInputValue(role.title ?? '')
                           }}
                         />
-                        <Dropdown.Item
-                          label="Set as Project Lead"
-                          onAction={() => handleSetProjectLead(role.agent_id)}
-                        />
+                        {isProjectLead ? (
+                          <Dropdown.Item
+                            label="Remove Project Lead"
+                            onAction={() => handleRemoveProjectLead()}
+                          />
+                        ) : (
+                          <Dropdown.Item
+                            label="Set as Project Lead"
+                            onAction={() => handleSetProjectLead(role.agent_id)}
+                          />
+                        )}
                         <Dropdown.Item
                           label="Remove from project"
                           onAction={() => handleRemoveMember(role.id, agentName)}
@@ -482,21 +476,121 @@ export function ProjectOverviewTab({
             })}
           </div>
         )}
+      </section>
 
-        {/* Add member button */}
-        <div className="mt-2 px-2">
-          <Button
-            color="secondary"
-            size="sm"
-            iconLeading={Plus}
-            onClick={() => {
-              setShowAddMemberModal(true)
-              setMemberSearch('')
-            }}
-          >
-            + Add member
-          </Button>
+      {/* Divider */}
+      <div className="h-px bg-border-secondary" />
+
+      {/* ====================================================================
+          Section 3: Goals — moved after Members
+          ==================================================================== */}
+      <section className="py-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Target04 className="size-5 text-fg-secondary" />
+            <h3 className="font-display text-base font-semibold text-primary">Goals</h3>
+          </div>
+          {!showGoalForm && (
+            <Button
+              color="secondary"
+              size="sm"
+              iconLeading={Plus}
+              onClick={handleAddGoalClick}
+            >
+              Add goal
+            </Button>
+          )}
         </div>
+
+        {/* Goal list or empty state */}
+        {departmentGoals.length === 0 && !showGoalForm ? (
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <FeaturedIcon icon={<Target04 />} variant="light" size="md" />
+            <p className="font-display text-base font-semibold text-primary">No goals yet</p>
+            <p className="text-xs text-tertiary">
+              Create a goal to align this project with team objectives.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-0.5">
+            {departmentGoals.map((goal) => (
+              <div
+                key={goal.goal_id}
+                className="group flex items-center gap-2 py-2 px-2 rounded-md hover:bg-secondary"
+              >
+                <Badge color="gray" size="sm">Department</Badge>
+                <span
+                  className="flex-1 text-sm text-primary cursor-pointer truncate"
+                  onClick={() => router.push(`/goals/${goal.goal_id}`)}
+                >
+                  {goal.title}
+                </span>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <AriaButton
+                    aria-label="Edit goal"
+                    className="rounded p-0.5 text-fg-quaternary hover:text-fg-secondary transition-colors"
+                    onPress={() => router.push(`/goals/${goal.goal_id}`)}
+                  >
+                    <Edit03 className="size-4" />
+                  </AriaButton>
+                  <AriaButton
+                    aria-label="Delete goal"
+                    className="rounded p-0.5 text-fg-error-primary hover:text-error-primary transition-colors"
+                    onPress={() => router.push(`/goals/${goal.goal_id}`)}
+                  >
+                    <Trash01 className="size-4" />
+                  </AriaButton>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Inline goal creation form — vertical layout with title + description */}
+        {showGoalForm && (
+          <div className="flex flex-col gap-2 mt-2 px-2">
+            <input
+              ref={goalInputRef}
+              type="text"
+              value={goalInput}
+              onChange={(e) => setGoalInput(e.target.value)}
+              onKeyDown={handleGoalKeyDown}
+              placeholder="Goal name..."
+              className={cx(
+                'w-full rounded-md border border-primary bg-primary px-3 py-1.5 text-sm text-primary placeholder:text-placeholder',
+                'focus:outline-none focus:ring-1 focus:ring-brand'
+              )}
+            />
+            <textarea
+              ref={goalDescRef}
+              value={goalDescInput}
+              onChange={(e) => setGoalDescInput(e.target.value)}
+              onKeyDown={handleGoalDescKeyDown}
+              placeholder="Goal description (optional)..."
+              rows={2}
+              className={cx(
+                'w-full rounded-md border border-primary bg-primary px-3 py-1.5 text-sm text-primary placeholder:text-placeholder',
+                'focus:outline-none focus:ring-1 focus:ring-brand resize-none'
+              )}
+            />
+            <div className="flex items-center gap-2">
+              <Button color="primary" size="sm" onClick={handleGoalSave}>
+                Save Goal
+              </Button>
+              <Button
+                color="secondary"
+                size="sm"
+                onClick={() => {
+                  setShowGoalForm(false)
+                  setGoalInput('')
+                  setGoalDescInput('')
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ====================================================================
