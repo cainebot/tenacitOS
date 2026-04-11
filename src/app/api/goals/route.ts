@@ -3,10 +3,11 @@ import { createServiceRoleClient } from '@/lib/supabase'
 import type { GoalLevel, GoalRow } from '@/types/project'
 
 // GET /api/goals — list all goals (company + department), ordered by level then title
-// Query: optional ?level=company|department filter
+// Query: optional ?level=company|department filter, optional ?project_id= filter
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const levelParam = searchParams.get('level') as GoalLevel | null
+  const projectIdParam = searchParams.get('project_id')
 
   try {
     const supabase = createServiceRoleClient()
@@ -24,6 +25,10 @@ export async function GET(request: NextRequest) {
         )
       }
       query = query.eq('level', levelParam)
+    }
+
+    if (projectIdParam) {
+      query = query.eq('project_id', projectIdParam)
     }
 
     const { data, error } = await query
@@ -53,11 +58,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { title, description, level, parent_id } = body as {
+  const { title, description, level, parent_id, project_id } = body as {
     title?: string
     description?: string
     level?: string
     parent_id?: string
+    project_id?: string
   }
 
   if (!title || typeof title !== 'string' || !title.trim()) {
@@ -71,9 +77,9 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  if (level === 'department' && !parent_id) {
+  if (level === 'department' && !parent_id && !project_id) {
     return NextResponse.json(
-      { error: 'Department goals require a parent_id' },
+      { error: 'Department goals require either a parent_id or a project_id' },
       { status: 400 }
     )
   }
@@ -86,6 +92,7 @@ export async function POST(request: NextRequest) {
     }
     if (description) payload.description = description
     if (parent_id) payload.parent_id = parent_id
+    if (project_id) payload.project_id = project_id
 
     const { data, error } = await supabase
       .from('goals')

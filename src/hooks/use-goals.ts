@@ -13,6 +13,7 @@ export interface UseGoalsResult {
     description?: string
     level: GoalLevel
     parent_id?: string
+    project_id?: string
   }) => Promise<GoalRow | null>
   updateGoal: (
     id: string,
@@ -23,7 +24,7 @@ export interface UseGoalsResult {
   departmentGoals: GoalRow[]
 }
 
-export function useGoals(): UseGoalsResult {
+export function useGoals(projectId?: string): UseGoalsResult {
   const [goals, setGoals] = useState<GoalRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -31,7 +32,8 @@ export function useGoals(): UseGoalsResult {
   // ----- Initial data fetch -----
   const fetchGoals = useCallback(async () => {
     try {
-      const res = await fetch('/api/goals', {
+      const url = projectId ? `/api/goals?project_id=${projectId}` : '/api/goals'
+      const res = await fetch(url, {
         headers: { 'Content-Type': 'application/json' },
       })
       if (!res.ok) {
@@ -46,7 +48,7 @@ export function useGoals(): UseGoalsResult {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [projectId])
 
   useEffect(() => {
     fetchGoals()
@@ -63,6 +65,7 @@ export function useGoals(): UseGoalsResult {
         { event: 'INSERT', schema: 'public', table: 'goals' },
         (payload) => {
           const newGoal = payload.new as GoalRow
+          if (projectId && newGoal.project_id !== projectId) return  // cross-project guard
           setGoals((prev) => [...prev, newGoal])
         }
       )
@@ -71,6 +74,7 @@ export function useGoals(): UseGoalsResult {
         { event: 'UPDATE', schema: 'public', table: 'goals' },
         (payload) => {
           const updated = payload.new as GoalRow
+          if (projectId && updated.project_id !== projectId) return  // cross-project guard
           setGoals((prev) =>
             prev.map((g) => (g.goal_id === updated.goal_id ? updated : g))
           )
@@ -101,6 +105,7 @@ export function useGoals(): UseGoalsResult {
       description?: string
       level: GoalLevel
       parent_id?: string
+      project_id?: string
     }): Promise<GoalRow | null> => {
       try {
         const res = await fetch('/api/goals', {

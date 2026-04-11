@@ -206,6 +206,7 @@ export interface GoalRow {
   level: GoalLevel
   status: GoalStatus
   parent_id: string | null
+  project_id: string | null  // Phase 88.1 — per-project scoping
   created_at: string
   updated_at: string
 }
