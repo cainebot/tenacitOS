@@ -54,6 +54,7 @@ export interface ProjectRow {
   cover_icon: string | null     // Phase 61 — project cover icon
   members: ProjectMember[]      // Phase 61 — JSONB array of project members
   is_favorite: boolean          // Phase 61 — user favorite flag
+  goal_id: string | null        // Phase 88 — FK to goals table (D-08)
   created_at: string
   updated_at: string
 }
@@ -114,6 +115,7 @@ export interface CardRow {
   due_date: string | null
   sort_order: string
   code: string | null // JIRA-style code e.g. "SP-42" (null until migration 07 applied)
+  goal_id: string | null        // Phase 88 — FK to goals table (D-08)
   created_at: string
   updated_at: string
   agent_status: CardAgentStatus | null  // Phase 87: agent execution state
@@ -188,6 +190,39 @@ export interface CardCustomFieldValueRow {
   card_id: string
   field_id: string
   value: unknown  // JSONB — type depends on field_type
+}
+
+// ---------------------------------------------------------------------------
+// Goals (Phase 88 — GOAL-01, GOAL-02)
+// ---------------------------------------------------------------------------
+
+export type GoalLevel = 'company' | 'department'
+export type GoalStatus = 'active' | 'paused' | 'completed'
+
+export interface GoalRow {
+  goal_id: string
+  title: string
+  description: string | null
+  level: GoalLevel
+  status: GoalStatus
+  parent_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ---------------------------------------------------------------------------
+// Agent Project Roles (Phase 88 — ORG-01)
+// ---------------------------------------------------------------------------
+
+export interface AgentProjectRoleRow {
+  id: string
+  agent_id: string
+  project_id: string
+  reports_to: string | null
+  title: string | null
+  role: string | null
+  created_at: string
+  updated_at: string
 }
 
 // ---- Composite types for API responses ----
