@@ -219,7 +219,10 @@ export function ProjectOverviewTab({
 
   const handleAddMember = useCallback(
     async (agentId: string) => {
-      await createRole({ agent_id: agentId, project_id: projectId })
+      const result = await createRole({ agent_id: agentId, project_id: projectId })
+      if (!result) {
+        toast.error('Failed to add member. They may already be in this project.')
+      }
     },
     [createRole, projectId]
   )
