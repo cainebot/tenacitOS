@@ -670,7 +670,7 @@ function ImageBubble({
 
   // D-01: Proactive expiry check on mount — if URL is >50min old, refresh immediately
   useEffect(() => {
-    if (!attachmentId || !createdAt || refreshAttemptedRef.current) return
+    if (!attachmentId || !createdAt || refreshAttemptedRef.current || attachmentId.startsWith('local-')) return
     if (!isUrlNearExpiry(createdAt)) return
 
     // Check session cache first
@@ -693,9 +693,11 @@ function ImageBubble({
 
   // D-01: On-demand signed URL refresh when image fails to load (fallback)
   // WR-01: hasRefreshedRef guards against infinite refresh — at most one retry per mount
+  // Phase 102 v3: Skip refresh for local-* optimistic attachment IDs (blob URLs are valid as-is)
   const handleImgError = useCallback(async () => {
     if (refreshing) return
-    if (!attachmentId || hasRefreshedRef.current) {
+    // Local optimistic attachments use blob URLs — no signed URL to refresh
+    if (!attachmentId || hasRefreshedRef.current || attachmentId.startsWith('local-')) {
       setImgError(true)
       return
     }
