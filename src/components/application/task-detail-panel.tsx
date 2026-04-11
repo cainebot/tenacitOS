@@ -425,20 +425,6 @@ export function TaskDetailPanel({
           />
 
           {/* ================================================================ */}
-          {/* Goal breadcrumb — D-05 cascade (read-only)                       */}
-          {/* ================================================================ */}
-          {resolvedGoal && (
-            <div className="px-0 py-3">
-              <GoalBreadcrumb
-                resolvedGoal={resolvedGoal}
-                parentGoal={parentGoal}
-                contextSource=""
-                isOverride={isGoalOverride}
-              />
-            </div>
-          )}
-
-          {/* ================================================================ */}
           {/* F · Description body (rich text)                                 */}
           {/* ================================================================ */}
           <SectionDescriptionBody bodyContent={bodyContent} onContentChange={onDescriptionChange} />
@@ -460,6 +446,9 @@ export function TaskDetailPanel({
             onTagCreate={onTagCreate}
             priority={priority}
             onPriorityChange={handlePriorityChange}
+            resolvedGoal={resolvedGoal}
+            parentGoal={parentGoal}
+            isGoalOverride={isGoalOverride}
           />
 
           <div className="h-px bg-border-secondary" />
@@ -738,6 +727,9 @@ function SectionDetails({
   onTagCreate,
   priority,
   onPriorityChange,
+  resolvedGoal,
+  parentGoal,
+  isGoalOverride,
 }: {
   assignee: TaskUser | null | undefined
   onAssigneeChange: (user: TaskUser | null) => void
@@ -750,6 +742,9 @@ function SectionDetails({
   onTagCreate?: (tag: TaskTag) => void
   priority: Priority | null | undefined
   onPriorityChange: (priority: Priority | null) => void
+  resolvedGoal: import('@/types/project').GoalRow | null
+  parentGoal?: import('@/types/project').GoalRow | null
+  isGoalOverride: boolean
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
@@ -799,12 +794,24 @@ function SectionDetails({
       </MetadataRow>
 
       {/* D4 · Priority */}
-      <MetadataRow label="Priority" noBorder>
+      <MetadataRow label="Priority" noBorder={!resolvedGoal}>
         <MetadataPriority
           priority={priority ?? null}
           onSelect={onPriorityChange}
         />
       </MetadataRow>
+
+      {/* D5 · Goal — D-05 cascade (read-only) */}
+      {resolvedGoal && (
+        <MetadataRow label="Goal" noBorder>
+          <GoalBreadcrumb
+            resolvedGoal={resolvedGoal}
+            parentGoal={parentGoal ?? null}
+            contextSource=""
+            isOverride={isGoalOverride}
+          />
+        </MetadataRow>
+      )}
         </div>
       )}
     </div>
