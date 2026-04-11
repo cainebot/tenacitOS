@@ -9,10 +9,10 @@ import {
   BadgeWithDot,
   AvatarLabelGroup,
   Avatar,
-  Input,
   Dropdown,
   ModalForm,
   FeaturedIcon,
+  Input,
   cx,
 } from '@circos/ui'
 import { Target04, Users01, Plus, Edit03, Trash01 } from '@untitledui/icons'
@@ -95,7 +95,8 @@ export function ProjectOverviewTab({
 
   useEffect(() => {
     if (showGoalForm) {
-      goalInputRef.current?.focus()
+      // Short delay so the input is mounted before focus
+      setTimeout(() => goalInputRef.current?.focus(), 50)
     }
   }, [showGoalForm])
 
@@ -207,7 +208,7 @@ export function ProjectOverviewTab({
     [deleteRole]
   )
 
-  const handleAddRole = useCallback(
+  const handleSaveRole = useCallback(
     async (roleId: string) => {
       const title = roleInputValue.trim()
       if (!title) return
@@ -236,6 +237,15 @@ export function ProjectOverviewTab({
     [createRole, projectId]
   )
 
+  // Helper: get agent initials from name
+  const getInitials = (name: string) =>
+    name
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -262,14 +272,14 @@ export function ProjectOverviewTab({
           ==================================================================== */}
       <section>
         <div className="flex items-center gap-2 mb-3">
-          <Target04 className="size-5 fg-secondary" />
+          <Target04 className="size-5 text-fg-secondary" />
           <h3 className="font-display text-base font-semibold text-primary">Goals</h3>
         </div>
 
-        {/* Goal list */}
+        {/* Goal list or empty state */}
         {departmentGoals.length === 0 && !showGoalForm ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <FeaturedIcon icon={Target04} theme="light" size="md" />
+            <FeaturedIcon icon={<Target04 />} variant="light" size="md" />
             <p className="font-display text-base font-semibold text-primary">No goals yet</p>
             <p className="text-xs text-tertiary">
               Create a goal to align this project with team objectives.
@@ -325,13 +335,13 @@ export function ProjectOverviewTab({
                 'focus:outline-none focus:ring-1 focus:ring-brand'
               )}
             />
-            <Button color="primary" size="sm" onPress={handleGoalSave}>
+            <Button color="primary" size="sm" onClick={handleGoalSave}>
               Save Goal
             </Button>
             <Button
               color="secondary"
               size="sm"
-              onPress={() => {
+              onClick={() => {
                 setShowGoalForm(false)
                 setGoalInput('')
               }}
@@ -348,7 +358,7 @@ export function ProjectOverviewTab({
               color="secondary"
               size="sm"
               iconLeading={Plus}
-              onPress={handleAddGoalClick}
+              onClick={handleAddGoalClick}
             >
               + Add goal
             </Button>
@@ -361,14 +371,14 @@ export function ProjectOverviewTab({
           ==================================================================== */}
       <section>
         <div className="flex items-center gap-2 mb-3">
-          <Users01 className="size-5 fg-secondary" />
+          <Users01 className="size-5 text-fg-secondary" />
           <h3 className="font-display text-base font-semibold text-primary">Members</h3>
         </div>
 
-        {/* Member list */}
+        {/* Member list or empty state */}
         {roles.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <FeaturedIcon icon={Users01} theme="light" size="md" />
+            <FeaturedIcon icon={<Users01 />} variant="light" size="md" />
             <p className="font-display text-base font-semibold text-primary">No members assigned</p>
             <p className="text-xs text-tertiary">
               Add agents or team members to collaborate on this project.
@@ -380,6 +390,7 @@ export function ProjectOverviewTab({
               const agent = agents.find((a) => a.agent_id === role.agent_id)
               const isProjectLead = role.agent_id === localPlAgentId
               const agentName = agent?.name ?? 'Unknown'
+              const agentRole = agent?.role ?? ''
 
               return (
                 <div key={role.id}>
@@ -387,11 +398,13 @@ export function ProjectOverviewTab({
                     <AriaButton className="w-full text-left">
                       <div className="flex items-center gap-3 py-2 px-2 rounded-md hover:bg-secondary cursor-pointer min-h-[44px]">
                         <AvatarLabelGroup
-                          src={agent?.avatar_url ?? undefined}
+                          src={undefined}
+                          initials={getInitials(agentName)}
                           title={agentName}
+                          subtitle={role.title ?? agentRole}
                           size="sm"
                         />
-                        <div className="ml-auto">
+                        <div className="ml-auto shrink-0">
                           {isProjectLead ? (
                             <BadgeWithDot color="brand" type="pill-color">
                               Project Lead
@@ -426,7 +439,7 @@ export function ProjectOverviewTab({
                     </Dropdown.Popover>
                   </Dropdown.Root>
 
-                  {/* Inline role input */}
+                  {/* Inline role title input */}
                   {addingRoleForId === role.id && (
                     <div className="flex items-center gap-2 mt-1 mb-1 px-2">
                       <input
@@ -436,7 +449,7 @@ export function ProjectOverviewTab({
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault()
-                            handleAddRole(role.id)
+                            handleSaveRole(role.id)
                           } else if (e.key === 'Escape') {
                             setAddingRoleForId(null)
                             setRoleInputValue('')
@@ -449,13 +462,13 @@ export function ProjectOverviewTab({
                         )}
                         autoFocus
                       />
-                      <Button color="primary" size="sm" onPress={() => handleAddRole(role.id)}>
+                      <Button color="primary" size="sm" onClick={() => handleSaveRole(role.id)}>
                         Save
                       </Button>
                       <Button
                         color="secondary"
                         size="sm"
-                        onPress={() => {
+                        onClick={() => {
                           setAddingRoleForId(null)
                           setRoleInputValue('')
                         }}
@@ -476,7 +489,7 @@ export function ProjectOverviewTab({
             color="secondary"
             size="sm"
             iconLeading={Plus}
-            onPress={() => {
+            onClick={() => {
               setShowAddMemberModal(true)
               setMemberSearch('')
             }}
@@ -507,7 +520,7 @@ export function ProjectOverviewTab({
             onChange={(val) => setMemberSearch(val)}
           />
 
-          {/* Search results */}
+          {/* Search results — agents not yet members */}
           {filteredAgents.length > 0 && (
             <div className="space-y-1">
               {filteredAgents.map((agent) => (
@@ -516,14 +529,15 @@ export function ProjectOverviewTab({
                   className="flex items-center gap-3 py-2 px-2 rounded-md hover:bg-secondary"
                 >
                   <Avatar
-                    src={agent.avatar_url ?? undefined}
+                    src={undefined}
+                    initials={getInitials(agent.name)}
                     size="sm"
                   />
                   <span className="flex-1 text-sm text-primary">{agent.name}</span>
                   <Button
                     size="sm"
                     color="secondary"
-                    onPress={() => handleAddMember(agent.agent_id)}
+                    onClick={() => handleAddMember(agent.agent_id)}
                   >
                     Add
                   </Button>
@@ -547,22 +561,26 @@ export function ProjectOverviewTab({
                 <div className="flex-1 h-px bg-border-secondary" />
               </div>
 
-              {/* Existing members */}
+              {/* Existing members read-only list */}
               <div className="space-y-1">
                 {roles.map((role) => {
                   const agent = agents.find((a) => a.agent_id === role.agent_id)
                   const isProjectLead = role.agent_id === localPlAgentId
+                  const name = agent?.name ?? 'Unknown'
+                  const agentRole = agent?.role ?? ''
                   return (
                     <div
                       key={role.id}
                       className="flex items-center gap-3 py-2 px-2 rounded-md"
                     >
                       <AvatarLabelGroup
-                        src={agent?.avatar_url ?? undefined}
-                        title={agent?.name ?? 'Unknown'}
+                        src={undefined}
+                        initials={getInitials(name)}
+                        title={name}
+                        subtitle={role.title ?? agentRole}
                         size="sm"
                       />
-                      <div className="ml-auto">
+                      <div className="ml-auto shrink-0">
                         {isProjectLead ? (
                           <BadgeWithDot color="brand" type="pill-color">
                             Project Lead
