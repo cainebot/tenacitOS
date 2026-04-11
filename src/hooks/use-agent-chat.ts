@@ -526,22 +526,32 @@ export function useAgentChat({
             }
             const enriched = enrichMessage(raw, myParticipantId, recipientIdsRef.current)
             // Replace optimistic with real message if same text + mine, else append
+            // Phase 102 gap-closure: Extended dedup to handle image/file messages where text is null
             const optimisticIdx = prev.findIndex(
               (m) =>
                 m._optimistic &&
                 m.isMine &&
-                m.text === raw.text &&
-                m.sender_id === raw.sender_id
+                m.sender_id === raw.sender_id &&
+                (
+                  // Text message dedup (existing): match by text content
+                  (m.text === raw.text && m.text !== null) ||
+                  // Image/file message dedup (new): match by content_type + _isLocalPreview flag
+                  (m._isLocalPreview && (raw.content_type === 'image' || raw.content_type === 'file'))
+                )
             )
 
-            // Phase 102 D-11: Revoke local preview URLs for any _isLocalPreview optimistic messages
-            // that are being replaced by the server INSERT (Pitfall 2 prevention)
-            const localPreviewMessages = prev.filter(m => m._optimistic && m._isLocalPreview)
-            for (const lpm of localPreviewMessages) {
-              const urls = localPreviewUrlsRef.current.get(lpm.message_id)
-              if (urls) {
-                urls.forEach(url => URL.revokeObjectURL(url))
-                localPreviewUrlsRef.current.delete(lpm.message_id)
+            // Phase 102 gap-closure: Only revoke ObjectURLs for the matching optimistic image message
+            // (not all _isLocalPreview messages on every INSERT)
+            if (raw.content_type === 'image' || raw.content_type === 'file') {
+              const matchingOptimistic = prev.find(
+                (m) => m._optimistic && m._isLocalPreview && m.isMine && m.sender_id === raw.sender_id
+              )
+              if (matchingOptimistic) {
+                const urls = localPreviewUrlsRef.current.get(matchingOptimistic.message_id)
+                if (urls) {
+                  urls.forEach(url => URL.revokeObjectURL(url))
+                  localPreviewUrlsRef.current.delete(matchingOptimistic.message_id)
+                }
               }
             }
 
