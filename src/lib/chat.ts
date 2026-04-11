@@ -42,14 +42,13 @@ export async function fetchMessages(
 export async function fetchSingleMessage(
   conversationId: string,
   messageId: string
-): Promise<unknown | null> {
+): Promise<Record<string, unknown> | null> {
   const res = await fetch(
-    `/api/conversations/${conversationId}/messages?limit=50`
+    `/api/conversations/${conversationId}/messages/${messageId}`
   )
   if (!res.ok) return null
   const { data } = await res.json()
-  const messages = data as Array<{ message_id: string }>
-  return messages.find(m => m.message_id === messageId) ?? null
+  return data ?? null
 }
 
 /** Send a message in a conversation */
