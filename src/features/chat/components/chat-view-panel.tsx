@@ -272,10 +272,16 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
               <ChatPanelSection key={group.dateKey}>
                 <ChatPanelDivider label={group.dateLabel} />
                 {group.messages.map((msg) => {
-                  // Hide agent messages with no text and no attachments.
-                  // These are streaming placeholders: either actively streaming (the
-                  // dots/streaming section handles display) or historically unfinalised.
-                  if (!msg.isMine && !msg.text && (!msg.attachments || msg.attachments.length === 0)) {
+                  // Hide agent messages with no text and no attachments — UNLESS
+                  // the message is actively streaming (streamingMessages has its text).
+                  // Without this check, the streaming override at line ~311 never runs
+                  // because this filter returns null before reaching it.
+                  if (
+                    !msg.isMine &&
+                    !msg.text &&
+                    !streamingMessages.has(msg.message_id) &&
+                    (!msg.attachments || msg.attachments.length === 0)
+                  ) {
                     return null
                   }
 
@@ -388,16 +394,23 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
             )
           }
 
-          // State 3: Waiting for reply (after user sends, before any UPDATE arrives)
+          // State 3: Waiting for reply — show dots once the agent has received
+          // the message (delivered or read). Before delivery, the single-check
+          // "sent" indicator is enough feedback; dots mean "agent is thinking".
           if (waitingForReply) {
-            return (
-              <Message
-                type="writing"
-                senderName={agentName}
-                senderAvatar={agentAvatar}
-                timestamp=""
-              />
-            )
+            const latestUserMsg = [...chat.messages].reverse().find(m => m.isMine && !m._failed)
+            const agentReceived = latestUserMsg?.statusIcon === 'delivered' || latestUserMsg?.statusIcon === 'read'
+            if (agentReceived) {
+              return (
+                <Message
+                  type="writing"
+                  senderName={agentName}
+                  senderAvatar={agentAvatar}
+                  timestamp=""
+                />
+              )
+            }
+            return null
           }
 
           return null

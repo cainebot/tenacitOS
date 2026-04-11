@@ -930,31 +930,73 @@ export function useAgentChat({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, myParticipantId])
 
-  // ── Fallback: refetch receipts when Realtime misses events ────────────────
+  // ── Fallback: full sync when Realtime misses events ───────────────────────
   // After sending a message, if the status stays 'sent' for 5s, refetch to catch
-  // receipts that Realtime may have dropped (e.g. auth token expired).
+  // receipts AND missing messages that Realtime may have dropped (e.g. auth token
+  // expired, subscription lost). This also replaces orphaned optimistic messages
+  // with their real DB counterparts.
 
   useEffect(() => {
     if (!conversationId || !myParticipantId) return
 
-    const sentMessages = messages.filter((m) => m.isMine && m.statusIcon === 'sent' && !m._failed && !m._optimistic)
-    if (sentMessages.length === 0) return
+    const hasPendingSent = messages.some((m) => m.isMine && m.statusIcon === 'sent' && !m._failed && !m._optimistic)
+    const hasOrphanedOptimistic = messages.some((m) => m._optimistic)
+    if (!hasPendingSent && !hasOrphanedOptimistic) return
 
     const timer = setTimeout(() => {
-      // Re-fetch latest messages to sync receipt status
       fetchMessagesApi(conversationId)
         .then(({ data }) => {
           const raw = data as RawApiMessage[]
+          // Populate sender cache from fresh API data
+          for (const m of raw) {
+            if (m.sender) senderCacheRef.current.set(m.sender_id, m.sender)
+          }
           setMessages((prev) => {
+            const localIds = new Set(prev.map((m) => m.message_id))
             const apiMap = new Map(raw.map((m) => [m.message_id, m]))
-            return prev.map((msg) => {
+
+            // 1. Update existing messages (receipt sync) + replace orphaned optimistic
+            let updated = prev.map((msg) => {
+              // Replace optimistic messages with their real DB counterpart
+              // (matched by sender + text, same logic as Realtime dedup)
+              if (msg._optimistic && msg.isMine) {
+                const realMatch = raw.find(
+                  (r) =>
+                    r.sender_id === msg.sender_id &&
+                    r.text === msg.text &&
+                    r.text !== null &&
+                    !localIds.has(r.message_id)
+                )
+                if (realMatch) {
+                  localIds.add(realMatch.message_id) // prevent duplicate append
+                  return enrichMessage(realMatch, myParticipantId, recipientIdsRef.current)
+                }
+              }
+
               const fresh = apiMap.get(msg.message_id)
               if (!fresh) return msg
-              // Only update if the API has more receipts than local state
               const freshReceipts = fresh.receipts ?? []
-              if (freshReceipts.length <= msg.receipts.length) return msg
+              const hasNewReceipts = freshReceipts.length > msg.receipts.length
+              const hasNewText = !msg.text && !!fresh.text
+              if (!hasNewReceipts && !hasNewText) return msg
               return enrichMessage(fresh, myParticipantId, recipientIdsRef.current)
             })
+
+            // 2. Append messages from API that are missing locally
+            // (Realtime INSERT was dropped — e.g. expired auth token)
+            const apiReversed = [...raw].reverse() // API returns newest-first; reverse to ascending
+            const missing = apiReversed
+              .filter((m) => !localIds.has(m.message_id))
+              .map((m) => enrichMessage(m, myParticipantId, recipientIdsRef.current))
+
+            if (missing.length > 0) {
+              // Insert missing messages in chronological order
+              updated = [...updated, ...missing].sort(
+                (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              )
+            }
+
+            return updated
           })
         })
         .catch(() => {}) // best-effort
@@ -970,6 +1012,64 @@ export function useAgentChat({
     const timer = setTimeout(() => setWaitingForReply(false), 60_000)
     return () => clearTimeout(timer)
   }, [waitingForReply])
+
+  // ── Fallback: poll for agent response when Realtime INSERT may be missed ───
+  // Supabase Realtime can drop INSERT events (auth token expiry, RLS, network).
+  // Poll every 5s while waitingForReply to catch agent responses and update
+  // streaming placeholders whose text was finalized in the DB.
+  useEffect(() => {
+    if (!conversationId || !myParticipantId || !waitingForReply) return
+
+    const interval = setInterval(() => {
+      fetchMessagesApi(conversationId)
+        .then(({ data }) => {
+          const raw = data as RawApiMessage[]
+          for (const m of raw) {
+            if (m.sender) senderCacheRef.current.set(m.sender_id, m.sender)
+          }
+          setMessages((prev) => {
+            const localIds = new Set(prev.map((m) => m.message_id))
+            const apiMap = new Map(raw.map((m) => [m.message_id, m]))
+            let changed = false
+
+            // 1. Update existing messages with new text or receipts
+            let updated = prev.map((msg) => {
+              const fresh = apiMap.get(msg.message_id)
+              if (!fresh) return msg
+              const hasNewText = !msg.text && !!fresh.text
+              const hasNewReceipts = (fresh.receipts ?? []).length > msg.receipts.length
+              if (!hasNewText && !hasNewReceipts) return msg
+              changed = true
+              return enrichMessage(fresh, myParticipantId, recipientIdsRef.current)
+            })
+
+            // 2. Append missing messages from API
+            const apiReversed = [...raw].reverse()
+            const missing = apiReversed
+              .filter((m) => !localIds.has(m.message_id))
+              .map((m) => enrichMessage(m, myParticipantId, recipientIdsRef.current))
+
+            if (missing.length > 0) {
+              changed = true
+              updated = [...updated, ...missing].sort(
+                (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              )
+            }
+            return changed ? updated : prev
+          })
+
+          // Clear waitingForReply if agent has responded
+          // API returns newest-first; check if latest message is from agent with text
+          if (raw.length > 0 && raw[0].sender_id !== myParticipantId && raw[0].text) {
+            setWaitingForReply(false)
+          }
+        })
+        .catch(() => {})
+    }, 5000)
+
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, myParticipantId, waitingForReply])
 
   // ── Batch mark messages as read (viewport-based, called by AgentChatTab) ────
 
