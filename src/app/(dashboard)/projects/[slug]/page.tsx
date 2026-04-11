@@ -12,6 +12,7 @@ import { TeamChart } from "@/components/application/team-chart"
 import type { ProjectCoverValue } from "@/components/application/project-cover/project-cover"
 import { TaskDetailPanel } from "@/components/application/task-detail-panel"
 import { TaskDetailPanelSkeleton } from "@/components/application/task-detail-panel-skeleton"
+import { ProjectOverviewTab } from "@/components/application/project-overview-tab"
 import type {
   TaskUser,
   TaskTag,
@@ -174,6 +175,10 @@ export default function ProjectBoardPage() {
   const [cover, setCover] = useState<ProjectCoverValue>({ color: "orange", icon: "rocket" })
 
   // Persist cover changes to DB + notify sidebar
+  const handleProjectDescriptionChange = useCallback((desc: string) => {
+    setProjectDescription(desc)
+  }, [])
+
   const handleCoverChange = useCallback((value: ProjectCoverValue) => {
     setCover(value)
     if (!board?.project_id) return
@@ -1005,7 +1010,14 @@ export default function ProjectBoardPage() {
         />
         {selectedTab === "overview" ? (
           <div className="flex-1 overflow-y-auto p-6">
-            <p className="text-secondary text-sm">Overview tab — component will be added in Plan 02</p>
+            <ProjectOverviewTab
+              projectId={projectId}
+              boardId={boardId}
+              description={projectDescription}
+              onDescriptionChange={handleProjectDescriptionChange}
+              agents={agents}
+              projectLeadAgentId={board?.project_lead_agent_id ?? null}
+            />
           </div>
         ) : selectedTab === "team-chart" ? (
           <div className="flex-1 overflow-auto p-6">
