@@ -287,7 +287,7 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                     return (
                       <div key={msg.message_id} className="relative">
                         <Message {...msgProps} />
-                        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-overlay opacity-60">
+                        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-primary/40">
                           <LoadingIndicator size="sm" />
                         </div>
                       </div>
