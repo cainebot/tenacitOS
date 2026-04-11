@@ -1,6 +1,8 @@
 "use client"
 
-import { type FC, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { type FC, type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { GoalBreadcrumb } from './goal-breadcrumb'
+import { useGoals } from '@/hooks/use-goals'
 import {
   ChevronRight,
   ChevronUpDouble,
@@ -243,6 +245,12 @@ export interface TaskDetailPanelProps {
   onAddComment?: (content: string) => void
   activities?: ActivityEvent[]
 
+  // Goal breadcrumb — D-05 cascade: card.goal_id (override) -> project.goal_id -> null
+  /** The card's own goal_id (explicit override, takes precedence) */
+  goalId?: string | null
+  /** The project's goal_id (inherited when card has no explicit goal) */
+  projectGoalId?: string | null
+
   className?: string
 }
 
@@ -337,6 +345,8 @@ export function TaskDetailPanel({
   comments = [],
   onAddComment,
   activities = [],
+  goalId,
+  projectGoalId,
   className,
 }: TaskDetailPanelProps) {
   // Internal state for uncontrolled fields
@@ -368,6 +378,22 @@ export function TaskDetailPanel({
   const subtasksDone = subtasks.filter((s) => s.status === "done").length
   const subtasksProgress = subtasks.length > 0 ? Math.round((subtasksDone / subtasks.length) * 100) : 0
 
+  // Goal breadcrumb resolution — D-05 cascade: card.goal_id (override) -> project.goal_id -> null
+  const { goals } = useGoals()
+  const resolvedGoalId = goalId ?? projectGoalId ?? null
+  const isGoalOverride = goalId != null
+  const resolvedGoal = useMemo(
+    () => (resolvedGoalId ? goals.find((g) => g.goal_id === resolvedGoalId) ?? null : null),
+    [goals, resolvedGoalId]
+  )
+  const parentGoal = useMemo(
+    () =>
+      resolvedGoal?.parent_id
+        ? goals.find((g) => g.goal_id === resolvedGoal.parent_id) ?? null
+        : null,
+    [goals, resolvedGoal]
+  )
+
   return (
     <div className={cx("flex h-full flex-col overflow-y-auto bg-primary", className)}>
       {/* ================================================================ */}
@@ -397,6 +423,20 @@ export function TaskDetailPanel({
             stateId={stateId}
             onStateIdChange={onStateIdChange}
           />
+
+          {/* ================================================================ */}
+          {/* Goal breadcrumb — D-05 cascade (read-only)                       */}
+          {/* ================================================================ */}
+          {resolvedGoal && (
+            <div className="px-0 py-3">
+              <GoalBreadcrumb
+                resolvedGoal={resolvedGoal}
+                parentGoal={parentGoal}
+                contextSource=""
+                isOverride={isGoalOverride}
+              />
+            </div>
+          )}
 
           {/* ================================================================ */}
           {/* F · Description body (rich text)                                 */}
