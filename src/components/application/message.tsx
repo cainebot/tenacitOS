@@ -779,12 +779,11 @@ function ImageBubble({
             </div>
           )}
 
-          {/* Actual image */}
-          {!imgError && !refreshing && (
+          {/* Actual image — eager load (lazy + hidden = deadlock) */}
+          {!imgError && !refreshing && activeSrc && (
             <img
               src={activeSrc}
               alt={alt ?? fileName ?? 'Image'}
-              loading="lazy"
               className={cx(
                 'max-w-[280px] max-h-[320px] object-contain',
                 imgLoaded ? 'block' : 'hidden',

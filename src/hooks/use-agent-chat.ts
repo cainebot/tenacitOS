@@ -583,6 +583,12 @@ export function useAgentChat({
           if (raw.sender_id !== myParticipantId && raw.text && raw.text.length > 0) {
             setWaitingForReply(false)
           }
+          // Phase 102 fix: For media messages with local preview, DON'T replace the
+          // optimistic message immediately — Realtime INSERT lacks JOINed attachments,
+          // which causes a flash to FileBubble fallback. Instead, keep the optimistic
+          // preview (with blob URLs) and let fetchSingleMessage do the full replacement.
+          const isMediaInsert = MEDIA_CONTENT_TYPES.includes(raw.content_type as ContentType)
+
           setMessages((prev) => {
             // Skip if already present (handles dedup of optimistic messages)
             if (prev.some((m) => m.message_id === raw.message_id && !m._optimistic)) {
@@ -604,22 +610,15 @@ export function useAgentChat({
                 )
             )
 
-            // Phase 102 gap-closure: Only revoke ObjectURLs for the matching optimistic image message
-            // (not all _isLocalPreview messages on every INSERT)
-            if (raw.content_type === 'image' || raw.content_type === 'file') {
-              const matchingOptimistic = prev.find(
-                (m) => m._optimistic && m._isLocalPreview && m.isMine && m.sender_id === raw.sender_id
-              )
-              if (matchingOptimistic) {
-                const urls = localPreviewUrlsRef.current.get(matchingOptimistic.message_id)
-                if (urls) {
-                  urls.forEach(url => URL.revokeObjectURL(url))
-                  localPreviewUrlsRef.current.delete(matchingOptimistic.message_id)
-                }
-              }
-            }
-
             if (optimisticIdx !== -1) {
+              // For media with local preview: keep the optimistic blob preview visible,
+              // just update the message_id so fetchSingleMessage can find & replace it.
+              // Don't revoke blob URLs yet — that happens when fetchSingleMessage replaces.
+              if (isMediaInsert && prev[optimisticIdx]._isLocalPreview) {
+                const next = [...prev]
+                next[optimisticIdx] = { ...prev[optimisticIdx], message_id: raw.message_id }
+                return next
+              }
               const next = [...prev]
               next[optimisticIdx] = enriched
               return next
@@ -629,8 +628,8 @@ export function useAgentChat({
 
           // Phase 102 gap-closure: Realtime INSERT lacks JOINed message_attachments.
           // For media messages, refetch the full message (with attachments + signed URLs)
-          // and merge into state. This ensures images render correctly immediately.
-          if (MEDIA_CONTENT_TYPES.includes(raw.content_type as ContentType)) {
+          // and merge into state. This replaces the optimistic preview with real data.
+          if (isMediaInsert) {
             fetchSingleMessage(conversationId!, raw.message_id)
               .then((fullMsg) => {
                 if (!fullMsg) return
@@ -641,9 +640,22 @@ export function useAgentChat({
                   full.sender = senderCacheRef.current.get(full.sender_id)!
                 }
                 const enrichedFull = enrichMessage(full, myParticipantId, recipientIdsRef.current)
-                setMessages(prev => prev.map(m =>
-                  m.message_id === raw.message_id ? enrichedFull : m
-                ))
+                setMessages(prev => {
+                  // Revoke blob URLs from the optimistic preview now that real data arrived
+                  const optimistic = prev.find(m => m.message_id === raw.message_id && m._isLocalPreview)
+                  if (optimistic) {
+                    const urls = localPreviewUrlsRef.current.get(optimistic.message_id)
+                      ?? localPreviewUrlsRef.current.get(raw.message_id)
+                    if (urls) {
+                      urls.forEach(url => URL.revokeObjectURL(url))
+                      localPreviewUrlsRef.current.delete(optimistic.message_id)
+                      localPreviewUrlsRef.current.delete(raw.message_id)
+                    }
+                  }
+                  return prev.map(m =>
+                    m.message_id === raw.message_id ? enrichedFull : m
+                  )
+                })
               })
               .catch(() => {}) // best-effort — image will render on next refresh
           }
