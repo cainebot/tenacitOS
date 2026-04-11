@@ -59,6 +59,8 @@ export default function ProjectBoardPage() {
   // Board discovery chain: slug → project_id → boardId (D-11)
   const [boardId, setBoardId] = useState("")
   const [discoveryDone, setDiscoveryDone] = useState(false)
+  const [projectId, setProjectId] = useState("")
+  const [projectDescription, setProjectDescription] = useState<string | null>(null)
 
   useEffect(() => {
     if (!slug) return
@@ -69,6 +71,8 @@ export default function ProjectBoardPage() {
       })
       .then((project: import('@/types/project').ProjectRow) => {
         if (!project?.project_id) throw new Error('Project not found')
+        setProjectId(project.project_id)
+        setProjectDescription(project.description ?? null)
         return fetch(`/api/boards?project_id=${project.project_id}`)
       })
       .then((r) => r.json())
@@ -999,7 +1003,11 @@ export default function ProjectBoardPage() {
           selectedTab={selectedTab}
           onTabChange={setSelectedTab}
         />
-        {selectedTab === "team-chart" ? (
+        {selectedTab === "overview" ? (
+          <div className="flex-1 overflow-y-auto p-6">
+            <p className="text-secondary text-sm">Overview tab — component will be added in Plan 02</p>
+          </div>
+        ) : selectedTab === "team-chart" ? (
           <div className="flex-1 overflow-auto p-6">
             <TeamChart
               projectId={board?.project_id ?? ""}

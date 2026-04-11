@@ -1,7 +1,7 @@
 "use client"
 
 import { type FC, type ReactNode } from "react"
-import { ChevronDown, Star01, List, Calendar, PieChart03, Users01 } from "@untitledui/icons"
+import { ChevronDown, Star01, List, Calendar, PieChart03, Users01, File06 } from "@untitledui/icons"
 import { ButtonUtility, AvatarGroup, Tabs, TabList, Tab, TabPanel, cx } from "@circos/ui"
 import { ProjectCover, type ProjectCoverValue } from "../project-cover/project-cover"
 import { Kanban } from "@/components/icons/kanban-icon"
@@ -36,6 +36,7 @@ export interface ProjectHeaderProps {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_TABS: ProjectHeaderTab[] = [
+  { id: "overview", label: "Overview", icon: File06 },
   { id: "list", label: "List", icon: List },
   { id: "board", label: "Board", icon: Kanban },
   { id: "timeline", label: "Timeline", icon: ChartNoAxesGantt },
