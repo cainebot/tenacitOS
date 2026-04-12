@@ -246,7 +246,8 @@ interface MembersTableProps {
   onOpenModal: () => void
 }
 
-function MembersTable({ members, agents, onOpenModal }: MembersTableProps) {
+function MembersTable({ members: rawMembers, agents, onOpenModal }: MembersTableProps) {
+  const members = rawMembers ?? []
   const getInitials = (name: string) =>
     name
       .split(' ')
@@ -342,7 +343,7 @@ function MetadataRow({
     : null
 
   // Build avatar items from members
-  const avatarItems = members.slice(0, 5).map((m) => {
+  const avatarItems = (members ?? []).slice(0, 5).map((m) => {
     const agent = agents.find((a) => a.agent_id === m.id)
     return {
       src: undefined as string | undefined,
