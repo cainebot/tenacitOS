@@ -1,27 +1,19 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import {
   TextEditor,
   Button,
-  Badge,
-  BadgeWithDot,
-  AvatarLabelGroup,
-  Avatar,
-  Dropdown,
-  ModalForm,
-  FeaturedIcon,
-  Input,
+  AvatarGroup,
   cx,
 } from '@circos/ui'
-import { Target04, Users01, Plus, Edit03, Trash01 } from '@untitledui/icons'
-import { Button as AriaButton } from 'react-aria-components'
+import { Plus, ChevronRight, ChevronDown, CalendarPlus01, CornerDownRight, Target04, DotsVertical, Users01 } from '@untitledui/icons'
+import { AccordionOverview } from './accordion-overview'
+import { GoalsInProgressCard } from './goals-in-progress-card'
 import { useGoals } from '@/hooks/use-goals'
-import { useAgentProjectRoles } from '@/hooks/use-agent-project-roles'
-import { createBrowserClient } from '@/lib/supabase'
 import { toast } from 'sonner'
 import type { AgentRow } from '@/types/supabase'
+import type { GoalRow, ProjectMember } from '@/types/project'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -30,10 +22,394 @@ import type { AgentRow } from '@/types/supabase'
 interface ProjectOverviewTabProps {
   projectId: string
   boardId: string
+  projectSlug: string
+  projectName: string
+  projectIcon: string | null
   description: string | null
   onDescriptionChange: (desc: string) => void
+  deliveryDate: string | null
+  onDeliveryDateChange: (date: string | null) => void
   agents: AgentRow[]
   projectLeadAgentId: string | null
+  members: ProjectMember[]
+  onGoalNavigate: (goalId: string) => void
+}
+
+// ---------------------------------------------------------------------------
+// Progress calculation (D-03)
+// ---------------------------------------------------------------------------
+
+function calculateProgress(goal: GoalRow): number {
+  if (goal.goal_type === 'boolean') return goal.boolean_current === 'complete' ? 100 : 0
+  if (
+    goal.target_value !== null &&
+    goal.initial_value !== null &&
+    goal.current_value !== null &&
+    goal.target_value !== goal.initial_value
+  ) {
+    return Math.max(
+      0,
+      Math.min(
+        100,
+        ((goal.current_value - goal.initial_value) / (goal.target_value - goal.initial_value)) * 100
+      )
+    )
+  }
+  return 0
+}
+
+// ---------------------------------------------------------------------------
+// CharacterCounter (D-08/D-23)
+// ---------------------------------------------------------------------------
+
+function CharacterCounter({ charCount }: { charCount: number }) {
+  const MAX_CHARS = 3000
+  const WARNING_THRESHOLD = 100
+  const charsLeft = MAX_CHARS - charCount
+
+  return (
+    <span
+      className={cx(
+        'text-xs mt-1 block',
+        charsLeft < WARNING_THRESHOLD ? 'text-error-primary' : 'text-tertiary'
+      )}
+    >
+      {charsLeft} characters left
+    </span>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// GoalsTable (D-04, D-06)
+// ---------------------------------------------------------------------------
+
+interface GoalsTableProps {
+  goals: GoalRow[]
+  onGoalClick: (goalId: string) => void
+  onCreateGoal: () => void
+}
+
+function GoalsTable({ goals, onGoalClick, onCreateGoal }: GoalsTableProps) {
+  // Only top-level goals (no parent)
+  const rootGoals = useMemo(() => goals.filter((g) => !g.parent_id), [goals])
+
+  // All sub-goals grouped by parent
+  const subGoalsByParent = useMemo(() => {
+    const map = new Map<string, GoalRow[]>()
+    goals.forEach((g) => {
+      if (g.parent_id) {
+        const existing = map.get(g.parent_id) ?? []
+        map.set(g.parent_id, [...existing, g])
+      }
+    })
+    return map
+  }, [goals])
+
+  // Expand/collapse state — track expanded goal IDs in a Set (D-06)
+  const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set())
+
+  const toggleExpand = useCallback((goalId: string) => {
+    setExpandedGoals((prev) => {
+      const next = new Set(prev)
+      if (next.has(goalId)) {
+        next.delete(goalId)
+      } else {
+        next.add(goalId)
+      }
+      return next
+    })
+  }, [])
+
+  // Empty state
+  if (rootGoals.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8">
+        <Target04 className="size-8 text-fg-quaternary mb-2" />
+        <p className="text-sm text-tertiary">No goals defined yet</p>
+        <Button
+          size="sm"
+          color="link-color"
+          iconLeading={Plus}
+          onPress={onCreateGoal}
+          className="mt-2"
+        >
+          New Goal
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-2">
+      {rootGoals.map((goal) => {
+        const children = subGoalsByParent.get(goal.goal_id) ?? []
+        const hasChildren = children.length > 0
+        const isExpanded = expandedGoals.has(goal.goal_id)
+        const progress = calculateProgress(goal)
+
+        return (
+          <div key={goal.goal_id}>
+            {/* Parent goal row */}
+            <div
+              className="flex items-center gap-3 py-2.5 px-2 rounded-md hover:bg-secondary cursor-pointer group"
+              onClick={() => onGoalClick(goal.goal_id)}
+            >
+              {/* Chevron — only shown if has sub-goals (D-06) */}
+              <button
+                type="button"
+                className={cx(
+                  'shrink-0 text-fg-quaternary',
+                  hasChildren ? 'visible' : 'invisible'
+                )}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (hasChildren) toggleExpand(goal.goal_id)
+                }}
+                aria-label={isExpanded ? 'Collapse sub-goals' : 'Expand sub-goals'}
+              >
+                {isExpanded ? (
+                  <ChevronDown className="size-4" />
+                ) : (
+                  <ChevronRight className="size-4" />
+                )}
+              </button>
+
+              {/* Goal title */}
+              <span className="flex-1 text-sm text-secondary truncate">{goal.title}</span>
+
+              {/* Progress bar + percentage */}
+              <div className="flex items-center gap-2 shrink-0 min-w-[140px]">
+                <div className="flex-1 h-1.5 rounded-full bg-tertiary overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-fg-brand-primary transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="text-xs text-tertiary w-8 text-right">
+                  {Math.round(progress)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Sub-goal rows — indented, bg-secondary (D-04) */}
+            {hasChildren && isExpanded && (
+              <div>
+                {children.map((sub) => {
+                  const subProgress = calculateProgress(sub)
+                  return (
+                    <div
+                      key={sub.goal_id}
+                      className="flex items-center gap-3 py-2 px-2 rounded-md bg-secondary cursor-pointer hover:bg-secondary/80"
+                      onClick={() => onGoalClick(sub.goal_id)}
+                    >
+                      {/* Spacer for chevron column alignment */}
+                      <div className="size-4 shrink-0" />
+
+                      {/* ↳ icon (D-04) */}
+                      <CornerDownRight className="size-4 text-fg-quaternary shrink-0" />
+
+                      {/* Sub-goal title — indented (pl-4xl = 32px via pl-8) */}
+                      <span className="flex-1 text-sm text-secondary truncate pl-2">{sub.title}</span>
+
+                      {/* Progress bar + percentage */}
+                      <div className="flex items-center gap-2 shrink-0 min-w-[140px]">
+                        <div className="flex-1 h-1.5 rounded-full bg-tertiary overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-fg-brand-primary transition-all duration-300"
+                            style={{ width: `${subProgress}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-tertiary w-8 text-right">
+                          {Math.round(subProgress)}%
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// MembersTable (D-22, D-25)
+// ---------------------------------------------------------------------------
+
+interface MembersTableProps {
+  members: ProjectMember[]
+  agents: AgentRow[]
+  onOpenModal: () => void
+}
+
+function MembersTable({ members, agents, onOpenModal }: MembersTableProps) {
+  const getInitials = (name: string) =>
+    name
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+
+  if (members.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-6">
+        <Users01 className="size-6 text-fg-quaternary mb-2" />
+        <p className="text-sm text-tertiary">No team members yet</p>
+        <Button
+          size="sm"
+          color="link-color"
+          iconLeading={Plus}
+          onPress={onOpenModal}
+          className="mt-2"
+        >
+          Add member
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-2 divide-y divide-secondary">
+      {members.map((member) => {
+        const agent = agents.find((a) => a.agent_id === member.id)
+        const displayName = agent?.name ?? member.name
+        const roleLabel = agent?.role ?? member.type
+
+        return (
+          <div
+            key={member.id}
+            className="flex items-center gap-3 py-2.5 px-2 hover:bg-secondary rounded-md"
+          >
+            {/* Avatar */}
+            <div className="size-8 rounded-full bg-tertiary flex items-center justify-center text-xs font-medium text-secondary shrink-0">
+              {getInitials(displayName)}
+            </div>
+
+            {/* Name + role */}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-secondary truncate">{displayName}</p>
+              <p className="text-xs text-tertiary truncate capitalize">{roleLabel}</p>
+            </div>
+
+            {/* Actions placeholder */}
+            <button
+              type="button"
+              className="text-fg-quaternary hover:text-fg-secondary transition-colors"
+              aria-label="Member options"
+            >
+              <DotsVertical className="size-4" />
+            </button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// MetadataRow
+// ---------------------------------------------------------------------------
+
+interface MetadataRowProps {
+  deliveryDate: string | null
+  agents: AgentRow[]
+  projectLeadAgentId: string | null
+  members: ProjectMember[]
+  onOpenMembersModal: () => void
+}
+
+function MetadataRow({
+  deliveryDate,
+  agents,
+  projectLeadAgentId,
+  members,
+  onOpenMembersModal,
+}: MetadataRowProps) {
+  const leadAgent = agents.find((a) => a.agent_id === projectLeadAgentId)
+
+  // Format delivery date for display
+  const formattedDate = deliveryDate
+    ? new Date(deliveryDate).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null
+
+  // Build avatar items from members
+  const avatarItems = members.slice(0, 5).map((m) => {
+    const agent = agents.find((a) => a.agent_id === m.id)
+    return {
+      src: undefined as string | undefined,
+      alt: agent?.name ?? m.name,
+    }
+  })
+
+  return (
+    <div className="flex flex-wrap items-center gap-4 mb-6 py-3 border-b border-secondary">
+      {/* Project Lead */}
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-xs text-tertiary shrink-0">Project Lead</span>
+        {leadAgent ? (
+          <div className="flex items-center gap-1.5">
+            <div className="size-5 rounded-full bg-tertiary flex items-center justify-center text-xs font-medium text-secondary shrink-0">
+              {leadAgent.name.slice(0, 1).toUpperCase()}
+            </div>
+            <span className="text-sm text-secondary truncate">{leadAgent.name}</span>
+          </div>
+        ) : (
+          <span className="text-sm text-placeholder">No lead assigned</span>
+        )}
+      </div>
+
+      <div className="w-px h-4 bg-border-secondary shrink-0" />
+
+      {/* Delivery Date (D-01) */}
+      <div className="flex items-center gap-2 min-w-0">
+        <CalendarPlus01 className="size-4 text-fg-quaternary shrink-0" />
+        <span className="text-xs text-tertiary shrink-0">Delivery Date</span>
+        <span className="text-sm text-secondary">
+          {formattedDate ?? (
+            <span className="text-placeholder">No date</span>
+          )}
+        </span>
+      </div>
+
+      <div className="w-px h-4 bg-border-secondary shrink-0" />
+
+      {/* Team members avatar group (D-10) */}
+      {avatarItems.length > 0 ? (
+        <button
+          type="button"
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          onClick={onOpenMembersModal}
+          aria-label="Open team members"
+        >
+          <AvatarGroup
+            avatars={avatarItems}
+            size="xs"
+            max={4}
+          />
+          {members.length > 4 && (
+            <span className="text-xs text-tertiary">+{members.length - 4}</span>
+          )}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="flex items-center gap-1.5 text-xs text-tertiary hover:text-secondary transition-colors"
+          onClick={onOpenMembersModal}
+        >
+          <Users01 className="size-4" />
+          <span>Add members</span>
+        </button>
+      )}
+    </div>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -42,13 +418,24 @@ interface ProjectOverviewTabProps {
 
 export function ProjectOverviewTab({
   projectId,
-  boardId,
+  boardId: _boardId,
+  projectSlug: _projectSlug,
+  projectName,
+  projectIcon,
   description,
   onDescriptionChange,
+  deliveryDate,
+  onDeliveryDateChange: _onDeliveryDateChange,
   agents,
   projectLeadAgentId,
+  members,
+  onGoalNavigate,
 }: ProjectOverviewTabProps) {
-  const router = useRouter()
+  // ---------------------------------------------------------------------------
+  // Goals
+  // ---------------------------------------------------------------------------
+
+  const { goals, createGoal } = useGoals(projectId)
 
   // ---------------------------------------------------------------------------
   // Description section — debounced auto-save
@@ -84,621 +471,174 @@ export function ProjectOverviewTab({
   }, [])
 
   // ---------------------------------------------------------------------------
-  // Members section
+  // Goal creation (D-18)
   // ---------------------------------------------------------------------------
 
-  const { roles, createRole, updateRole, deleteRole } = useAgentProjectRoles(projectId)
-
-  // Track which role row is showing inline role input
-  const [addingRoleForId, setAddingRoleForId] = useState<string | null>(null)
-  const [roleInputValue, setRoleInputValue] = useState('')
-
-  // Local optimistic PL state (syncs from props initially)
-  const [localPlAgentId, setLocalPlAgentId] = useState<string | null>(projectLeadAgentId)
-  useEffect(() => {
-    setLocalPlAgentId(projectLeadAgentId)
-  }, [projectLeadAgentId])
-
-  const handleSetProjectLead = useCallback(
-    async (agentId: string) => {
-      const previousPl = localPlAgentId
-      setLocalPlAgentId(agentId) // optimistic
-
-      try {
-        const res = await fetch(`/api/boards/${boardId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ project_lead_agent_id: agentId }),
-        })
-        if (!res.ok) {
-          setLocalPlAgentId(previousPl)
-          toast.error('Failed to update Project Lead.')
-          return
-        }
-
-        // Mark both old and new PL as soul_dirty
-        try {
-          const supabase = createBrowserClient()
-          const dirtyIds = [previousPl, agentId].filter(Boolean) as string[]
-          if (dirtyIds.length > 0) {
-            const { error } = await supabase
-              .from('agents')
-              .update({ soul_dirty: true })
-              .in('agent_id', dirtyIds)
-            if (error) {
-              // Fallback: PATCH /api/agents for each
-              for (const id of dirtyIds) {
-                await fetch(`/api/agents/${id}`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ soul_dirty: true }),
-                }).catch(() => {})
-              }
-            }
-          }
-        } catch {
-          // soul_dirty update is non-critical — don't fail the whole operation
-        }
-
-        toast.success('Project Lead updated.')
-      } catch {
-        setLocalPlAgentId(previousPl)
-        toast.error('Failed to update Project Lead.')
-      }
-    },
-    [boardId, localPlAgentId]
-  )
-
-  const handleRemoveProjectLead = useCallback(async () => {
-    const previousPl = localPlAgentId
-    setLocalPlAgentId(null) // optimistic
-    try {
-      const res = await fetch(`/api/boards/${boardId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project_lead_agent_id: null }),
-      })
-      if (!res.ok) {
-        setLocalPlAgentId(previousPl)
-        toast.error('Failed to remove Project Lead.')
-        return
-      }
-      // Mark old PL as soul_dirty
-      if (previousPl) {
-        try {
-          const supabase = createBrowserClient()
-          await supabase.from('agents').update({ soul_dirty: true }).eq('agent_id', previousPl)
-        } catch {
-          await fetch(`/api/agents/${previousPl}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ soul_dirty: true }),
-          }).catch(() => {})
-        }
-      }
-      toast.success('Project Lead removed.')
-    } catch {
-      setLocalPlAgentId(previousPl)
-      toast.error('Failed to remove Project Lead.')
-    }
-  }, [boardId, localPlAgentId])
-
-  const handleRemoveMember = useCallback(
-    async (roleId: string, agentName: string) => {
-      const success = await deleteRole(roleId)
-      if (success) {
-        toast.success(`Removed ${agentName} from project.`)
-      } else {
-        toast.error('Failed to remove member.')
-      }
-    },
-    [deleteRole]
-  )
-
-  const handleSaveRole = useCallback(
-    async (roleId: string) => {
-      const title = roleInputValue.trim()
-      if (!title) return
-      await updateRole(roleId, { title })
-      setAddingRoleForId(null)
-      setRoleInputValue('')
-    },
-    [updateRole, roleInputValue]
-  )
-
-  // Add Member modal
-  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
-  const [memberSearch, setMemberSearch] = useState('')
-
-  const existingAgentIds = new Set(roles.map((r) => r.agent_id))
-  const filteredAgents = agents.filter(
-    (a) =>
-      !existingAgentIds.has(a.agent_id) &&
-      a.name.toLowerCase().includes(memberSearch.toLowerCase())
-  )
-
-  const handleAddMember = useCallback(
-    async (agentId: string) => {
-      const result = await createRole({ agent_id: agentId, project_id: projectId })
-      if (!result) {
-        toast.error('Failed to add member. They may already be in this project.')
-      }
-    },
-    [createRole, projectId]
-  )
-
-  // ---------------------------------------------------------------------------
-  // Goals section
-  // ---------------------------------------------------------------------------
-
-  const { departmentGoals, createGoal, deleteGoal } = useGoals(projectId)
-
-  const [showGoalForm, setShowGoalForm] = useState(false)
-  const [goalInput, setGoalInput] = useState('')
-  const [goalDescInput, setGoalDescInput] = useState('')
-  const goalInputRef = useRef<HTMLInputElement>(null)
-  const goalDescRef = useRef<HTMLTextAreaElement>(null)
-
-  useEffect(() => {
-    if (showGoalForm) {
-      // Short delay so the input is mounted before focus
-      setTimeout(() => goalInputRef.current?.focus(), 50)
-    }
-  }, [showGoalForm])
-
-  const handleAddGoalClick = useCallback(() => {
-    setShowGoalForm(true)
-    setGoalInput('')
-    setGoalDescInput('')
-  }, [])
-
-  const handleGoalSave = useCallback(async () => {
-    const title = goalInput.trim()
-    if (!title) return
-    const result = await createGoal({
-      title,
-      description: goalDescInput.trim() || undefined,
+  const handleCreateGoal = useCallback(async () => {
+    const newGoal = await createGoal({
+      title: 'Untitled Goal',
       level: 'department',
       project_id: projectId,
     })
-    if (!result) {
-      toast.error('Failed to create goal. Try again.')
-      return
+    if (newGoal) {
+      onGoalNavigate(newGoal.goal_id)
     }
-    setShowGoalForm(false)
-    setGoalInput('')
-    setGoalDescInput('')
-  }, [goalInput, goalDescInput, createGoal, projectId])
+  }, [createGoal, projectId, onGoalNavigate])
 
-  const handleGoalKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        // Move focus to description field instead of saving immediately
-        goalDescRef.current?.focus()
-      } else if (e.key === 'Escape') {
-        setShowGoalForm(false)
-        setGoalInput('')
-        setGoalDescInput('')
-      }
-    },
-    []
-  )
+  // ---------------------------------------------------------------------------
+  // Members modal state
+  // ---------------------------------------------------------------------------
 
-  const handleGoalDescKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault()
-        handleGoalSave()
-      } else if (e.key === 'Escape') {
-        setShowGoalForm(false)
-        setGoalInput('')
-        setGoalDescInput('')
-      }
-    },
-    [handleGoalSave]
-  )
-
-  // Helper: get agent initials from name
-  const getInitials = (name: string) =>
-    name
-      .split(' ')
-      .map((w) => w[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
+  const [showMembersModal, setShowMembersModal] = useState(false)
 
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="max-w-3xl mx-auto space-y-0">
-
-      {/* ====================================================================
-          Section 1: Description
-          ==================================================================== */}
-      <section className="py-6">
-        <h3 className="font-display text-base font-semibold text-primary mb-3">
-          Description
-        </h3>
-        <TextEditor
-          content={description ?? ''}
-          onContentChange={handleDescriptionChange}
-          placeholder="What is this project about?"
-        />
-      </section>
-
-      {/* Divider */}
-      <div className="h-px bg-border-secondary" />
-
-      {/* ====================================================================
-          Section 2: Members ("Roles en el proyecto") — moved before Goals
-          ==================================================================== */}
-      <section className="py-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Users01 className="size-5 text-fg-secondary" />
-            <h3 className="font-display text-base font-semibold text-primary">Roles en el proyecto</h3>
-          </div>
-          <Button
-            color="secondary"
-            size="sm"
-            iconLeading={Plus}
-            onClick={() => {
-              setShowAddMemberModal(true)
-              setMemberSearch('')
-            }}
-          >
-            Add member
-          </Button>
+    <div className="grid grid-cols-[1fr_403px] gap-6">
+      {/* ====================================================
+          Left column — metadata + accordions
+          ==================================================== */}
+      <div className="min-w-0 space-y-0">
+        {/* D-09: Duplicate title with 42x42 icon */}
+        <div className="flex items-center gap-3 mb-6">
+          {projectIcon && (
+            <div className="size-[42px] rounded-lg bg-secondary flex items-center justify-center text-xl shrink-0">
+              {projectIcon}
+            </div>
+          )}
+          <h2 className="text-display-xs font-semibold text-primary">{projectName}</h2>
         </div>
 
-        {/* Member list or empty state */}
-        {roles.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <FeaturedIcon icon={<Users01 />} variant="light" size="md" />
-            <p className="font-display text-base font-semibold text-primary">No members assigned</p>
-            <p className="text-xs text-tertiary">
-              Add agents or team members to collaborate on this project.
-            </p>
+        {/* Metadata row: Project lead + Delivery Date + Team members */}
+        <MetadataRow
+          deliveryDate={deliveryDate}
+          agents={agents}
+          projectLeadAgentId={projectLeadAgentId}
+          members={members}
+          onOpenMembersModal={() => setShowMembersModal(true)}
+        />
+
+        {/* Accordion 1: Description (D-07, D-08) */}
+        <AccordionOverview
+          title="Description"
+          projectId={projectId}
+          section="description"
+        >
+          <div className="pt-4">
+            <TextEditor
+              content={description ?? ''}
+              onContentChange={handleDescriptionChange}
+              placeholder="What is this project about?"
+            />
+            <CharacterCounter charCount={(description ?? '').length} />
           </div>
-        ) : (
-          <div>
-            {/* Table header row — Jira Personas style */}
-            <div className="flex items-center gap-3 px-2 py-1.5 border-b border-secondary">
-              <span className="flex-1 text-xs font-medium text-tertiary">Name</span>
-              <span className="text-xs font-medium text-tertiary">Role</span>
-            </div>
+        </AccordionOverview>
 
-            {/* Member rows */}
-            {roles.map((role, index) => {
-              const agent = agents.find((a) => a.agent_id === role.agent_id)
-              const isProjectLead = role.agent_id === localPlAgentId
-              const agentName = agent?.name ?? 'Unknown'
-              const agentRole = agent?.role ?? ''
-              const isLast = index === roles.length - 1
+        {/* Accordion 2: Goals (D-07) */}
+        <AccordionOverview
+          title="Project's Goals"
+          projectId={projectId}
+          section="goals"
+          action={
+            <Button
+              size="sm"
+              color="secondary"
+              iconLeading={Plus}
+              onPress={handleCreateGoal}
+            >
+              New Goal
+            </Button>
+          }
+        >
+          <GoalsTable
+            goals={goals}
+            onGoalClick={onGoalNavigate}
+            onCreateGoal={handleCreateGoal}
+          />
+        </AccordionOverview>
 
+        {/* Accordion 3: Team Members (D-07) */}
+        <AccordionOverview
+          title="Team Members"
+          projectId={projectId}
+          section="members"
+          action={
+            <Button
+              size="sm"
+              color="secondary"
+              iconLeading={Plus}
+              onPress={() => setShowMembersModal(true)}
+            >
+              Add member
+            </Button>
+          }
+        >
+          <MembersTable
+            members={members}
+            agents={agents}
+            onOpenModal={() => setShowMembersModal(true)}
+          />
+        </AccordionOverview>
+      </div>
+
+      {/* ====================================================
+          Right column — sticky sidebar (D-20)
+          ==================================================== */}
+      <aside className="relative">
+        <div className="sticky top-4">
+          <GoalsInProgressCard goals={goals} onGoalClick={onGoalNavigate} />
+        </div>
+      </aside>
+
+      {/* Members modal placeholder — will be wired in Plan 06 */}
+      {showMembersModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/70 backdrop-blur-sm"
+          onClick={() => setShowMembersModal(false)}
+        >
+          <div
+            className="bg-primary rounded-2xl shadow-xl p-6 max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-semibold text-primary mb-4">Share with people</h2>
+            <p className="text-sm text-tertiary mb-6">
+              The following users have access to this project:
+            </p>
+            {members.map((m) => {
+              const agent = agents.find((a) => a.agent_id === m.id)
+              const displayName = agent?.name ?? m.name
               return (
-                <div key={role.id}>
-                  <Dropdown.Root>
-                    <AriaButton className="w-full text-left">
-                      <div className={cx(
-                        'flex items-center gap-3 py-2 px-2 hover:bg-secondary cursor-pointer min-h-[44px]',
-                        !isLast && 'border-b border-secondary/50'
-                      )}>
-                        <AvatarLabelGroup
-                          src={undefined}
-                          initials={getInitials(agentName)}
-                          title={agentName}
-                          subtitle={role.title ?? agentRole}
-                          size="sm"
-                        />
-                        <div className="ml-auto shrink-0">
-                          {isProjectLead ? (
-                            <BadgeWithDot color="brand" type="pill-color">
-                              Project Lead
-                            </BadgeWithDot>
-                          ) : (
-                            <BadgeWithDot color="gray" type="pill-color">
-                              Member
-                            </BadgeWithDot>
-                          )}
-                        </div>
-                      </div>
-                    </AriaButton>
-                    <Dropdown.Popover>
-                      <Dropdown.Menu>
-                        <Dropdown.Item
-                          label="Add role"
-                          onAction={() => {
-                            setAddingRoleForId(role.id)
-                            setRoleInputValue(role.title ?? '')
-                          }}
-                        />
-                        {isProjectLead ? (
-                          <Dropdown.Item
-                            label="Remove Project Lead"
-                            onAction={() => handleRemoveProjectLead()}
-                          />
-                        ) : (
-                          <Dropdown.Item
-                            label="Set as Project Lead"
-                            onAction={() => handleSetProjectLead(role.agent_id)}
-                          />
-                        )}
-                        <Dropdown.Item
-                          label="Remove from project"
-                          onAction={() => handleRemoveMember(role.id, agentName)}
-                          className="text-error-primary"
-                        />
-                      </Dropdown.Menu>
-                    </Dropdown.Popover>
-                  </Dropdown.Root>
-
-                  {/* Inline role title input */}
-                  {addingRoleForId === role.id && (
-                    <div className="flex items-center gap-2 mt-1 mb-1 px-2">
-                      <input
-                        type="text"
-                        value={roleInputValue}
-                        onChange={(e) => setRoleInputValue(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault()
-                            handleSaveRole(role.id)
-                          } else if (e.key === 'Escape') {
-                            setAddingRoleForId(null)
-                            setRoleInputValue('')
-                          }
-                        }}
-                        placeholder="Enter role title..."
-                        className={cx(
-                          'flex-1 rounded-md border border-primary bg-primary px-3 py-1.5 text-sm text-primary placeholder:text-placeholder',
-                          'focus:outline-none focus:ring-1 focus:ring-brand'
-                        )}
-                        autoFocus
-                      />
-                      <Button color="primary" size="sm" onClick={() => handleSaveRole(role.id)}>
-                        Save
-                      </Button>
-                      <Button
-                        color="secondary"
-                        size="sm"
-                        onClick={() => {
-                          setAddingRoleForId(null)
-                          setRoleInputValue('')
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
+                <div key={m.id} className="flex items-center gap-3 py-2">
+                  <div className="size-10 rounded-full bg-tertiary flex items-center justify-center text-sm font-medium text-secondary shrink-0">
+                    {displayName.slice(0, 2).toUpperCase()}
+                  </div>
+                  <span className="text-sm text-primary">{displayName}</span>
                 </div>
               )
             })}
-          </div>
-        )}
-      </section>
-
-      {/* Divider */}
-      <div className="h-px bg-border-secondary" />
-
-      {/* ====================================================================
-          Section 3: Goals — moved after Members
-          ==================================================================== */}
-      <section className="py-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Target04 className="size-5 text-fg-secondary" />
-            <h3 className="font-display text-base font-semibold text-primary">Goals</h3>
-          </div>
-          {!showGoalForm && (
-            <Button
-              color="secondary"
-              size="sm"
-              iconLeading={Plus}
-              onClick={handleAddGoalClick}
-            >
-              Add goal
-            </Button>
-          )}
-        </div>
-
-        {/* Goal list or empty state */}
-        {departmentGoals.length === 0 && !showGoalForm ? (
-          <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <FeaturedIcon icon={<Target04 />} variant="light" size="md" />
-            <p className="font-display text-base font-semibold text-primary">No goals yet</p>
-            <p className="text-xs text-tertiary">
-              Create a goal to align this project with team objectives.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-0.5">
-            {departmentGoals.map((goal) => (
-              <div
-                key={goal.goal_id}
-                className="group flex items-center gap-2 py-2 px-2 rounded-md hover:bg-secondary"
+            <div className="flex items-center gap-3 mt-6 pt-4 border-t border-secondary">
+              <Button
+                size="sm"
+                color="secondary"
+                className="flex-1"
+                onPress={() => setShowMembersModal(false)}
               >
-                <Badge color="gray" size="sm">Department</Badge>
-                <span
-                  className="flex-1 text-sm text-primary cursor-pointer truncate"
-                  onClick={() => router.push(`/goals/${goal.goal_id}`)}
-                >
-                  {goal.title}
-                </span>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <AriaButton
-                    aria-label="Edit goal"
-                    className="rounded p-0.5 text-fg-quaternary hover:text-fg-secondary transition-colors"
-                    onPress={() => router.push(`/goals/${goal.goal_id}`)}
-                  >
-                    <Edit03 className="size-4" />
-                  </AriaButton>
-                  <AriaButton
-                    aria-label="Delete goal"
-                    className="rounded p-0.5 text-fg-error-primary hover:text-error-primary transition-colors"
-                    onPress={async () => {
-                      const ok = await deleteGoal(goal.goal_id)
-                      if (!ok) toast.error('Failed to delete goal.')
-                    }}
-                  >
-                    <Trash01 className="size-4" />
-                  </AriaButton>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Inline goal creation form — vertical layout with title + description */}
-        {showGoalForm && (
-          <div className="flex flex-col gap-2 mt-2 px-2">
-            <input
-              ref={goalInputRef}
-              type="text"
-              value={goalInput}
-              onChange={(e) => setGoalInput(e.target.value)}
-              onKeyDown={handleGoalKeyDown}
-              placeholder="Goal name..."
-              className={cx(
-                'w-full rounded-md border border-primary bg-primary px-3 py-1.5 text-sm text-primary placeholder:text-placeholder',
-                'focus:outline-none focus:ring-1 focus:ring-brand'
-              )}
-            />
-            <textarea
-              ref={goalDescRef}
-              value={goalDescInput}
-              onChange={(e) => setGoalDescInput(e.target.value)}
-              onKeyDown={handleGoalDescKeyDown}
-              placeholder="Goal description (optional)..."
-              rows={2}
-              className={cx(
-                'w-full rounded-md border border-primary bg-primary px-3 py-1.5 text-sm text-primary placeholder:text-placeholder',
-                'focus:outline-none focus:ring-1 focus:ring-brand resize-none'
-              )}
-            />
-            <div className="flex items-center gap-2">
-              <Button color="primary" size="sm" onClick={handleGoalSave}>
-                Save Goal
+                Copy link
               </Button>
               <Button
-                color="secondary"
                 size="sm"
-                onClick={() => {
-                  setShowGoalForm(false)
-                  setGoalInput('')
-                  setGoalDescInput('')
-                }}
+                color="primary"
+                className="flex-1"
+                onPress={() => setShowMembersModal(false)}
               >
-                Cancel
+                Done
               </Button>
             </div>
           </div>
-        )}
-      </section>
-
-      {/* ====================================================================
-          Add Member Modal
-          ==================================================================== */}
-      <ModalForm
-        isOpen={showAddMemberModal}
-        onOpenChange={setShowAddMemberModal}
-        title="Add members"
-        submitLabel="Done"
-        cancelLabel=""
-        onSubmit={() => setShowAddMemberModal(false)}
-        onCancel={() => setShowAddMemberModal(false)}
-        size="md"
-      >
-        <div className="space-y-4">
-          {/* Search input */}
-          <Input
-            placeholder="Search agents and members..."
-            value={memberSearch}
-            onChange={(val) => setMemberSearch(val)}
-          />
-
-          {/* Search results — agents not yet members */}
-          {filteredAgents.length > 0 && (
-            <div className="space-y-1">
-              {filteredAgents.map((agent) => (
-                <div
-                  key={agent.agent_id}
-                  className="flex items-center gap-3 py-2 px-2 rounded-md hover:bg-secondary"
-                >
-                  <Avatar
-                    src={undefined}
-                    initials={getInitials(agent.name)}
-                    size="sm"
-                  />
-                  <span className="flex-1 text-sm text-primary">{agent.name}</span>
-                  <Button
-                    size="sm"
-                    color="secondary"
-                    onClick={() => handleAddMember(agent.agent_id)}
-                  >
-                    Add
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {filteredAgents.length === 0 && memberSearch && (
-            <p className="text-xs text-tertiary text-center py-4">
-              No agents found matching &quot;{memberSearch}&quot;
-            </p>
-          )}
-
-          {/* Divider: Who has access */}
-          {roles.length > 0 && (
-            <>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-border-secondary" />
-                <span className="text-xs text-tertiary">Who has access</span>
-                <div className="flex-1 h-px bg-border-secondary" />
-              </div>
-
-              {/* Existing members read-only list */}
-              <div className="space-y-1">
-                {roles.map((role) => {
-                  const agent = agents.find((a) => a.agent_id === role.agent_id)
-                  const isProjectLead = role.agent_id === localPlAgentId
-                  const name = agent?.name ?? 'Unknown'
-                  const agentRole = agent?.role ?? ''
-                  return (
-                    <div
-                      key={role.id}
-                      className="flex items-center gap-3 py-2 px-2 rounded-md"
-                    >
-                      <AvatarLabelGroup
-                        src={undefined}
-                        initials={getInitials(name)}
-                        title={name}
-                        subtitle={role.title ?? agentRole}
-                        size="sm"
-                      />
-                      <div className="ml-auto shrink-0">
-                        {isProjectLead ? (
-                          <BadgeWithDot color="brand" type="pill-color">
-                            Project Lead
-                          </BadgeWithDot>
-                        ) : (
-                          <BadgeWithDot color="gray" type="pill-color">
-                            Member
-                          </BadgeWithDot>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </>
-          )}
         </div>
-      </ModalForm>
+      )}
     </div>
   )
 }
