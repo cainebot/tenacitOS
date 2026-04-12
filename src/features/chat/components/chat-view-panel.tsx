@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Avatar, ButtonUtility, Dropdown, LoadingIndicator } from '@circos/ui'
 import { AlertCircle, DotsHorizontal } from '@untitledui/icons'
@@ -54,26 +54,48 @@ interface ChatViewPanelProps {
 
 // ── Inner conversation view ─────────────────────────────────────────────────
 
+// Participant shape with full fields for @mention and typing bubbles
+interface ConversationParticipant {
+  participant_id: string
+  participant_type: 'human' | 'agent'
+  display_name: string
+  avatar_url: string | null
+}
+
 function ConversationView({ conversationId, conversation }: { conversationId: string; conversation: ConversationWithMeta | undefined }) {
   const { participant } = useMyParticipant()
   const myParticipantId = participant?.participant_id ?? ''
   const [recipientIds, setRecipientIds] = useState<string[]>([])
+  // Full participant data for @mention autocomplete and multi-agent typing bubbles (Phase 104)
+  const [participants, setParticipants] = useState<ConversationParticipant[]>([])
 
   // Fetch all participants for the conversation (excluding self)
   useEffect(() => {
     if (!conversationId || !myParticipantId) return
     fetch(`/api/conversations/${conversationId}/participants`)
       .then(res => res.ok ? res.json() : [])
-      .then((data: Array<{ participant_id: string }>) => {
+      .then((data: Array<{ participant_id: string; participant_type?: string; display_name?: string; avatar_url?: string | null }>) => {
         setRecipientIds(
           data
             .map(d => d.participant_id)
             .filter(id => id !== myParticipantId)
         )
+        // Store full participant data for @mention and typing bubbles
+        setParticipants(
+          data
+            .filter(d => d.participant_id !== myParticipantId)
+            .map(d => ({
+              participant_id: d.participant_id,
+              participant_type: (d.participant_type ?? 'human') as 'human' | 'agent',
+              display_name: d.display_name ?? d.participant_id,
+              avatar_url: d.avatar_url ?? null,
+            }))
+        )
       })
       .catch((err) => {
         console.warn(`[ChatViewPanel] Failed to load participants for ${conversationId}:`, err)
         setRecipientIds([])
+        setParticipants([])
       })
   }, [conversationId, myParticipantId])
 
@@ -87,6 +109,37 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
     ? agents.find((a) => a.name === conversation.agent_name)
     : undefined
   const isAgentTyping = agent?.status === 'thinking'
+
+  // Multi-agent processing detection for group conversations (Phase 104, GROUP-09, D-12)
+  const conversationType = conversation?.conversation_type ?? 'direct'
+  const isGroupConversation = conversationType === 'group'
+
+  const processingAgents = useMemo(() => {
+    if (!isGroupConversation) return []
+    if (!chat.streamingMessages || chat.streamingMessages.size === 0) return []
+    // Find the sender_ids of messages that are currently being streamed
+    const streamingMessageIds = Array.from(chat.streamingMessages.keys())
+    const streamingSenderIds = new Set(
+      chat.messages
+        .filter(m => streamingMessageIds.includes(m.message_id))
+        .map(m => m.sender_id)
+    )
+    // Match streaming sender_ids to agent participants
+    const agentParticipants = participants.filter(p => p.participant_type === 'agent')
+    return agentParticipants.filter(ap => streamingSenderIds.has(ap.participant_id))
+  }, [chat.streamingMessages, chat.messages, participants, isGroupConversation])
+
+  // @mention autocomplete agents — only in group conversations (Phase 104, GROUP-07, D-10)
+  const mentionableAgents = useMemo(() => {
+    if (!isGroupConversation) return undefined
+    return participants
+      .filter(p => p.participant_type === 'agent')
+      .map(p => ({
+        participant_id: p.participant_id,
+        display_name: p.display_name,
+        avatar_url: p.avatar_url,
+      }))
+  }, [isGroupConversation, participants])
 
   // Detect language for processing state strings (D-07)
   const userLang: 'en' | 'es' = (() => {
@@ -383,6 +436,26 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
           </>
         )}
 
+        {/* Multi-agent typing bubbles — group conversations (Phase 104, GROUP-09, D-12) */}
+        {processingAgents.length > 0 && (
+          <div className="flex flex-col gap-1" aria-live="polite">
+            {processingAgents.length <= 5 ? (
+              processingAgents.map(agentItem => (
+                <div key={agentItem.participant_id} className="flex items-center gap-2 px-4 py-1">
+                  <Avatar src={agentItem.avatar_url ?? undefined} alt={agentItem.display_name} size="xs" />
+                  <span className="text-sm text-secondary">{agentItem.display_name} is thinking...</span>
+                  <LoadingIndicator size="sm" />
+                </div>
+              ))
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-1">
+                <span className="text-sm text-secondary">{processingAgents.length} agents are thinking...</span>
+                <LoadingIndicator size="sm" />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Unified agent response bubble: dots -> processing state -> streaming text */}
         {/* All three states render in this same DOM location for seamless in-place transitions */}
         {(() => {
@@ -478,6 +551,7 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
               : undefined
           }
           onClearReply={clearReply}
+          mentionableAgents={mentionableAgents}
         />
       </div>
     </div>
