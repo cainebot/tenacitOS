@@ -20,6 +20,7 @@ import type { ConversationWithMeta } from '../hooks/use-conversations'
 import { DmCreationPanel } from './dm-creation-panel'
 import { ChannelCreationPanel } from './channel-creation-panel'
 import { AnnouncementNotice } from './announcement-notice'
+import { OAuthReconnectBanner } from './oauth-reconnect-banner'
 
 // ── Processing state strings (D-07) ──────────────────────────────────────────
 const PROCESSING_STATE_STRINGS: Record<string, { en: string; es: string }> = {
@@ -78,7 +79,7 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
 
   const chat = useAgentChat({ conversationId, recipientIds })
   // Destructure streaming fields for clarity (Phase 102)
-  const { isStreaming, streamingMessages, processingState, streamingMessageId, waitingForReply } = chat
+  const { isStreaming, streamingMessages, processingState, streamingMessageId, waitingForReply, oauthExpired } = chat
 
   // Agent typing indicator
   const { agents } = useRealtimeAgents()
@@ -250,6 +251,9 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
         </div>
         <ButtonUtility icon={DotsHorizontal} size="sm" color="secondary" />
       </header>
+
+      {/* OAUTH-02: Reconnection banner — appears when oauth_expired detected via Realtime or mount-time query */}
+      <OAuthReconnectBanner visible={oauthExpired} />
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 py-4">
