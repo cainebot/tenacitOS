@@ -2,14 +2,28 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import {
+  DatePicker as AriaDatePicker,
+  Group as AriaGroup,
+  Button as AriaButton,
+  Popover as AriaPopover,
+  Dialog as AriaDialog,
+} from 'react-aria-components'
+import { I18nProvider } from 'react-aria'
+import { parseDate, type DateValue } from '@internationalized/date'
+import {
   TextEditor,
   Button,
+  ButtonUtility,
+  Select,
   AvatarGroup,
+  ProgressBar,
+  DatePickerCalendar,
   cx,
 } from '@circos/ui'
-import { Plus, ChevronRight, ChevronDown, CalendarPlus01, CornerDownRight, Target04, DotsVertical, Users01 } from '@untitledui/icons'
+import { Plus, ChevronRight, ChevronDown, Calendar, ArrowDown, CornerDownRight, Target04, DotsVertical, Users01, User01, XClose } from '@untitledui/icons'
 import { AccordionOverview } from './accordion-overview'
 import { GoalsInProgressCard } from './goals-in-progress-card'
+import { PROJECT_COVER_ICONS, PROJECT_COVER_COLORS, type ProjectCoverColorId } from './project-cover/project-cover'
 import { useGoals } from '@/hooks/use-goals'
 import { toast } from 'sonner'
 import type { AgentRow } from '@/types/supabase'
@@ -25,12 +39,14 @@ interface ProjectOverviewTabProps {
   projectSlug: string
   projectName: string
   projectIcon: string | null
+  projectCoverColor: ProjectCoverColorId | null
   description: string | null
   onDescriptionChange: (desc: string) => void
   deliveryDate: string | null
   onDeliveryDateChange: (date: string | null) => void
   agents: AgentRow[]
   projectLeadAgentId: string | null
+  onProjectLeadChange: (agentId: string | null) => void
   members: ProjectMember[]
   onGoalNavigate: (goalId: string) => void
   onOpenMembersModal: () => void  // REQUIRED per D-10 — not optional
@@ -90,11 +106,44 @@ interface GoalsTableProps {
   onCreateGoal: () => void
 }
 
+// TableCell variants per Figma design
+function TableCellText({ children, isSubGoal, className }: { children: React.ReactNode; isSubGoal?: boolean; className?: string }) {
+  return (
+    <div className={cx("flex flex-1 items-center gap-3 border-b border-secondary h-[72px] px-6 py-4", className)}>
+      {isSubGoal && <span className="text-sm font-medium text-primary shrink-0">↳</span>}
+      <p className="flex-1 text-sm font-medium text-primary truncate">{children}</p>
+    </div>
+  )
+}
+
+function TableCellProgress({ value, className }: { value: number; className?: string }) {
+  return (
+    <div className={cx("flex flex-1 items-center border-b border-secondary h-[72px] px-6 py-4", className)}>
+      <ProgressBar value={value} labelPosition="right" />
+    </div>
+  )
+}
+
+function TableCellChevron({ direction, onClick, className }: { direction: 'down' | 'right'; onClick?: () => void; className?: string }) {
+  return (
+    <div
+      className={cx("flex items-center border-b border-secondary h-[72px] px-6 py-4 w-[76px] shrink-0", className)}
+      onClick={onClick ? (e) => { e.stopPropagation(); onClick() } : undefined}
+    >
+      {onClick && (
+        <ButtonUtility
+          icon={direction === 'down' ? ChevronDown : ChevronRight}
+          size="xs"
+          color="tertiary"
+        />
+      )}
+    </div>
+  )
+}
+
 function GoalsTable({ goals, onGoalClick, onCreateGoal }: GoalsTableProps) {
-  // Only top-level goals (no parent)
   const rootGoals = useMemo(() => goals.filter((g) => !g.parent_id), [goals])
 
-  // All sub-goals grouped by parent
   const subGoalsByParent = useMemo(() => {
     const map = new Map<string, GoalRow[]>()
     goals.forEach((g) => {
@@ -106,22 +155,17 @@ function GoalsTable({ goals, onGoalClick, onCreateGoal }: GoalsTableProps) {
     return map
   }, [goals])
 
-  // Expand/collapse state — track expanded goal IDs in a Set (D-06)
   const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set())
 
   const toggleExpand = useCallback((goalId: string) => {
     setExpandedGoals((prev) => {
       const next = new Set(prev)
-      if (next.has(goalId)) {
-        next.delete(goalId)
-      } else {
-        next.add(goalId)
-      }
+      if (next.has(goalId)) next.delete(goalId)
+      else next.add(goalId)
       return next
     })
   }, [])
 
-  // Empty state
   if (rootGoals.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
@@ -131,7 +175,7 @@ function GoalsTable({ goals, onGoalClick, onCreateGoal }: GoalsTableProps) {
           size="sm"
           color="link-color"
           iconLeading={Plus}
-          onPress={onCreateGoal}
+          onClick={onCreateGoal}
           className="mt-2"
         >
           New Goal
@@ -141,94 +185,58 @@ function GoalsTable({ goals, onGoalClick, onCreateGoal }: GoalsTableProps) {
   }
 
   return (
-    <div className="mt-2">
-      {rootGoals.map((goal) => {
+    <div className="mt-4 overflow-clip rounded-2xl border border-primary bg-primary_alt">
+      {/* Table header */}
+      <div className="flex items-center">
+        <div className="flex flex-1 items-center gap-1 bg-secondary border-b border-secondary h-10 px-5 py-2">
+          <span className="text-xs font-semibold text-quaternary">Nombre</span>
+          <ArrowDown className="size-3 text-fg-quaternary" />
+        </div>
+        <div className="flex-1 bg-secondary border-b border-secondary h-10" />
+        <div className="w-[76px] shrink-0 bg-secondary border-b border-secondary h-10" />
+      </div>
+
+      {/* Table rows */}
+      {rootGoals.map((goal, idx) => {
         const children = subGoalsByParent.get(goal.goal_id) ?? []
         const hasChildren = children.length > 0
         const isExpanded = expandedGoals.has(goal.goal_id)
         const progress = calculateProgress(goal)
+        const isLastRoot = idx === rootGoals.length - 1
+        const isLastVisible = isLastRoot && (!hasChildren || !isExpanded)
 
         return (
           <div key={goal.goal_id}>
-            {/* Parent goal row */}
+            {/* Parent row — bg-primary */}
             <div
-              className="flex items-center gap-3 py-2.5 px-2 rounded-md hover:bg-secondary cursor-pointer group"
-              onClick={() => onGoalClick(goal.goal_id)}
+              className="flex items-center cursor-pointer hover:bg-primary_hover transition-colors"
+              onClick={() => hasChildren ? toggleExpand(goal.goal_id) : onGoalClick(goal.goal_id)}
             >
-              {/* Chevron — only shown if has sub-goals (D-06) */}
-              <button
-                type="button"
-                className={cx(
-                  'shrink-0 text-fg-quaternary',
-                  hasChildren ? 'visible' : 'invisible'
-                )}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (hasChildren) toggleExpand(goal.goal_id)
-                }}
-                aria-label={isExpanded ? 'Collapse sub-goals' : 'Expand sub-goals'}
-              >
-                {isExpanded ? (
-                  <ChevronDown className="size-4" />
-                ) : (
-                  <ChevronRight className="size-4" />
-                )}
-              </button>
-
-              {/* Goal title */}
-              <span className="flex-1 text-sm text-secondary truncate">{goal.title}</span>
-
-              {/* Progress bar + percentage */}
-              <div className="flex items-center gap-2 shrink-0 min-w-[140px]">
-                <div className="flex-1 h-1.5 rounded-full bg-tertiary overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-fg-brand-primary transition-all duration-300"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <span className="text-xs text-tertiary w-8 text-right">
-                  {Math.round(progress)}%
-                </span>
-              </div>
+              <TableCellText className={isLastVisible ? 'border-b-0' : undefined}>{goal.title}</TableCellText>
+              <TableCellProgress value={progress} className={isLastVisible ? 'border-b-0' : undefined} />
+              <TableCellChevron
+                direction={isExpanded ? 'down' : 'right'}
+                className={isLastVisible ? 'border-b-0' : undefined}
+                onClick={hasChildren ? () => toggleExpand(goal.goal_id) : undefined}
+              />
             </div>
 
-            {/* Sub-goal rows — indented, bg-secondary (D-04) */}
-            {hasChildren && isExpanded && (
-              <div>
-                {children.map((sub) => {
-                  const subProgress = calculateProgress(sub)
-                  return (
-                    <div
-                      key={sub.goal_id}
-                      className="flex items-center gap-3 py-2 px-2 rounded-md bg-secondary cursor-pointer hover:bg-secondary/80"
-                      onClick={() => onGoalClick(sub.goal_id)}
-                    >
-                      {/* Spacer for chevron column alignment */}
-                      <div className="size-4 shrink-0" />
-
-                      {/* ↳ icon (D-04) */}
-                      <CornerDownRight className="size-4 text-fg-quaternary shrink-0" />
-
-                      {/* Sub-goal title — indented (pl-4xl = 32px via pl-8) */}
-                      <span className="flex-1 text-sm text-secondary truncate pl-2">{sub.title}</span>
-
-                      {/* Progress bar + percentage */}
-                      <div className="flex items-center gap-2 shrink-0 min-w-[140px]">
-                        <div className="flex-1 h-1.5 rounded-full bg-tertiary overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-fg-brand-primary transition-all duration-300"
-                            style={{ width: `${subProgress}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-tertiary w-8 text-right">
-                          {Math.round(subProgress)}%
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+            {/* Sub-goal rows — bg-secondary */}
+            {hasChildren && isExpanded && children.map((sub, subIdx) => {
+              const subProgress = calculateProgress(sub)
+              const isSubLast = isLastRoot && subIdx === children.length - 1
+              return (
+                <div
+                  key={sub.goal_id}
+                  className="flex items-center bg-secondary cursor-pointer hover:bg-secondary_hover transition-colors"
+                  onClick={() => onGoalClick(sub.goal_id)}
+                >
+                  <TableCellText isSubGoal className={cx("pl-8", isSubLast ? 'border-b-0' : undefined)}>{sub.title}</TableCellText>
+                  <TableCellProgress value={subProgress} className={isSubLast ? 'border-b-0' : undefined} />
+                  <TableCellChevron direction="right" className={isSubLast ? 'border-b-0' : undefined} />
+                </div>
+              )
+            })}
           </div>
         )
       })}
@@ -318,20 +326,41 @@ function MembersTable({ members: rawMembers, agents, onOpenModal }: MembersTable
 
 interface MetadataRowProps {
   deliveryDate: string | null
+  onDeliveryDateChange: (date: string | null) => void
   agents: AgentRow[]
   projectLeadAgentId: string | null
+  onProjectLeadChange: (agentId: string | null) => void
   members: ProjectMember[]
   onOpenMembersModal: () => void
 }
 
 function MetadataRow({
   deliveryDate,
+  onDeliveryDateChange,
   agents,
   projectLeadAgentId,
+  onProjectLeadChange,
   members,
   onOpenMembersModal,
 }: MetadataRowProps) {
-  const leadAgent = agents.find((a) => a.agent_id === projectLeadAgentId)
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
+
+  // Parse delivery date to DateValue for react-aria DatePicker
+  const dateValue = useMemo(() => {
+    if (!deliveryDate) return null
+    try {
+      return parseDate(deliveryDate.slice(0, 10))
+    } catch {
+      return null
+    }
+  }, [deliveryDate])
+
+  const handleDateChange = useCallback(
+    (date: DateValue | null) => {
+      onDeliveryDateChange(date ? date.toString() : null)
+    },
+    [onDeliveryDateChange],
+  )
 
   // Format delivery date for display
   const formattedDate = deliveryDate
@@ -341,6 +370,12 @@ function MetadataRow({
         year: 'numeric',
       })
     : null
+
+  // Build agent items for select (icon for user-style rendering)
+  const agentItems = useMemo(
+    () => agents.map((a) => ({ id: a.agent_id, label: a.name ?? a.agent_id, icon: User01 })),
+    [agents],
+  )
 
   // Build avatar items from members
   const avatarItems = (members ?? []).slice(0, 5).map((m) => {
@@ -352,64 +387,113 @@ function MetadataRow({
   })
 
   return (
-    <div className="flex flex-wrap items-center gap-4 mb-6 py-3 border-b border-secondary">
-      {/* Project Lead */}
-      <div className="flex items-center gap-2 min-w-0">
-        <span className="text-xs text-tertiary shrink-0">Project Lead</span>
-        {leadAgent ? (
-          <div className="flex items-center gap-1.5">
-            <div className="size-5 rounded-full bg-tertiary flex items-center justify-center text-xs font-medium text-secondary shrink-0">
-              {leadAgent.name.slice(0, 1).toUpperCase()}
-            </div>
-            <span className="text-sm text-secondary truncate">{leadAgent.name}</span>
-          </div>
+    <div className="flex items-start gap-4 py-6">
+      {/* Project Lead — ghost Select */}
+      <div className="flex flex-1 flex-col gap-1.5 min-w-0">
+        <span className="text-sm font-medium text-secondary">Project lead</span>
+        <Select
+          aria-label="Project lead"
+          placeholder="Unassigned"
+          placeholderIcon={User01}
+          size="md"
+          selectedKey={projectLeadAgentId}
+          onSelectionChange={(key) => onProjectLeadChange(key ? String(key) : null)}
+          items={agentItems}
+          className="[&_button]:bg-transparent [&_button]:shadow-none [&_button]:ring-0 [&_button]:hover:bg-primary_hover [&_button]:rounded-md [&_button_span]:px-1.5 [&_button_span]:py-2 [&_.ml-auto]:hidden"
+        >
+          {(item) => <Select.Item id={item.id} icon={item.icon}>{item.label}</Select.Item>}
+        </Select>
+      </div>
+
+      {/* Delivery Date — ghost DatePicker */}
+      <div className="flex flex-1 flex-col gap-1.5 min-w-0">
+        <span className="text-sm font-medium text-secondary">Delivery Date</span>
+        <I18nProvider locale="en-US">
+          <AriaDatePicker
+            aria-label="Delivery date"
+            shouldCloseOnSelect
+            value={dateValue}
+            onChange={handleDateChange}
+            onOpenChange={setIsPickerOpen}
+          >
+            <AriaGroup>
+              <AriaButton
+                className={cx(
+                  "flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-2 text-md outline-none transition-colors hover:bg-primary_hover",
+                  formattedDate ? "text-primary" : "text-placeholder",
+                )}
+              >
+                <Calendar className="size-5 shrink-0 text-fg-quaternary" />
+                <span className="truncate">{formattedDate ?? 'No date'}</span>
+              </AriaButton>
+            </AriaGroup>
+            <AriaPopover
+              offset={8}
+              placement="bottom start"
+              className={({ isEntering, isExiting }) =>
+                cx(
+                  "origin-(--trigger-anchor-point) will-change-transform",
+                  isEntering && "duration-150 ease-out animate-in fade-in placement-bottom:slide-in-from-top-0.5",
+                  isExiting && "duration-100 ease-in animate-out fade-out placement-bottom:slide-out-to-top-0.5",
+                )
+              }
+            >
+              <AriaDialog aria-label="Date picker" className="rounded-2xl bg-primary shadow-xl ring ring-secondary_alt">
+                {({ close }) => (
+                  <>
+                    <div className="flex px-6 py-5">
+                      <DatePickerCalendar />
+                    </div>
+                    {formattedDate && (
+                      <div className="border-t border-secondary px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleDateChange(null)
+                            close()
+                          }}
+                          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-secondary transition hover:bg-primary_hover"
+                        >
+                          <XClose className="size-4 stroke-[2.5px]" />
+                          Clear date
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </AriaDialog>
+            </AriaPopover>
+          </AriaDatePicker>
+        </I18nProvider>
+      </div>
+
+      {/* Team members — avatar group */}
+      <div className="flex flex-col gap-1 items-start shrink-0">
+        <span className="text-sm font-medium text-secondary">Team members</span>
+        {avatarItems.length > 0 ? (
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-md py-1 transition-opacity hover:opacity-80"
+            onClick={onOpenMembersModal}
+            aria-label="Manage team members"
+          >
+            <AvatarGroup
+              avatars={avatarItems}
+              size="md"
+              max={4}
+            />
+          </button>
         ) : (
-          <span className="text-sm text-placeholder">No lead assigned</span>
+          <Button
+            size="sm"
+            color="tertiary"
+            iconLeading={Users01}
+            onClick={onOpenMembersModal}
+          >
+            Add members
+          </Button>
         )}
       </div>
-
-      <div className="w-px h-4 bg-border-secondary shrink-0" />
-
-      {/* Delivery Date (D-01) */}
-      <div className="flex items-center gap-2 min-w-0">
-        <CalendarPlus01 className="size-4 text-fg-quaternary shrink-0" />
-        <span className="text-xs text-tertiary shrink-0">Delivery Date</span>
-        <span className="text-sm text-secondary">
-          {formattedDate ?? (
-            <span className="text-placeholder">No date</span>
-          )}
-        </span>
-      </div>
-
-      <div className="w-px h-4 bg-border-secondary shrink-0" />
-
-      {/* Team members avatar group (D-10) */}
-      {avatarItems.length > 0 ? (
-        <button
-          type="button"
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          onClick={onOpenMembersModal}
-          aria-label="Open team members"
-        >
-          <AvatarGroup
-            avatars={avatarItems}
-            size="xs"
-            max={4}
-          />
-          {members.length > 4 && (
-            <span className="text-xs text-tertiary">+{members.length - 4}</span>
-          )}
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="flex items-center gap-1.5 text-xs text-tertiary hover:text-secondary transition-colors"
-          onClick={onOpenMembersModal}
-        >
-          <Users01 className="size-4" />
-          <span>Add members</span>
-        </button>
-      )}
     </div>
   )
 }
@@ -424,12 +508,14 @@ export function ProjectOverviewTab({
   projectSlug: _projectSlug,
   projectName,
   projectIcon,
+  projectCoverColor,
   description,
   onDescriptionChange,
   deliveryDate,
-  onDeliveryDateChange: _onDeliveryDateChange,
+  onDeliveryDateChange,
   agents,
   projectLeadAgentId,
+  onProjectLeadChange,
   members,
   onGoalNavigate,
   onOpenMembersModal,
@@ -507,20 +593,29 @@ export function ProjectOverviewTab({
           ==================================================== */}
       <div className="min-w-0 space-y-0">
         {/* D-09: Duplicate title with 42x42 icon */}
-        <div className="flex items-center gap-3 mb-6">
-          {projectIcon && (
-            <div className="size-[42px] rounded-lg bg-secondary flex items-center justify-center text-xl shrink-0">
-              {projectIcon}
-            </div>
-          )}
-          <h2 className="text-display-xs font-semibold text-primary">{projectName}</h2>
+        <div className="flex items-center gap-[9px] mb-6">
+          {projectIcon && (() => {
+            const IconComp = PROJECT_COVER_ICONS[projectIcon]
+            const coverBg = PROJECT_COVER_COLORS.find((c) => c.id === (projectCoverColor ?? 'orange'))?.bg ?? '#ec8d5e'
+            return (
+              <div
+                className="size-[42px] rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: coverBg }}
+              >
+                {IconComp ? <IconComp size={20} color="white" /> : null}
+              </div>
+            )
+          })()}
+          <h2 className="font-display text-display-xs font-semibold text-primary">{projectName}</h2>
         </div>
 
         {/* Metadata row: Project lead + Delivery Date + Team members */}
         <MetadataRow
           deliveryDate={deliveryDate}
+          onDeliveryDateChange={onDeliveryDateChange}
           agents={agents}
           projectLeadAgentId={projectLeadAgentId}
+          onProjectLeadChange={onProjectLeadChange}
           members={members}
           onOpenMembersModal={onOpenMembersModal}
         />

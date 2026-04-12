@@ -206,6 +206,21 @@ export default function ProjectBoardPage() {
     }
   }, [projectId])
 
+  const handleProjectLeadChange = useCallback(async (agentId: string | null) => {
+    if (!boardId) return
+    try {
+      const res = await fetch(`/api/boards/${boardId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_lead_agent_id: agentId }),
+      })
+      if (!res.ok) throw new Error('Save failed')
+      refetch()
+    } catch {
+      toast.error('Failed to update project lead.')
+    }
+  }, [boardId, refetch])
+
   const searchParams = useSearchParams()
   const tabFromUrl = searchParams.get('tab')
 
@@ -1087,12 +1102,14 @@ export default function ProjectBoardPage() {
                 projectSlug={slug}
                 projectName={projectName}
                 projectIcon={projectIcon}
+                projectCoverColor={cover.color ?? null}
                 description={projectDescription}
                 onDescriptionChange={handleProjectDescriptionChange}
                 deliveryDate={projectDeliveryDate}
                 onDeliveryDateChange={handleDeliveryDateChange}
                 agents={agents}
                 projectLeadAgentId={board?.project_lead_agent_id ?? null}
+                onProjectLeadChange={handleProjectLeadChange}
                 members={projectMembers}
                 onGoalNavigate={handleGoalNavigate}
                 onOpenMembersModal={() => setShowMembersModal(true)}
