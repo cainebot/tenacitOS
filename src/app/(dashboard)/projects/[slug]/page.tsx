@@ -31,7 +31,8 @@ import { useCardDetail } from "@/hooks/useCardDetail"
 import { useStoreSyncRealtime } from "@/hooks/use-store-sync-realtime"
 import { useBoardSyncEngine } from "@/hooks/use-board-sync-engine"
 import { useBoardStore, type BoardColumn } from "@/stores/board-store"
-import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, activityLogToActivityEvents } from "@/lib/adapters"
+import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, activityLogToActivityEvents, taskMessagesToActivityEvents } from "@/lib/adapters"
+import { useRealtimeTaskMessages } from "@/hooks/use-realtime-task-messages"
 import { sortKeyBetween } from "@/lib/fractional-index"
 import { parseDate } from "@internationalized/date"
 import type { CardRow, ActivityLogRow, BoardRow, ProjectStateRow, ProjectMember } from "@/types/project"
@@ -687,6 +688,13 @@ export default function ProjectBoardPage() {
     [cardActivities, agents, projectStates],
   )
 
+  // Task messages (Phase 89 — Realtime streaming)
+  const { messages: taskMessages } = useRealtimeTaskMessages(detailCardId)
+  const taskMessageEvents = useMemo(
+    () => taskMessagesToActivityEvents(taskMessages, agents),
+    [taskMessages, agents],
+  )
+
   // Board columns for the panel status dropdown — derived from store (updated on rename)
   const panelBoardColumns = useMemo(
     () => storeColumns.map(col => ({ columnId: col.columnId, name: col.title, stateIds: [col.stateId] })),
@@ -1242,6 +1250,7 @@ export default function ProjectBoardPage() {
             comments={panelDataProps?.comments}
             onAddComment={handlePanelAddComment}
             activities={activityEvents}
+            taskMessages={taskMessageEvents}
             className="h-full border-l border-secondary"
           />
           )}
