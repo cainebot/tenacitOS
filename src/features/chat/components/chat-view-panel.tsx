@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Avatar, ButtonUtility, LoadingIndicator } from '@circos/ui'
-import { DotsHorizontal } from '@untitledui/icons'
+import { Avatar, ButtonUtility, Dropdown, LoadingIndicator } from '@circos/ui'
+import { AlertCircle, DotsHorizontal } from '@untitledui/icons'
 import { useAgentChat } from '@/hooks/use-agent-chat'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import { useChatSend } from '../hooks/use-chat-send'
@@ -108,28 +108,27 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
         localUrls,
         participant?.display_name ?? 'You',
         participant?.avatar_url ?? null,
+        payload.images,
       )
     }
 
-    // Safety timeout: if optimistic message is still present after 30s, remove it
+    // Safety timeout: if optimistic message is still present after 30s, transition to error
     let timeoutHandle: ReturnType<typeof setTimeout> | null = null
     if (tempId) {
       const capturedTempId = tempId
       timeoutHandle = setTimeout(() => {
-        chat.removeOptimisticMessage(capturedTempId)
-        toast.error('Image upload timed out')
+        chat.setUploadError(capturedTempId)
       }, 30_000)
     }
 
     try {
       await handleSend(payload)
     } catch {
-      // Upload failed — clean up optimistic message immediately
+      // D-06: Upload failed — transition to error state, don't delete
       if (tempId) {
-        chat.removeOptimisticMessage(tempId)
+        chat.setUploadError(tempId)
       }
     } finally {
-      // Clear timeout if send completed (success or failure was handled above)
       if (timeoutHandle) clearTimeout(timeoutHandle)
     }
   }, [handleSend, chat, participant])
@@ -319,8 +318,45 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                     (msgProps as { content: string }).content = streamingText
                   }
 
-                  // Phase 102 D-12: Upload overlay for optimistic image preview messages
+                  // Phase 102.1: Upload states for optimistic image preview messages
                   if (msg._isLocalPreview) {
+                    if (msg._uploadError) {
+                      // D-06: Error state — show bubble with (!) icon + retry/delete dropdown
+                      return (
+                        <div key={msg.message_id} className="flex items-center gap-1 justify-end">
+                          <Message {...msgProps} />
+                          <Dropdown.Root>
+                            <ButtonUtility icon={AlertCircle} size="sm" color="tertiary" className="text-error-primary" aria-label="Error al enviar" />
+                            <Dropdown.Popover placement="bottom end">
+                              <Dropdown.Menu>
+                                <Dropdown.Item
+                                  onAction={() => {
+                                    // D-08: Retry from stored File/Blob
+                                    const files = msg._pendingFiles
+                                    if (files && files.length > 0) {
+                                      chat.removeOptimisticMessage(msg.message_id)
+                                      void handleSendWithPreview({ text: msg.text ?? '', images: files })
+                                    }
+                                  }}
+                                >
+                                  <span className="text-primary">Reintentar</span>
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onAction={() => {
+                                    // D-09: Delete failed message + revoke ObjectURLs
+                                    chat.removeOptimisticMessage(msg.message_id)
+                                  }}
+                                >
+                                  <span className="text-error-primary">Eliminar</span>
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown.Popover>
+                          </Dropdown.Root>
+                        </div>
+                      )
+                    }
+
+                    // Normal uploading state — loading overlay
                     return (
                       <div key={msg.message_id} className="relative">
                         <Message {...msgProps} />

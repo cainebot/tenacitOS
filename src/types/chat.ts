@@ -149,6 +149,10 @@ export interface EnrichedMessage {
   _failed?: boolean
   /** Phase 102 D-11: True when this is an optimistic image preview using a local ObjectURL */
   _isLocalPreview?: boolean
+  /** Phase 102.1 D-06: True when image upload failed — shows (!) error icon */
+  _uploadError?: boolean
+  /** Phase 102.1 D-08: Stored File/Blob references for retry on upload failure */
+  _pendingFiles?: File[]
 }
 
 export function deriveStatusIcon(

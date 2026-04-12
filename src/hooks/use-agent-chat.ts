@@ -47,9 +47,12 @@ interface UseAgentChatResult {
   /** Phase 102 D-08/D-09: Sends abort signal to stop active generation */
   abortStream: () => Promise<void>
   /** Phase 102 D-11: Adds optimistic image preview message before upload completes */
-  addOptimisticImageMessage: (localUrls: string[], senderName: string, senderAvatar: string | null) => string
+  addOptimisticImageMessage: (localUrls: string[], senderName: string, senderAvatar: string | null, files?: File[]) => string
   /** Phase 102 gap-closure: Removes a stuck optimistic message by temp ID */
   removeOptimisticMessage: (tempId: string) => void
+  /** Phase 102.1 D-06: Transition optimistic message to upload error state */
+  setUploadError: (tempId: string) => void
+
 }
 
 // ── Raw API message shape (joined rows from API) ──────────────────────────────
@@ -434,6 +437,7 @@ export function useAgentChat({
     localUrls: string[],
     senderName: string,
     senderAvatar: string | null,
+    files?: File[],
   ) => {
     const tempId = crypto.randomUUID()
     const localUrlsCopy = [...localUrls]
@@ -483,6 +487,7 @@ export function useAgentChat({
       messageType: 'image',
       _optimistic: true,
       _isLocalPreview: true,
+      _pendingFiles: files ?? [],
     }
 
     setMessages(prev => [...prev, optimisticMsg])
@@ -499,6 +504,15 @@ export function useAgentChat({
     }
     // Remove from messages array
     setMessages(prev => prev.filter(m => m.message_id !== tempId))
+  }, [])
+
+  /** Phase 102.1 D-06: Transition optimistic message to upload error state */
+  const setUploadError = useCallback((tempId: string) => {
+    setMessages(prev =>
+      prev.map(m =>
+        m.message_id === tempId ? { ...m, _uploadError: true } : m
+      )
+    )
   }, [])
 
   // ── Toggle emoji reaction (optimistic + API + revert on error) ───────────
@@ -1119,5 +1133,6 @@ export function useAgentChat({
     abortStream,
     addOptimisticImageMessage,
     removeOptimisticMessage,
+    setUploadError,
   }
 }
