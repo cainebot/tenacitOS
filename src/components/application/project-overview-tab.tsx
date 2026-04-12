@@ -445,20 +445,27 @@ export function ProjectOverviewTab({
   // ---------------------------------------------------------------------------
 
   const descTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const descAbortRef = useRef<AbortController | null>(null)
 
   const handleDescriptionChange = useCallback(
     (content: string) => {
       onDescriptionChange(content)
       if (descTimerRef.current) clearTimeout(descTimerRef.current)
+      // Abort any in-flight save from a previous keystroke
+      if (descAbortRef.current) descAbortRef.current.abort()
       descTimerRef.current = setTimeout(async () => {
+        const controller = new AbortController()
+        descAbortRef.current = controller
         try {
           const res = await fetch(`/api/projects/${projectId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ description: content }),
+            signal: controller.signal,
           })
           if (!res.ok) throw new Error('Save failed')
-        } catch {
+        } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') return
           toast.error('Failed to save description. Try again.')
         }
       }, 800)
@@ -466,10 +473,11 @@ export function ProjectOverviewTab({
     [projectId, onDescriptionChange]
   )
 
-  // Cleanup timer on unmount
+  // Cleanup timer + abort in-flight fetch on unmount
   useEffect(() => {
     return () => {
       if (descTimerRef.current) clearTimeout(descTimerRef.current)
+      if (descAbortRef.current) descAbortRef.current.abort()
     }
   }, [])
 
