@@ -33,6 +33,7 @@ interface ProjectOverviewTabProps {
   projectLeadAgentId: string | null
   members: ProjectMember[]
   onGoalNavigate: (goalId: string) => void
+  onOpenMembersModal: () => void  // REQUIRED per D-10 — not optional
 }
 
 // ---------------------------------------------------------------------------
@@ -430,6 +431,7 @@ export function ProjectOverviewTab({
   projectLeadAgentId,
   members,
   onGoalNavigate,
+  onOpenMembersModal,
 }: ProjectOverviewTabProps) {
   // ---------------------------------------------------------------------------
   // Goals
@@ -486,12 +488,6 @@ export function ProjectOverviewTab({
   }, [createGoal, projectId, onGoalNavigate])
 
   // ---------------------------------------------------------------------------
-  // Members modal state
-  // ---------------------------------------------------------------------------
-
-  const [showMembersModal, setShowMembersModal] = useState(false)
-
-  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
@@ -517,7 +513,7 @@ export function ProjectOverviewTab({
           agents={agents}
           projectLeadAgentId={projectLeadAgentId}
           members={members}
-          onOpenMembersModal={() => setShowMembersModal(true)}
+          onOpenMembersModal={onOpenMembersModal}
         />
 
         {/* Accordion 1: Description (D-07, D-08) */}
@@ -569,7 +565,7 @@ export function ProjectOverviewTab({
               size="sm"
               color="secondary"
               iconLeading={Plus}
-              onPress={() => setShowMembersModal(true)}
+              onPress={onOpenMembersModal}
             >
               Add member
             </Button>
@@ -578,7 +574,7 @@ export function ProjectOverviewTab({
           <MembersTable
             members={members}
             agents={agents}
-            onOpenModal={() => setShowMembersModal(true)}
+            onOpenModal={onOpenMembersModal}
           />
         </AccordionOverview>
       </div>
@@ -592,53 +588,6 @@ export function ProjectOverviewTab({
         </div>
       </aside>
 
-      {/* Members modal placeholder — will be wired in Plan 06 */}
-      {showMembersModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/70 backdrop-blur-sm"
-          onClick={() => setShowMembersModal(false)}
-        >
-          <div
-            className="bg-primary rounded-2xl shadow-xl p-6 max-w-md w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-base font-semibold text-primary mb-4">Share with people</h2>
-            <p className="text-sm text-tertiary mb-6">
-              The following users have access to this project:
-            </p>
-            {members.map((m) => {
-              const agent = agents.find((a) => a.agent_id === m.id)
-              const displayName = agent?.name ?? m.name
-              return (
-                <div key={m.id} className="flex items-center gap-3 py-2">
-                  <div className="size-10 rounded-full bg-tertiary flex items-center justify-center text-sm font-medium text-secondary shrink-0">
-                    {displayName.slice(0, 2).toUpperCase()}
-                  </div>
-                  <span className="text-sm text-primary">{displayName}</span>
-                </div>
-              )
-            })}
-            <div className="flex items-center gap-3 mt-6 pt-4 border-t border-secondary">
-              <Button
-                size="sm"
-                color="secondary"
-                className="flex-1"
-                onPress={() => setShowMembersModal(false)}
-              >
-                Copy link
-              </Button>
-              <Button
-                size="sm"
-                color="primary"
-                className="flex-1"
-                onPress={() => setShowMembersModal(false)}
-              >
-                Done
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

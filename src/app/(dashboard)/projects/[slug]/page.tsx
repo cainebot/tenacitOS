@@ -13,6 +13,8 @@ import type { ProjectCoverValue } from "@/components/application/project-cover/p
 import { TaskDetailPanel } from "@/components/application/task-detail-panel"
 import { TaskDetailPanelSkeleton } from "@/components/application/task-detail-panel-skeleton"
 import { ProjectOverviewTab } from "@/components/application/project-overview-tab"
+import { GoalDetailView } from "@/components/application/goal-detail-view"
+import { ShareMembersModal } from "@/components/application/share-members-modal"
 import type {
   TaskUser,
   TaskTag,
@@ -206,6 +208,13 @@ export default function ProjectBoardPage() {
 
   const searchParams = useSearchParams()
   const tabFromUrl = searchParams.get('tab')
+
+  // Goal/sub-goal routing params (D-19/D-24)
+  const goalIdParam = searchParams.get('goal')
+  const subGoalIdParam = searchParams.get('subgoal')
+
+  // Share members modal state (D-22)
+  const [showMembersModal, setShowMembersModal] = useState(false)
 
   const handleGoalNavigate = useCallback((goalId: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -1057,21 +1066,38 @@ export default function ProjectBoardPage() {
         />
         {selectedTab === "overview" ? (
           <div className="flex-1 overflow-y-auto p-6">
-            <ProjectOverviewTab
-              projectId={projectId}
-              boardId={boardId}
-              projectSlug={slug}
-              projectName={projectName}
-              projectIcon={projectIcon}
-              description={projectDescription}
-              onDescriptionChange={handleProjectDescriptionChange}
-              deliveryDate={projectDeliveryDate}
-              onDeliveryDateChange={handleDeliveryDateChange}
-              agents={agents}
-              projectLeadAgentId={board?.project_lead_agent_id ?? null}
-              members={projectMembers}
-              onGoalNavigate={handleGoalNavigate}
-            />
+            {goalIdParam ? (
+              <GoalDetailView
+                goalId={goalIdParam}
+                subGoalId={subGoalIdParam}
+                projectSlug={slug}
+                projectName={projectName}
+                onBack={() => {
+                  const params = new URLSearchParams(searchParams.toString())
+                  params.delete('goal')
+                  params.delete('subgoal')
+                  params.set('tab', 'overview')
+                  router.push(`/projects/${slug}?${params.toString()}`, { scroll: false })
+                }}
+              />
+            ) : (
+              <ProjectOverviewTab
+                projectId={projectId}
+                boardId={boardId}
+                projectSlug={slug}
+                projectName={projectName}
+                projectIcon={projectIcon}
+                description={projectDescription}
+                onDescriptionChange={handleProjectDescriptionChange}
+                deliveryDate={projectDeliveryDate}
+                onDeliveryDateChange={handleDeliveryDateChange}
+                agents={agents}
+                projectLeadAgentId={board?.project_lead_agent_id ?? null}
+                members={projectMembers}
+                onGoalNavigate={handleGoalNavigate}
+                onOpenMembersModal={() => setShowMembersModal(true)}
+              />
+            )}
           </div>
         ) : selectedTab === "team-chart" ? (
           <div className="flex-1 overflow-auto p-6">
@@ -1119,6 +1145,28 @@ export default function ProjectBoardPage() {
           </>
         )}
       </div>
+
+      {/* Share Members Modal (D-22) */}
+      <ShareMembersModal
+        isOpen={showMembersModal}
+        onClose={() => setShowMembersModal(false)}
+        members={projectMembers}
+        agents={agents}
+        projectId={projectId}
+        onMemberAdd={(memberId) => {
+          const agent = agents.find((a) => a.agent_id === memberId)
+          if (agent) {
+            setProjectMembers((prev) => [
+              ...prev,
+              { id: agent.agent_id, name: agent.name, type: 'agent' },
+            ])
+          }
+        }}
+        onMemberRoleChange={(memberId, role) => {
+          // Role stored but not enforced per D-25
+          console.log(`Role change: ${memberId} -> ${role}`)
+        }}
+      />
 
       {/* Side Panel — full height, shrinks board when open */}
       <div
