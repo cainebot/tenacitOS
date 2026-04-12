@@ -250,14 +250,29 @@ export function GoalProgress({
   // ---- Render ----
 
   return (
-    <div className="grid grid-cols-4 gap-4">
-      {/* ---- Numeric mode ---- */}
-      {mode === 'numeric' && (
-        <>
-          {/* Column 1: Initial */}
-          <div className="relative flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-tertiary">Initial</span>
-            <div className="relative">
+    <div className="overflow-clip rounded-xl border border-secondary bg-primary shadow-xs">
+      {/* Header row */}
+      <div className="flex items-center">
+        <div className="flex flex-1 items-center border-b border-secondary h-10 px-5 py-2">
+          <span className="text-xs font-semibold text-quaternary">Initial</span>
+        </div>
+        <div className="flex flex-1 items-center border-b border-secondary h-10 px-5 py-2">
+          <span className="text-xs font-semibold text-quaternary">Current</span>
+        </div>
+        <div className="flex flex-1 items-center border-b border-secondary h-10 px-5 py-2">
+          <span className="text-xs font-semibold text-quaternary">Target</span>
+        </div>
+        <div className="flex flex-1 items-center border-b border-secondary h-10 px-5 py-2">
+          <span className="text-xs font-semibold text-quaternary">Progress</span>
+        </div>
+      </div>
+
+      {/* Data row */}
+      <div className="flex items-center">
+        {mode === 'numeric' ? (
+          <>
+            {/* Cell 1: Initial — numeric Input + dropdown */}
+            <div className="relative flex flex-1 items-center h-[72px] px-6 py-4">
               <Input
                 type="number"
                 value={initialValue !== null ? String(initialValue) : ''}
@@ -296,12 +311,9 @@ export function GoalProgress({
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Column 2: Current */}
-          <div className="relative flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-tertiary">Current</span>
-            <div className="relative">
+            {/* Cell 2: Current — numeric Input + dropdown */}
+            <div className="relative flex flex-1 items-center h-[72px] px-6 py-4">
               <Input
                 type="number"
                 value={currentValue !== null ? String(currentValue) : ''}
@@ -340,12 +352,9 @@ export function GoalProgress({
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Column 3: Target */}
-          <div className="relative flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-tertiary">Target</span>
-            <div className="relative">
+            {/* Cell 3: Target — numeric Input + dropdown */}
+            <div className="relative flex flex-1 items-center h-[72px] px-6 py-4">
               <Input
                 type="number"
                 value={targetValue !== null ? String(targetValue) : ''}
@@ -384,53 +393,44 @@ export function GoalProgress({
                 </div>
               )}
             </div>
-          </div>
-        </>
-      )}
-
-      {/* ---- Boolean mode ---- */}
-      {mode === 'boolean' && (
-        <>
-          {/* Column 1: Initial (boolean) */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-tertiary">Initial</span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                className="flex items-center"
-                onClick={handleInitialCycle}
-                disabled={disabled}
-                aria-label="Cycle initial boolean value"
-              >
-                <BadgeWithDot
-                  color={
-                    booleanColorMap[booleanInitial ?? 'planning']
-                  }
-                  type="pill-color"
-                  size="sm"
+          </>
+        ) : (
+          <>
+            {/* Cell 1: Initial — boolean BadgeWithDot + clear button */}
+            <div className="flex flex-1 items-center h-[72px] px-6 py-4">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  className="flex items-center"
+                  onClick={handleInitialCycle}
+                  disabled={disabled}
+                  aria-label="Cycle initial boolean value"
                 >
-                  {booleanLabelMap[booleanInitial ?? 'planning']}
-                </BadgeWithDot>
-              </button>
-              <button
-                type="button"
-                className={cx(
-                  'ml-1 text-xs text-tertiary hover:text-error-primary leading-none',
-                  disabled && 'pointer-events-none opacity-50'
-                )}
-                onClick={handleBadgeClear}
-                disabled={disabled}
-                aria-label="Clear boolean mode, revert to numeric"
-              >
-                ×
-              </button>
+                  <BadgeWithDot
+                    color={booleanColorMap[booleanInitial ?? 'planning']}
+                    type="pill-color"
+                    size="sm"
+                  >
+                    {booleanLabelMap[booleanInitial ?? 'planning']}
+                  </BadgeWithDot>
+                </button>
+                <button
+                  type="button"
+                  className={cx(
+                    'ml-1 text-xs text-tertiary hover:text-error-primary leading-none',
+                    disabled && 'pointer-events-none opacity-50'
+                  )}
+                  onClick={handleBadgeClear}
+                  disabled={disabled}
+                  aria-label="Clear boolean mode, revert to numeric"
+                >
+                  ×
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Column 2: Current (boolean) */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-tertiary">Current</span>
-            <div className="flex items-center gap-1">
+            {/* Cell 2: Current — boolean BadgeWithDot */}
+            <div className="flex flex-1 items-center h-[72px] px-6 py-4">
               <button
                 type="button"
                 className="flex items-center"
@@ -439,9 +439,7 @@ export function GoalProgress({
                 aria-label="Cycle current boolean value"
               >
                 <BadgeWithDot
-                  color={
-                    booleanColorMap[booleanCurrent ?? 'planning']
-                  }
+                  color={booleanColorMap[booleanCurrent ?? 'planning']}
                   type="pill-color"
                   size="sm"
                 >
@@ -449,26 +447,21 @@ export function GoalProgress({
                 </BadgeWithDot>
               </button>
             </div>
-          </div>
 
-          {/* Column 3: Target (boolean — always Complete, not editable per D-11) */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-tertiary">Target</span>
-            <BadgeWithDot color="success" type="pill-color" size="sm">
-              Complete
-            </BadgeWithDot>
-          </div>
-        </>
-      )}
+            {/* Cell 3: Target — static Complete badge */}
+            <div className="flex flex-1 items-center h-[72px] px-6 py-4">
+              <BadgeWithDot color="success" type="pill-color" size="sm">
+                Complete
+              </BadgeWithDot>
+            </div>
+          </>
+        )}
 
-      {/* Column 4: Progress (shared across modes) */}
-      <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-tertiary">Progress</span>
-        <div className="flex flex-col gap-1">
-          <ProgressBar value={progress} />
-          <span className="text-sm text-secondary">
-            {Math.round(progress)}%
-          </span>
+        {/* Cell 4: Progress — shared across modes */}
+        <div className="flex flex-1 items-center h-[72px] px-6 py-4">
+          <div className="flex-1 min-w-0">
+            <ProgressBar value={progress} labelPosition="right" />
+          </div>
         </div>
       </div>
     </div>
