@@ -32,8 +32,9 @@ import { useBoardStore, type BoardColumn } from "@/stores/board-store"
 import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, activityLogToActivityEvents } from "@/lib/adapters"
 import { sortKeyBetween } from "@/lib/fractional-index"
 import { parseDate } from "@internationalized/date"
-import type { CardRow, ActivityLogRow, BoardRow, ProjectStateRow } from "@/types/project"
+import type { CardRow, ActivityLogRow, BoardRow, ProjectStateRow, ProjectMember } from "@/types/project"
 import type { AgentRow } from "@/types/supabase"
+import { toast } from 'sonner'
 
 // ---------------------------------------------------------------------------
 // Live card item type
@@ -63,6 +64,10 @@ export default function ProjectBoardPage() {
   const [projectId, setProjectId] = useState("")
   const [projectDescription, setProjectDescription] = useState<string | null>(null)
   const [projectGoalId, setProjectGoalId] = useState<string | null>(null)
+  const [projectDeliveryDate, setProjectDeliveryDate] = useState<string | null>(null)
+  const [projectName, setProjectName] = useState<string>('')
+  const [projectIcon, setProjectIcon] = useState<string | null>(null)
+  const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([])
 
   useEffect(() => {
     if (!slug) return
@@ -76,6 +81,10 @@ export default function ProjectBoardPage() {
         setProjectId(project.project_id)
         setProjectDescription(project.description ?? null)
         setProjectGoalId(project.goal_id ?? null)
+        setProjectDeliveryDate(project.delivery_date ?? null)
+        setProjectName(project.name)
+        setProjectIcon(project.cover_icon ?? null)
+        setProjectMembers(project.members ?? [])
         return fetch(`/api/boards?project_id=${project.project_id}`)
       })
       .then((r) => r.json())
@@ -181,6 +190,30 @@ export default function ProjectBoardPage() {
     setProjectDescription(desc)
   }, [])
 
+  const handleDeliveryDateChange = useCallback(async (date: string | null) => {
+    setProjectDeliveryDate(date)
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delivery_date: date }),
+      })
+      if (!res.ok) throw new Error('Save failed')
+    } catch {
+      toast.error('Failed to save delivery date.')
+    }
+  }, [projectId])
+
+  const searchParams = useSearchParams()
+  const tabFromUrl = searchParams.get('tab')
+
+  const handleGoalNavigate = useCallback((goalId: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', 'overview')
+    params.set('goal', goalId)
+    router.push(`/projects/${slug}?${params.toString()}`, { scroll: false })
+  }, [searchParams, router, slug])
+
   const handleCoverChange = useCallback((value: ProjectCoverValue) => {
     setCover(value)
     if (!board?.project_id) return
@@ -192,8 +225,6 @@ export default function ProjectBoardPage() {
       .then(() => { window.dispatchEvent(new Event("project-cover-changed")) })
       .catch((err) => { console.error('[cover-update] Failed:', err) })
   }, [board?.project_id])
-  const searchParams = useSearchParams()
-  const tabFromUrl = searchParams.get('tab')
   const [selectedTab, setSelectedTab] = useState(tabFromUrl ?? "board")
 
   const handleTabChange = useCallback((tabId: string) => {
@@ -1029,10 +1060,17 @@ export default function ProjectBoardPage() {
             <ProjectOverviewTab
               projectId={projectId}
               boardId={boardId}
+              projectSlug={slug}
+              projectName={projectName}
+              projectIcon={projectIcon}
               description={projectDescription}
               onDescriptionChange={handleProjectDescriptionChange}
+              deliveryDate={projectDeliveryDate}
+              onDeliveryDateChange={handleDeliveryDateChange}
               agents={agents}
               projectLeadAgentId={board?.project_lead_agent_id ?? null}
+              members={projectMembers}
+              onGoalNavigate={handleGoalNavigate}
             />
           </div>
         ) : selectedTab === "team-chart" ? (
