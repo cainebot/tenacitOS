@@ -5,6 +5,7 @@ import {
   useRef,
   useCallback,
   useEffect,
+  useMemo,
   type KeyboardEvent,
   type ClipboardEvent,
   type ChangeEvent,
@@ -122,6 +123,8 @@ interface ChatInputProps {
   isStreaming?: boolean
   /** Phase 102 D-08: Called when user clicks the stop/abort button */
   onAbort?: () => void
+  /** Agent participants available for @mention autocomplete in group conversations (Phase 104, D-08) */
+  mentionableAgents?: Array<{ participant_id: string; display_name: string; avatar_url: string | null }>
 }
 
 // ── ChatInput ────────────────────────────────────────────────────────────────
@@ -139,6 +142,7 @@ export function ChatInput({
   onClearReply,
   isStreaming = false,
   onAbort,
+  mentionableAgents,
 }: ChatInputProps) {
   const [text, setText] = useState('')
   const [images, setImages] = useState<AttachedImage[]>([])
@@ -155,6 +159,12 @@ export function ChatInput({
   const [shortcutQuery, setShortcutQuery] = useState('')
   const [shortcutIndex, setShortcutIndex] = useState(0)
   const [panelPos, setPanelPos] = useState({ top: 0, left: 0 })
+
+  // @mention autocomplete state (Phase 104, D-08)
+  const [showMentionPanel, setShowMentionPanel] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [mentionIndex, setMentionIndex] = useState(0)
+  const [mentionStartIndex, setMentionStartIndex] = useState(-1)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -259,9 +269,53 @@ export function ChatInput({
       : true,
   )
 
+  // ── @mention autocomplete — filtered agents list (Phase 104, D-08, T-104-09) ──
+
+  const filteredMentions = useMemo(() => {
+    if (!mentionableAgents || mentionableAgents.length === 0) return []
+    if (!mentionQuery) return mentionableAgents
+    const q = mentionQuery.toLowerCase()
+    return mentionableAgents.filter(a => a.display_name.toLowerCase().includes(q))
+  }, [mentionableAgents, mentionQuery])
+
+  const insertMention = useCallback((displayName: string) => {
+    const before = text.slice(0, mentionStartIndex)
+    const cursorPos = textareaRef.current?.selectionStart ?? text.length
+    const after = text.slice(cursorPos)
+    const newText = `${before}@${displayName} ${after}`
+    setText(newText)
+    setShowMentionPanel(false)
+    setMentionQuery('')
+    setMentionIndex(0)
+    // Focus back on textarea
+    requestAnimationFrame(() => textareaRef.current?.focus())
+  }, [text, mentionStartIndex])
+
   const handleTextChange = useCallback(
-    (newText: string) => {
+    (newText: string, cursorPosOverride?: number) => {
       setText(newText)
+
+      // @mention detection (Phase 104, D-08, D-10)
+      // Only active when mentionableAgents prop is provided (group conversations)
+      if (mentionableAgents && mentionableAgents.length > 0) {
+        const cursorPos = cursorPosOverride ?? newText.length
+        const textBeforeCursor = newText.slice(0, cursorPos)
+        const lastAtIndex = textBeforeCursor.lastIndexOf('@')
+
+        if (lastAtIndex !== -1) {
+          const query = textBeforeCursor.slice(lastAtIndex + 1)
+          // No space or newline after @ means user is still typing the mention
+          if (!query.includes(' ') && !query.includes('\n')) {
+            setMentionQuery(query)
+            setShowMentionPanel(true)
+            setMentionStartIndex(lastAtIndex)
+          } else {
+            setShowMentionPanel(false)
+          }
+        } else {
+          setShowMentionPanel(false)
+        }
+      }
 
       if (!supportsShortcuts) return
 
@@ -284,7 +338,7 @@ export function ChatInput({
         setShortcutQuery('')
       }
     },
-    [supportsShortcuts, getCaretCoords],
+    [supportsShortcuts, getCaretCoords, mentionableAgents],
   )
 
   const selectShortcut = useCallback(
@@ -522,6 +576,30 @@ export function ChatInput({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+      // @mention keyboard navigation (Phase 104, D-08)
+      if (showMentionPanel && filteredMentions.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          setMentionIndex(prev => (prev + 1) % filteredMentions.length)
+          return
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          setMentionIndex(prev => (prev - 1 + filteredMentions.length) % filteredMentions.length)
+          return
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault()
+          insertMention(filteredMentions[mentionIndex].display_name)
+          return
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          setShowMentionPanel(false)
+          return
+        }
+      }
+
       // Shortcut panel navigation
       if (showShortcutPanel && filteredShortcuts.length > 0) {
         if (e.key === 'ArrowDown') {
@@ -558,7 +636,7 @@ export function ChatInput({
         handleSend()
       }
     },
-    [handleSend, showShortcutPanel, filteredShortcuts, shortcutIndex, selectShortcut, text, activeCommand, removeCommand],
+    [handleSend, showShortcutPanel, filteredShortcuts, shortcutIndex, selectShortcut, text, activeCommand, removeCommand, showMentionPanel, filteredMentions, mentionIndex, insertMention],
   )
 
   // ── Paste images ───────────────────────────────────────────────────────
@@ -673,6 +751,58 @@ export function ChatInput({
         <XClose className="size-3 text-brand-secondary" />
       </AriaButton>
     </span>
+  )
+
+  // ── @mention autocomplete popover (shared) (Phase 104, D-08, D-09) ────────
+
+  const mentionPanel = showMentionPanel && filteredMentions.length > 0 && (
+    <div
+      className={cx(
+        'absolute bottom-full left-0 z-50 mb-1 w-full min-w-[280px]',
+        'rounded-lg bg-secondary shadow-lg',
+        'max-h-[240px] overflow-y-auto'
+      )}
+      role="listbox"
+      aria-label="Mention suggestions"
+    >
+      {filteredMentions.map((agentItem, i) => (
+        <button
+          key={agentItem.participant_id}
+          id={`mention-${agentItem.participant_id}`}
+          role="option"
+          aria-selected={i === mentionIndex}
+          type="button"
+          className={cx(
+            'flex w-full items-center gap-2 px-2 py-1.5 text-left',
+            'text-sm font-semibold text-primary',
+            i === mentionIndex
+              ? 'border-l-2 border-brand-solid bg-primary_hover'
+              : 'border-l-2 border-transparent hover:bg-primary_hover'
+          )}
+          onMouseDown={(e) => {
+            e.preventDefault() // Prevent textarea blur
+            insertMention(agentItem.display_name)
+          }}
+          onMouseEnter={() => setMentionIndex(i)}
+        >
+          <Avatar src={agentItem.avatar_url ?? undefined} alt={agentItem.display_name} size="xs" />
+          <span>{agentItem.display_name}</span>
+        </button>
+      ))}
+    </div>
+  )
+
+  // Empty state when query matches nothing
+  const mentionEmptyPanel = showMentionPanel && filteredMentions.length === 0 && mentionQuery.length > 0 && (
+    <div
+      className={cx(
+        'absolute bottom-full left-0 z-50 mb-1 w-full min-w-[280px]',
+        'rounded-lg bg-secondary shadow-lg',
+        'px-3 py-2 text-sm text-tertiary'
+      )}
+    >
+      No agents found
+    </div>
   )
 
   // ── Shortcut suggestions panel (shared) ────────────────────────────────
@@ -962,12 +1092,16 @@ export function ChatInput({
             <textarea
               ref={textareaRef}
               value={text}
-              onChange={(e) => handleTextChange(e.target.value)}
+              onChange={(e) => handleTextChange(e.target.value, e.target.selectionStart ?? undefined)}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
               placeholder={activeCommand ? `Message for /${activeCommand.label}...` : (placeholder ?? defaultPlaceholder)}
               disabled={isDisabled}
               rows={1}
+              aria-expanded={showMentionPanel || showShortcutPanel || undefined}
+              aria-activedescendant={showMentionPanel && filteredMentions.length > 0
+                ? `mention-${filteredMentions[mentionIndex]?.participant_id}`
+                : undefined}
               className={cx(
                 'w-full flex-1 resize rounded-xl border border-primary bg-primary px-3.5 py-3 text-md leading-6 text-primary shadow-xs outline-none',
                 'placeholder:text-placeholder disabled:cursor-not-allowed disabled:opacity-50',
@@ -1035,10 +1169,12 @@ export function ChatInput({
             </div>
           </div>
 
-          {/* Command chip + shortcut panel */}
+          {/* Command chip + shortcut panel + mention panel */}
           {activeCommand && (
             <div className="absolute left-3.5 top-3">{commandChip}</div>
           )}
+          {mentionPanel}
+          {mentionEmptyPanel}
           {shortcutPanel}
         </div>
 
@@ -1098,12 +1234,16 @@ export function ChatInput({
       <textarea
         ref={textareaRef}
         value={text}
-        onChange={(e) => handleTextChange(e.target.value)}
+        onChange={(e) => handleTextChange(e.target.value, e.target.selectionStart ?? undefined)}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         placeholder={activeCommand ? `Message for /${activeCommand.label}...` : (placeholder ?? defaultPlaceholder)}
         disabled={isDisabled}
         rows={1}
+        aria-expanded={showMentionPanel || showShortcutPanel || undefined}
+        aria-activedescendant={showMentionPanel && filteredMentions.length > 0
+          ? `mention-${filteredMentions[mentionIndex]?.participant_id}`
+          : undefined}
         className={cx(
           'w-full flex-1 resize-none bg-transparent px-3.5 py-3 text-md leading-6 text-primary outline-none',
           'placeholder:text-placeholder disabled:cursor-not-allowed disabled:opacity-50',
@@ -1173,6 +1313,8 @@ export function ChatInput({
         )}
       </div>
 
+      {mentionPanel}
+      {mentionEmptyPanel}
       {shortcutPanel}
       {hiddenFileInput}
       {emojiPickerPopover}
