@@ -66,8 +66,6 @@ export function ShareMembersModal({
 
   const handleRoleChange = (memberId: string, role: MemberRole) => {
     setMemberRoles((prev) => ({ ...prev, [memberId]: role }))
-    // Role stored but not enforced per D-25
-    console.log(`Role change: ${memberId} -> ${role}`)
     onMemberRoleChange(memberId, role)
   }
 

@@ -1162,9 +1162,8 @@ export default function ProjectBoardPage() {
             ])
           }
         }}
-        onMemberRoleChange={(memberId, role) => {
-          // Role stored but not enforced per D-25
-          console.log(`Role change: ${memberId} -> ${role}`)
+        onMemberRoleChange={(_memberId, _role) => {
+          // Role stored locally; no persistence needed per D-25
         }}
       />
 
