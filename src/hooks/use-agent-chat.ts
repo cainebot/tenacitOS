@@ -238,6 +238,32 @@ export function useAgentChat({
     })
   }, []) // Run once on mount — no deps needed
 
+  // ── OAUTH-02 (WR-02): Subscribe to provider_token_status via Realtime ──────
+  // Auto-dismiss or re-show banner immediately when DB status changes,
+  // e.g. after user completes OAuth in another tab. Complements the 3s poll
+  // (tokenPollRef) which handles the retry flow; Realtime handles instant dismiss.
+  useEffect(() => {
+    const supabase = createBrowserClient()
+    const channel = supabase
+      .channel('provider-token-status-watch')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'provider_token_status',
+          filter: 'provider=eq.openai',
+        },
+        (payload) => {
+          const row = payload.new as { status: string }
+          if (row.status === 'connected') setOauthExpired(false)
+          if (row.status === 'expired') setOauthExpired(true)
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, []) // Mount-only — provider filter is static
+
   // ── Initial fetch ──────────────────────────────────────────────────────────
 
   useEffect(() => {
