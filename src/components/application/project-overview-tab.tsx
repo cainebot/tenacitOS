@@ -7,20 +7,20 @@ import {
   Button as AriaButton,
   Popover as AriaPopover,
   Dialog as AriaDialog,
+  DialogTrigger as AriaDialogTrigger,
 } from 'react-aria-components'
 import { I18nProvider } from 'react-aria'
 import { parseDate, type DateValue } from '@internationalized/date'
 import {
   TextEditor,
   Button,
-  ButtonUtility,
-  Select,
+  Avatar,
   AvatarGroup,
   ProgressBar,
   DatePickerCalendar,
   cx,
 } from '@circos/ui'
-import { Plus, ChevronRight, ChevronDown, Calendar, ArrowDown, CornerDownRight, Target04, DotsVertical, Users01, User01, XClose } from '@untitledui/icons'
+import { Plus, ChevronRight, ChevronDown, Calendar, CornerDownRight, Target04, DotsVertical, Users01, User01, XClose, SearchLg } from '@untitledui/icons'
 import { AccordionOverview } from './accordion-overview'
 import { GoalsInProgressCard } from './goals-in-progress-card'
 import { PROJECT_COVER_ICONS, PROJECT_COVER_COLORS, type ProjectCoverColorId } from './project-cover/project-cover'
@@ -109,33 +109,35 @@ interface GoalsTableProps {
 // TableCell variants per Figma design
 function TableCellText({ children, isSubGoal, className }: { children: React.ReactNode; isSubGoal?: boolean; className?: string }) {
   return (
-    <div className={cx("flex flex-1 items-center gap-3 border-b border-secondary h-[72px] px-6 py-4", className)}>
+    <div className={cx("flex flex-1 items-center gap-3 border-b border-secondary h-[72px] px-6 py-4 min-w-0", className)}>
       {isSubGoal && <span className="text-sm font-medium text-primary shrink-0">↳</span>}
-      <p className="flex-1 text-sm font-medium text-primary truncate">{children}</p>
+      <p className="flex-1 text-sm font-medium text-primary truncate min-w-0">{children}</p>
     </div>
   )
 }
 
 function TableCellProgress({ value, className }: { value: number; className?: string }) {
   return (
-    <div className={cx("flex flex-1 items-center border-b border-secondary h-[72px] px-6 py-4", className)}>
-      <ProgressBar value={value} labelPosition="right" />
+    <div className={cx("flex items-center border-b border-secondary h-[72px] px-6 py-4 w-[266px] shrink-0", className)}>
+      <div className="flex-1 min-w-0">
+        <ProgressBar value={value} labelPosition="right" />
+      </div>
     </div>
   )
 }
 
 function TableCellChevron({ direction, onClick, className }: { direction: 'down' | 'right'; onClick?: () => void; className?: string }) {
+  const Icon = direction === 'down' ? ChevronDown : ChevronRight
   return (
-    <div
-      className={cx("flex items-center border-b border-secondary h-[72px] px-6 py-4 w-[76px] shrink-0", className)}
-      onClick={onClick ? (e) => { e.stopPropagation(); onClick() } : undefined}
-    >
+    <div className={cx("flex items-center border-b border-secondary h-[72px] px-6 py-4 w-[76px] shrink-0", className)}>
       {onClick && (
-        <ButtonUtility
-          icon={direction === 'down' ? ChevronDown : ChevronRight}
-          size="xs"
-          color="tertiary"
-        />
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onClick() }}
+          className="flex items-center justify-center rounded-md p-1.5 text-fg-quaternary hover:bg-primary_hover hover:text-fg-quaternary_hover cursor-pointer transition duration-100 ease-linear"
+        >
+          <Icon data-icon className="size-4" />
+        </button>
       )}
     </div>
   )
@@ -188,11 +190,10 @@ function GoalsTable({ goals, onGoalClick, onCreateGoal }: GoalsTableProps) {
     <div className="mt-4 overflow-clip rounded-2xl border border-primary bg-primary_alt">
       {/* Table header */}
       <div className="flex items-center">
-        <div className="flex flex-1 items-center gap-1 bg-secondary border-b border-secondary h-10 px-5 py-2">
-          <span className="text-xs font-semibold text-quaternary">Nombre</span>
-          <ArrowDown className="size-3 text-fg-quaternary" />
+        <div className="flex flex-1 items-center bg-secondary border-b border-secondary h-10 px-5 py-2">
+          <span className="text-xs font-semibold text-quaternary">Name</span>
         </div>
-        <div className="flex-1 bg-secondary border-b border-secondary h-10" />
+        <div className="w-[266px] shrink-0 bg-secondary border-b border-secondary h-10" />
         <div className="w-[76px] shrink-0 bg-secondary border-b border-secondary h-10" />
       </div>
 
@@ -207,10 +208,10 @@ function GoalsTable({ goals, onGoalClick, onCreateGoal }: GoalsTableProps) {
 
         return (
           <div key={goal.goal_id}>
-            {/* Parent row — bg-primary */}
+            {/* Parent row — bg-primary (distinct from sub-goal bg-secondary) */}
             <div
-              className="flex items-center cursor-pointer hover:bg-primary_hover transition-colors"
-              onClick={() => hasChildren ? toggleExpand(goal.goal_id) : onGoalClick(goal.goal_id)}
+              className="flex items-center bg-primary cursor-pointer hover:bg-primary_hover transition-colors"
+              onClick={() => onGoalClick(goal.goal_id)}
             >
               <TableCellText className={isLastVisible ? 'border-b-0' : undefined}>{goal.title}</TableCellText>
               <TableCellProgress value={progress} className={isLastVisible ? 'border-b-0' : undefined} />
@@ -321,6 +322,123 @@ function MembersTable({ members: rawMembers, agents, onOpenModal }: MembersTable
 }
 
 // ---------------------------------------------------------------------------
+// ProjectLeadSelector — same pattern as Kanban AssigneeSelector
+// ---------------------------------------------------------------------------
+
+function ProjectLeadSelector({
+  agents,
+  selectedAgent,
+  onSelect,
+}: {
+  agents: AgentRow[]
+  selectedAgent: AgentRow | null
+  onSelect: (agent: AgentRow | null) => void
+}) {
+  const [search, setSearch] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const getInitials = (name: string) =>
+    name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+
+  const filtered = search
+    ? agents.filter((a) => (a.name ?? a.agent_id).toLowerCase().includes(search.toLowerCase()))
+    : agents
+
+  return (
+    <AriaDialogTrigger>
+      <AriaButton className="flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-2 outline-none transition-colors hover:bg-primary_hover">
+        {selectedAgent ? (
+          <>
+            <Avatar size="xs" src={selectedAgent.avatar_url ?? undefined} initials={getInitials(selectedAgent.name)} alt={selectedAgent.name} />
+            <span className="text-md font-medium text-primary truncate">{selectedAgent.name}</span>
+          </>
+        ) : (
+          <>
+            <User01 className="size-5 text-fg-quaternary" />
+            <span className="text-md text-placeholder truncate">Unassigned</span>
+          </>
+        )}
+      </AriaButton>
+      <AriaPopover
+        placement="bottom start"
+        offset={4}
+        onOpenChange={(isOpen) => {
+          if (isOpen) {
+            setSearch('')
+            setTimeout(() => inputRef.current?.focus(), 50)
+          }
+        }}
+        className={({ isEntering, isExiting }) =>
+          cx(
+            'w-56 origin-(--trigger-anchor-point) overflow-hidden rounded-xl bg-primary shadow-lg ring-1 ring-secondary_alt will-change-transform',
+            isEntering && 'duration-150 ease-out animate-in fade-in slide-in-from-top-0.5',
+            isExiting && 'duration-100 ease-in animate-out fade-out slide-out-to-top-0.5',
+          )
+        }
+      >
+        <AriaDialog aria-label="Project lead picker" className="outline-none">
+          {({ close }) => (
+            <>
+              {/* Search input */}
+              <div className="flex items-center gap-2 border-b border-secondary px-3 py-2">
+                <SearchLg className="size-4 shrink-0 text-fg-quaternary" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full bg-transparent text-sm text-primary placeholder:text-quaternary outline-none"
+                />
+              </div>
+              {/* Agent list */}
+              <div className="max-h-48 overflow-y-auto py-1">
+                {filtered.map((agent) => (
+                  <button
+                    key={agent.agent_id}
+                    type="button"
+                    onClick={() => {
+                      onSelect(selectedAgent?.agent_id === agent.agent_id ? null : agent)
+                      close()
+                    }}
+                    className={cx(
+                      'flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm text-secondary transition hover:bg-primary_hover',
+                      selectedAgent?.agent_id === agent.agent_id && 'bg-primary_hover text-primary',
+                    )}
+                  >
+                    <Avatar size="xs" src={agent.avatar_url ?? undefined} initials={getInitials(agent.name)} alt={agent.name} />
+                    <span className="truncate font-medium">{agent.name}</span>
+                  </button>
+                ))}
+                {filtered.length === 0 && (
+                  <p className="px-3 py-2 text-sm text-quaternary">No results</p>
+                )}
+              </div>
+              {/* Unassign */}
+              {selectedAgent && (
+                <div className="border-t border-secondary py-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelect(null)
+                      close()
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm text-secondary transition hover:bg-primary_hover"
+                  >
+                    <XClose className="size-4 shrink-0 stroke-[2.5px] text-fg-quaternary" />
+                    <span className="font-medium">Unassign</span>
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </AriaDialog>
+      </AriaPopover>
+    </AriaDialogTrigger>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // MetadataRow
 // ---------------------------------------------------------------------------
 
@@ -371,15 +489,16 @@ function MetadataRow({
       })
     : null
 
-  // Build agent items for select (icon for user-style rendering)
-  const agentItems = useMemo(
-    () => agents.map((a) => ({ id: a.agent_id, label: a.name ?? a.agent_id, icon: User01 })),
-    [agents],
-  )
+  const safeAgents = agents ?? []
+  const safeMembers = members ?? []
+  const getInitials = (name: string) =>
+    name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+
+  const selectedAgent = safeAgents.find((a) => a.agent_id === projectLeadAgentId) ?? null
 
   // Build avatar items from members
-  const avatarItems = (members ?? []).slice(0, 5).map((m) => {
-    const agent = agents.find((a) => a.agent_id === m.id)
+  const avatarItems = safeMembers.slice(0, 5).map((m) => {
+    const agent = safeAgents.find((a) => a.agent_id === m.id)
     return {
       src: undefined as string | undefined,
       alt: agent?.name ?? m.name,
@@ -388,21 +507,14 @@ function MetadataRow({
 
   return (
     <div className="flex items-start gap-4 py-6">
-      {/* Project Lead — ghost Select */}
+      {/* Project Lead — AssigneeSelector pattern (same as Kanban) */}
       <div className="flex flex-1 flex-col gap-1.5 min-w-0">
         <span className="text-sm font-medium text-secondary">Project lead</span>
-        <Select
-          aria-label="Project lead"
-          placeholder="Unassigned"
-          placeholderIcon={User01}
-          size="md"
-          selectedKey={projectLeadAgentId}
-          onSelectionChange={(key) => onProjectLeadChange(key ? String(key) : null)}
-          items={agentItems}
-          className="[&_button]:bg-transparent [&_button]:shadow-none [&_button]:ring-0 [&_button]:hover:bg-primary_hover [&_button]:rounded-md [&_button_span]:px-1.5 [&_button_span]:py-2 [&_.ml-auto]:hidden"
-        >
-          {(item) => <Select.Item id={item.id} icon={item.icon}>{item.label}</Select.Item>}
-        </Select>
+        <ProjectLeadSelector
+          agents={safeAgents}
+          selectedAgent={selectedAgent}
+          onSelect={(agent) => onProjectLeadChange(agent ? agent.agent_id : null)}
+        />
       </div>
 
       {/* Delivery Date — ghost DatePicker */}
