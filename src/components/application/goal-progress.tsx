@@ -147,7 +147,7 @@ export function GoalProgress({
   onUpdate,
   disabled = false,
 }: GoalProgressProps) {
-  const [mode, setMode] = useState<GoalInputMode>(goalType)
+  const [mode, setMode] = useState<GoalInputMode>(goalType || 'numeric')
 
   const [initialCell, setInitialCell] = useState<CellState>(defaultCellState)
   const [currentCell, setCurrentCell] = useState<CellState>(defaultCellState)
@@ -161,9 +161,9 @@ export function GoalProgress({
   const currentDropdownRef = useRef<HTMLDivElement>(null)
   const targetDropdownRef = useRef<HTMLDivElement>(null)
 
-  // Sync mode with goalType prop
+  // Sync mode with goalType prop (default to numeric if null/undefined)
   useEffect(() => {
-    setMode(goalType)
+    setMode(goalType || 'numeric')
   }, [goalType])
 
   // When mode changes to boolean, ensure cells are not in editing state
@@ -199,7 +199,7 @@ export function GoalProgress({
           : field === 'current'
             ? currentValue
             : targetValue
-      if (val === null) return '0'
+      if (val == null) return '0'
       return numberFormat === 'percentage' ? `${val}%` : String(val)
     },
     [initialValue, currentValue, targetValue, numberFormat]
@@ -265,55 +265,63 @@ export function GoalProgress({
 
       // Small delay to allow dropdown click to fire first
       setTimeout(() => {
-        setState((s) => {
-          // If dropdown was already closed by a selection, skip
-          if (!s.editing) return s
+        // Read current state snapshot BEFORE setState — never call onUpdate inside setState
+        const accessor = getCellAccessor(field)
+        const currentState = accessor.state
 
-          const text = s.inputText.trim()
+        // If editing was already closed by a selection, skip
+        if (!currentState.editing) return
 
-          // If text has letters or is empty, reset to numeric display
-          if (hasLetters(text) || text === '') {
-            return { ...defaultCellState }
-          }
+        const text = currentState.inputText.trim()
 
-          // Text is numeric — commit value
-          const { value: numericValue, isPercentage } = parseNumericText(text)
+        // If text has letters or is empty, reset to numeric display
+        if (hasLetters(text) || text === '') {
+          setState({ ...defaultCellState })
+          return
+        }
 
-          // If we were in boolean mode (badge was clicked, user typed a number),
-          // convert back to numeric
-          if (mode === 'boolean') {
-            const fieldMap: Record<CellField, 'initial_value' | 'current_value' | 'target_value'> = {
-              initial: 'initial_value',
-              current: 'current_value',
-              target: 'target_value',
-            }
-            onUpdate({
-              goal_type: 'numeric',
-              number_format: isPercentage ? 'percentage' : 'natural',
-              [fieldMap[field]]: numericValue,
-              // Reset other fields to 0
-              ...(field !== 'initial' && { initial_value: 0 }),
-              ...(field !== 'current' && { current_value: 0 }),
-              ...(field !== 'target' && { target_value: 0 }),
-              boolean_initial: null,
-              boolean_current: null,
-            })
-            setMode('numeric')
-          } else {
-            // Already in numeric mode — just update this field
-            const fieldMap: Record<CellField, 'initial_value' | 'current_value' | 'target_value'> = {
-              initial: 'initial_value',
-              current: 'current_value',
-              target: 'target_value',
-            }
-            onUpdate({
-              number_format: isPercentage ? 'percentage' : 'natural',
-              [fieldMap[field]]: numericValue,
-            })
-          }
+        // Text is numeric — commit value
+        const { value: numericValue, isPercentage } = parseNumericText(text)
+        const fieldMap: Record<CellField, 'initial_value' | 'current_value' | 'target_value'> = {
+          initial: 'initial_value',
+          current: 'current_value',
+          target: 'target_value',
+        }
 
-          return { ...defaultCellState }
-        })
+        // Skip update if value hasn't actually changed (prevents unnecessary API calls)
+        const currentNumeric =
+          field === 'initial' ? initialValue
+            : field === 'current' ? currentValue
+            : targetValue
+        const currentFormat = numberFormat
+        const valueChanged = numericValue !== (currentNumeric ?? 0)
+        const formatChanged = (isPercentage ? 'percentage' : 'natural') !== currentFormat
+
+        // Reset cell state first, then fire side effect
+        setState({ ...defaultCellState })
+
+        // If we were in boolean mode (badge was clicked, user typed a number),
+        // convert back to numeric
+        if (mode === 'boolean') {
+          setMode('numeric')
+          onUpdate({
+            goal_type: 'numeric',
+            number_format: isPercentage ? 'percentage' : 'natural',
+            [fieldMap[field]]: numericValue,
+            // Reset other fields to 0
+            ...(field !== 'initial' && { initial_value: 0 }),
+            ...(field !== 'current' && { current_value: 0 }),
+            ...(field !== 'target' && { target_value: 0 }),
+            boolean_initial: null,
+            boolean_current: null,
+          })
+        } else if (valueChanged || formatChanged) {
+          // Already in numeric mode — only update if something changed
+          onUpdate({
+            number_format: isPercentage ? 'percentage' : 'natural',
+            [fieldMap[field]]: numericValue,
+          })
+        }
       }, 150)
     },
     [getCellAccessor, mode, onUpdate]
@@ -576,7 +584,7 @@ export function GoalProgress({
   // ---- Main render ----
 
   return (
-    <div className="overflow-clip rounded-xl border border-secondary bg-primary shadow-xs">
+    <div className="overflow-visible rounded-xl border border-secondary bg-primary shadow-xs">
       {/* Header row */}
       <div className="flex items-center">
         <div className="flex flex-1 items-center border-b border-secondary h-10 px-5 py-2">
