@@ -50,8 +50,10 @@ export async function GET(request: NextRequest) {
 
     if (!tokenRes.ok) {
       const text = await tokenRes.text()
+      // Log full body server-side for debugging; never expose to browser (CR-02).
+      console.error('[oauth-callback] Token exchange failed:', tokenRes.status, text)
       return NextResponse.json(
-        { error: `Token exchange failed: ${tokenRes.status} — ${text}` },
+        { error: 'Token exchange failed. Please try reconnecting.' },
         { status: 502 }
       )
     }
