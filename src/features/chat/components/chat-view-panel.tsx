@@ -69,7 +69,10 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
             .filter(id => id !== myParticipantId)
         )
       })
-      .catch(() => setRecipientIds([]))
+      .catch((err) => {
+        console.warn(`[ChatViewPanel] Failed to load participants for ${conversationId}:`, err)
+        setRecipientIds([])
+      })
   }, [conversationId, myParticipantId])
 
   const chat = useAgentChat({ conversationId, recipientIds })
