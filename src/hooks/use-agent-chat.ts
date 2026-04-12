@@ -22,6 +22,36 @@ import {
 } from '@/types/chat'
 import { useMyParticipant } from '@/contexts/my-participant-context'
 
+// ── OAUTH-02: Exported helper functions for unit testing (Plan 103-03 Task 1) ──
+
+/**
+ * Queries provider_token_status for the openai provider.
+ * Returns true if status='expired', false otherwise (including on error).
+ * Called on hook mount to show banner immediately on page reload.
+ */
+export async function checkInitialTokenStatus(): Promise<boolean> {
+  try {
+    const supabase = createBrowserClient()
+    const { data } = await supabase
+      .from('provider_token_status')
+      .select('status, last_refreshed')
+      .eq('provider', 'openai')
+      .single()
+
+    return data?.status === 'expired'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Pure function: returns true if a receipt indicates an OAuth expiry failure.
+ * status must be 'failed' AND error_code must be 'oauth_expired'.
+ */
+export function isOauthExpiredReceipt(receipt: { status?: string; error_code?: string }): boolean {
+  return receipt.status === 'failed' && receipt.error_code === 'oauth_expired'
+}
+
 interface UseAgentChatOptions {
   conversationId: string | null
   recipientIds: string[]  // DM: [agentParticipantId], channel: all member IDs, announcement: all agent IDs
@@ -52,7 +82,8 @@ interface UseAgentChatResult {
   removeOptimisticMessage: (tempId: string) => void
   /** Phase 102.1 D-06: Transition optimistic message to upload error state */
   setUploadError: (tempId: string) => void
-
+  /** OAUTH-02 (Plan 103-03): True when oauth_expired detected via Realtime receipt OR mount-time query */
+  oauthExpired: boolean
 }
 
 // ── Raw API message shape (joined rows from API) ──────────────────────────────
@@ -149,6 +180,11 @@ export function useAgentChat({
   const [streamingMessages, setStreamingMessages] = useState<Map<string, string>>(new Map())
   const [processingState, setProcessingState] = useState<string | null>(null)
 
+  // ── OAUTH-02 (Plan 103-03): OAuth expired banner state ───────────────────────
+  const [oauthExpired, setOauthExpired] = useState(false)
+  const [pendingOauthRetries, setPendingOauthRetries] = useState<string[]>([])
+  const tokenPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   // ── Streaming refs (Phase 102 — RAF buffer, no re-renders per token) ─────────
   const streamingBuffersRef = useRef<Map<string, string>>(new Map())
   const rafIdsRef = useRef<Map<string, number>>(new Map())
@@ -190,6 +226,17 @@ export function useAgentChat({
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipientIdsKey])
+
+  // ── OAUTH-02 (Q3 resolution): Check provider_token_status on mount ────────
+  // If token is already expired when page loads, show banner immediately
+  // without waiting for a new Realtime receipt. Runs once on mount.
+  useEffect(() => {
+    checkInitialTokenStatus().then((isExpired) => {
+      if (isExpired) {
+        setOauthExpired(true)
+      }
+    })
+  }, []) // Run once on mount — no deps needed
 
   // ── Initial fetch ──────────────────────────────────────────────────────────
 
@@ -857,6 +904,18 @@ export function useAgentChat({
             // Phase 102 gap-closure T-02: Clean up aborted set when message is finalized
             abortedMessageIdsRef.current.delete(receipt.message_id)
           }
+
+          // OAUTH-02 (D-08): Detect oauth_expired -> activate banner + queue retry
+          const newReceipt = payload.new as { status?: string; error_code?: string; message_id?: string }
+          if (isOauthExpiredReceipt(newReceipt)) {
+            setOauthExpired(true)
+            setPendingOauthRetries(prev => {
+              if (newReceipt.message_id && !prev.includes(newReceipt.message_id)) {
+                return [...prev, newReceipt.message_id]
+              }
+              return prev
+            })
+          }
         }
       )
       // message_reactions INSERT/DELETE — re-run groupReactions
@@ -1046,6 +1105,68 @@ export function useAgentChat({
     return () => clearTimeout(timer)
   }, [waitingForReply])
 
+  // ── OAUTH-02 (D-09): Poll provider_token_status for token renewal ──────────
+  // Starts when oauthExpired becomes true, stops when token is renewed.
+  // On renewal: dismiss banner + auto-retry all pending failed messages.
+  useEffect(() => {
+    if (!oauthExpired) {
+      // Clear poll when not expired
+      if (tokenPollRef.current) {
+        clearInterval(tokenPollRef.current)
+        tokenPollRef.current = null
+      }
+      return
+    }
+
+    const firstErrorTime = Date.now()
+
+    const checkTokenStatus = async () => {
+      try {
+        const supabase = createBrowserClient()
+        const { data } = await supabase
+          .from('provider_token_status')
+          .select('status, last_refreshed')
+          .eq('provider', 'openai')
+          .single()
+
+        if (data?.status === 'connected' && data.last_refreshed) {
+          const refreshedAt = new Date(data.last_refreshed).getTime()
+          // D-09 / Pitfall 5: Only retry if token was refreshed AFTER the first error
+          if (refreshedAt > firstErrorTime) {
+            // Token renewed — dismiss banner and retry failed messages
+            setOauthExpired(false)
+
+            // D-10: Auto-retry all pending messages
+            const messageIds = [...pendingOauthRetries]
+            setPendingOauthRetries([])
+
+            for (const msgId of messageIds) {
+              try {
+                await retryMessage(msgId)
+              } catch {
+                // Individual retry failure is non-fatal
+              }
+            }
+          }
+        }
+      } catch {
+        // Poll failure is non-fatal — try again next interval
+      }
+    }
+
+    // Poll every 3 seconds (fast enough for good UX, light on Supabase)
+    tokenPollRef.current = setInterval(checkTokenStatus, 3000)
+
+    // Cleanup on unmount or oauthExpired change
+    return () => {
+      if (tokenPollRef.current) {
+        clearInterval(tokenPollRef.current)
+        tokenPollRef.current = null
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oauthExpired, pendingOauthRetries, retryMessage])
+
   // ── Fallback: poll for agent response when Realtime INSERT may be missed ───
   // Supabase Realtime can drop INSERT events (auth token expiry, RLS, network).
   // Poll every 5s while waitingForReply to catch agent responses and update
@@ -1141,5 +1262,7 @@ export function useAgentChat({
     addOptimisticImageMessage,
     removeOptimisticMessage,
     setUploadError,
+    // OAUTH-02 (Plan 103-03): OAuth banner state
+    oauthExpired,
   }
 }
