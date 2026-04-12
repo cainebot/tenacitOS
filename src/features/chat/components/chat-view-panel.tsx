@@ -26,6 +26,7 @@ const PROCESSING_STATE_STRINGS: Record<string, { en: string; es: string }> = {
   analyzing_image:    { en: 'Analyzing your image...',    es: 'Analizando tu imagen...' },
   transcribing_audio: { en: 'Transcribing your audio...', es: 'Transcribiendo tu audio...' },
   processing_pdf:     { en: 'Reading your document...',   es: 'Leyendo tu documento...' },
+  processing_video:   { en: 'Analyzing your video...',    es: 'Analizando tu video...' },
   thinking:           { en: 'Thinking...',                 es: 'Pensando...' },
 }
 const PROCESSING_FALLBACK = { en: 'Processing...', es: 'Procesando...' }
