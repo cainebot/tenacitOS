@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const levelParam = searchParams.get('level') as GoalLevel | null
   const projectIdParam = searchParams.get('project_id')
+  const parentIdParam = searchParams.get('parent_id')
 
   try {
     const supabase = createServiceRoleClient()
@@ -29,6 +30,10 @@ export async function GET(request: NextRequest) {
 
     if (projectIdParam) {
       query = query.eq('project_id', projectIdParam)
+    }
+
+    if (parentIdParam) {
+      query = query.eq('parent_id', parentIdParam)
     }
 
     const { data, error } = await query

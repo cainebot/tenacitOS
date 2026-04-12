@@ -1,8 +1,8 @@
 'use client'
 
 import { type FC } from 'react'
-import { Badge, Button, cx } from '@circos/ui'
-import { Target04, ChevronRight } from '@untitledui/icons'
+import { Badge, Button, PageHeader, cx } from '@circos/ui'
+import { Target04, ChevronRight, HomeLine } from '@untitledui/icons'
 import type { GoalRow } from '@/types/project'
 
 interface GoalBreadcrumbProps {
@@ -67,4 +67,44 @@ export const GoalBreadcrumb: FC<GoalBreadcrumbProps> = ({
       )}
     </div>
   )
+}
+
+// ---------------------------------------------------------------------------
+// GoalNavBreadcrumb — navigation breadcrumb for goal detail view (D-19, D-24)
+// Renders: Home > Project > Overview > Goal (> Sub Goal)
+// Used inside GoalDetailView within the project layout.
+// ---------------------------------------------------------------------------
+
+export interface GoalNavBreadcrumbProps {
+  projectName: string
+  projectSlug: string
+  goalTitle: string
+  goalId?: string        // parent goal ID, used when viewing a sub-goal
+  subGoalTitle?: string  // if present, renders as leaf breadcrumb
+}
+
+export function GoalNavBreadcrumb({
+  projectName,
+  projectSlug,
+  goalTitle,
+  goalId,
+  subGoalTitle,
+}: GoalNavBreadcrumbProps) {
+  const breadcrumbs = [
+    { icon: HomeLine, href: '/' },
+    { label: projectName, href: `/projects/${projectSlug}` },
+    { label: 'Overview', href: `/projects/${projectSlug}?tab=overview` },
+  ]
+
+  if (subGoalTitle) {
+    breadcrumbs.push({
+      label: goalTitle,
+      href: `/projects/${projectSlug}?tab=overview&goal=${goalId}`,
+    })
+    breadcrumbs.push({ label: subGoalTitle })
+  } else {
+    breadcrumbs.push({ label: goalTitle })
+  }
+
+  return <PageHeader title="" breadcrumbs={breadcrumbs} bordered={false} />
 }
