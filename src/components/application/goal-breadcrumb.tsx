@@ -90,8 +90,8 @@ export function GoalNavBreadcrumb({
   goalId,
   subGoalTitle,
 }: GoalNavBreadcrumbProps) {
-  const breadcrumbs = [
-    { icon: HomeLine, href: '/' },
+  const breadcrumbs: Array<{ label: string; href?: string; icon?: React.ComponentType<{ className?: string }> }> = [
+    { label: '', icon: HomeLine, href: '/' },
     { label: projectName, href: `/projects/${projectSlug}` },
     { label: 'Overview', href: `/projects/${projectSlug}?tab=overview` },
   ]
