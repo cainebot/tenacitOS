@@ -343,20 +343,27 @@ export function useAgentChat({
     async (messageId: string) => {
       if (!conversationId) return
 
-      const failed = messages.find((m) => m.message_id === messageId && m._failed)
-      if (!failed) return
-
-      // Reset failed state before retrying
-      setMessages((prev) =>
-        prev.map((m) =>
+      // Use functional update to access current messages (avoids stale closure)
+      let failedText: string | null = null
+      let failedContentType: string = 'text'
+      setMessages((prev) => {
+        const failed = prev.find((m) => m.message_id === messageId && m._failed)
+        if (failed) {
+          failedText = failed.text ?? ''
+          failedContentType = failed.content_type
+        }
+        // Reset failed state before retrying
+        return prev.map((m) =>
           m.message_id === messageId ? { ...m, _failed: false, statusIcon: 'sent' } : m
         )
-      )
+      })
+
+      if (failedText === null) return
 
       try {
         await sendMessageApi(conversationId, {
-          text: failed.text ?? '',
-          content_type: failed.content_type,
+          text: failedText ?? '',
+          content_type: failedContentType,
         })
         // Realtime will deliver the persisted message; optimistic will be deduped
       } catch {
@@ -371,7 +378,7 @@ export function useAgentChat({
         toast.error('Failed to send message')
       }
     },
-    [conversationId, messages]
+    [conversationId]
   )
 
   // ── Abort streaming (Phase 102 — D-08, D-09) ─────────────────────────────
