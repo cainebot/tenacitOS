@@ -12,6 +12,7 @@ import {
   Map01,
   MessageChatCircle,
   Server01,
+  Settings01,
 } from "@untitledui/icons";
 import {
   Badge,
@@ -183,6 +184,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     { label: "Agents", href: "/agents", icon: BotIcon },
     { label: "Skills", href: "/skills", icon: Data },
     { label: "Workspaces", href: "/workspaces", icon: Server01 },
+    { divider: true, label: "Cuenta" },
+    { label: "Settings", href: "/settings", icon: Settings01 },
   ];
 
   // Determine secondary panel content and visibility (agents only — chat uses hover menu)
