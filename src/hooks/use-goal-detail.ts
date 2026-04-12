@@ -40,6 +40,9 @@ export function useGoalDetail(goalId: string | null): UseGoalDetailResult {
       return
     }
 
+    // Reset to loading + clear stale data immediately, synchronously
+    setGoal(null)
+    setSubGoals([])
     setLoading(true)
     setError(null)
 
