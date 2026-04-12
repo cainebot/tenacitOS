@@ -36,41 +36,37 @@ interface GoalProgressProps {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Constants
 // ---------------------------------------------------------------------------
 
-type BooleanOption =
-  | { value: 'planning'; label: 'Planning' }
-  | { value: 'in_progress'; label: 'In progress' }
-  | { value: 'complete'; label: 'Complete' }
+type BooleanValue = 'planning' | 'in_progress' | 'complete'
 
-const booleanOptionsByField: Record<
-  'initial' | 'current' | 'target',
-  BooleanOption[]
-> = {
-  initial: [
-    { value: 'planning', label: 'Planning' },
-    { value: 'in_progress', label: 'In progress' },
-  ],
-  current: [
-    { value: 'planning', label: 'Planning' },
-    { value: 'in_progress', label: 'In progress' },
-    { value: 'complete', label: 'Complete' },
-  ],
-  target: [{ value: 'complete', label: 'Complete' }],
+interface BooleanOption {
+  value: BooleanValue
+  label: string
 }
 
-const booleanColorMap = {
+const booleanOptions: BooleanOption[] = [
+  { value: 'planning', label: 'Iniciada' },
+  { value: 'in_progress', label: 'En progreso' },
+  { value: 'complete', label: 'Completada' },
+]
+
+const booleanColorMap: Record<BooleanValue, 'gray' | 'brand' | 'success'> = {
   planning: 'gray',
   in_progress: 'brand',
   complete: 'success',
-} as const
-
-const booleanLabelMap = {
-  planning: 'Planning',
-  in_progress: 'In progress',
-  complete: 'Complete',
 }
+
+const booleanLabelMap: Record<BooleanValue, string> = {
+  planning: 'Iniciada',
+  in_progress: 'En progreso',
+  complete: 'Completada',
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function calcProgress(
   mode: GoalInputMode,
@@ -99,6 +95,43 @@ function calcProgress(
   return 0
 }
 
+/** Parse a text value as a number, stripping trailing % */
+function parseNumericText(text: string): { value: number; isPercentage: boolean } {
+  const trimmed = text.trim()
+  const isPercentage = trimmed.endsWith('%')
+  const numStr = isPercentage ? trimmed.slice(0, -1).trim() : trimmed
+  const parsed = parseFloat(numStr)
+  return {
+    value: isNaN(parsed) ? 0 : parsed,
+    isPercentage,
+  }
+}
+
+/** Check if a string contains any letter characters */
+function hasLetters(text: string): boolean {
+  return /[a-zA-Z]/.test(text)
+}
+
+// ---------------------------------------------------------------------------
+// Per-cell state
+// ---------------------------------------------------------------------------
+
+interface CellState {
+  editing: boolean
+  inputText: string
+  showDropdown: boolean
+  highlightedIndex: number
+}
+
+const defaultCellState: CellState = {
+  editing: false,
+  inputText: '',
+  showDropdown: false,
+  highlightedIndex: -1,
+}
+
+type CellField = 'initial' | 'current' | 'target'
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -115,35 +148,282 @@ export function GoalProgress({
   disabled = false,
 }: GoalProgressProps) {
   const [mode, setMode] = useState<GoalInputMode>(goalType)
-  const [showBooleanDropdown, setShowBooleanDropdown] = useState(false)
-  const [activeDropdownField, setActiveDropdownField] = useState<
-    'initial' | 'current' | 'target' | null
-  >(null)
 
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [initialCell, setInitialCell] = useState<CellState>(defaultCellState)
+  const [currentCell, setCurrentCell] = useState<CellState>(defaultCellState)
+  const [targetCell, setTargetCell] = useState<CellState>(defaultCellState)
+
+  const initialInputRef = useRef<HTMLInputElement>(null)
+  const currentInputRef = useRef<HTMLInputElement>(null)
+  const targetInputRef = useRef<HTMLInputElement>(null)
+
+  const initialDropdownRef = useRef<HTMLDivElement>(null)
+  const currentDropdownRef = useRef<HTMLDivElement>(null)
+  const targetDropdownRef = useRef<HTMLDivElement>(null)
 
   // Sync mode with goalType prop
   useEffect(() => {
     setMode(goalType)
   }, [goalType])
 
+  // When mode changes to boolean, ensure cells are not in editing state
+  useEffect(() => {
+    if (mode === 'boolean') {
+      setInitialCell(defaultCellState)
+      setCurrentCell(defaultCellState)
+      setTargetCell(defaultCellState)
+    }
+  }, [mode])
+
+  // Helper to get cell state & setter by field
+  const getCellAccessor = useCallback(
+    (field: CellField) => {
+      switch (field) {
+        case 'initial':
+          return { state: initialCell, setState: setInitialCell, ref: initialInputRef, dropdownRef: initialDropdownRef }
+        case 'current':
+          return { state: currentCell, setState: setCurrentCell, ref: currentInputRef, dropdownRef: currentDropdownRef }
+        case 'target':
+          return { state: targetCell, setState: setTargetCell, ref: targetInputRef, dropdownRef: targetDropdownRef }
+      }
+    },
+    [initialCell, currentCell, targetCell]
+  )
+
+  // Numeric value for display
+  const getNumericDisplay = useCallback(
+    (field: CellField): string => {
+      const val =
+        field === 'initial'
+          ? initialValue
+          : field === 'current'
+            ? currentValue
+            : targetValue
+      if (val === null) return '0'
+      return numberFormat === 'percentage' ? `${val}%` : String(val)
+    },
+    [initialValue, currentValue, targetValue, numberFormat]
+  )
+
   // Close dropdown on outside click
   useEffect(() => {
-    if (!showBooleanDropdown) return
+    const anyDropdownOpen =
+      initialCell.showDropdown || currentCell.showDropdown || targetCell.showDropdown
+
+    if (!anyDropdownOpen) return
 
     function handleMouseDown(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setShowBooleanDropdown(false)
-        setActiveDropdownField(null)
+      const target = e.target as Node
+      const refs = [initialDropdownRef, currentDropdownRef, targetDropdownRef]
+      const isInsideDropdown = refs.some(
+        (ref) => ref.current && ref.current.contains(target)
+      )
+      if (!isInsideDropdown) {
+        setInitialCell((s) => ({ ...s, showDropdown: false, highlightedIndex: -1 }))
+        setCurrentCell((s) => ({ ...s, showDropdown: false, highlightedIndex: -1 }))
+        setTargetCell((s) => ({ ...s, showDropdown: false, highlightedIndex: -1 }))
       }
     }
 
     document.addEventListener('mousedown', handleMouseDown)
     return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [showBooleanDropdown])
+  }, [initialCell.showDropdown, currentCell.showDropdown, targetCell.showDropdown])
+
+  // Filter dropdown options based on inputText
+  const getFilteredOptions = useCallback(
+    (inputText: string): BooleanOption[] => {
+      if (inputText.length < 3) return booleanOptions
+      const lower = inputText.toLowerCase()
+      return booleanOptions.filter((opt) =>
+        opt.label.toLowerCase().includes(lower)
+      )
+    },
+    []
+  )
+
+  // ---- Input change handler ----
+
+  const handleInputChange = useCallback(
+    (field: CellField, value: string) => {
+      const { setState } = getCellAccessor(field)
+      const showDropdown = hasLetters(value)
+      setState((s) => ({
+        ...s,
+        inputText: value,
+        showDropdown,
+        highlightedIndex: showDropdown ? 0 : -1,
+      }))
+    },
+    [getCellAccessor]
+  )
+
+  // ---- Input blur handler ----
+
+  const handleInputBlur = useCallback(
+    (field: CellField) => {
+      const { state, setState } = getCellAccessor(field)
+
+      // Small delay to allow dropdown click to fire first
+      setTimeout(() => {
+        setState((s) => {
+          // If dropdown was already closed by a selection, skip
+          if (!s.editing) return s
+
+          const text = s.inputText.trim()
+
+          // If text has letters or is empty, reset to numeric display
+          if (hasLetters(text) || text === '') {
+            return { ...defaultCellState }
+          }
+
+          // Text is numeric — commit value
+          const { value: numericValue, isPercentage } = parseNumericText(text)
+
+          // If we were in boolean mode (badge was clicked, user typed a number),
+          // convert back to numeric
+          if (mode === 'boolean') {
+            const fieldMap: Record<CellField, 'initial_value' | 'current_value' | 'target_value'> = {
+              initial: 'initial_value',
+              current: 'current_value',
+              target: 'target_value',
+            }
+            onUpdate({
+              goal_type: 'numeric',
+              number_format: isPercentage ? 'percentage' : 'natural',
+              [fieldMap[field]]: numericValue,
+              // Reset other fields to 0
+              ...(field !== 'initial' && { initial_value: 0 }),
+              ...(field !== 'current' && { current_value: 0 }),
+              ...(field !== 'target' && { target_value: 0 }),
+              boolean_initial: null,
+              boolean_current: null,
+            })
+            setMode('numeric')
+          } else {
+            // Already in numeric mode — just update this field
+            const fieldMap: Record<CellField, 'initial_value' | 'current_value' | 'target_value'> = {
+              initial: 'initial_value',
+              current: 'current_value',
+              target: 'target_value',
+            }
+            onUpdate({
+              number_format: isPercentage ? 'percentage' : 'natural',
+              [fieldMap[field]]: numericValue,
+            })
+          }
+
+          return { ...defaultCellState }
+        })
+      }, 150)
+    },
+    [getCellAccessor, mode, onUpdate]
+  )
+
+  // ---- Boolean select handler ----
+
+  const handleBooleanSelect = useCallback(
+    (optionValue: BooleanValue, field: CellField) => {
+      setMode('boolean')
+
+      // Close all cells
+      setInitialCell(defaultCellState)
+      setCurrentCell(defaultCellState)
+      setTargetCell(defaultCellState)
+
+      // Build defaults for non-edited fields
+      const newInitial: 'planning' | 'in_progress' =
+        field === 'initial'
+          ? (optionValue as 'planning' | 'in_progress')
+          : booleanInitial ?? 'planning'
+      const newCurrent: BooleanValue =
+        field === 'current'
+          ? optionValue
+          : booleanCurrent ?? 'in_progress'
+
+      onUpdate({
+        goal_type: 'boolean',
+        boolean_initial: newInitial,
+        boolean_current: newCurrent,
+        initial_value: null,
+        current_value: null,
+        target_value: null,
+      })
+    },
+    [onUpdate, booleanInitial, booleanCurrent]
+  )
+
+  // ---- Badge click handler (revert to empty input with dropdown) ----
+
+  const handleBadgeClick = useCallback(
+    (field: CellField) => {
+      if (disabled) return
+
+      const { setState, ref } = getCellAccessor(field)
+      setState({
+        editing: true,
+        inputText: '',
+        showDropdown: true,
+        highlightedIndex: 0,
+      })
+
+      // Focus the input after state update
+      requestAnimationFrame(() => {
+        ref.current?.focus()
+      })
+    },
+    [disabled, getCellAccessor]
+  )
+
+  // ---- Keyboard navigation ----
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, field: CellField) => {
+      const { state, setState } = getCellAccessor(field)
+      if (!state.showDropdown) return
+
+      const filtered = getFilteredOptions(state.inputText)
+      if (filtered.length === 0) return
+
+      switch (e.key) {
+        case 'ArrowDown': {
+          e.preventDefault()
+          setState((s) => ({
+            ...s,
+            highlightedIndex: Math.min(s.highlightedIndex + 1, filtered.length - 1),
+          }))
+          break
+        }
+        case 'ArrowUp': {
+          e.preventDefault()
+          setState((s) => ({
+            ...s,
+            highlightedIndex: Math.max(s.highlightedIndex - 1, 0),
+          }))
+          break
+        }
+        case 'Enter': {
+          e.preventDefault()
+          const idx = state.highlightedIndex >= 0 ? state.highlightedIndex : 0
+          if (filtered[idx]) {
+            handleBooleanSelect(filtered[idx].value, field)
+          }
+          break
+        }
+        case 'Escape': {
+          e.preventDefault()
+          setState((s) => ({
+            ...s,
+            showDropdown: false,
+            highlightedIndex: -1,
+          }))
+          break
+        }
+      }
+    },
+    [getCellAccessor, getFilteredOptions, handleBooleanSelect]
+  )
+
+  // ---- Progress calc ----
 
   const progress = calcProgress(
     mode,
@@ -153,101 +433,147 @@ export function GoalProgress({
     booleanCurrent
   )
 
-  // ---- Numeric mode handlers ----
+  // ---- Render helpers ----
 
-  const handleNumericChange = useCallback(
-    (
-      field: 'initial_value' | 'current_value' | 'target_value',
-      rawValue: string
-    ) => {
-      const parsed = rawValue === '' ? null : parseFloat(rawValue)
-      onUpdate({ [field]: isNaN(parsed as number) ? null : parsed })
-    },
-    [onUpdate]
-  )
+  /** Render a numeric input cell with dropdown */
+  const renderNumericCell = (field: CellField) => {
+    const { state, setState, ref, dropdownRef } = getCellAccessor(field)
+    const filteredOptions = getFilteredOptions(state.inputText)
 
-  const handleKeyDown = useCallback(
-    (
-      e: React.KeyboardEvent<HTMLInputElement>,
-      field: 'initial' | 'current' | 'target'
-    ) => {
-      if (/^[a-zA-Z]$/.test(e.key)) {
-        e.preventDefault()
-        setShowBooleanDropdown(true)
-        setActiveDropdownField(field)
-      }
-    },
-    []
-  )
+    return (
+      <div
+        className="relative flex flex-1 items-center h-[72px] px-6 py-4"
+        onKeyDown={(e) => handleKeyDown(e, field)}
+      >
+        <Input
+          type="text"
+          value={state.editing ? state.inputText : getNumericDisplay(field)}
+          onChange={(value: string) => {
+            if (!state.editing) {
+              // First keystroke in numeric mode
+              setState((s) => ({ ...s, editing: true }))
+            }
+            handleInputChange(field, value)
+          }}
+          onFocus={() => {
+            if (!state.editing) {
+              setState((s) => ({
+                ...s,
+                editing: true,
+                inputText: getNumericDisplay(field),
+              }))
+            }
+          }}
+          onBlur={() => handleInputBlur(field)}
+          isDisabled={disabled}
+          ref={ref}
+        />
+        {state.showDropdown && filteredOptions.length > 0 && (
+          <div
+            ref={dropdownRef}
+            className="absolute left-6 right-6 bottom-full mb-1 z-10 rounded-lg border border-secondary bg-primary shadow-lg p-1 min-w-[140px]"
+          >
+            {filteredOptions.map((opt, idx) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={cx(
+                  'w-full text-left px-3 py-2 text-sm rounded-md text-secondary',
+                  idx === state.highlightedIndex && 'bg-active'
+                )}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  handleBooleanSelect(opt.value, field)
+                }}
+                onMouseEnter={() => {
+                  setState((s) => ({ ...s, highlightedIndex: idx }))
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
-  const handleInputBlur = useCallback(() => {
-    // If dropdown not open, just close — blur without selection resets nothing
-    // The input retains its numeric value; the letter keystroke was prevented
-  }, [])
+  /** Render a boolean badge cell (editable) */
+  const renderBooleanCell = (
+    field: CellField,
+    value: BooleanValue
+  ) => {
+    const { state, setState, ref, dropdownRef } = getCellAccessor(field)
+    const filteredOptions = getFilteredOptions(state.inputText)
 
-  // ---- Boolean dropdown handler ----
+    if (state.editing) {
+      // Show input with dropdown (badge was clicked)
+      return (
+        <div
+          className="relative flex flex-1 items-center h-[72px] px-6 py-4"
+          onKeyDown={(e) => handleKeyDown(e, field)}
+        >
+          <Input
+            type="text"
+            value={state.inputText}
+            onChange={(val: string) => handleInputChange(field, val)}
+            onBlur={() => handleInputBlur(field)}
+            isDisabled={disabled}
+            ref={ref}
+          />
+          {state.showDropdown && filteredOptions.length > 0 && (
+            <div
+              ref={dropdownRef}
+              className="absolute left-6 right-6 bottom-full mb-1 z-10 rounded-lg border border-secondary bg-primary shadow-lg p-1 min-w-[140px]"
+            >
+              {filteredOptions.map((opt, idx) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={cx(
+                    'w-full text-left px-3 py-2 text-sm rounded-md text-secondary',
+                    idx === state.highlightedIndex && 'bg-active'
+                  )}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    handleBooleanSelect(opt.value, field)
+                  }}
+                  onMouseEnter={() => {
+                    setState((s) => ({ ...s, highlightedIndex: idx }))
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    }
 
-  const handleBooleanSelect = useCallback(
-    (
-      optionValue: 'planning' | 'in_progress' | 'complete',
-      field: 'initial' | 'current' | 'target'
-    ) => {
-      setMode('boolean')
-      setShowBooleanDropdown(false)
-      setActiveDropdownField(null)
+    // Show badge
+    return (
+      <div className="flex flex-1 items-center h-[72px] px-6 py-4">
+        <button
+          type="button"
+          className="flex items-center"
+          onClick={() => handleBadgeClick(field)}
+          disabled={disabled}
+          aria-label={`Edit ${field} value`}
+        >
+          <BadgeWithDot
+            color={booleanColorMap[value]}
+            type="pill-color"
+            size="sm"
+          >
+            {booleanLabelMap[value]}
+          </BadgeWithDot>
+        </button>
+      </div>
+    )
+  }
 
-      onUpdate({
-        goal_type: 'boolean',
-        boolean_initial:
-          field === 'initial'
-            ? (optionValue as 'planning' | 'in_progress')
-            : booleanInitial ?? 'planning',
-        boolean_current:
-          field === 'current' ? optionValue : booleanCurrent ?? 'in_progress',
-        initial_value: null,
-        current_value: null,
-        target_value: null,
-      })
-    },
-    [onUpdate, booleanInitial, booleanCurrent]
-  )
-
-  // ---- Badge clear handler (reverts to numeric) ----
-
-  const handleBadgeClear = useCallback(() => {
-    setMode('numeric')
-    onUpdate({
-      goal_type: 'numeric',
-      boolean_initial: null,
-      boolean_current: null,
-      initial_value: 0,
-      current_value: 0,
-      target_value: 0,
-    })
-  }, [onUpdate])
-
-  // ---- Boolean badge cycle for current field ----
-
-  const handleCurrentCycle = useCallback(() => {
-    const order: Array<'planning' | 'in_progress' | 'complete'> = [
-      'planning',
-      'in_progress',
-      'complete',
-    ]
-    const idx = order.indexOf(booleanCurrent ?? 'planning')
-    const next = order[(idx + 1) % order.length]
-    onUpdate({ boolean_current: next })
-  }, [booleanCurrent, onUpdate])
-
-  const handleInitialCycle = useCallback(() => {
-    const next =
-      booleanInitial === 'planning' ? 'in_progress' : 'planning'
-    onUpdate({ boolean_initial: next })
-  }, [booleanInitial, onUpdate])
-
-  const percentSuffix = numberFormat === 'percentage' ? '%' : ''
-
-  // ---- Render ----
+  // ---- Main render ----
 
   return (
     <div className="overflow-clip rounded-xl border border-secondary bg-primary shadow-xs">
@@ -271,187 +597,18 @@ export function GoalProgress({
       <div className="flex items-center">
         {mode === 'numeric' ? (
           <>
-            {/* Cell 1: Initial — numeric Input + dropdown */}
-            <div className="relative flex flex-1 items-center h-[72px] px-6 py-4">
-              <Input
-                type="number"
-                value={initialValue !== null ? String(initialValue) : ''}
-                onChange={(e) =>
-                  handleNumericChange('initial_value', e.target.value)
-                }
-                onKeyDown={(e) => handleKeyDown(e, 'initial')}
-                onBlur={handleInputBlur}
-                isDisabled={disabled}
-                trailingElement={
-                  percentSuffix ? (
-                    <span className="text-sm text-quaternary">
-                      {percentSuffix}
-                    </span>
-                  ) : undefined
-                }
-              />
-              {showBooleanDropdown && activeDropdownField === 'initial' && (
-                <div
-                  ref={dropdownRef}
-                  className="absolute z-10 mt-1 rounded-lg border border-secondary bg-primary shadow-lg p-1 min-w-[140px]"
-                >
-                  {booleanOptionsByField.initial.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-secondary_hover rounded-md text-secondary"
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        handleBooleanSelect(opt.value, 'initial')
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Cell 2: Current — numeric Input + dropdown */}
-            <div className="relative flex flex-1 items-center h-[72px] px-6 py-4">
-              <Input
-                type="number"
-                value={currentValue !== null ? String(currentValue) : ''}
-                onChange={(e) =>
-                  handleNumericChange('current_value', e.target.value)
-                }
-                onKeyDown={(e) => handleKeyDown(e, 'current')}
-                onBlur={handleInputBlur}
-                isDisabled={disabled}
-                trailingElement={
-                  percentSuffix ? (
-                    <span className="text-sm text-quaternary">
-                      {percentSuffix}
-                    </span>
-                  ) : undefined
-                }
-              />
-              {showBooleanDropdown && activeDropdownField === 'current' && (
-                <div
-                  ref={dropdownRef}
-                  className="absolute z-10 mt-1 rounded-lg border border-secondary bg-primary shadow-lg p-1 min-w-[140px]"
-                >
-                  {booleanOptionsByField.current.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-secondary_hover rounded-md text-secondary"
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        handleBooleanSelect(opt.value, 'current')
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Cell 3: Target — numeric Input + dropdown */}
-            <div className="relative flex flex-1 items-center h-[72px] px-6 py-4">
-              <Input
-                type="number"
-                value={targetValue !== null ? String(targetValue) : ''}
-                onChange={(e) =>
-                  handleNumericChange('target_value', e.target.value)
-                }
-                onKeyDown={(e) => handleKeyDown(e, 'target')}
-                onBlur={handleInputBlur}
-                isDisabled={disabled}
-                trailingElement={
-                  percentSuffix ? (
-                    <span className="text-sm text-quaternary">
-                      {percentSuffix}
-                    </span>
-                  ) : undefined
-                }
-              />
-              {showBooleanDropdown && activeDropdownField === 'target' && (
-                <div
-                  ref={dropdownRef}
-                  className="absolute z-10 mt-1 rounded-lg border border-secondary bg-primary shadow-lg p-1 min-w-[140px]"
-                >
-                  {booleanOptionsByField.target.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-secondary_hover rounded-md text-secondary"
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        handleBooleanSelect(opt.value, 'target')
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {renderNumericCell('initial')}
+            {renderNumericCell('current')}
+            {renderNumericCell('target')}
           </>
         ) : (
           <>
-            {/* Cell 1: Initial — boolean BadgeWithDot + clear button */}
-            <div className="flex flex-1 items-center h-[72px] px-6 py-4">
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  className="flex items-center"
-                  onClick={handleInitialCycle}
-                  disabled={disabled}
-                  aria-label="Cycle initial boolean value"
-                >
-                  <BadgeWithDot
-                    color={booleanColorMap[booleanInitial ?? 'planning']}
-                    type="pill-color"
-                    size="sm"
-                  >
-                    {booleanLabelMap[booleanInitial ?? 'planning']}
-                  </BadgeWithDot>
-                </button>
-                <button
-                  type="button"
-                  className={cx(
-                    'ml-1 text-xs text-tertiary hover:text-error-primary leading-none',
-                    disabled && 'pointer-events-none opacity-50'
-                  )}
-                  onClick={handleBadgeClear}
-                  disabled={disabled}
-                  aria-label="Clear boolean mode, revert to numeric"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            {/* Cell 2: Current — boolean BadgeWithDot */}
-            <div className="flex flex-1 items-center h-[72px] px-6 py-4">
-              <button
-                type="button"
-                className="flex items-center"
-                onClick={handleCurrentCycle}
-                disabled={disabled}
-                aria-label="Cycle current boolean value"
-              >
-                <BadgeWithDot
-                  color={booleanColorMap[booleanCurrent ?? 'planning']}
-                  type="pill-color"
-                  size="sm"
-                >
-                  {booleanLabelMap[booleanCurrent ?? 'planning']}
-                </BadgeWithDot>
-              </button>
-            </div>
-
-            {/* Cell 3: Target — static Complete badge */}
+            {renderBooleanCell('initial', booleanInitial ?? 'planning')}
+            {renderBooleanCell('current', booleanCurrent ?? 'planning')}
+            {/* Target is always non-editable Completada badge */}
             <div className="flex flex-1 items-center h-[72px] px-6 py-4">
               <BadgeWithDot color="success" type="pill-color" size="sm">
-                Complete
+                Completada
               </BadgeWithDot>
             </div>
           </>
