@@ -105,12 +105,9 @@ export function ShareMembersModal({
             members.map((member) => {
               const agent = agents.find((a) => a.agent_id === member.id)
               const displayName = agent?.name ?? member.name
-              const initials = displayName
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .slice(0, 2)
-                .toUpperCase()
+              const initials = displayName.trim()
+                ? displayName.trim().split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+                : '?'
               const currentRole = memberRoles[member.id] ?? 'editor'
 
               return (
