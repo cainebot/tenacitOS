@@ -1,7 +1,7 @@
 'use client'
 
 import { cx } from '@circos/ui'
-import { CheckCircle } from '@untitledui/icons'
+import { StepIconBase } from '@circos/ui'
 
 interface GoalItemProps {
   title: string
@@ -13,14 +13,14 @@ export function GoalItem({ title, isComplete, onClick }: GoalItemProps) {
   const content = (
     <>
       {isComplete ? (
-        <CheckCircle className="size-5 fg-brand-primary shrink-0" />
+        <StepIconBase status="Complete" size="md" className="shrink-0" />
       ) : (
-        <div className="size-5 rounded-full border-2 border-secondary shrink-0" />
+        <StepIconBase status="Incomplete" size="md" className="shrink-0" />
       )}
       <span
         className={cx(
-          'text-sm truncate',
-          isComplete ? 'line-through text-tertiary' : 'text-secondary',
+          'text-lg font-semibold truncate',
+          isComplete ? 'line-through text-quaternary' : 'text-primary',
         )}
       >
         {title}
@@ -32,7 +32,7 @@ export function GoalItem({ title, isComplete, onClick }: GoalItemProps) {
     return (
       <button
         type="button"
-        className="flex flex-row items-center gap-3 w-full cursor-pointer hover:bg-primary_hover rounded-md px-2 py-1.5 text-left"
+        className="flex flex-row items-center gap-[18px] w-full cursor-pointer hover:bg-primary_hover rounded-md px-2 py-1.5 text-left"
         onClick={onClick}
       >
         {content}
@@ -41,7 +41,7 @@ export function GoalItem({ title, isComplete, onClick }: GoalItemProps) {
   }
 
   return (
-    <div className="flex flex-row items-center gap-3 px-2 py-1.5">
+    <div className="flex flex-row items-center gap-[18px] px-2 py-1.5">
       {content}
     </div>
   )
