@@ -833,6 +833,14 @@ export function useAgentChat({
           // Only update the full message when NOT actively streaming text.
           // During streaming, hasPartialText is true and the RAF buffer handles display;
           // re-enriching here would overwrite the buffer with the partial DB row text.
+
+          // WR-01 fix: Skip re-enrich when processing_state transitions to null
+          // (daemon cleared it before streaming tokens arrive). Supabase sends null
+          // (not undefined) for cleared columns — only match explicit null.
+          if (updated.processing_state === null && updated.message_id === streamingMessageIdRef.current) {
+            return
+          }
+
           if (!hasPartialText) {
             setMessages((prev) =>
               prev.map((m) => {
@@ -921,6 +929,7 @@ export function useAgentChat({
             // Only reset global streaming state if this receipt belongs to the
             // currently active streaming message — prevents premature UI unlock
             // when a receipt for a different message arrives during active streaming.
+            // WR-02 (v5.0 audit): guard prevents multi-conversation race
             if (receipt.message_id === streamingMessageIdRef.current) {
               setIsStreaming(false)
               setStreamingMessageId(null)
