@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, ProgressBar, cx } from '@circos/ui'
-import { Plus, Target04, CornerDownRight, ArrowNarrowLeft } from '@untitledui/icons'
+import { Plus, Target04, ArrowNarrowLeft } from '@untitledui/icons'
 import { GoalProgress } from './goal-progress'
 import { GoalPropertiesPanel, type EpicOption } from './goal-properties-panel'
 import { GoalNavBreadcrumb } from './goal-breadcrumb'
@@ -20,6 +20,28 @@ interface GoalDetailViewProps {
   projectSlug: string
   projectName: string
   onBack: () => void  // Navigate back to Overview
+}
+
+// ---------------------------------------------------------------------------
+// Sub-goal table cell helpers
+// ---------------------------------------------------------------------------
+
+function SubGoalCellText({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cx("flex flex-1 items-center gap-3 border-b border-secondary h-[72px] px-6 py-4 min-w-0", className)}>
+      <p className="flex-1 text-sm font-medium text-primary truncate min-w-0">{children}</p>
+    </div>
+  )
+}
+
+function SubGoalCellProgress({ value, className }: { value: number; className?: string }) {
+  return (
+    <div className={cx("flex items-center border-b border-secondary h-[72px] px-6 py-4 w-[266px] shrink-0", className)}>
+      <div className="flex-1 min-w-0">
+        <ProgressBar value={value} labelPosition="right" />
+      </div>
+    </div>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -187,7 +209,8 @@ export function GoalDetailView({
               className={cx(
                 'w-full bg-transparent text-2xl font-semibold text-primary',
                 'border-0 outline-none focus:ring-0 placeholder:text-placeholder',
-                'py-1'
+                'hover:bg-primary_hover rounded-lg transition-colors duration-100',
+                'py-1 px-2'
               )}
               aria-label="Goal title"
             />
@@ -195,9 +218,6 @@ export function GoalDetailView({
 
           {/* Description */}
           <div>
-            <h3 className="text-sm font-semibold text-secondary mb-2">
-              Description
-            </h3>
             <textarea
               value={goal.description ?? ''}
               onChange={(e) => updateGoal({ description: e.target.value })}
@@ -205,8 +225,9 @@ export function GoalDetailView({
               rows={4}
               className={cx(
                 'w-full bg-transparent text-sm text-secondary',
-                'border border-secondary rounded-lg p-3',
-                'outline-none focus:border-brand resize-none',
+                'border-0 p-3 rounded-lg',
+                'outline-none focus:ring-0 resize-none',
+                'hover:bg-primary_hover transition-colors duration-100',
                 'placeholder:text-placeholder'
               )}
               aria-label="Goal description"
@@ -215,9 +236,6 @@ export function GoalDetailView({
 
           {/* Progress section */}
           <div>
-            <h3 className="text-sm font-semibold text-secondary mb-3">
-              Progress
-            </h3>
             <GoalProgress
               goalType={goal.goal_type}
               numberFormat={goal.number_format}
@@ -263,36 +281,34 @@ export function GoalDetailView({
                   <p className="text-sm text-tertiary">No sub-goals yet</p>
                 </div>
               ) : (
-                /* Sub-goals list with progress */
-                <div className="space-y-1">
-                  {subGoals.map((sg) => {
+                /* Sub-goals table matching overview GoalsTable pattern */
+                <div className="overflow-clip rounded-2xl border border-primary bg-primary_alt">
+                  {/* Table header */}
+                  <div className="flex items-center">
+                    <div className="flex flex-1 items-center bg-secondary border-b border-secondary h-10 px-5 py-2">
+                      <span className="text-xs font-semibold text-quaternary">Name</span>
+                    </div>
+                    <div className="w-[266px] shrink-0 bg-secondary border-b border-secondary h-10" />
+                  </div>
+
+                  {/* Sub-goal rows */}
+                  {subGoals.map((sg, idx) => {
                     const progress = calcSubGoalProgress(sg)
+                    const isLast = idx === subGoals.length - 1
                     return (
-                      <button
+                      <div
                         key={sg.goal_id}
-                        type="button"
+                        className="flex items-center bg-primary cursor-pointer hover:bg-primary_hover transition-colors"
                         onClick={() => {
                           router.push(
                             `/projects/${projectSlug}?tab=overview&goal=${goalId}&subgoal=${sg.goal_id}`,
                             { scroll: false }
                           )
                         }}
-                        className={cx(
-                          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg',
-                          'hover:bg-secondary_hover text-left transition-colors duration-100'
-                        )}
                       >
-                        <CornerDownRight className="size-4 fg-quaternary shrink-0" />
-                        <span className="text-sm text-secondary flex-1 truncate">
-                          {sg.title}
-                        </span>
-                        <div className="w-20 shrink-0">
-                          <ProgressBar value={progress} />
-                        </div>
-                        <span className="text-xs text-tertiary w-8 text-right shrink-0">
-                          {Math.round(progress)}%
-                        </span>
-                      </button>
+                        <SubGoalCellText className={isLast ? 'border-b-0' : undefined}>{sg.title}</SubGoalCellText>
+                        <SubGoalCellProgress value={progress} className={isLast ? 'border-b-0' : undefined} />
+                      </div>
                     )
                   })}
                 </div>
