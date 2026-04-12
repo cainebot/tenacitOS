@@ -58,12 +58,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { title, description, level, parent_id, project_id } = body as {
+  const { title, description, level, parent_id, project_id, goal_type, number_format } = body as {
     title?: string
     description?: string
     level?: string
     parent_id?: string
     project_id?: string
+    goal_type?: string
+    number_format?: string
   }
 
   if (!title || typeof title !== 'string' || !title.trim()) {
@@ -93,6 +95,8 @@ export async function POST(request: NextRequest) {
     if (description) payload.description = description
     if (parent_id) payload.parent_id = parent_id
     if (project_id) payload.project_id = project_id
+    if (goal_type) payload.goal_type = goal_type
+    if (number_format) payload.number_format = number_format
 
     const { data, error } = await supabase
       .from('goals')

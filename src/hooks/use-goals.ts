@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
-import type { GoalRow, GoalLevel } from '@/types/project'
+import type { GoalRow, GoalLevel, GoalType, NumberFormat } from '@/types/project'
 
 export interface UseGoalsResult {
   goals: GoalRow[]
@@ -14,10 +14,12 @@ export interface UseGoalsResult {
     level: GoalLevel
     parent_id?: string
     project_id?: string
+    goal_type?: GoalType
+    number_format?: NumberFormat
   }) => Promise<GoalRow | null>
   updateGoal: (
     id: string,
-    data: Partial<Pick<GoalRow, 'title' | 'description' | 'status' | 'parent_id'>>
+    data: Partial<Pick<GoalRow, 'title' | 'description' | 'parent_id' | 'goal_type' | 'number_format' | 'initial_value' | 'current_value' | 'target_value' | 'boolean_initial' | 'boolean_current' | 'epic_id'>>
   ) => Promise<GoalRow | null>
   deleteGoal: (id: string) => Promise<boolean>
   companyGoals: GoalRow[]
@@ -111,6 +113,8 @@ export function useGoals(projectId?: string): UseGoalsResult {
       level: GoalLevel
       parent_id?: string
       project_id?: string
+      goal_type?: GoalType
+      number_format?: NumberFormat
     }): Promise<GoalRow | null> => {
       try {
         const res = await fetch('/api/goals', {
@@ -136,7 +140,7 @@ export function useGoals(projectId?: string): UseGoalsResult {
   const updateGoal = useCallback(
     async (
       id: string,
-      data: Partial<Pick<GoalRow, 'title' | 'description' | 'status' | 'parent_id'>>
+      data: Partial<Pick<GoalRow, 'title' | 'description' | 'parent_id' | 'goal_type' | 'number_format' | 'initial_value' | 'current_value' | 'target_value' | 'boolean_initial' | 'boolean_current' | 'epic_id'>>
     ): Promise<GoalRow | null> => {
       try {
         const res = await fetch(`/api/goals/${id}`, {

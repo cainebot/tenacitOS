@@ -55,6 +55,7 @@ export interface ProjectRow {
   members: ProjectMember[]      // Phase 61 — JSONB array of project members
   is_favorite: boolean          // Phase 61 — user favorite flag
   goal_id: string | null        // Phase 88 — FK to goals table (D-08)
+  delivery_date: string | null  // Phase 88.2 — D-01
   created_at: string
   updated_at: string
 }
@@ -197,7 +198,9 @@ export interface CardCustomFieldValueRow {
 // ---------------------------------------------------------------------------
 
 export type GoalLevel = 'company' | 'department'
-export type GoalStatus = 'active' | 'paused' | 'completed'
+export type GoalType = 'numeric' | 'boolean'
+export type NumberFormat = 'natural' | 'percentage'
+export type GoalStatus = 'planning' | 'active' | 'completed'
 
 export interface GoalRow {
   goal_id: string
@@ -207,6 +210,15 @@ export interface GoalRow {
   status: GoalStatus
   parent_id: string | null
   project_id: string | null  // Phase 88.1 — per-project scoping
+  goal_type: GoalType
+  number_format: NumberFormat
+  initial_value: number | null
+  current_value: number | null
+  target_value: number | null
+  boolean_initial: 'planning' | 'in_progress' | null
+  boolean_current: 'planning' | 'in_progress' | 'complete' | null
+  completed_at: string | null
+  epic_id: string | null
   created_at: string
   updated_at: string
 }

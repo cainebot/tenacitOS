@@ -48,7 +48,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const allowed = ['title', 'description', 'status', 'parent_id']
+  const allowed = ['title', 'description', 'parent_id', 'goal_type', 'number_format', 'initial_value', 'current_value', 'target_value', 'boolean_initial', 'boolean_current', 'epic_id']
   const updates: Record<string, unknown> = {}
   for (const key of allowed) {
     if (key in body) updates[key] = body[key]
