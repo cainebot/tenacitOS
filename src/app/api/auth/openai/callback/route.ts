@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServiceRoleClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,6 +71,24 @@ export async function GET(request: NextRequest) {
       { error: `Token exchange request failed: ${message}` },
       { status: 502 }
     )
+  }
+
+  // Phase 103 (OAUTH-03, Pitfall 3): Persist token status to Supabase
+  // so frontend can detect renewal via Realtime/polling and dismiss banner.
+  try {
+    const serviceClient = createServiceRoleClient()
+    await serviceClient.from('provider_token_status').upsert(
+      {
+        provider: 'openai',
+        status: 'connected',
+        last_refreshed: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'provider' }
+    )
+  } catch (upsertErr) {
+    // Non-fatal: cookie still works, but banner won't auto-dismiss
+    console.error('[oauth-callback] Failed to update provider_token_status:', upsertErr)
   }
 
   // Store token in httpOnly cookie — 30 days
