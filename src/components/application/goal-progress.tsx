@@ -201,15 +201,15 @@ export function GoalProgress({
         boolean_initial:
           field === 'initial'
             ? (optionValue as 'planning' | 'in_progress')
-            : 'planning',
+            : booleanInitial ?? 'planning',
         boolean_current:
-          field === 'current' ? optionValue : 'in_progress',
+          field === 'current' ? optionValue : booleanCurrent ?? 'in_progress',
         initial_value: null,
         current_value: null,
         target_value: null,
       })
     },
-    [onUpdate]
+    [onUpdate, booleanInitial, booleanCurrent]
   )
 
   // ---- Badge clear handler (reverts to numeric) ----
