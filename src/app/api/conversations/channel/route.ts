@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase'
+import { resolveCurrentParticipantId } from '@/lib/auth-helpers'
 
 export const dynamic = 'force-dynamic'
 
 // POST /api/conversations/channel
 // Body: { name: string, memberParticipantIds: string[] }
-// Creates a group conversation with Joan as owner and given members
+// Creates a group conversation with the authenticated user as owner and given members.
+// GROUP-08: User-aware owner resolution via `userId` query param or fallback to single human.
 // Uses service_role (middleware already verifies mc_auth cookie for auth)
 export async function POST(request: NextRequest) {
   const supabase = createServiceRoleClient()
@@ -26,19 +28,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'memberParticipantIds must be a non-empty array' }, { status: 400 })
   }
 
-  // Step 1: Resolve Joan's participant_id (single human participant)
-  const { data: joanRow, error: joanError } = await supabase
-    .from('chat_participants')
-    .select('participant_id')
-    .eq('participant_type', 'human')
-    .limit(1)
-    .single()
+  // Step 1: Resolve the authenticated user's participant_id (GROUP-08)
+  const { participantId: ownerParticipantId, error: ownerError } = await resolveCurrentParticipantId(request)
 
-  if (joanError || !joanRow) {
-    return NextResponse.json({ error: 'Human participant record not found' }, { status: 404 })
+  if (ownerError || !ownerParticipantId) {
+    return NextResponse.json({ error: ownerError ?? 'Human participant record not found' }, { status: 404 })
   }
-
-  const joanParticipantId = joanRow.participant_id
 
   // Step 2: INSERT conversation
   const { data: conversation, error: convError } = await supabase
@@ -56,9 +51,9 @@ export async function POST(request: NextRequest) {
 
   const conversationId = conversation.conversation_id
 
-  // Step 3: INSERT conversation_participants — Joan as owner, members as member
+  // Step 3: INSERT conversation_participants — authenticated user as owner, members as member
   const participants = [
-    { conversation_id: conversationId, participant_id: joanParticipantId, participation_role: 'owner' },
+    { conversation_id: conversationId, participant_id: ownerParticipantId, participation_role: 'owner' },
     ...memberParticipantIds.map((id) => ({
       conversation_id: conversationId,
       participant_id: id,
