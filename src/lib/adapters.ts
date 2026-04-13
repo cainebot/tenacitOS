@@ -5,7 +5,7 @@
 // no side effects. Created in Phase 62 Plan 03 (D-14, D-14a).
 // ============================================================
 
-import type { CardRow, CardDetail, ActivityLogRow, ProjectStateRow } from '@/types/project'
+import type { CardRow, CardDetail, ActivityLogRow, ProjectStateRow, TaskMessageRow, TaskMessageType } from '@/types/project'
 import type { AgentRow } from '@/types/supabase'
 import type { KanbanCardProps, KanbanCardTag, KanbanCardUser, Priority as KanbanPriority } from '@/components/application/kanban-card'
 import type {
@@ -313,6 +313,52 @@ export function activityLogToActivityEvents(
         }
       default:
         return base
+    }
+  })
+}
+
+// ---------------------------------------------------------------------------
+// taskMessagesToActivityEvents (task_messages rows -> ActivityEvent[])
+// Phase 89 — TASK-04
+// ---------------------------------------------------------------------------
+
+/**
+ * Type-safe mapping from DB message_type to ActivityEventType.
+ * 'text' maps to 'comment' so agent text messages render as comment bubbles
+ * in ActivityFeedEntry (which has no 'text' case).
+ */
+const TASK_MSG_TO_ACTIVITY: Record<TaskMessageType, ActivityEventType> = {
+  text:        'comment',
+  tool_use:    'tool_use',
+  tool_result: 'tool_result',
+  thinking:    'thinking',
+  error:       'error',
+  status:      'status',
+}
+
+export function taskMessagesToActivityEvents(
+  rows: TaskMessageRow[],
+  agents: AgentRow[],
+): ActivityEvent[] {
+  return rows.map((row) => {
+    const agent = row.actor_id
+      ? agents.find(a => a.agent_id === row.actor_id)
+      : null
+    const actor: TaskUser = agent
+      ? { id: agent.agent_id, name: agent.name, avatarUrl: undefined, role: agent.role }
+      : { id: row.actor_id ?? 'agent', name: row.actor_id ?? 'Agent' }
+
+    return {
+      id: row.id,
+      actor,
+      type: TASK_MSG_TO_ACTIVITY[row.message_type] ?? 'field_update',
+      createdAt: row.created_at,
+      actorType: 'agent' as const,
+      content: row.content ?? undefined,
+      toolName: row.tool_name ?? undefined,
+      toolInput: (row.input ?? undefined) as Record<string, unknown> | undefined,
+      toolOutput: row.output ?? undefined,
+      durationMs: row.duration_ms ?? undefined,
     }
   })
 }
