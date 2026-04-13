@@ -194,6 +194,89 @@ function simulateInsertHandlerRevokeLocalPreviews(
   }
 }
 
+interface ActiveGenerationIdentity {
+  promptMessageId: string | null
+  replyMessageId: string | null
+}
+
+function simulateCaptureAbortTargetFromSendResponse(sendResponse: { message_id: string }) {
+  return {
+    abortTargetMessageId: sendResponse.message_id,
+    generation: {
+      promptMessageId: sendResponse.message_id,
+      replyMessageId: null,
+    } satisfies ActiveGenerationIdentity,
+  }
+}
+
+function simulateBindReplyToActiveGeneration(
+  activeGeneration: ActiveGenerationIdentity,
+  replyMessageId: string
+): ActiveGenerationIdentity {
+  if (!activeGeneration.promptMessageId) return activeGeneration
+  return {
+    ...activeGeneration,
+    replyMessageId,
+  }
+}
+
+function simulatePromptReceiptFinalization(params: {
+  receiptMessageId: string
+  activeGeneration: ActiveGenerationIdentity
+  bufferedText: string | null
+  existingReplyText: string | null
+  isCancelling: boolean
+}) {
+  const {
+    receiptMessageId,
+    activeGeneration,
+    bufferedText,
+    existingReplyText,
+    isCancelling,
+  } = params
+
+  const isActivePromptReceipt =
+    !!activeGeneration.promptMessageId &&
+    receiptMessageId === activeGeneration.promptMessageId
+  if (!isActivePromptReceipt) {
+    return {
+      shouldFinalize: false,
+    }
+  }
+
+  const finalText = bufferedText && bufferedText.length > 0
+    ? bufferedText
+    : existingReplyText
+  const shouldRemoveReply = isCancelling && (!finalText || finalText.length === 0)
+
+  return {
+    shouldFinalize: true,
+    shouldRemoveReply,
+    abortState: !shouldRemoveReply && isCancelling ? 'canceled' : undefined,
+    finalText,
+    clearsStreaming: true,
+    nextGeneration: { promptMessageId: null, replyMessageId: null } satisfies ActiveGenerationIdentity,
+  }
+}
+
+function simulateCancelGraceTimeout(isCancelling: boolean, updatesStillStreaming: boolean) {
+  if (!isCancelling || !updatesStillStreaming) {
+    return {
+      clearCancelingState: false,
+      showToast: false,
+      streamingContinues: updatesStillStreaming,
+      allowRetry: !isCancelling,
+    }
+  }
+
+  return {
+    clearCancelingState: true,
+    showToast: true,
+    streamingContinues: true,
+    allowRetry: true,
+  }
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('useAgentChat — streaming (Phase 102)', () => {
@@ -553,6 +636,80 @@ describe('useAgentChat — streaming (Phase 102)', () => {
 
       expect(cancelRafMock).toHaveBeenCalledWith(99)
       expect(rafIdsRef.size).toBe(0)
+    })
+  })
+
+  describe('Phase 108 abort lifecycle', () => {
+    it('captures persisted human prompt message_id as abort target from send response', () => {
+      const sendResponse = { message_id: 'human-prompt-123' }
+
+      const result = simulateCaptureAbortTargetFromSendResponse(sendResponse)
+
+      expect(result.abortTargetMessageId).toBe('human-prompt-123')
+      expect(result.generation.promptMessageId).toBe('human-prompt-123')
+      expect(result.generation.replyMessageId).toBeNull()
+    })
+
+    it('correlates prompt receipt to active reply placeholder cleanup/finalization', () => {
+      const generation = simulateBindReplyToActiveGeneration(
+        { promptMessageId: 'human-prompt-1', replyMessageId: null },
+        'reply-placeholder-1'
+      )
+
+      const result = simulatePromptReceiptFinalization({
+        receiptMessageId: 'human-prompt-1',
+        activeGeneration: generation,
+        bufferedText: 'partial daemon text',
+        existingReplyText: null,
+        isCancelling: false,
+      })
+
+      expect(result.shouldFinalize).toBe(true)
+      expect(result.finalText).toBe('partial daemon text')
+      expect(result.nextGeneration).toEqual({ promptMessageId: null, replyMessageId: null })
+    })
+
+    it('marks partial reply as canceled after successful cancel', () => {
+      const result = simulatePromptReceiptFinalization({
+        receiptMessageId: 'human-prompt-2',
+        activeGeneration: { promptMessageId: 'human-prompt-2', replyMessageId: 'reply-2' },
+        bufferedText: 'texto parcial',
+        existingReplyText: null,
+        isCancelling: true,
+      })
+
+      expect(result.shouldFinalize).toBe(true)
+      expect(result.shouldRemoveReply).toBe(false)
+      expect(result.abortState).toBe('canceled')
+      expect(result.finalText).toBe('texto parcial')
+    })
+
+    it('removes empty placeholder when cancel succeeds before first token', () => {
+      const result = simulatePromptReceiptFinalization({
+        receiptMessageId: 'human-prompt-3',
+        activeGeneration: { promptMessageId: 'human-prompt-3', replyMessageId: 'reply-3' },
+        bufferedText: null,
+        existingReplyText: null,
+        isCancelling: true,
+      })
+
+      expect(result.shouldFinalize).toBe(true)
+      expect(result.shouldRemoveReply).toBe(true)
+      expect(result.abortState).toBeUndefined()
+    })
+
+    it('clears canceling state and keeps stream alive when grace timeout expires', () => {
+      const result = simulateCancelGraceTimeout(true, true)
+
+      expect(result.clearCancelingState).toBe(true)
+      expect(result.showToast).toBe(true)
+      expect(result.streamingContinues).toBe(true)
+      expect(result.allowRetry).toBe(true)
+    })
+
+    it('allows a second cancel attempt after failed fallback', () => {
+      const timeoutResult = simulateCancelGraceTimeout(true, true)
+      expect(timeoutResult.allowRetry).toBe(true)
     })
   })
 })

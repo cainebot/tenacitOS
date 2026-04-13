@@ -76,6 +76,8 @@ interface UseAgentChatResult {
   processingState: string | null          // current processing_state value
   /** Phase 102 D-08/D-09: Sends abort signal to stop active generation */
   abortStream: () => Promise<void>
+  /** Phase 108: true while cancel request is pending in grace window */
+  isCancelling: boolean
   /** Phase 102 D-11: Adds optimistic image preview message before upload completes */
   addOptimisticImageMessage: (localUrls: string[], senderName: string, senderAvatar: string | null, files?: File[]) => string
   /** Phase 102 gap-closure: Removes a stuck optimistic message by temp ID */
@@ -85,6 +87,8 @@ interface UseAgentChatResult {
   /** OAUTH-02 (Plan 103-03): True when oauth_expired detected via Realtime receipt OR mount-time query */
   oauthExpired: boolean
 }
+
+const CANCEL_GRACE_MS = 2500
 
 // ── Raw API message shape (joined rows from API) ──────────────────────────────
 
@@ -179,6 +183,7 @@ export function useAgentChat({
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
   const [streamingMessages, setStreamingMessages] = useState<Map<string, string>>(new Map())
   const [processingState, setProcessingState] = useState<string | null>(null)
+  const [isCancelling, setIsCancelling] = useState(false)
 
   // ── OAUTH-02 (Plan 103-03): OAuth expired banner state ───────────────────────
   const [oauthExpired, setOauthExpired] = useState(false)
@@ -192,9 +197,18 @@ export function useAgentChat({
   const streamingMessageIdRef = useRef<string | null>(null)
   streamingMessageIdRef.current = streamingMessageId
 
-  // Phase 102 gap-closure T-02: Track locally-aborted message IDs to prevent
-  // streaming state reactivation when daemon UPDATEs continue after local abort.
-  const abortedMessageIdsRef = useRef<Set<string>>(new Set())
+  // Abort target is always the persisted human prompt row returned by sendMessage API.
+  const abortTargetMessageIdRef = useRef<string | null>(null)
+  const activeGenerationRef = useRef<{
+    promptMessageId: string | null
+    replyMessageId: string | null
+  }>({
+    promptMessageId: null,
+    replyMessageId: null,
+  })
+  const cancelGraceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isCancellingRef = useRef(false)
+  isCancellingRef.current = isCancelling
 
   // Sender info cache — Realtime INSERT/UPDATE only has raw columns, no joins.
   // Populated from API responses to resolve senderName for Realtime payloads.
@@ -205,6 +219,25 @@ export function useAgentChat({
   //  recipientIds can change async after the effect runs)
   const recipientIdsRef = useRef(recipientIds)
   recipientIdsRef.current = recipientIds
+
+  const clearCancelGraceTimer = useCallback(() => {
+    if (cancelGraceTimerRef.current) {
+      clearTimeout(cancelGraceTimerRef.current)
+      cancelGraceTimerRef.current = null
+    }
+  }, [])
+
+  const setReplyAbortState = useCallback(
+    (replyMessageId: string, abortState: EnrichedMessage['_abortState']) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.message_id !== replyMessageId) return m
+          return { ...m, _abortState: abortState }
+        })
+      )
+    },
+    []
+  )
 
   // ── Re-derive statusIcon when recipientIds arrives late ───────────────────
   // WorkspaceConversationView loads recipientIds async AFTER the initial fetch.
@@ -274,8 +307,10 @@ export function useAgentChat({
     setStreamingMessageId(null)
     setStreamingMessages(new Map())
     setProcessingState(null)
-    // Phase 102 gap-closure T-02: Clear aborted set on conversation switch
-    abortedMessageIdsRef.current.clear()
+    setIsCancelling(false)
+    clearCancelGraceTimer()
+    abortTargetMessageIdRef.current = null
+    activeGenerationRef.current = { promptMessageId: null, replyMessageId: null }
 
     let cancelled = false
     setLoading(true)
@@ -307,7 +342,7 @@ export function useAgentChat({
 
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId, myParticipantId])
+  }, [clearCancelGraceTimer, conversationId, myParticipantId])
 
   // ── Infinite scroll — load older messages ─────────────────────────────────
 
@@ -383,13 +418,20 @@ export function useAgentChat({
       setWaitingForReply(true)
 
       try {
-        await sendMessageApi(conversationId, {
+        const persistedPrompt = await sendMessageApi(conversationId, {
           text: payload.text,
           content_type: payload.content_type,
           ...(payload.parent_message_id ? { parent_message_id: payload.parent_message_id } : {}),
           ...(payload.skill_id ? { skill_id: payload.skill_id } : {}),
           ...(payload.skill_command ? { skill_command: payload.skill_command } : {}),
         })
+        clearCancelGraceTimer()
+        setIsCancelling(false)
+        abortTargetMessageIdRef.current = persistedPrompt.message_id
+        activeGenerationRef.current = {
+          promptMessageId: persistedPrompt.message_id,
+          replyMessageId: null,
+        }
         // Realtime INSERT will arrive and replace the optimistic message via dedup
       } catch (err) {
         // Mark optimistic message as failed (D-08)
@@ -401,10 +443,14 @@ export function useAgentChat({
           )
         )
         setWaitingForReply(false)
+        clearCancelGraceTimer()
+        setIsCancelling(false)
+        abortTargetMessageIdRef.current = null
+        activeGenerationRef.current = { promptMessageId: null, replyMessageId: null }
         toast.error('Failed to send message')
       }
     },
-    [conversationId, myParticipantId, participant]
+    [clearCancelGraceTimer, conversationId, myParticipantId, participant]
   )
 
   // ── Phase 102: Local preview URL tracking (D-11, Pitfall 2) ─────────────────
@@ -434,10 +480,18 @@ export function useAgentChat({
       if (failedText === null) return
 
       try {
-        await sendMessageApi(conversationId, {
+        setWaitingForReply(true)
+        const persistedPrompt = await sendMessageApi(conversationId, {
           text: failedText ?? '',
           content_type: failedContentType,
         })
+        clearCancelGraceTimer()
+        setIsCancelling(false)
+        abortTargetMessageIdRef.current = persistedPrompt.message_id
+        activeGenerationRef.current = {
+          promptMessageId: persistedPrompt.message_id,
+          replyMessageId: null,
+        }
         // Realtime will deliver the persisted message; optimistic will be deduped
       } catch {
         // Re-mark as failed
@@ -448,68 +502,53 @@ export function useAgentChat({
               : m
           )
         )
+        setWaitingForReply(false)
+        clearCancelGraceTimer()
+        setIsCancelling(false)
+        abortTargetMessageIdRef.current = null
+        activeGenerationRef.current = { promptMessageId: null, replyMessageId: null }
         toast.error('Failed to send message')
       }
     },
-    [conversationId]
+    [clearCancelGraceTimer, conversationId]
   )
 
   // ── Abort streaming (Phase 102 — D-08, D-09) ─────────────────────────────
 
   const abortStream = useCallback(async () => {
-    const abortingMessageId = streamingMessageId
-    if (!abortingMessageId) return
+    if (isCancellingRef.current) return
 
-    // 1. Fire abort API call (best-effort — bash daemon does not read it yet,
-    //    but the future Node.js daemon will. Phase 101 long-term fix.)
+    const replyMessageId = streamingMessageId
+    const promptMessageId = abortTargetMessageIdRef.current
+    if (!replyMessageId || !promptMessageId) return
+
+    setIsCancelling(true)
+    setReplyAbortState(replyMessageId, 'canceling')
+    clearCancelGraceTimer()
+    cancelGraceTimerRef.current = setTimeout(() => {
+      if (!isCancellingRef.current) return
+      setIsCancelling(false)
+      setReplyAbortState(replyMessageId, undefined)
+      toast.error('No se pudo cancelar. La respuesta sigue en curso.')
+    }, CANCEL_GRACE_MS)
+
     try {
-      const res = await fetch(
-        `/api/messages/${abortingMessageId}/abort`,
-        { method: 'POST' }
-      )
+      const res = await fetch(`/api/messages/${promptMessageId}/abort`, {
+        method: 'POST',
+      })
       if (!res.ok) {
-        toast.error('Could not stop generation.')
+        clearCancelGraceTimer()
+        setIsCancelling(false)
+        setReplyAbortState(replyMessageId, undefined)
+        toast.error('No se pudo cancelar. Intentalo de nuevo.')
       }
     } catch {
-      toast.error('Could not stop generation.')
+      clearCancelGraceTimer()
+      setIsCancelling(false)
+      setReplyAbortState(replyMessageId, undefined)
+      toast.error('No se pudo cancelar. Intentalo de nuevo.')
     }
-
-    // 2. Frontend-only workaround: immediately clean up streaming state locally.
-    // The daemon will continue generating, but the UI freezes at current text (D-10).
-    // When the daemon's final receipt arrives, the receipt handler sees
-    // streamingMessageIdRef.current is null and skips the redundant cleanup.
-
-    // Track this message as locally aborted to block state reactivation from
-    // subsequent daemon UPDATEs (T-102-10: cleaned up on receipt + conversation switch)
-    abortedMessageIdsRef.current.add(abortingMessageId)
-
-    // Cancel pending RAF for this message
-    const pendingRaf = rafIdsRef.current.get(abortingMessageId)
-    if (pendingRaf !== undefined) {
-      cancelAnimationFrame(pendingRaf)
-      rafIdsRef.current.delete(abortingMessageId)
-    }
-
-    // Freeze current buffer text into the messages array as final content (D-10)
-    const frozenText = streamingBuffersRef.current.get(abortingMessageId) ?? ''
-    if (frozenText) {
-      setMessages(prev => prev.map(m => {
-        if (m.message_id !== abortingMessageId) return m
-        return { ...m, text: frozenText }
-      }))
-    }
-
-    // Clear streaming state — UI returns to idle immediately
-    streamingBuffersRef.current.delete(abortingMessageId)
-    setStreamingMessages(prev => {
-      const next = new Map(prev)
-      next.delete(abortingMessageId)
-      return next
-    })
-    setIsStreaming(false)
-    setStreamingMessageId(null)
-    setProcessingState(null)
-  }, [streamingMessageId])
+  }, [clearCancelGraceTimer, setReplyAbortState, streamingMessageId])
 
   // ── Optimistic image preview (Phase 102 — D-11, D-12) ────────────────────
 
@@ -789,27 +828,28 @@ export function useAgentChat({
             setWaitingForReply(false)
             setProcessingState(updated.processing_state!)
             setStreamingMessageId(updated.message_id)
+            if (activeGenerationRef.current.promptMessageId) {
+              activeGenerationRef.current.replyMessageId = updated.message_id
+            }
+            if (isCancellingRef.current) {
+              setReplyAbortState(updated.message_id, 'canceling')
+            }
             return
           }
 
           // ── Streaming text (real tokens arriving) per D-01, D-02 ────────────
           if (hasPartialText) {
-            // Phase 102 gap-closure T-02: Skip streaming state reactivation for
-            // messages that were locally aborted. Still update the message text
-            // silently so the final committed text is correct when receipt arrives.
-            if (abortedMessageIdsRef.current.has(updated.message_id)) {
-              setMessages(prev => prev.map(m => {
-                if (m.message_id !== updated.message_id) return m
-                return { ...m, text: updated.text! }
-              }))
-              return
-            }
-
             // Turn off waitingForReply and processing state — user sees real text now (D-03)
             setWaitingForReply(false)
             setProcessingState(null)
             setIsStreaming(true)
             setStreamingMessageId(updated.message_id)
+            if (activeGenerationRef.current.promptMessageId) {
+              activeGenerationRef.current.replyMessageId = updated.message_id
+            }
+            if (isCancellingRef.current) {
+              setReplyAbortState(updated.message_id, 'canceling')
+            }
 
             // Accumulate in buffer ref (zero re-renders per UPDATE)
             streamingBuffersRef.current.set(updated.message_id, updated.text!)
@@ -884,60 +924,90 @@ export function useAgentChat({
             toast.error(`Agent error: ${receipt.error_message}`)
           }
 
-          // Phase 102: Finalize streaming when receipt transitions to 'processed' or 'failed'
+          // Phase 108: Finalize active generation when human prompt receipt settles.
+          // Receipt rows are keyed to prompt message_id, while streamed text lives on reply row.
           if (receipt.status === 'processed' || receipt.status === 'failed') {
-            // Cancel any pending RAF for this message
-            const pendingRaf = rafIdsRef.current.get(receipt.message_id)
-            if (pendingRaf !== undefined) {
-              cancelAnimationFrame(pendingRaf)
-              rafIdsRef.current.delete(receipt.message_id)
+            const activeGeneration = activeGenerationRef.current
+            const isActivePromptReceipt =
+              !!activeGeneration.promptMessageId &&
+              receipt.message_id === activeGeneration.promptMessageId
+
+            if (!isActivePromptReceipt) {
+              return
             }
 
-            // Get final text from buffer and update the actual message
-            const finalText = streamingBuffersRef.current.get(receipt.message_id)
-            if (finalText) {
-              setMessages(prev => prev.map(m => {
-                if (m.message_id !== receipt.message_id) return m
-                return { ...m, text: finalText }
-              }))
-            } else if (receipt.message_id === streamingMessageIdRef.current) {
-              // Buffer was empty — the INSERT/UPDATE with text may not have arrived yet
-              // (Supabase Realtime does not guarantee INSERT-before-UPDATE ordering).
-              // Re-fetch latest messages to capture committed text and avoid empty bubble.
-              fetchMessagesApi(conversationId!)
-                .then(({ data }) => {
-                  const raw = data as RawApiMessage[]
-                  const target = raw.find(m => m.message_id === receipt.message_id)
-                  if (target?.text) {
-                    setMessages(prev => prev.map(m => {
-                      if (m.message_id !== receipt.message_id) return m
-                      return { ...m, text: target.text }
-                    }))
+            const replyMessageId =
+              activeGeneration.replyMessageId ?? streamingMessageIdRef.current
+            const shouldMarkCanceled = isCancellingRef.current
+
+            if (replyMessageId) {
+              const pendingRaf = rafIdsRef.current.get(replyMessageId)
+              if (pendingRaf !== undefined) {
+                cancelAnimationFrame(pendingRaf)
+                rafIdsRef.current.delete(replyMessageId)
+              }
+
+              const bufferedText = streamingBuffersRef.current.get(replyMessageId) ?? null
+              setMessages((prev) => {
+                const target = prev.find((m) => m.message_id === replyMessageId)
+                if (!target) return prev
+
+                const finalText = bufferedText && bufferedText.length > 0
+                  ? bufferedText
+                  : target.text
+
+                if (shouldMarkCanceled && (!finalText || finalText.length === 0)) {
+                  return prev.filter((m) => m.message_id !== replyMessageId)
+                }
+
+                return prev.map((m) => {
+                  if (m.message_id !== replyMessageId) return m
+                  return {
+                    ...m,
+                    text: finalText ?? m.text,
+                    _abortState: shouldMarkCanceled ? 'canceled' : undefined,
                   }
                 })
-                .catch(() => {}) // best-effort — message will arrive via Realtime eventually
+              })
+
+              if (!shouldMarkCanceled && !bufferedText) {
+                fetchMessagesApi(conversationId!)
+                  .then(({ data }) => {
+                    const raw = data as RawApiMessage[]
+                    const target = raw.find((m) => m.message_id === replyMessageId)
+                    if (target?.text) {
+                      setMessages((prev) =>
+                        prev.map((m) => {
+                          if (m.message_id !== replyMessageId) return m
+                          return { ...m, text: target.text }
+                        })
+                      )
+                    }
+                  })
+                  .catch(() => {})
+              }
+
+              streamingBuffersRef.current.delete(replyMessageId)
+              setStreamingMessages((prev) => {
+                const next = new Map(prev)
+                next.delete(replyMessageId)
+                return next
+              })
             }
 
-            // Clean up per-message streaming data (always safe — keyed by message_id)
-            streamingBuffersRef.current.delete(receipt.message_id)
-            setStreamingMessages(prev => {
-              const next = new Map(prev)
-              next.delete(receipt.message_id)
-              return next
-            })
+            clearCancelGraceTimer()
+            setIsCancelling(false)
+            abortTargetMessageIdRef.current = null
+            activeGenerationRef.current = {
+              promptMessageId: null,
+              replyMessageId: null,
+            }
 
-            // Only reset global streaming state if this receipt belongs to the
-            // currently active streaming message — prevents premature UI unlock
-            // when a receipt for a different message arrives during active streaming.
-            // WR-02 (v5.0 audit): guard prevents multi-conversation race
-            if (receipt.message_id === streamingMessageIdRef.current) {
+            if (!replyMessageId || replyMessageId === streamingMessageIdRef.current) {
               setIsStreaming(false)
               setStreamingMessageId(null)
               setProcessingState(null)
             }
-
-            // Phase 102 gap-closure T-02: Clean up aborted set when message is finalized
-            abortedMessageIdsRef.current.delete(receipt.message_id)
           }
 
           // OAUTH-02 (D-08): Detect oauth_expired -> activate banner + queue retry
@@ -1053,9 +1123,12 @@ export function useAgentChat({
         urls.forEach(url => URL.revokeObjectURL(url))
       }
       localPreviewUrlsRef.current.clear()
+      clearCancelGraceTimer()
+      abortTargetMessageIdRef.current = null
+      activeGenerationRef.current = { promptMessageId: null, replyMessageId: null }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId, myParticipantId])
+  }, [clearCancelGraceTimer, conversationId, myParticipantId])
 
   // ── Fallback: full sync when Realtime misses events ───────────────────────
   // After sending a message, if the status stays 'sent' for 5s, refetch to catch
@@ -1294,6 +1367,7 @@ export function useAgentChat({
     streamingMessages,
     processingState,
     abortStream,
+    isCancelling,
     addOptimisticImageMessage,
     removeOptimisticMessage,
     setUploadError,
