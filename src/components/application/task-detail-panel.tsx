@@ -150,6 +150,16 @@ export type ActivityEventType =
   | "attachment_remove"
   | "due_date_change"
   | "field_update"
+  // Agent execution events (Phase 89 — TASK-04)
+  | "tool_use"
+  | "tool_result"
+  | "thinking"
+  | "error"
+  | "status"
+  // Task lifecycle events (Phase 87)
+  | "task_swept"
+  | "agent_blocked"
+  | "task_cancelled"
 
 export interface ActivityEvent {
   id: string
@@ -166,6 +176,17 @@ export interface ActivityEvent {
   labels?: TaskTag[]
   /** File info (type=attachment_add) */
   attachment?: { name: string; size: string; fileType?: string }
+  // Phase 89 — agent execution event fields
+  /** Actor classification for filter (human/agent/system) */
+  actorType?: 'human' | 'agent' | 'system'
+  /** Tool name for tool_use/tool_result events */
+  toolName?: string
+  /** Tool arguments as JSON (tool_use) */
+  toolInput?: Record<string, unknown>
+  /** Tool result text (tool_result) */
+  toolOutput?: string
+  /** Tool execution duration in ms */
+  durationMs?: number
 }
 
 export interface TaskAttachment {
@@ -244,6 +265,8 @@ export interface TaskDetailPanelProps {
   comments?: TaskComment[]
   onAddComment?: (content: string) => void
   activities?: ActivityEvent[]
+  /** Phase 89 — agent execution events from task_messages Realtime */
+  taskMessages?: ActivityEvent[]
 
   // Goal breadcrumb — D-05 cascade: card.goal_id (override) -> project.goal_id -> null
   /** The card's own goal_id (explicit override, takes precedence) */
@@ -345,6 +368,7 @@ export function TaskDetailPanel({
   comments = [],
   onAddComment,
   activities = [],
+  taskMessages = [],
   goalId,
   projectGoalId,
   className,
@@ -492,6 +516,7 @@ export function TaskDetailPanel({
           <SectionComments
             comments={comments}
             activities={activities}
+            taskMessages={taskMessages}
             onAddComment={onAddComment}
           />
         </div>
@@ -2114,16 +2139,322 @@ function ActivityFeedEntry({
         />
       )
 
+    case "tool_use":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={
+            <>
+              used tool <span className="font-semibold">{event.toolName ?? 'unknown'}</span>
+              {event.durationMs != null && (
+                <span className="ml-1 text-quaternary">({event.durationMs}ms)</span>
+              )}
+            </>
+          }
+          connector={connector}
+          size="sm"
+        >
+          {event.toolInput && (
+            <ToolArgsBlock input={event.toolInput} />
+          )}
+        </FeedItem>
+      )
+
+    case "tool_result":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={
+            <>
+              tool result: <span className="font-semibold">{event.toolName ?? 'tool'}</span>
+            </>
+          }
+          connector={connector}
+          size="sm"
+        >
+          {event.toolOutput && (
+            <ToolOutputBlock output={event.toolOutput} />
+          )}
+          {event.content && !event.toolOutput && (
+            <FeedItemText>{event.content}</FeedItemText>
+          )}
+        </FeedItem>
+      )
+
+    case "error":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action="encountered an error"
+          connector={connector}
+          size="sm"
+        >
+          <div className="rounded-md bg-[var(--oc-msg-tool-result-fail)]/10 px-3 py-2 text-sm text-error-primary">
+            {event.content ?? 'Unknown error'}
+          </div>
+        </FeedItem>
+      )
+
+    case "status":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={
+            event.oldValue && event.newValue ? (
+              <span className="inline-flex items-center gap-1">
+                <BadgeWithDot color="gray" size="sm" type="pill-color">{event.oldValue}</BadgeWithDot>
+                <span className="text-quaternary">-&gt;</span>
+                <BadgeWithDot color="brand" size="sm" type="pill-color">{event.newValue}</BadgeWithDot>
+              </span>
+            ) : (
+              <>{event.content ?? 'status changed'}</>
+            )
+          }
+          connector={connector}
+          size="sm"
+        />
+      )
+
+    case "thinking":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          connector={connector}
+          size="sm"
+        >
+          <p className="text-sm italic text-[var(--oc-msg-thinking)]">
+            {event.content}
+          </p>
+        </FeedItem>
+      )
+
+    case "task_swept":
+    case "agent_blocked":
+    case "task_cancelled":
+      return (
+        <FeedItem
+          avatarSrc={event.actor.avatarUrl}
+          avatarAlt={event.actor.name}
+          name={event.actor.name}
+          timestamp={formatRelativeTime(event.createdAt)}
+          action={
+            event.type === 'task_swept' ? 'task was swept (stuck)'
+            : event.type === 'agent_blocked' ? 'agent is blocked'
+            : 'task was cancelled'
+          }
+          connector={connector}
+          size="sm"
+        >
+          {event.content && <FeedItemText>{event.content}</FeedItemText>}
+        </FeedItem>
+      )
+
     default:
       return null
   }
 }
 
 // ---------------------------------------------------------------------------
+// ToolArgsBlock — collapsible JSON arguments (D-03)
+// ---------------------------------------------------------------------------
+
+function ToolArgsBlock({ input }: { input: Record<string, unknown> }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const json = JSON.stringify(input, null, 2)
+
+  return (
+    <div>
+      <Button
+        type="button"
+        color="link-gray"
+        size="sm"
+        onClick={() => setIsOpen(!isOpen)}
+        className="text-xs text-tertiary transition hover:text-secondary"
+      >
+        {isOpen ? 'ocultar' : 'Ver argumentos'}
+      </Button>
+      {isOpen && (
+        <pre className="mt-1 max-h-[200px] overflow-y-auto rounded-md bg-secondary px-3 py-2 font-mono text-[13px] leading-relaxed text-secondary">
+          {json}
+        </pre>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// ToolOutputBlock — 2-line clamp preview + expandable monospace output (D-03)
+// ---------------------------------------------------------------------------
+
+function ToolOutputBlock({ output }: { output: string }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const isLong = output.length > 200
+
+  return (
+    <div>
+      {!isLong ? (
+        <pre className="max-h-[200px] overflow-y-auto rounded-md bg-secondary px-3 py-2 font-mono text-[13px] leading-relaxed text-secondary">
+          {output}
+        </pre>
+      ) : (
+        <>
+          {!isOpen && (
+            <p className="line-clamp-2 text-sm text-secondary">{output}</p>
+          )}
+          {isOpen && (
+            <pre className="mt-1 max-h-[200px] overflow-y-auto rounded-md bg-secondary px-3 py-2 font-mono text-[13px] leading-relaxed text-secondary">
+              {output}
+            </pre>
+          )}
+          <Button
+            type="button"
+            color="link-gray"
+            size="sm"
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-xs text-tertiary transition hover:text-secondary"
+          >
+            {isOpen ? 'ocultar' : 'Ver detalle'}
+          </Button>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Auto-collapse algorithm (D-05)
+// Collapses 3+ consecutive same-actor same-type events into a summary row
+// ---------------------------------------------------------------------------
+
+type CollapsedGroup = {
+  type: 'group'
+  id: string
+  actor: TaskUser
+  messageType: ActivityEventType
+  items: ActivityEvent[]
+}
+
+type TimelineEntry = ActivityEvent | CollapsedGroup
+
+const COLLAPSIBLE_TYPES: ActivityEventType[] = ['tool_use', 'tool_result', 'thinking']
+const COLLAPSE_THRESHOLD = 3
+
+function collapseTimeline(events: ActivityEvent[]): TimelineEntry[] {
+  const result: TimelineEntry[] = []
+  let i = 0
+
+  while (i < events.length) {
+    const event = events[i]
+
+    if (!COLLAPSIBLE_TYPES.includes(event.type)) {
+      result.push(event)
+      i++
+      continue
+    }
+
+    // Count consecutive same-actor + same-type
+    let j = i + 1
+    while (
+      j < events.length &&
+      events[j].actor.id === event.actor.id &&
+      events[j].type === event.type
+    ) {
+      j++
+    }
+
+    const runLength = j - i
+    if (runLength >= COLLAPSE_THRESHOLD) {
+      result.push({
+        type: 'group',
+        id: `group-${event.id}`,
+        actor: event.actor,
+        messageType: event.type,
+        items: events.slice(i, j),
+      })
+    } else {
+      result.push(...events.slice(i, j))
+    }
+    i = j
+  }
+
+  return result
+}
+
+// ---------------------------------------------------------------------------
+// CollapsedGroupRow — avatar + count summary with click-to-expand (D-05)
+// ---------------------------------------------------------------------------
+
+function CollapsedGroupRow({
+  group,
+  isExpanded,
+  onToggle,
+}: {
+  group: CollapsedGroup
+  isExpanded: boolean
+  onToggle: () => void
+}) {
+  const typeLabel = group.messageType === 'tool_use' ? 'tool calls'
+    : group.messageType === 'tool_result' ? 'resultados'
+    : group.messageType === 'thinking' ? 'pensamientos'
+    : group.messageType
+
+  return (
+    <div>
+      {isExpanded && group.items.map((item, idx) => (
+        <ActivityFeedEntry
+          key={item.id}
+          event={item}
+          connector={idx < group.items.length - 1}
+        />
+      ))}
+      <Button
+        type="button"
+        color="link-gray"
+        size="sm"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 rounded-md bg-secondary px-3 py-1.5 text-xs font-medium text-secondary transition hover:bg-secondary_hover"
+      >
+        <Avatar size="xs" alt={group.actor.name} />
+        {isExpanded ? (
+          <>
+            <ChevronDown className="size-3.5 text-fg-tertiary" />
+            <span>{group.actor.name}: {group.items.length} {typeLabel} (ocultar)</span>
+          </>
+        ) : (
+          <>
+            <ChevronRight className="size-3.5 text-fg-tertiary" />
+            <span>{group.actor.name}: {group.items.length} {typeLabel} mas</span>
+          </>
+        )}
+      </Button>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Merge comments + activities into unified timeline
 // ---------------------------------------------------------------------------
 
-function mergeTimeline(comments: TaskComment[], activities: ActivityEvent[]): ActivityEvent[] {
+function mergeTimeline(
+  comments: TaskComment[],
+  activities: ActivityEvent[],
+  taskMessages: ActivityEvent[] = [],
+): ActivityEvent[] {
   const commentEvents: ActivityEvent[] = comments
     .filter((c) => !c.isSystemEvent)
     .map((c) => ({
@@ -2132,6 +2463,7 @@ function mergeTimeline(comments: TaskComment[], activities: ActivityEvent[]): Ac
       type: "comment" as const,
       createdAt: c.createdAt,
       content: c.content,
+      actorType: (c.author.role ? 'agent' : 'human') as 'human' | 'agent' | 'system',
     }))
 
   const systemEvents: ActivityEvent[] = comments
@@ -2142,9 +2474,10 @@ function mergeTimeline(comments: TaskComment[], activities: ActivityEvent[]): Ac
       type: "field_update" as const,
       createdAt: c.createdAt,
       newValue: c.content,
+      actorType: 'system' as const,
     }))
 
-  return [...commentEvents, ...systemEvents, ...activities].sort(
+  return [...commentEvents, ...systemEvents, ...activities, ...taskMessages].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   )
 }
@@ -2152,14 +2485,18 @@ function mergeTimeline(comments: TaskComment[], activities: ActivityEvent[]): Ac
 function SectionComments({
   comments,
   activities,
+  taskMessages = [],
   onAddComment,
 }: {
   comments: TaskComment[]
   activities: ActivityEvent[]
+  taskMessages?: ActivityEvent[]
   onAddComment?: (content: string) => void
 }) {
   const [commentText, setCommentText] = useState("")
   const [sortNewest, setSortNewest] = useState(false)
+  const [activeFilters, setActiveFilters] = useState<Set<'human' | 'agent' | 'system'>>(new Set())
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   const commentOnlyEvents = comments
     .filter((c) => !c.isSystemEvent)
@@ -2169,12 +2506,41 @@ function SectionComments({
       type: "comment",
       createdAt: c.createdAt,
       content: c.content,
+      actorType: (c.author.role ? 'agent' : 'human') as 'human' | 'agent' | 'system',
     }))
 
-  const allEvents = mergeTimeline(comments, activities)
+  const allEvents = mergeTimeline(comments, activities, taskMessages)
 
   const sortedComments = sortNewest ? [...commentOnlyEvents].reverse() : commentOnlyEvents
   const sortedAll = sortNewest ? [...allEvents].reverse() : allEvents
+
+  const filteredEvents = activeFilters.size === 0
+    ? sortedAll
+    : sortedAll.filter(e => e.actorType && activeFilters.has(e.actorType))
+
+  const collapsedEntries = collapseTimeline(filteredEvents)
+
+  function toggleFilter(filterType: 'human' | 'agent' | 'system') {
+    setActiveFilters(prev => {
+      const next = new Set(prev)
+      if (next.has(filterType)) next.delete(filterType)
+      else next.add(filterType)
+      return next
+    })
+  }
+
+  function resetFilters() {
+    setActiveFilters(new Set())
+  }
+
+  function toggleGroupExpand(groupId: string) {
+    setExpandedGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(groupId)) next.delete(groupId)
+      else next.add(groupId)
+      return next
+    })
+  }
 
   const handleSubmit = () => {
     if (!commentText.trim()) return
@@ -2216,16 +2582,63 @@ function SectionComments({
         </TabPanel>
 
         <TabPanel id="activity">
-          <div className="flex flex-col gap-0.5 pt-3">
-            {sortedAll.map((event, i) => (
-              <ActivityFeedEntry
-                key={event.id}
-                event={event}
-                connector={i < sortedAll.length - 1}
-              />
+          {/* Actor filter bar — D-06, D-07 */}
+          <div className="flex items-center gap-2 pt-3 pb-2">
+            <button
+              type="button"
+              onClick={resetFilters}
+              className={cx(
+                "inline-flex cursor-pointer select-none items-center rounded-full py-0.5 px-2 text-xs font-medium transition",
+                activeFilters.size === 0
+                  ? "bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"
+                  : "bg-secondary text-secondary hover:bg-secondary_hover",
+              )}
+            >
+              Todo
+            </button>
+            {(['human', 'agent', 'system'] as const).map((filterType) => (
+              <button
+                key={filterType}
+                type="button"
+                onClick={() => toggleFilter(filterType)}
+                className={cx(
+                  "inline-flex cursor-pointer select-none items-center rounded-full py-0.5 px-2 text-xs font-medium transition",
+                  activeFilters.has(filterType)
+                    ? "bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"
+                    : "bg-secondary text-secondary hover:bg-secondary_hover",
+                )}
+              >
+                {filterType === 'human' ? 'Humano' : filterType === 'agent' ? 'Agente' : 'Sistema'}
+              </button>
             ))}
-            {sortedAll.length === 0 && (
-              <p className="py-4 text-center text-sm text-quaternary">No activity yet</p>
+          </div>
+
+          <div className="flex flex-col gap-0.5">
+            {collapsedEntries.map((entry, i) => {
+              if ((entry as CollapsedGroup).type === 'group') {
+                const group = entry as CollapsedGroup
+                return (
+                  <CollapsedGroupRow
+                    key={group.id}
+                    group={group}
+                    isExpanded={expandedGroups.has(group.id)}
+                    onToggle={() => toggleGroupExpand(group.id)}
+                  />
+                )
+              }
+              return (
+                <ActivityFeedEntry
+                  key={(entry as ActivityEvent).id}
+                  event={entry as ActivityEvent}
+                  connector={i < collapsedEntries.length - 1}
+                />
+              )
+            })}
+            {collapsedEntries.length === 0 && (
+              <div className="py-8 text-center">
+                <p className="text-sm font-medium text-secondary">Sin actividad aun</p>
+                <p className="mt-1 text-xs text-tertiary">La actividad del equipo y los eventos del agente apareceran aqui.</p>
+              </div>
             )}
           </div>
         </TabPanel>
