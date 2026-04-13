@@ -101,7 +101,16 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
 
   const chat = useAgentChat({ conversationId, recipientIds })
   // Destructure streaming fields for clarity (Phase 102)
-  const { isStreaming, streamingMessages, processingState, streamingMessageId, waitingForReply, oauthExpired } = chat
+  const {
+    isStreaming,
+    streamingMessages,
+    processingState,
+    streamingMessageId,
+    waitingForReply,
+    oauthExpired,
+    isCancelling,
+  } = chat
+  const isGenerationActive = waitingForReply || !!processingState || isStreaming
 
   // Agent typing indicator
   const { agents } = useRealtimeAgents()
@@ -471,6 +480,9 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                 senderAvatar={agentAvatar}
                 timestamp=""
                 content={getProcessingText(processingState, userLang)}
+                stateLabel={isCancelling ? 'cancelando...' : undefined}
+                stateTone={isCancelling ? 'canceling' : undefined}
+                statePulse={isCancelling}
                 sent={false}
                 className="[&_p]:text-sm [&_p]:italic [&_p]:text-tertiary"
               />
@@ -494,6 +506,9 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                     senderAvatar={agentAvatar}
                     timestamp=""
                     content={text}
+                    stateLabel={isCancelling ? 'cancelando...' : undefined}
+                    stateTone={isCancelling ? 'canceling' : undefined}
+                    statePulse={isCancelling}
                     sent={false}
                   />
                 )
@@ -501,6 +516,21 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
               return null
             }
             // streamingMessageId set but no text yet — show animated dots
+            if (isCancelling) {
+              return (
+                <Message
+                  type="message"
+                  senderName={agentName}
+                  senderAvatar={agentAvatar}
+                  timestamp=""
+                  content="Pausando respuesta..."
+                  stateLabel="cancelando..."
+                  stateTone="canceling"
+                  statePulse
+                  sent={false}
+                />
+              )
+            }
             return (
               <Message
                 type="writing"
@@ -518,6 +548,21 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
             const latestUserMsg = [...chat.messages].reverse().find(m => m.isMine && !m._failed)
             const agentReceived = latestUserMsg?.statusIcon === 'delivered' || latestUserMsg?.statusIcon === 'read'
             if (agentReceived) {
+              if (isCancelling) {
+                return (
+                  <Message
+                    type="message"
+                    senderName={agentName}
+                    senderAvatar={agentAvatar}
+                    timestamp=""
+                    content="Pausando respuesta..."
+                    stateLabel="cancelando..."
+                    stateTone="canceling"
+                    statePulse
+                    sent={false}
+                  />
+                )
+              }
               return (
                 <Message
                   type="writing"
@@ -541,6 +586,8 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
           type="advanced"
           onSend={handleSendWithPreview}
           isStreaming={isStreaming}
+          showAbortControl={isGenerationActive}
+          isAbortPending={isCancelling}
           onAbort={() => { void chat.abortStream() }}
           replyTo={
             replyToMessage

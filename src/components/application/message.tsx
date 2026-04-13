@@ -119,6 +119,8 @@ export type MessageType =
   | 'writing'
   | 'system-error'
 
+export type BubbleStateTone = 'canceling' | 'canceled'
+
 export interface ReactionData {
   emoji: ReactNode
   count?: number
@@ -141,16 +143,22 @@ interface MessageBase {
   className?: string
 }
 
+interface BubbleStateMeta {
+  stateLabel?: string
+  stateTone?: BubbleStateTone
+  statePulse?: boolean
+}
+
 type MessageTextProps = MessageBase & {
   type: 'message'
   content: string
-}
+} & BubbleStateMeta
 
 type MessageReplyProps = MessageBase & {
   type: 'message-reply'
   content: string
   replyText: string
-}
+} & BubbleStateMeta
 
 type MessageFileProps = MessageBase & {
   type: 'file'
@@ -363,27 +371,69 @@ const bubbleRadius = (sent: boolean) =>
 
 // ── Bubble sub-components ───────────────────────────────────────────────────
 
-function TextBubble({ content, sent }: { content: string; sent: boolean }) {
+function TextBubble({
+  content,
+  sent,
+  stateLabel,
+  stateTone,
+  statePulse,
+}: {
+  content: string
+  sent: boolean
+  stateLabel?: string
+  stateTone?: BubbleStateTone
+  statePulse?: boolean
+}) {
   return (
     <div
       className={cx(
         'border border-secondary overflow-clip px-3 py-2 w-full min-h-9',
         bubbleRadius(sent),
         'bg-primary',
+        stateTone === 'canceled' && 'opacity-85',
+        stateTone === 'canceling' && 'opacity-75',
+        statePulse && 'animate-pulse',
       )}
     >
       <p className="text-md text-primary leading-6 whitespace-pre-wrap">{content}</p>
+      {stateLabel && (
+        <p
+          className={cx(
+            'mt-2 text-xs font-semibold',
+            stateTone === 'canceled' ? 'text-warning-primary' : 'text-tertiary'
+          )}
+        >
+          {stateLabel}
+        </p>
+      )}
     </div>
   )
 }
 
-function ReplyBubble({ content, replyText, sent }: { content: string; replyText: string; sent: boolean }) {
+function ReplyBubble({
+  content,
+  replyText,
+  sent,
+  stateLabel,
+  stateTone,
+  statePulse,
+}: {
+  content: string
+  replyText: string
+  sent: boolean
+  stateLabel?: string
+  stateTone?: BubbleStateTone
+  statePulse?: boolean
+}) {
   return (
     <div
       className={cx(
         'border border-secondary overflow-clip px-3 py-2 w-full flex flex-col gap-1.5',
         bubbleRadius(sent),
         'bg-primary',
+        stateTone === 'canceled' && 'opacity-85',
+        stateTone === 'canceling' && 'opacity-75',
+        statePulse && 'animate-pulse',
       )}
     >
       <div className="border-l-[3px] border-brand rounded-md overflow-clip">
@@ -392,6 +442,16 @@ function ReplyBubble({ content, replyText, sent }: { content: string; replyText:
         </div>
       </div>
       <p className="text-md text-primary leading-6 whitespace-pre-wrap">{content}</p>
+      {stateLabel && (
+        <p
+          className={cx(
+            'text-xs font-semibold',
+            stateTone === 'canceled' ? 'text-warning-primary' : 'text-tertiary'
+          )}
+        >
+          {stateLabel}
+        </p>
+      )}
     </div>
   )
 }
@@ -959,10 +1019,23 @@ export function Message(props: MessageProps) {
 
         {/* Type-specific bubble */}
         {props.type === 'message' && (
-          <TextBubble content={props.content} sent={sent} />
+          <TextBubble
+            content={props.content}
+            sent={sent}
+            stateLabel={props.stateLabel}
+            stateTone={props.stateTone}
+            statePulse={props.statePulse}
+          />
         )}
         {props.type === 'message-reply' && (
-          <ReplyBubble content={props.content} replyText={props.replyText} sent={sent} />
+          <ReplyBubble
+            content={props.content}
+            replyText={props.replyText}
+            sent={sent}
+            stateLabel={props.stateLabel}
+            stateTone={props.stateTone}
+            statePulse={props.statePulse}
+          />
         )}
         {props.type === 'file' && (
           <FileBubble

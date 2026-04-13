@@ -121,6 +121,10 @@ interface ChatInputProps {
   onClearReply?: () => void
   /** Phase 102 D-08: True when agent is streaming a response — send button morphs to stop */
   isStreaming?: boolean
+  /** Phase 108: Explicit active-generation flag for showing cancel before first token */
+  showAbortControl?: boolean
+  /** Phase 108: While abort request is pending, block repeated abort clicks */
+  isAbortPending?: boolean
   /** Phase 102 D-08: Called when user clicks the stop/abort button */
   onAbort?: () => void
   /** Agent participants available for @mention autocomplete in group conversations (Phase 104, D-08) */
@@ -141,6 +145,8 @@ export function ChatInput({
   replyTo,
   onClearReply,
   isStreaming = false,
+  showAbortControl,
+  isAbortPending = false,
   onAbort,
   mentionableAgents,
 }: ChatInputProps) {
@@ -186,6 +192,8 @@ export function ChatInput({
 
   const hasContent = text.trim().length > 0 || images.length > 0 || nonImageFiles.length > 0 || activeCommand != null
   const supportsShortcuts = type !== 'minimal' && shortcuts.length > 0
+  const shouldShowAbortControl = showAbortControl ?? isStreaming
+  const abortButtonDisabled = isAbortPending || isDisabled
 
   const defaultPlaceholder =
     type === 'advanced' ? 'Ask me anything...' : 'Message'
@@ -571,6 +579,11 @@ export function ChatInput({
       if (textareaRef.current) textareaRef.current.style.height = 'auto'
     }, 0)
   }, [hasContent, isDisabled, onSend, text, images, nonImageFiles, activeCommand])
+
+  const handleAbort = useCallback(() => {
+    if (abortButtonDisabled) return
+    onAbort?.()
+  }, [abortButtonDisabled, onAbort])
 
   // ── Keyboard ───────────────────────────────────────────────────────────
 
@@ -998,17 +1011,24 @@ export function ChatInput({
           />
         </div>
 
-        {/* Send/Stop icon button — morphs to StopCircle during streaming (Phase 102 D-08) */}
-        {isStreaming ? (
+        {/* Send/Stop icon button — visible only while generation is active */}
+        {shouldShowAbortControl ? (
           <AriaButton
-            onPress={() => onAbort?.()}
-            aria-label="Stop generation"
+            onPress={handleAbort}
+            isDisabled={abortButtonDisabled}
+            aria-label={isAbortPending ? 'Cancelando' : 'Stop generation'}
             className={cx(
               'flex shrink-0 items-center justify-center rounded-md border border-primary p-3 shadow-xs-skeumorphic transition duration-100 ease-linear',
-              'bg-tertiary text-fg-secondary hover:bg-error-solid hover:text-white',
+              'bg-tertiary text-fg-secondary',
+              !abortButtonDisabled && 'hover:bg-error-solid hover:text-white',
+              abortButtonDisabled && 'cursor-not-allowed opacity-70',
             )}
           >
-            <StopCircle className="size-5" />
+            {isAbortPending ? (
+              <span className="text-xs font-semibold lowercase">cancelando...</span>
+            ) : (
+              <StopCircle className="size-5" />
+            )}
           </AriaButton>
         ) : (
           <AriaButton
@@ -1153,17 +1173,24 @@ export function ChatInput({
                 <Attachment01 className="size-4 text-fg-tertiary" />
                 Attach
               </button>
-              {/* Stop button — visible only during streaming */}
-              {isStreaming && (
+              {/* Stop button — visible only while generation is active */}
+              {shouldShowAbortControl && (
                 <AriaButton
-                  onPress={() => onAbort?.()}
-                  aria-label="Stop generation"
+                  onPress={handleAbort}
+                  isDisabled={abortButtonDisabled}
+                  aria-label={isAbortPending ? 'Cancelando' : 'Stop generation'}
                   className={cx(
                     'flex items-center justify-center rounded-full p-1.5 transition duration-100 ease-linear',
-                    'bg-tertiary text-fg-secondary hover:bg-error-solid hover:text-white',
+                    'bg-tertiary text-fg-secondary',
+                    !abortButtonDisabled && 'hover:bg-error-solid hover:text-white',
+                    abortButtonDisabled && 'cursor-not-allowed opacity-70',
                   )}
                 >
-                  <StopCircle className="size-4" />
+                  {isAbortPending ? (
+                    <span className="text-[11px] font-semibold lowercase">cancelando...</span>
+                  ) : (
+                    <StopCircle className="size-4" />
+                  )}
                 </AriaButton>
               )}
             </div>
@@ -1285,17 +1312,24 @@ export function ChatInput({
           </div>
         </div>
 
-        {/* Send/Stop — morphs to StopCircle during streaming (Phase 102 D-08) */}
-        {isStreaming ? (
+        {/* Send/Stop — visible only while generation is active */}
+        {shouldShowAbortControl ? (
           <AriaButton
-            onPress={() => onAbort?.()}
-            aria-label="Stop generation"
+            onPress={handleAbort}
+            isDisabled={abortButtonDisabled}
+            aria-label={isAbortPending ? 'Cancelando' : 'Stop generation'}
             className={cx(
               'flex items-center justify-center rounded-full p-1.5 transition duration-100 ease-linear',
-              'bg-tertiary text-fg-secondary hover:bg-error-solid hover:text-white',
+              'bg-tertiary text-fg-secondary',
+              !abortButtonDisabled && 'hover:bg-error-solid hover:text-white',
+              abortButtonDisabled && 'cursor-not-allowed opacity-70',
             )}
           >
-            <StopCircle className="size-4" />
+            {isAbortPending ? (
+              <span className="text-xs font-semibold lowercase">cancelando...</span>
+            ) : (
+              <StopCircle className="size-4" />
+            )}
           </AriaButton>
         ) : (
           <AriaButton

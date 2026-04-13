@@ -75,6 +75,27 @@ const VIDEO_THUMBNAIL_PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" fill="%23525866"><rect width="320" height="180" rx="8"/><text x="160" y="98" text-anchor="middle" fill="%23999" font-size="14">Video</text></svg>'
 )
 
+function getAbortBubbleMeta(msg: EnrichedMessage): {
+  stateLabel?: string
+  stateTone?: 'canceling' | 'canceled'
+  statePulse?: boolean
+} {
+  if (msg._abortState === 'canceling') {
+    return {
+      stateLabel: 'cancelando...',
+      stateTone: 'canceling',
+      statePulse: true,
+    }
+  }
+  if (msg._abortState === 'canceled') {
+    return {
+      stateLabel: 'Respuesta cancelada',
+      stateTone: 'canceled',
+    }
+  }
+  return {}
+}
+
 function buildMessageProps(
   msg: EnrichedMessage,
   baseProps: {
@@ -91,6 +112,7 @@ function buildMessageProps(
   allMessages: EnrichedMessage[]
 ): MessageProps {
   const att: MessageAttachmentRow | undefined = msg.attachments[0]
+  const abortBubbleMeta = getAbortBubbleMeta(msg)
 
   switch (msg.messageType) {
     case 'file':
@@ -150,12 +172,14 @@ function buildMessageProps(
           type: 'message-reply' as const,
           content: msg.text ?? '',
           replyText,
+          ...abortBubbleMeta,
         }
       }
       return {
         ...baseProps,
         type: 'message',
         content: msg.text ?? '',
+        ...abortBubbleMeta,
       }
     }
   }
@@ -175,6 +199,7 @@ export function AgentChatTab({
   const { conversationId, loading: conversationLoading } = useDirectConversation(agentParticipantId)
 
   const chat = useAgentChat({ conversationId, recipientIds: [agentParticipantId] })
+  const isGenerationActive = chat.waitingForReply || !!chat.processingState || chat.isStreaming
   const { shortcuts } = useAgentSkills(agentId)
 
   const { agents } = useRealtimeAgents()
@@ -424,6 +449,10 @@ export function AgentChatTab({
           avatarSrc={userAvatarSrc}
           userName={userName}
           onSend={handleSend}
+          isStreaming={chat.isStreaming}
+          showAbortControl={isGenerationActive}
+          isAbortPending={chat.isCancelling}
+          onAbort={() => { void chat.abortStream() }}
           shortcuts={shortcuts}
           replyTo={replyToMessage ? {
             senderName: replyToMessage.senderName,

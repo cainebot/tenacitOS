@@ -1,7 +1,7 @@
 // Extracted from chat-workspace.tsx — shared message rendering utility
 
 import type { EnrichedMessage, MessageAttachmentRow } from '@/types/chat'
-import type { MessageProps } from '@/components/application/message'
+import type { BubbleStateTone, MessageProps } from '@/components/application/message'
 import type { MessageAction } from '@/components/application/message-action-panel'
 import type { MessageStatus } from '@/components/application/message-status-icon'
 import { formatBytes } from '@/lib/format'
@@ -59,6 +59,27 @@ const ERROR_CODE_LABELS: Record<string, { heading: string; body: string }> = {
   unknown: { heading: 'Error del agente', body: 'Ocurrio un error inesperado.' },
 }
 
+function getAbortBubbleMeta(msg: EnrichedMessage): {
+  stateLabel?: string
+  stateTone?: BubbleStateTone
+  statePulse?: boolean
+} {
+  if (msg._abortState === 'canceling') {
+    return {
+      stateLabel: 'cancelando...',
+      stateTone: 'canceling',
+      statePulse: true,
+    }
+  }
+  if (msg._abortState === 'canceled') {
+    return {
+      stateLabel: 'Respuesta cancelada',
+      stateTone: 'canceled',
+    }
+  }
+  return {}
+}
+
 export function buildMessageProps(
   msg: EnrichedMessage,
   baseProps: {
@@ -77,6 +98,7 @@ export function buildMessageProps(
   allMessages: EnrichedMessage[]
 ): MessageProps {
   const att: MessageAttachmentRow | undefined = msg.attachments[0]
+  const abortBubbleMeta = getAbortBubbleMeta(msg)
 
   // D-08: Detect failed messages with error_code — render as SystemErrorBubble
   const failedReceipt = msg.receipts.find(r => r.status === 'failed' && r.error_code)
@@ -153,12 +175,14 @@ export function buildMessageProps(
           type: 'message-reply' as const,
           content: msg.text ?? '',
           replyText,
+          ...abortBubbleMeta,
         }
       }
       return {
         ...baseProps,
         type: 'message',
         content: msg.text ?? '',
+        ...abortBubbleMeta,
       }
     }
   }

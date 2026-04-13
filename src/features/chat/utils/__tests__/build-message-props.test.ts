@@ -58,6 +58,7 @@ interface EnrichedMessage {
   messageType: string
   _optimistic?: boolean
   _failed?: boolean
+  _abortState?: 'canceling' | 'canceled'
 }
 
 // ── Replicated helpers ────────────────────────────────────────────────────────
@@ -140,6 +141,22 @@ function buildMessageProps(
   allMessages: EnrichedMessage[],
 ): MessagePropsResult {
   const att: MessageAttachmentRow | undefined = msg.attachments[0]
+  const abortBubbleMeta = (() => {
+    if (msg._abortState === 'canceling') {
+      return {
+        stateLabel: 'cancelando...',
+        stateTone: 'canceling',
+        statePulse: true,
+      }
+    }
+    if (msg._abortState === 'canceled') {
+      return {
+        stateLabel: 'Respuesta cancelada',
+        stateTone: 'canceled',
+      }
+    }
+    return {}
+  })()
 
   const failedReceipt = msg.receipts.find(r => r.status === 'failed' && r.error_code)
   if (failedReceipt) {
@@ -198,12 +215,14 @@ function buildMessageProps(
           type: 'message-reply' as const,
           content: msg.text ?? '',
           replyText,
+          ...abortBubbleMeta,
         }
       }
       return {
         ...baseProps,
         type: 'message',
         content: msg.text ?? '',
+        ...abortBubbleMeta,
       }
     }
   }
@@ -525,6 +544,59 @@ describe('buildMessageProps — default text routing', () => {
     const result = buildMessageProps(msg, baseProps(), [])
     expect(result.type).toBe('message')
     expect(result.content).toBe('')
+  })
+})
+
+describe('buildMessageProps — abort metadata routing (Phase 108)', () => {
+  it('keeps canceled text in the same bubble and adds Respuesta cancelada label', () => {
+    const msg = baseMsg({
+      messageType: 'message',
+      text: 'Partial daemon output',
+      _abortState: 'canceled',
+    })
+    const result = buildMessageProps(msg, baseProps(), [])
+    expect(result.type).toBe('message')
+    expect(result.content).toBe('Partial daemon output')
+    expect(result.stateLabel).toBe('Respuesta cancelada')
+    expect(result.stateTone).toBe('canceled')
+  })
+
+  it('renders canceling metadata without converting message into system-error', () => {
+    const msg = baseMsg({
+      messageType: 'message',
+      text: 'Still streaming',
+      _abortState: 'canceling',
+    })
+    const result = buildMessageProps(msg, baseProps(), [])
+    expect(result.type).toBe('message')
+    expect(result.stateLabel).toBe('cancelando...')
+    expect(result.stateTone).toBe('canceling')
+    expect(result.statePulse).toBe(true)
+  })
+
+  it('keeps genuine threaded replies as message-reply even when canceled', () => {
+    const parent = baseMsg({ message_id: 'parent-msg', text: 'Original parent text' })
+    const reply = baseMsg({
+      message_id: 'reply-msg',
+      parent_message_id: 'parent-msg',
+      text: 'Reply text',
+      _abortState: 'canceled',
+    })
+    const result = buildMessageProps(reply, baseProps(), [parent, reply])
+    expect(result.type).toBe('message-reply')
+    expect(result.stateLabel).toBe('Respuesta cancelada')
+  })
+
+  it('does not require parent_message_id to render cancel metadata', () => {
+    const msg = baseMsg({
+      messageType: 'message',
+      parent_message_id: null,
+      text: 'Standalone reply',
+      _abortState: 'canceling',
+    })
+    const result = buildMessageProps(msg, baseProps(), [])
+    expect(result.type).toBe('message')
+    expect(result.stateLabel).toBe('cancelando...')
   })
 })
 
