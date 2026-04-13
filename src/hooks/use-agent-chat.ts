@@ -766,7 +766,7 @@ export function useAgentChat({
             fetchSingleMessage(conversationId!, raw.message_id)
               .then((fullMsg) => {
                 if (!fullMsg) return
-                const full = fullMsg as RawApiMessage
+                const full = fullMsg as unknown as RawApiMessage
                 if (!full.attachments || full.attachments.length === 0) return
                 // Resolve sender from cache for consistency
                 if (!full.sender && senderCacheRef.current.has(full.sender_id)) {

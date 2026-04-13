@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest'
 
 // ── Pure logic extracted from use-agent-chat.ts (Phase 102) ──────────────────
 //
@@ -35,7 +35,7 @@ interface RawMessage {
 function simulateUpdateHandler(
   updated: RawMessage,
   rafIdsRef: Map<string, number>,
-  rafMock: (cb: () => void) => number
+  rafMock: Mock<(cb: () => void) => number>
 ): UpdateHandlerResult {
   const result: UpdateHandlerResult = {}
 
@@ -89,7 +89,7 @@ function simulateReceiptFinalization(
   receipt: Receipt,
   rafIdsRef: Map<string, number>,
   streamingBuffersRef: Map<string, string>,
-  cancelRafMock: (id: number) => void
+  cancelRafMock: Mock<(id: number) => void>
 ): ReceiptHandlerResult {
   const result: ReceiptHandlerResult = {
     clearedStreaming: false,
@@ -126,8 +126,8 @@ function simulateChannelCleanup(
   rafIdsRef: Map<string, number>,
   streamingBuffersRef: Map<string, string>,
   localPreviewUrlsRef: Map<string, string[]>,
-  cancelRafMock: (id: number) => void,
-  revokeObjectUrlMock: (url: string) => void
+  cancelRafMock: Mock<(id: number) => void>,
+  revokeObjectUrlMock: Mock<(url: string) => void>
 ): void {
   for (const rafId of rafIdsRef.values()) {
     cancelRafMock(rafId)
@@ -182,7 +182,7 @@ function simulateAddOptimisticImageMessage(
 function simulateInsertHandlerRevokeLocalPreviews(
   prevMessages: Array<{ message_id: string; _optimistic?: boolean; _isLocalPreview?: boolean }>,
   localPreviewUrlsRef: Map<string, string[]>,
-  revokeObjectUrlMock: (url: string) => void
+  revokeObjectUrlMock: Mock<(url: string) => void>
 ): void {
   const localPreviewMessages = prevMessages.filter(m => m._optimistic && m._isLocalPreview)
   for (const lpm of localPreviewMessages) {
@@ -284,9 +284,9 @@ describe('useAgentChat — streaming (Phase 102)', () => {
   let streamingBuffersRef: Map<string, string>
   let localPreviewUrlsRef: Map<string, string[]>
   let rafCounter: number
-  let rafMock: ReturnType<typeof vi.fn>
-  let cancelRafMock: ReturnType<typeof vi.fn>
-  let revokeObjectUrlMock: ReturnType<typeof vi.fn>
+  let rafMock: Mock<(cb: () => void) => number>
+  let cancelRafMock: Mock<(id: number) => void>
+  let revokeObjectUrlMock: Mock<(url: string) => void>
 
   beforeEach(() => {
     rafIdsRef = new Map()
