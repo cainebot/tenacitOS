@@ -1,6 +1,39 @@
 // lib/chat.ts — Client-side API helpers for chat system
 // Used by useDirectConversation and useAgentChat hooks
-import type { ConversationType } from '@/types/chat'
+import type {
+  ConversationType,
+  MessageAttachmentRow,
+  MessageRow,
+} from '@/types/chat'
+
+export type SendMessagePayload = {
+  text: string
+  content_type?: string
+  parent_message_id?: string
+  skill_id?: string
+  skill_command?: string
+}
+
+export type PersistedMessageAttachment = Pick<
+  MessageAttachmentRow,
+  'message_id' | 'storage_path' | 'url' | 'filename' | 'size_bytes' | 'mime_type'
+> &
+  Partial<
+    Pick<
+      MessageAttachmentRow,
+      | 'attachment_id'
+      | 'duration_seconds'
+      | 'width_px'
+      | 'height_px'
+      | 'thumbnail_storage_path'
+      | 'metadata'
+      | 'created_at'
+    >
+  >
+
+export type SendMessageResponse = MessageRow & {
+  attachments?: PersistedMessageAttachment[]
+}
 
 /** Get or create a direct conversation between current user and an agent */
 export async function getOrCreateDirectConversation(
@@ -54,14 +87,8 @@ export async function fetchSingleMessage(
 /** Send a message in a conversation */
 export async function sendMessage(
   conversationId: string,
-  payload: {
-    text: string
-    content_type?: string
-    parent_message_id?: string
-    skill_id?: string
-    skill_command?: string
-  }
-): Promise<unknown> {
+  payload: SendMessagePayload
+): Promise<SendMessageResponse> {
   const res = await fetch(
     `/api/conversations/${conversationId}/messages`,
     {
@@ -87,7 +114,7 @@ export async function sendMessageWithAttachments(
     /** T-99-05: Normalized frequency bars [0..1] captured from AnalyserNode during recording */
     waveformData?: number[]
   }
-): Promise<unknown> {
+): Promise<SendMessageResponse> {
   const form = new FormData()
   form.append('text', payload.text)
   if (payload.parent_message_id) {

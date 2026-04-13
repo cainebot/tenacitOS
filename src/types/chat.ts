@@ -10,6 +10,7 @@ export type ParticipantRole = 'admin' | 'operator' | 'viewer' | 'agent'
 export type ParticipationRole = 'owner' | 'member' | 'readonly'
 export type ConversationType = 'direct' | 'broadcast' | 'group'
 export type ReceiptStatus = 'delivered' | 'read' | 'processing' | 'processed' | 'failed'
+export type AbortDisplayState = 'canceling' | 'canceled'
 
 export interface ChatParticipantRow {
   participant_id: string
@@ -153,6 +154,8 @@ export interface EnrichedMessage {
   _uploadError?: boolean
   /** Phase 102.1 D-08: Stored File/Blob references for retry on upload failure */
   _pendingFiles?: File[]
+  /** Phase 108: UI-only cancel state rendered inline in agent bubble */
+  _abortState?: AbortDisplayState
 }
 
 export function deriveStatusIcon(
