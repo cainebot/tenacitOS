@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
 import type { TaskMessageRow } from '@/types/project'
 
@@ -9,10 +9,25 @@ export interface UseRealtimeTaskMessagesResult {
   loading: boolean
 }
 
+/**
+ * Type guard to validate that a Realtime payload matches TaskMessageRow shape.
+ * Protects against partial replication or future column changes.
+ */
+function isTaskMessageRow(val: unknown): val is TaskMessageRow {
+  const r = val as Record<string, unknown>
+  return (
+    typeof r?.id === 'string' &&
+    typeof r?.task_id === 'string' &&
+    typeof r?.message_type === 'string'
+  )
+}
+
 export function useRealtimeTaskMessages(cardId: string | null): UseRealtimeTaskMessagesResult {
   const [messages, setMessages] = useState<TaskMessageRow[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createBrowserClient()
+  // createBrowserClient() returns a singleton, but memoize to guarantee stable reference
+  // for useCallback/useEffect dependency arrays.
+  const supabase = useMemo(() => createBrowserClient(), [])
 
   const fetchMessages = useCallback(async () => {
     if (!cardId) {
@@ -22,29 +37,34 @@ export function useRealtimeTaskMessages(cardId: string | null): UseRealtimeTaskM
     }
     setLoading(true)
 
-    // Step 1: Get task_ids for this card
-    const { data: tasks } = await supabase
-      .from('tasks')
-      .select('task_id')
-      .eq('card_id', cardId)
+    try {
+      // Step 1: Get task_ids for this card
+      const { data: tasks } = await supabase
+        .from('tasks')
+        .select('task_id')
+        .eq('card_id', cardId)
 
-    const taskIds = (tasks ?? []).map((t: { task_id: string }) => t.task_id)
+      const taskIds = (tasks ?? []).map((t: { task_id: string }) => t.task_id)
 
-    if (taskIds.length === 0) {
-      setMessages([])
+      if (taskIds.length === 0) {
+        setMessages([])
+        setLoading(false)
+        return
+      }
+
+      // Step 2: Fetch all messages for those tasks
+      const { data } = await supabase
+        .from('task_messages')
+        .select('*')
+        .in('task_id', taskIds)
+        .order('seq', { ascending: true })
+
+      setMessages((data as TaskMessageRow[]) ?? [])
+    } catch (err) {
+      console.error('[use-realtime-task-messages] fetch failed:', err)
+    } finally {
       setLoading(false)
-      return
     }
-
-    // Step 2: Fetch all messages for those tasks
-    const { data } = await supabase
-      .from('task_messages')
-      .select('*')
-      .in('task_id', taskIds)
-      .order('seq', { ascending: true })
-
-    setMessages((data as TaskMessageRow[]) ?? [])
-    setLoading(false)
   }, [supabase, cardId])
 
   useEffect(() => {
@@ -58,48 +78,54 @@ export function useRealtimeTaskMessages(cardId: string | null): UseRealtimeTaskM
 
     // Subscribe to task_messages for this card's tasks
     // We use a card-scoped approach: first get tasks, then subscribe per task
-    let channels: ReturnType<typeof supabase.channel>[] = []
-    let cancelled = false
+    let alive = true
+    const activeChannels: ReturnType<typeof supabase.channel>[] = []
 
     async function setupSubscriptions() {
-      const { data: tasks } = await supabase
-        .from('tasks')
-        .select('task_id')
-        .eq('card_id', cardId!)
+      try {
+        const { data: tasks } = await supabase
+          .from('tasks')
+          .select('task_id')
+          .eq('card_id', cardId!)
 
-      if (cancelled) return
-      const taskIds = (tasks ?? []).map((t: { task_id: string }) => t.task_id)
+        if (!alive) return
+        const taskIds = (tasks ?? []).map((t: { task_id: string }) => t.task_id)
 
-      for (const taskId of taskIds) {
-        const channel = supabase
-          .channel(`task-messages-${taskId}`)
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'task_messages',
-              filter: `task_id=eq.${taskId}`,
-            },
-            (payload) => {
-              if (!cancelled) {
-                setMessages((prev) => [...prev, payload.new as TaskMessageRow])
+        for (const taskId of taskIds) {
+          if (!alive) return
+          const channel = supabase
+            .channel(`task-messages-${taskId}`)
+            .on(
+              'postgres_changes',
+              {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'task_messages',
+                filter: `task_id=eq.${taskId}`,
+              },
+              (payload) => {
+                if (alive && isTaskMessageRow(payload.new)) {
+                  setMessages((prev) => [...prev, payload.new as TaskMessageRow])
+                }
               }
-            }
-          )
-          .subscribe()
-        channels.push(channel)
+            )
+            .subscribe()
+          activeChannels.push(channel)
+        }
+      } catch (err) {
+        console.error('[use-realtime-task-messages] subscription setup failed:', err)
       }
     }
 
     setupSubscriptions()
 
     return () => {
-      cancelled = true
-      for (const ch of channels) {
+      alive = false
+      // Drain all channels created so far. Any channels that would be created
+      // after this point are impossible because alive===false guards above.
+      for (const ch of activeChannels) {
         supabase.removeChannel(ch)
       }
-      channels = []
     }
   }, [fetchMessages, supabase, cardId])
 
