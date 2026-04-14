@@ -26,6 +26,14 @@
   --oc-type-security-bg: rgba(255, 69, 58, 0.125);
   --oc-type-build: #FF9F0A;
   --oc-type-build-bg: rgba(255, 159, 10, 0.125);
+
+  /* Phase 89 — task_message type visual tokens */
+  --oc-msg-tool-use: #FF9F0A;
+  --oc-msg-tool-use-bg: rgba(255, 159, 10, 0.12);
+  --oc-msg-tool-result-ok: #32D74B;
+  --oc-msg-tool-result-fail: #FF453A;
+  --oc-msg-thinking: rgba(255, 255, 255, 0.35);
+  --oc-msg-status-bg: rgba(68, 76, 231, 0.12);
 }
 
 /* Base body styles */
@@ -162,3 +170,37 @@ textarea::-webkit-resizer {
 
 /* Sidebar width */
 .sidebar-width { width: 240px; min-width: 240px; }
+
+/* ==========================================================================
+   shimmer-text — ported from Paperclip UI
+   Used in TranscriptThinkingBlock streaming state.
+   ========================================================================== */
+@keyframes shimmer-text-slide {
+  0%   { background-position: 100% center; }
+  60%  { background-position: 0% center; }
+  100% { background-position: 0% center; }
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--text-secondary-700) 0%,
+    var(--text-secondary-700) 40%,
+    color-mix(in srgb, var(--text-secondary-700) 25%, transparent) 50%,
+    var(--text-secondary-700) 60%,
+    var(--text-secondary-700) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-text-slide 2.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-text {
+    animation: none;
+    -webkit-text-fill-color: unset;
+    background: none;
+  }
+}
