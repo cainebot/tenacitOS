@@ -2105,13 +2105,27 @@ function ActivityFeedEntry({
           name={event.actor.name}
           timestamp={formatRelativeTime(event.createdAt)}
           action={
-            event.newValue ? (
-              <>
-                set due date to <FeedItemLink>{event.newValue}</FeedItemLink>
-              </>
-            ) : (
-              "removed due date"
-            )
+            (() => {
+              const fmtDate = (iso: string) => format(new Date(iso), "MMM d, yyyy")
+              if (event.newValue && event.oldValue) {
+                return (
+                  <>
+                    changed due date from{" "}
+                    <FeedItemLink>{fmtDate(event.oldValue)}</FeedItemLink>
+                    {" "}to{" "}
+                    <FeedItemLink>{fmtDate(event.newValue)}</FeedItemLink>
+                  </>
+                )
+              }
+              if (event.newValue) {
+                return (
+                  <>
+                    set due date to <FeedItemLink>{fmtDate(event.newValue)}</FeedItemLink>
+                  </>
+                )
+              }
+              return "removed due date"
+            })()
           }
           connector={connector}
           size="sm"

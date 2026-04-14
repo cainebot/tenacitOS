@@ -227,6 +227,10 @@ const activityActionMap: Record<string, ActivityEventType> = {
   parent_change: 'field_update',
   attachment_add: 'attachment_add',
   attachment_remove: 'attachment_remove',
+  tool_use: 'tool_use',
+  tool_result: 'tool_result',
+  thinking: 'thinking',
+  error: 'error',
 }
 
 export function activityLogToActivityEvents(
