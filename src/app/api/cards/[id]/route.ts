@@ -55,6 +55,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     'due_date',
     'sort_order',
     'parent_card_id',
+    'updated_by',
   ] as const
 
   const updateData: Record<string, unknown> = {}
@@ -84,6 +85,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         sort_order: string
         parent_card_id: string
         state_id: string
+        updated_by: string
       }>
     )
     return NextResponse.json(card)

@@ -222,6 +222,7 @@ const activityActionMap: Record<string, ActivityEventType> = {
   field_update: 'field_update',
   assignment: 'assignment',
   priority_change: 'priority_change',
+  due_date_change: 'due_date_change',
   label_change: 'label_change',
   parent_change: 'field_update',
   attachment_add: 'attachment_add',
@@ -283,6 +284,12 @@ export function activityLogToActivityEvents(
           ...base,
           oldValue: (oldVal?.priority as string) ?? undefined,
           newValue: (newVal?.priority as string) ?? undefined,
+        }
+      case 'due_date_change':
+        return {
+          ...base,
+          oldValue: (details?.old_due_date as string) ?? undefined,
+          newValue: (details?.new_due_date as string) ?? undefined,
         }
       case 'label_change':
         return {

@@ -27,6 +27,7 @@ export type ActivityAction =
   | 'field_update'
   | 'assignment'
   | 'priority_change'
+  | 'due_date_change'
   | 'label_change'
   | 'parent_change'
   | 'attachment_add'
@@ -149,6 +150,25 @@ export interface ActivityLogRow {
   actor_id: string | null
   action: string
   details: Record<string, unknown>
+  created_at: string
+}
+
+// ---- Task Messages (Phase 89 — D-08, D-09) ----
+
+export type TaskMessageType = 'text' | 'tool_use' | 'tool_result' | 'thinking' | 'error' | 'status'
+
+export interface TaskMessageRow {
+  id: string
+  task_id: string
+  seq: number
+  message_type: TaskMessageType
+  actor_id: string | null
+  tool_name: string | null
+  content: string | null
+  input: Record<string, unknown> | null
+  output: string | null
+  duration_ms: number | null
+  metadata: Record<string, unknown>
   created_at: string
 }
 
