@@ -33,9 +33,10 @@ import { useBoardSyncEngine } from "@/hooks/use-board-sync-engine"
 import { useBoardStore, type BoardColumn } from "@/stores/board-store"
 import { cardRowToKanbanCardProps, labelToTag, cardDetailToTaskDetailPanelProps, activityLogToActivityEvents, taskMessagesToActivityEvents } from "@/lib/adapters"
 import { useRealtimeTaskMessages } from "@/hooks/use-realtime-task-messages"
+import { useRealtimeActivityLog } from "@/hooks/use-realtime-activity-log"
 import { sortKeyBetween } from "@/lib/fractional-index"
 import { parseDate } from "@internationalized/date"
-import type { CardRow, ActivityLogRow, BoardRow, ProjectStateRow, ProjectMember } from "@/types/project"
+import type { CardRow, BoardRow, ProjectStateRow, ProjectMember } from "@/types/project"
 import type { AgentRow } from "@/types/supabase"
 import { toast } from 'sonner'
 
@@ -661,27 +662,9 @@ export default function ProjectBoardPage() {
       .catch((err) => { console.error('[signed-urls] Failed:', err) })
   }, [detailCard?.card_id, detailCard?.attachments.length])
 
-  // Activity events for the card
-  const [cardActivities, setCardActivities] = useState<ActivityLogRow[]>([])
+  // Activity events for the card — Realtime hook (replaces manual fetch + refetchActivities)
   const detailCardId = detailCard?.card_id ?? null
-  useEffect(() => {
-    if (!detailCardId) {
-      setCardActivities([])
-      return
-    }
-    fetch(`/api/cards/${detailCardId}/activity`)
-      .then(r => r.ok ? r.json() : [])
-      .then((rows: ActivityLogRow[]) => setCardActivities(rows))
-      .catch((err) => { console.error('[card-activity] Failed:', err) })
-  }, [detailCardId])
-
-  const refetchActivities = useCallback(() => {
-    if (!detailCardId) return
-    fetch(`/api/cards/${detailCardId}/activity`)
-      .then(r => r.ok ? r.json() : [])
-      .then((rows: ActivityLogRow[]) => setCardActivities(rows))
-      .catch((err) => { console.error('[card-activity] Failed:', err) })
-  }, [detailCardId])
+  const { activities: cardActivities } = useRealtimeActivityLog(detailCardId)
 
   const activityEvents = useMemo(
     () => activityLogToActivityEvents(cardActivities, agents, projectStates),
@@ -828,9 +811,8 @@ export default function ProjectBoardPage() {
     })
       .then(() => detailRefetch())
       .catch((err) => { console.error('[add-comment] Failed:', err) })
-    refetchActivities()
     refetch()
-  }, [detailCard, detailAppendComment, detailRefetch, refetchActivities, refetch])
+  }, [detailCard, detailAppendComment, detailRefetch, refetch])
 
   // Upload attachment (called by onFilesSelected from FileUpload component)
   const handlePanelFilesSelected = useCallback(async (files: File[]) => {
@@ -844,9 +826,8 @@ export default function ProjectBoardPage() {
       }).catch((err) => { console.error('[upload-attachment] Failed:', err) })
     }
     await detailRefetch()
-    refetchActivities()
     refetch()
-  }, [detailCard, detailRefetch, refetchActivities, refetch])
+  }, [detailCard, detailRefetch, refetch])
 
   // Delete attachment
   const handlePanelDeleteAttachment = useCallback(async (attachmentId: string) => {
@@ -855,9 +836,8 @@ export default function ProjectBoardPage() {
       method: 'DELETE',
     }).catch((err) => { console.error('[delete-attachment] Failed:', err) })
     await detailRefetch()
-    refetchActivities()
     refetch()
-  }, [detailCard, detailRefetch, refetchActivities, refetch])
+  }, [detailCard, detailRefetch, refetch])
 
   // Add subtask: create child card with card_type 'subtask'
   const handlePanelAddSubtask = useCallback(async (data: { title: string; priority?: TaskPriority; assignee?: string; status?: TaskStatus; stateId?: string }) => {

@@ -59,6 +59,7 @@ import {
 } from "@circos/ui"
 import { formatDistanceToNow, isYesterday, format } from "date-fns"
 import { TaskTypeIndicator, type TaskType } from "./task-type-indicator"
+import { TranscriptToolCard, TranscriptThinkingBlock } from "./run-transcript-view"
 import { getLocalTimeZone, isToday, today } from "@internationalized/date"
 import { I18nProvider } from "react-aria"
 import type { DateValue, Key } from "react-aria-components"
@@ -2146,20 +2147,16 @@ function ActivityFeedEntry({
           avatarAlt={event.actor.name}
           name={event.actor.name}
           timestamp={formatRelativeTime(event.createdAt)}
-          action={
-            <>
-              used tool <span className="font-semibold">{event.toolName ?? 'unknown'}</span>
-              {event.durationMs != null && (
-                <span className="ml-1 text-quaternary">({event.durationMs}ms)</span>
-              )}
-            </>
-          }
+          action={<>used tool <span className="font-semibold">{event.toolName ?? 'unknown'}</span></>}
           connector={connector}
           size="sm"
         >
-          {event.toolInput && (
-            <ToolArgsBlock input={event.toolInput} />
-          )}
+          <TranscriptToolCard
+            toolName={event.toolName ?? 'unknown'}
+            input={event.toolInput}
+            status="running"
+            durationMs={event.durationMs}
+          />
         </FeedItem>
       )
 
@@ -2170,20 +2167,17 @@ function ActivityFeedEntry({
           avatarAlt={event.actor.name}
           name={event.actor.name}
           timestamp={formatRelativeTime(event.createdAt)}
-          action={
-            <>
-              tool result: <span className="font-semibold">{event.toolName ?? 'tool'}</span>
-            </>
-          }
+          action={<>tool result: <span className="font-semibold">{event.toolName ?? 'tool'}</span></>}
           connector={connector}
           size="sm"
         >
-          {event.toolOutput && (
-            <ToolOutputBlock output={event.toolOutput} />
-          )}
-          {event.content && !event.toolOutput && (
-            <FeedItemText>{event.content}</FeedItemText>
-          )}
+          <TranscriptToolCard
+            toolName={event.toolName ?? 'tool'}
+            input={event.toolInput}
+            output={event.toolOutput ?? event.content}
+            status="completed"
+            durationMs={event.durationMs}
+          />
         </FeedItem>
       )
 
@@ -2198,9 +2192,12 @@ function ActivityFeedEntry({
           connector={connector}
           size="sm"
         >
-          <div className="rounded-md bg-[var(--oc-msg-tool-result-fail)]/10 px-3 py-2 text-sm text-error-primary">
-            {event.content ?? 'Unknown error'}
-          </div>
+          <TranscriptToolCard
+            toolName={event.toolName ?? 'error'}
+            output={event.content ?? 'Unknown error'}
+            status="error"
+            isError
+          />
         </FeedItem>
       )
 
@@ -2237,9 +2234,7 @@ function ActivityFeedEntry({
           connector={connector}
           size="sm"
         >
-          <p className="text-sm italic text-[var(--oc-msg-thinking)]">
-            {event.content}
-          </p>
+          <TranscriptThinkingBlock content={event.content ?? ''} />
         </FeedItem>
       )
 
@@ -2269,72 +2264,7 @@ function ActivityFeedEntry({
   }
 }
 
-// ---------------------------------------------------------------------------
-// ToolArgsBlock — collapsible JSON arguments (D-03)
-// ---------------------------------------------------------------------------
-
-function ToolArgsBlock({ input }: { input: Record<string, unknown> }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const json = JSON.stringify(input, null, 2)
-
-  return (
-    <div>
-      <Button
-        type="button"
-        color="link-gray"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="text-xs text-tertiary transition hover:text-secondary"
-      >
-        {isOpen ? 'ocultar' : 'Ver argumentos'}
-      </Button>
-      {isOpen && (
-        <pre className="mt-1 max-h-[200px] overflow-y-auto rounded-md bg-secondary px-3 py-2 font-mono text-[13px] leading-relaxed text-secondary">
-          {json}
-        </pre>
-      )}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// ToolOutputBlock — 2-line clamp preview + expandable monospace output (D-03)
-// ---------------------------------------------------------------------------
-
-function ToolOutputBlock({ output }: { output: string }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const isLong = output.length > 200
-
-  return (
-    <div>
-      {!isLong ? (
-        <pre className="max-h-[200px] overflow-y-auto rounded-md bg-secondary px-3 py-2 font-mono text-[13px] leading-relaxed text-secondary">
-          {output}
-        </pre>
-      ) : (
-        <>
-          {!isOpen && (
-            <p className="line-clamp-2 text-sm text-secondary">{output}</p>
-          )}
-          {isOpen && (
-            <pre className="mt-1 max-h-[200px] overflow-y-auto rounded-md bg-secondary px-3 py-2 font-mono text-[13px] leading-relaxed text-secondary">
-              {output}
-            </pre>
-          )}
-          <Button
-            type="button"
-            color="link-gray"
-            size="sm"
-            onClick={() => setIsOpen(!isOpen)}
-            className="text-xs text-tertiary transition hover:text-secondary"
-          >
-            {isOpen ? 'ocultar' : 'Ver detalle'}
-          </Button>
-        </>
-      )}
-    </div>
-  )
-}
+// ToolArgsBlock and ToolOutputBlock removed — replaced by TranscriptToolCard (Phase 89.1)
 
 // ---------------------------------------------------------------------------
 // Auto-collapse algorithm (D-05)
