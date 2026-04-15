@@ -63,6 +63,8 @@ export { ProgressBar as ProgressIndicatorBar } from "./progress-indicators/progr
 export { ProgressBarCircle, ProgressBarHalfCircle } from "./progress-indicators/progress-circles"
 export { CircleProgressBar } from "./progress-indicators/simple-circle"
 export { Form } from "./form/form"
+export { HookForm, FormField, useFormFieldContext } from "./form/hook-form"
+export { PinInput } from "./input/pin-input"
 export { TagGroup, TagList, Tag, type TagItem } from "./tags/tags"
 export {
   FeedItem,

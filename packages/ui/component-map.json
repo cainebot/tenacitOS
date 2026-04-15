@@ -287,6 +287,26 @@
         "installedAt": "2026-04-15",
         "notes": "Button size adjusted xs->sm."
       },
+      "hook-form": {
+        "uuiName": "hook-form",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/form/hook-form.tsx",
+        "storyPath": "packages/ui/src/components/base/form/hook-form.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Exports HookForm, FormField, useFormFieldContext. Requires react-hook-form@^7.54."
+      },
+      "pin-input": {
+        "uuiName": "pin-input",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/input/pin-input.tsx",
+        "storyPath": "packages/ui/src/components/base/input/pin-input.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Requires input-otp@^1.4. Sizes xxxs|xxs|xs|sm|md|lg."
+      },
       "progress-bar": {
         "uuiName": "progress-indicators",
         "figmaNodeIds": [],
@@ -639,9 +659,9 @@
   "pending": {
     "_overview": "Deferred to follow-up sessions. Each entry documents blocker. Unblock path: add missing npm deps, resolve dependency-graph conflicts, or make migration decision for CircOS-adapted primitives.",
     "base": {
-      "hook-form": { "blocker": "requires react-hook-form npm dependency" },
-      "pin-input": { "blocker": "requires input-otp npm dependency" },
       "_resolved": {
+        "hook-form": "installed 2026-04-15 (react-hook-form@7.54 added) — components.base.hook-form",
+        "pin-input": "installed 2026-04-15 (input-otp@1.4 added) — components.base.pin-input",
         "button-utility": "already installed — mapped in components.base",
         "play-button-icon": "installed in foundations/ (clone location)",
         "star-icon": "covered by rating-stars export",
