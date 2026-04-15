@@ -533,7 +533,8 @@
         "circosUiPath": "packages/ui/src/components/application/file-upload.tsx",
         "storyPath": "packages/ui/src/components/application/file-upload.stories.tsx",
         "installed": true,
-        "proOnly": false
+        "proOnly": false,
+        "notes": "CircOS custom implementation (single FileUpload component, onFilesSelected API). Clone's file-upload-base offers richer FileUploadDropZone + FileListItem with per-file progress/retry but requires motion/react (forbidden by CLAUDE.md). Port deferred until need for FileListItem arises — user directive 2026-04-15."
       },
       "loading-indicator": {
         "uuiName": "loading-indicator",
@@ -585,7 +586,7 @@
         "storyPath": null,
         "installed": true,
         "proOnly": false,
-        "notes": "CircOS variant. UUI equivalents: sidebar-dual-tier, sidebar-slim, sidebar-simple — migration decision pending."
+        "notes": "CircOS canonical — do NOT migrate to UUI sidebar-* variants (user directive 2026-04-15). All UUI sidebar + header-navigation entries are permanently deferred."
       },
       "featured-cards": {
         "uuiName": null,
@@ -759,18 +760,18 @@
     },
     "application": {
       "range-preset": { "blocker": "not present in reference clone (clone co-locates RangePresetButton in range-calendar.tsx — already installed)" },
-      "file-upload-base": { "blocker": "uses motion/react which CLAUDE.md forbids — needs tailwindcss-animate adaptation" },
+      "file-upload-base": { "blocker": "user directive 2026-04-15: defer clone port — CircOS custom file-upload.tsx works for sole consumer (task-detail-panel); motion/react adaptation to tailwindcss-animate not worth effort until FileListItem feature is needed elsewhere" },
       "filter-bar": { "blocker": "not present in reference clone" },
       "filter-dropdown-menu": { "blocker": "not present in reference clone" },
-      "header-navigation": { "blocker": "depends on dropdown-account-button + base-components/nav-* graph" },
+      "header-navigation": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
       "pagination-dot": { "blocker": "requires pagination-base; would name-collide with existing application/pagination.tsx — migration decision pending" },
       "pagination-line": { "blocker": "same as pagination-dot" },
-      "sidebar-dual-tier": { "blocker": "depends on app-navigation/base-components/ graph + overlaps with existing CircOS app-navigation" },
-      "sidebar-navigation-base": { "blocker": "same as sidebar-dual-tier" },
-      "sidebar-section-dividers": { "blocker": "same as sidebar-dual-tier" },
-      "sidebar-sections-subheadings": { "blocker": "same as sidebar-dual-tier" },
-      "sidebar-simple": { "blocker": "same as sidebar-dual-tier" },
-      "sidebar-slim": { "blocker": "same as sidebar-dual-tier" }
+      "sidebar-dual-tier": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "sidebar-navigation-base": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "sidebar-section-dividers": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "sidebar-sections-subheadings": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "sidebar-simple": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "sidebar-slim": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" }
     },
     "foundations": {
       "folder-icon": { "blocker": "not present in reference clone" }
