@@ -575,13 +575,13 @@ function TranscriptToolCard({ block, density }: { block: Extract<TranscriptBlock
             <div className={cx('grid gap-3', compact ? 'grid-cols-1' : 'lg:grid-cols-2')}>
               <div>
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-quaternary">Input</div>
-                <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono text-[11px] text-secondary">
+                <pre className="overflow-x-auto whitespace-pre-wrap break-words font-code text-[11px] text-secondary">
                   {formatToolPayload(block.input) || '<empty>'}
                 </pre>
               </div>
               <div>
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-quaternary">Result</div>
-                <pre className={cx('overflow-x-auto whitespace-pre-wrap break-words font-mono text-[11px]', block.status === 'error' ? 'text-error-primary' : 'text-secondary')}>
+                <pre className={cx('overflow-x-auto whitespace-pre-wrap break-words font-code text-[11px]', block.status === 'error' ? 'text-error-primary' : 'text-secondary')}>
                   {block.result ? formatToolPayload(block.result) : 'Waiting for result...'}
                 </pre>
               </div>
@@ -633,7 +633,7 @@ function TranscriptCommandGroup({ block, density }: { block: Extract<TranscriptB
         <div className="min-w-0 flex-1">
           <div className="text-[11px] font-semibold uppercase leading-none tracking-[0.1em] text-quaternary">{title}</div>
           {subtitle && (
-            <div className={cx('mt-1 break-words font-mono text-primary', compact ? 'text-xs' : 'text-sm')}>{subtitle}</div>
+            <div className={cx('mt-1 break-words font-code text-primary', compact ? 'text-xs' : 'text-sm')}>{subtitle}</div>
           )}
           {!subtitle && latestItem?.status === 'error' && open && (
             <div className={cx('mt-1 text-error-primary', compact ? 'text-xs' : 'text-sm')}>Command failed</div>
@@ -661,12 +661,12 @@ function TranscriptCommandGroup({ block, density }: { block: Extract<TranscriptB
                 )}>
                   <TerminalSquare className="h-3 w-3" />
                 </span>
-                <span className={cx('font-mono break-all', compact ? 'text-[11px]' : 'text-xs')}>
+                <span className={cx('font-code break-all', compact ? 'text-[11px]' : 'text-xs')}>
                   {summarizeToolInput('command_execution', item.input, density)}
                 </span>
               </div>
               {item.result && (
-                <pre className={cx('overflow-x-auto whitespace-pre-wrap break-words font-mono text-[11px]', item.status === 'error' ? 'text-error-primary' : 'text-secondary')}>
+                <pre className={cx('overflow-x-auto whitespace-pre-wrap break-words font-code text-[11px]', item.status === 'error' ? 'text-error-primary' : 'text-secondary')}>
                   {formatToolPayload(item.result)}
                 </pre>
               )}
@@ -721,7 +721,7 @@ function TranscriptToolGroup({ block, density }: { block: Extract<TranscriptBloc
         </div>
         <div className="min-w-0 flex-1">
           <div className={cx('font-semibold uppercase leading-none tracking-[0.1em] text-quaternary', compact ? 'text-[10px]' : 'text-[11px]')}>{title}</div>
-          {subtitle && <div className={cx('mt-1 break-words font-mono text-primary', compact ? 'text-xs' : 'text-sm')}>{subtitle}</div>}
+          {subtitle && <div className={cx('mt-1 break-words font-code text-primary', compact ? 'text-xs' : 'text-sm')}>{subtitle}</div>}
         </div>
         <button
           type="button"
@@ -757,12 +757,12 @@ function TranscriptToolGroup({ block, density }: { block: Extract<TranscriptBloc
               <div className={cx('grid gap-2 pl-7', compact ? 'grid-cols-1' : 'lg:grid-cols-2')}>
                 <div>
                   <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-quaternary">Input</div>
-                  <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono text-[11px] text-secondary">{formatToolPayload(item.input) || '<empty>'}</pre>
+                  <pre className="overflow-x-auto whitespace-pre-wrap break-words font-code text-[11px] text-secondary">{formatToolPayload(item.input) || '<empty>'}</pre>
                 </div>
                 {item.result && (
                   <div>
                     <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-quaternary">Result</div>
-                    <pre className={cx('overflow-x-auto whitespace-pre-wrap break-words font-mono text-[11px]', item.status === 'error' ? 'text-error-primary' : 'text-secondary')}>
+                    <pre className={cx('overflow-x-auto whitespace-pre-wrap break-words font-code text-[11px]', item.status === 'error' ? 'text-error-primary' : 'text-secondary')}>
                       {formatToolPayload(item.result)}
                     </pre>
                   </div>
@@ -834,7 +834,7 @@ function TranscriptEventRow({ block, density }: { block: Extract<TranscriptBlock
             </div>
           )}
           {block.detail && (
-            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words font-mono text-[11px] text-tertiary">{block.detail}</pre>
+            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words font-code text-[11px] text-tertiary">{block.detail}</pre>
           )}
         </div>
       </div>
@@ -870,7 +870,7 @@ function TranscriptDiffGroup({ block, density }: { block: Extract<TranscriptBloc
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
       </div>
       {open && (
-        <pre className={cx('mt-2 overflow-x-auto whitespace-pre-wrap break-words font-mono pl-5', compact ? 'text-[11px]' : 'text-xs')}>
+        <pre className={cx('mt-2 overflow-x-auto whitespace-pre-wrap break-words font-code pl-5', compact ? 'text-[11px]' : 'text-xs')}>
           {block.hunks.map((hunk, i) => {
             const key = `${i}-${hunk.changeType}`
             switch (hunk.changeType) {
@@ -900,7 +900,7 @@ function TranscriptStderrGroup({ block, density }: { block: Extract<TranscriptBl
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
       </div>
       {open && (
-        <pre className={cx('mt-2 overflow-x-auto whitespace-pre-wrap break-words font-mono text-warning-primary pl-5', compact ? 'text-[10px]' : 'text-[11px]')}>
+        <pre className={cx('mt-2 overflow-x-auto whitespace-pre-wrap break-words font-code text-warning-primary pl-5', compact ? 'text-[10px]' : 'text-[11px]')}>
           {block.lines.map((line, i) => <span key={`${line.ts}-${i}`}><span className="select-none text-utility-warning-400">{i > 0 ? '\n' : ''}</span>{line.text}</span>)}
         </pre>
       )}
@@ -921,7 +921,7 @@ function TranscriptSystemGroup({ block }: { block: Extract<TranscriptBlock, { ty
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
       </div>
       {open && (
-        <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words font-mono text-[11px] text-brand-secondary pl-5">
+        <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words font-code text-[11px] text-brand-secondary pl-5">
           {block.lines.map((line, i) => <span key={`${line.ts}-${i}`}><span className="select-none text-quaternary">{i > 0 ? '\n' : ''}</span>{line.text}</span>)}
         </pre>
       )}
@@ -940,7 +940,7 @@ function TranscriptStdoutRow({ block, density, collapseByDefault }: { block: Ext
         </button>
       </div>
       {open && (
-        <pre className={cx('mt-2 overflow-x-auto whitespace-pre-wrap break-words font-mono text-secondary', density === 'compact' ? 'text-[11px]' : 'text-xs')}>
+        <pre className={cx('mt-2 overflow-x-auto whitespace-pre-wrap break-words font-code text-secondary', density === 'compact' ? 'text-[11px]' : 'text-xs')}>
           {block.text}
         </pre>
       )}
@@ -951,7 +951,7 @@ function TranscriptStdoutRow({ block, density, collapseByDefault }: { block: Ext
 function RawTranscriptView({ entries, density }: { entries: TranscriptEntry[]; density: TranscriptDensity }) {
   const compact = density === 'compact'
   return (
-    <div className={cx('font-mono', compact ? 'space-y-1 text-[11px]' : 'space-y-1.5 text-xs')}>
+    <div className={cx('font-code', compact ? 'space-y-1 text-[11px]' : 'space-y-1.5 text-xs')}>
       {entries.map((entry, idx) => (
         <div key={`${entry.kind}-${entry.ts}-${idx}`} className="grid gap-x-3 grid-cols-[auto_1fr]">
           <span className="text-[10px] uppercase tracking-[0.18em] text-quaternary">{entry.kind}</span>

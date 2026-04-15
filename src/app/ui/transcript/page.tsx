@@ -13,9 +13,8 @@
  */
 
 import { MessageSquare01, TerminalSquare, Route, ClockRewind } from '@untitledui/icons'
-import { FlaskConical } from 'lucide-react'
 import Link from 'next/link'
-import { cx } from '@circos/ui'
+import { cx, FlaskConical } from '@circos/ui'
 import { RunTranscriptView } from '@/components/application/run-transcript-view-full'
 import type { TranscriptEntry } from '@/components/application/run-transcript-view-full'
 import { ActivityRow } from '@/components/application/activity-row'

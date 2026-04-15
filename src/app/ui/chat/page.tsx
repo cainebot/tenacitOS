@@ -13,9 +13,8 @@
  */
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { cx } from '@circos/ui'
-import { MessageSquare01, Route, MagicWand01, CheckCircle, Zap } from '@untitledui/icons'
-import { FlaskConical, Loader2, Brain } from 'lucide-react'
+import { cx, FlaskConical, Brain } from '@circos/ui'
+import { MessageSquare01, Route, MagicWand01, CheckCircle, Zap, Loading02 } from '@untitledui/icons'
 import Link from 'next/link'
 import { ChatThread } from '@/components/application/chat-lab'
 import {
@@ -266,7 +265,7 @@ export default function IssueChatLabPage() {
             </div>
             <div className="flex items-center gap-2.5 rounded-lg px-1 py-2">
               <span className="inline-flex items-center gap-2 text-sm font-medium text-secondary">
-                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-quaternary" />
+                <Loading02 className="h-4 w-4 shrink-0 animate-spin text-quaternary" />
                 <span className="shimmer-text">Working</span>
               </span>
               <span className="text-xs text-quaternary">por 12s</span>

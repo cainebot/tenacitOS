@@ -9,8 +9,7 @@
 
 import Link from 'next/link'
 import { LayoutGrid01, TerminalSquare, MessageDotsSquare } from '@untitledui/icons'
-import { FlaskConical } from 'lucide-react'
-import { cx } from '@circos/ui'
+import { cx, FlaskConical } from '@circos/ui'
 
 const labs = [
   {

@@ -21,5 +21,8 @@ export * from "./providers"
 // Hooks
 export * from "./hooks"
 
+// Custom Icons (not available in @untitledui/icons)
+export * from "./icons"
+
 // Utils
 export { cx, sortCx } from "./utils/cx"

@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { cx } from '@circos/ui'
-import { ChevronDown } from '@untitledui/icons'
-import { Brain, Loader2 } from 'lucide-react'
+import { cx, Brain } from '@circos/ui'
+import { ChevronDown, Loading02 } from '@untitledui/icons'
 import { TranscriptToolCard } from '../run-transcript-view'
 import type { ChatChainOfThoughtData } from './types'
 
@@ -36,7 +35,7 @@ export function ChatChainOfThought({ data }: ChatChainOfThoughtProps) {
         )}
       >
         {data.isActive ? (
-          <Loader2 className="size-4 shrink-0 animate-spin text-quaternary" />
+          <Loading02 className="size-4 shrink-0 animate-spin text-quaternary" />
         ) : (
           <span className="flex size-4 shrink-0 items-center justify-center">
             <span className="size-1.5 rounded-full bg-success-solid/70" />

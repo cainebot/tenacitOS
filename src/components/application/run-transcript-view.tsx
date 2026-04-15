@@ -110,7 +110,7 @@ export function TranscriptToolCard({
         ) : (
           <CheckCircle className={cx('size-3.5 shrink-0', iconColor)} />
         )}
-        <span className="flex-1 truncate font-mono text-xs font-medium text-primary">
+        <span className="flex-1 truncate font-code text-xs font-medium text-primary">
           {toolName}
         </span>
         {durationMs != null && status === 'completed' && (
@@ -144,7 +144,7 @@ export function TranscriptToolCard({
             {inputOpen ? 'Hide input' : 'Show input'}
           </button>
           {inputOpen && (
-            <pre className="max-h-[200px] overflow-y-auto border-t border-secondary bg-secondary px-3 py-2 font-mono text-[12px] leading-relaxed text-secondary">
+            <pre className="max-h-[200px] overflow-y-auto border-t border-secondary bg-secondary px-3 py-2 font-code text-[12px] leading-relaxed text-secondary">
               {JSON.stringify(input, null, 2)}
             </pre>
           )}

@@ -13,10 +13,8 @@
  */
 
 import { useState } from 'react'
-import { cx } from '@circos/ui'
-import { Monitor01, LayoutLeft } from '@untitledui/icons'
-import { FlaskConical, RadioTower } from 'lucide-react'
-import Link from 'next/link'
+import { cx, Badge, BadgeWithDot, Button, ButtonUtility, Dot, Tabs, TabList, Tab, FlaskConical, RadioTower } from '@circos/ui'
+import { Monitor01, LayoutLeft, ArrowLeft, ChevronRight } from '@untitledui/icons'
 import { RunTranscriptView } from '@/components/application/run-transcript-view-full'
 import type { TranscriptEntry, TranscriptMode, TranscriptDensity } from '@/components/application/run-transcript-view-full'
 
@@ -176,19 +174,10 @@ function RunDetailPreview({
     <div className="overflow-hidden rounded-xl border border-secondary bg-primary/80 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
       <div className="border-b border-secondary bg-primary/90 px-5 py-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-secondary bg-secondary px-3 py-0.5 text-[10px] uppercase tracking-[0.18em] text-tertiary">
-            Run Detail
-          </span>
-          <span
-            className={cx(
-              'rounded-full px-3 py-0.5 text-[10px] uppercase tracking-[0.18em]',
-              streaming
-                ? 'border border-warning-secondary bg-warning-secondary/10 text-warning-primary'
-                : 'border border-success-secondary bg-success-secondary/10 text-success-primary',
-            )}
-          >
+          <Badge color="gray" size="sm">Run Detail</Badge>
+          <BadgeWithDot color={streaming ? 'warning' : 'success'} size="sm">
             {streaming ? 'Running' : 'Succeeded'}
-          </span>
+          </BadgeWithDot>
           <span className="text-xs text-tertiary">
             {FIXTURE_META.startedAt.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
           </span>
@@ -234,24 +223,13 @@ function LiveWidgetPreview({
             <div className="text-sm font-medium text-primary">{FIXTURE_META.agentName}</div>
             <div className="mt-1 text-xs text-tertiary">{FIXTURE_META.agentRole}</div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-tertiary">
-              <span className="rounded-full border border-secondary bg-secondary px-2 py-0.5 font-mono">
-                {FIXTURE_META.sourceRunId.slice(0, 8)}
-              </span>
-              <span
-                className={cx(
-                  'rounded-full px-2 py-0.5 text-[10px]',
-                  streaming
-                    ? 'border border-warning-secondary bg-warning-secondary/10 text-warning-primary'
-                    : 'border border-success-secondary bg-success-secondary/10 text-success-primary',
-                )}
-              >
+              <Badge color="gray" size="sm" className="font-code">{FIXTURE_META.sourceRunId.slice(0, 8)}</Badge>
+              <BadgeWithDot color={streaming ? 'warning' : 'success'} size="sm">
                 {streaming ? 'Running' : 'Succeeded'}
-              </span>
+              </BadgeWithDot>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full border border-secondary bg-secondary px-2.5 py-1 text-[11px] text-tertiary">
-            Abrir run →
-          </span>
+          <Badge color="gray" size="sm">Abrir run →</Badge>
         </div>
         <div className="max-h-[460px] overflow-y-auto pr-1">
           <RunTranscriptView
@@ -288,21 +266,14 @@ function DashboardPreview({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span
-                  className={cx(
-                    'inline-flex h-2.5 w-2.5 rounded-full',
-                    streaming ? 'bg-brand shadow-[0_0_0_6px_rgba(68,76,231,0.12)]' : 'bg-quaternary',
-                  )}
-                />
+                <Dot size="sm" className={streaming ? 'text-brand-solid' : 'text-quaternary'} />
                 <span className="text-sm font-medium text-primary">{FIXTURE_META.agentName}</span>
               </div>
               <div className="mt-2 text-[11px] text-tertiary">
                 {streaming ? 'En vivo ahora' : 'Terminó hace 2m'}
               </div>
             </div>
-            <span className="rounded-full border border-secondary bg-secondary px-2 py-1 text-[10px] text-tertiary">
-              →
-            </span>
+            <ButtonUtility icon={ChevronRight} size="xs" color="tertiary" />
           </div>
           <div className="mt-3 rounded-lg border border-brand/20 bg-brand/[0.06] px-3 py-2 text-xs text-brand-secondary">
             {FIXTURE_META.issueIdentifier} — {FIXTURE_META.issueTitle}
@@ -352,12 +323,9 @@ export default function RunTranscriptLabPage() {
               <p className="mt-2 text-sm text-tertiary">
                 Construido desde un run real de CircOS sanitizado. Sin secretos, paths locales ni variables de entorno.
               </p>
-              <Link
-                href="/ui"
-                className="mt-3 inline-flex items-center gap-1 text-xs text-tertiary hover:text-secondary transition-colors"
-              >
-                ← Volver al índice
-              </Link>
+              <Button href="/ui" color="link-gray" size="sm" iconLeading={ArrowLeft} className="mt-3">
+                Volver al índice
+              </Button>
             </div>
 
             <div className="space-y-2">
@@ -412,12 +380,8 @@ export default function RunTranscriptLabPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-secondary bg-secondary px-3 py-0.5 text-[10px] uppercase tracking-[0.18em] text-tertiary">
-                  {FIXTURE_META.sourceRunId.slice(0, 8)}
-                </span>
-                <span className="rounded-full border border-secondary bg-secondary px-3 py-0.5 text-[10px] uppercase tracking-[0.18em] text-tertiary">
-                  {FIXTURE_META.issueIdentifier}
-                </span>
+                <Badge color="gray" size="sm">{FIXTURE_META.sourceRunId.slice(0, 8)}</Badge>
+                <Badge color="gray" size="sm">{FIXTURE_META.issueIdentifier}</Badge>
               </div>
             </div>
 
@@ -428,47 +392,25 @@ export default function RunTranscriptLabPage() {
               </span>
 
               {/* Mode toggle */}
-              <div className="inline-flex rounded-full border border-secondary bg-primary/80 p-1">
-                {(['nice', 'raw'] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setMode(m)}
-                    className={cx(
-                      'rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors',
-                      mode === m ? 'bg-active text-primary' : 'text-tertiary hover:text-secondary',
-                    )}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
+              <Tabs selectedKey={mode} onSelectionChange={(key) => setMode(key as TranscriptMode)}>
+                <TabList type="button-minimal" size="sm">
+                  <Tab id="nice">Nice</Tab>
+                  <Tab id="raw">Raw</Tab>
+                </TabList>
+              </Tabs>
 
               {/* Density toggle */}
-              <div className="inline-flex rounded-full border border-secondary bg-primary/80 p-1">
-                {(['comfortable', 'compact'] as const).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDensity(d)}
-                    className={cx(
-                      'rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors',
-                      density === d ? 'bg-active text-primary' : 'text-tertiary hover:text-secondary',
-                    )}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
+              <Tabs selectedKey={density} onSelectionChange={(key) => setDensity(key as TranscriptDensity)}>
+                <TabList type="button-minimal" size="sm">
+                  <Tab id="comfortable">Comfortable</Tab>
+                  <Tab id="compact">Compact</Tab>
+                </TabList>
+              </Tabs>
 
               {/* Streaming toggle */}
-              <button
-                type="button"
-                onClick={() => setStreaming((v) => !v)}
-                className="inline-flex items-center gap-2 rounded-full border border-secondary bg-primary/80 px-3 py-1.5 text-xs text-tertiary transition-colors hover:text-secondary"
-              >
+              <Button color="secondary" size="sm" onClick={() => setStreaming((v) => !v)}>
                 {streaming ? 'Ver estado asentado' : 'Ver estado streaming'}
-              </button>
+              </Button>
             </div>
 
             {/* Surface preview */}
