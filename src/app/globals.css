@@ -204,3 +204,34 @@ textarea::-webkit-resizer {
     background: none;
   }
 }
+
+/* ==========================================================================
+   cot-line — Chain-of-thought reasoning line ticker animations.
+   Pure translate, no opacity — the overflow-hidden container clips.
+   Both keyframes share the same easing so the two spans move in lockstep.
+   Ported from Paperclip UI.
+   ========================================================================== */
+@keyframes cot-line-slide-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes cot-line-slide-out {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-100%); }
+}
+
+.cot-line-enter {
+  animation: cot-line-slide-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.cot-line-exit {
+  animation: cot-line-slide-out 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cot-line-enter,
+  .cot-line-exit {
+    animation: none;
+  }
+}
