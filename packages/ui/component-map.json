@@ -1,6 +1,6 @@
 {
   "$schema": "./component-map.schema.json",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Mapping between Figma nodes (UUI PRO VARIABLES v7.0) and @circos/ui components. Source of truth for /uui-figma-creator and /uui-code-creator skills.",
   "figmaFile": {
     "fileKey": "MBkN7H8nYLx7DNhzTf8vcD",
@@ -69,10 +69,51 @@
       "select": {
         "uuiName": "select",
         "figmaNodeIds": [],
-        "circosUiPath": "packages/ui/src/components/base/select.tsx",
+        "circosUiPath": "packages/ui/src/components/base/select/select.tsx",
         "storyPath": "packages/ui/src/components/base/select.stories.tsx",
         "installed": true,
-        "proOnly": false
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Canonical UUI v7.0 via Theseus replacement. Sizes sm|md|lg, 'icon' prop (was 'placeholderIcon'), select-shared.tsx architecture. Default size 'md'. Breaking: consumers using 'placeholderIcon' must migrate to 'icon'."
+      },
+      "select-shared": {
+        "uuiName": "select-shared",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/select/select-shared.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Exports SelectContext, sizes, SelectItemType, CommonProps (shared across Select/ComboBox/MultiSelect/TagSelect)."
+      },
+      "multi-select": {
+        "uuiName": "multi-select",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/select/multi-select.tsx",
+        "storyPath": "packages/ui/src/components/base/select/multi-select.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Adaptations: footer Button xs->sm, Label isInvalid prop removed, FeaturedIcon theme->variant."
+      },
+      "tag-select": {
+        "uuiName": "tag-select",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/select/tag-select.tsx",
+        "storyPath": "packages/ui/src/components/base/select/tag-select.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "select-native": {
+        "uuiName": "select-native",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/select/select-native.tsx",
+        "storyPath": "packages/ui/src/components/base/select/select-native.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Exported as NativeSelect."
       },
       "checkbox": {
         "uuiName": "checkbox",
@@ -109,11 +150,142 @@
       "dropdown": {
         "uuiName": "dropdown",
         "figmaNodeIds": [],
-        "circosUiPath": "packages/ui/src/components/base/dropdown.tsx",
-        "storyPath": "packages/ui/src/components/base/dropdown.stories.tsx",
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
         "installed": true,
         "proOnly": false,
-        "notes": "CircOS adapted version. 14 UUI dropdown-* variants remain deferred (require clone base/dropdown/dropdown.tsx with different API)."
+        "installedAt": "2026-04-15",
+        "notes": "Canonical UUI v7.0 (Theseus replacement). Adds selectionIndicator (checkmark|checkbox|radio|toggle|none), submenu support, avatarUrl. 14 preconfigured variants installed alongside."
+      },
+      "dropdown-account-breadcrumb": {
+        "uuiName": "dropdown-account-breadcrumb",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-account-breadcrumb.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-account-button": {
+        "uuiName": "dropdown-account-button",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-account-button.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Button size adjusted xs->sm (CircOS Button lacks xs)."
+      },
+      "dropdown-account-card-xs": {
+        "uuiName": "dropdown-account-card-xs",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-account-card-xs.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-account-card-sm": {
+        "uuiName": "dropdown-account-card-sm",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-account-card-sm.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Avatar 'border' prop removed (CircOS Avatar lacks it)."
+      },
+      "dropdown-account-card-md": {
+        "uuiName": "dropdown-account-card-md",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-account-card-md.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-avatar": {
+        "uuiName": "dropdown-avatar",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-avatar.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Button size adjusted xs->sm."
+      },
+      "dropdown-button-advanced": {
+        "uuiName": "dropdown-button-advanced",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-button-advanced.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-button-link": {
+        "uuiName": "dropdown-button-link",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-button-link.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-button-simple": {
+        "uuiName": "dropdown-button-simple",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-button-simple.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-icon-advanced": {
+        "uuiName": "dropdown-icon-advanced",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-icon-advanced.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-icon-simple": {
+        "uuiName": "dropdown-icon-simple",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-icon-simple.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-integration": {
+        "uuiName": "dropdown-integration",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-integration.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-search-simple": {
+        "uuiName": "dropdown-search-simple",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-search-simple.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-search-advanced": {
+        "uuiName": "dropdown-search-advanced",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-search-advanced.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Button size adjusted xs->sm."
       },
       "progress-bar": {
         "uuiName": "progress-indicators",
@@ -467,28 +639,31 @@
   "pending": {
     "_overview": "Deferred to follow-up sessions. Each entry documents blocker. Unblock path: add missing npm deps, resolve dependency-graph conflicts, or make migration decision for CircOS-adapted primitives.",
     "base": {
-      "dropdown-account-breadcrumb": { "blocker": "requires clone base/dropdown/dropdown.tsx with different API than CircOS dropdown.tsx — needs migration decision" },
-      "dropdown-account-button": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-account-card-xs": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-account-card-sm": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-account-card-md": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-avatar": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-button-advanced": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-button-link": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-button-simple": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-icon-advanced": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-icon-simple": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-integration": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-search-advanced": { "blocker": "same as dropdown-account-breadcrumb" },
-      "dropdown-search-simple": { "blocker": "same as dropdown-account-breadcrumb" },
       "hook-form": { "blocker": "requires react-hook-form npm dependency" },
       "pin-input": { "blocker": "requires input-otp npm dependency" },
-      "select-shared": { "blocker": "requires clone's base/select/ structure that differs from CircOS select" },
-      "tag-select": { "blocker": "depends on select-shared + input-tags structure" },
       "_resolved": {
         "button-utility": "already installed — mapped in components.base",
         "play-button-icon": "installed in foundations/ (clone location)",
-        "star-icon": "covered by rating-stars export"
+        "star-icon": "covered by rating-stars export",
+        "dropdown": "consolidated 2026-04-15 to UUI canonical v7.0 (Theseus replacement) — components.base.dropdown",
+        "dropdown-account-breadcrumb": "installed 2026-04-15 — components.base.dropdown-account-breadcrumb",
+        "dropdown-account-button": "installed 2026-04-15 — components.base.dropdown-account-button",
+        "dropdown-account-card-xs": "installed 2026-04-15 — components.base.dropdown-account-card-xs",
+        "dropdown-account-card-sm": "installed 2026-04-15 — components.base.dropdown-account-card-sm",
+        "dropdown-account-card-md": "installed 2026-04-15 — components.base.dropdown-account-card-md",
+        "dropdown-avatar": "installed 2026-04-15 — components.base.dropdown-avatar",
+        "dropdown-button-advanced": "installed 2026-04-15 — components.base.dropdown-button-advanced",
+        "dropdown-button-link": "installed 2026-04-15 — components.base.dropdown-button-link",
+        "dropdown-button-simple": "installed 2026-04-15 — components.base.dropdown-button-simple",
+        "dropdown-icon-advanced": "installed 2026-04-15 — components.base.dropdown-icon-advanced",
+        "dropdown-icon-simple": "installed 2026-04-15 — components.base.dropdown-icon-simple",
+        "dropdown-integration": "installed 2026-04-15 — components.base.dropdown-integration",
+        "dropdown-search-advanced": "installed 2026-04-15 — components.base.dropdown-search-advanced",
+        "dropdown-search-simple": "installed 2026-04-15 — components.base.dropdown-search-simple",
+        "select-shared": "installed 2026-04-15 — components.base.select-shared",
+        "tag-select": "installed 2026-04-15 — components.base.tag-select",
+        "multi-select": "installed 2026-04-15 — components.base.multi-select",
+        "select-native": "installed 2026-04-15 — components.base.select-native"
       }
     },
     "application": {

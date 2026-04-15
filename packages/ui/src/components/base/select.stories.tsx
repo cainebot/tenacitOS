@@ -54,14 +54,14 @@ const meta: Meta<typeof Select> = {
     children: renderItems,
   },
   argTypes: {
-    size: { control: "inline-radio", options: ["sm", "md"] },
+    size: { control: "inline-radio", options: ["sm", "md", "lg"] },
     placeholder: { control: "text" },
     label: { control: "text" },
     hint: { control: "text" },
     tooltip: { control: "text" },
     isDisabled: { control: "boolean" },
     isRequired: { control: "boolean" },
-    placeholderIcon: {
+    icon: {
       control: "select",
       options: Object.keys(iconMap),
       mapping: iconMap,
@@ -88,8 +88,8 @@ export const Disabled: Story = {
   args: { label: "Team member", placeholder: "Select member", isDisabled: true },
 }
 
-export const WithPlaceholderIcon: Story = {
-  args: { label: "Country", placeholder: "Select country", placeholderIcon: Globe01 },
+export const WithIcon: Story = {
+  args: { label: "Country", placeholder: "Select country", icon: Globe01 },
 }
 
 export const WithIcons: Story = {

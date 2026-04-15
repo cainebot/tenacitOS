@@ -142,7 +142,7 @@ function SortableFilterRow({
           aria-label="Field"
           size="sm"
           placeholder="Field"
-          placeholderIcon={fieldDef?.icon}
+          icon={fieldDef?.icon}
           popoverClassName="min-w-[200px]"
           selectedKey={row.fieldType}
           onSelectionChange={(key) => {
@@ -161,7 +161,7 @@ function SortableFilterRow({
           aria-label="Operator"
           size="sm"
           placeholder="Operator"
-          placeholderIcon={Equal}
+          icon={Equal}
           popoverClassName="min-w-[200px]"
           selectedKey={row.operator}
           onSelectionChange={(key) => {
@@ -180,7 +180,7 @@ function SortableFilterRow({
           aria-label="Value"
           size="sm"
           placeholder="Select value"
-          placeholderIcon={valueDef?.icon}
+          icon={valueDef?.icon}
           popoverClassName="min-w-[200px]"
           selectedKey={row.value ?? undefined}
           onSelectionChange={(key) => {

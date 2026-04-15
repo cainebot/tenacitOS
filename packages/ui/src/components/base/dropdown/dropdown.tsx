@@ -1,14 +1,15 @@
-"use client"
+"use client";
 
-import type { FC, RefAttributes } from "react"
-import { DotsVertical } from "@untitledui/icons"
+import { type FC, type RefAttributes, useCallback } from "react";
+import { Check, ChevronRight, DotsVertical } from "@untitledui/icons";
 import type {
     ButtonProps as AriaButtonProps,
     MenuItemProps as AriaMenuItemProps,
     MenuProps as AriaMenuProps,
     PopoverProps as AriaPopoverProps,
     SeparatorProps as AriaSeparatorProps,
-} from "react-aria-components"
+    MenuItemRenderProps,
+} from "react-aria-components";
 import {
     Button as AriaButton,
     Header as AriaHeader,
@@ -18,23 +19,62 @@ import {
     MenuTrigger as AriaMenuTrigger,
     Popover as AriaPopover,
     Separator as AriaSeparator,
-} from "react-aria-components"
-import { cx } from "../../utils/cx"
+} from "react-aria-components";
+import { cx } from "../../../utils/cx";
+import { Avatar } from "../avatar/avatar";
+import { CheckboxBase } from "../checkbox";
+import { RadioButtonBase } from "../radio-buttons/radio-buttons";
+import { ToggleBase } from "../toggle";
 
 interface DropdownItemProps extends AriaMenuItemProps {
     /** The label of the item to be displayed. */
-    label?: string
+    label?: string;
     /** An addon to be displayed on the right side of the item. */
-    addon?: string
+    addon?: string;
     /** If true, the item will not have any styles. */
-    unstyled?: boolean
+    unstyled?: boolean;
     /** An icon to be displayed on the left side of the item. */
-    icon?: FC<{ className?: string }>
+    icon?: FC<{ className?: string }>;
+    /** Avatar URL to be displayed on the left side of the item. */
+    avatarUrl?: string;
+    /** The selection indicator to be displayed on the item. */
+    selectionIndicator?: "checkmark" | "checkbox" | "radio" | "toggle" | "none";
 }
 
-const DropdownItem = ({ label, children, addon, icon: Icon, unstyled, ...props }: DropdownItemProps) => {
+const DropdownItem = ({ label, children, addon, icon: Icon, avatarUrl, unstyled, selectionIndicator = "checkmark", ...props }: DropdownItemProps) => {
+    const SelectionIndicator = useCallback(
+        (state: MenuItemRenderProps & { className?: string }) => {
+            if (selectionIndicator === "checkmark") {
+                return (
+                    <Check
+                        aria-hidden="true"
+                        className={cx("size-4 shrink-0 stroke-[2.25px] text-fg-brand-primary", !state.isSelected && "invisible", state.className)}
+                    />
+                );
+            }
+            if (selectionIndicator === "checkbox") {
+                return (
+                    <CheckboxBase
+                        isSelected={state.isSelected && !state.hasSubmenu}
+                        isIndeterminate={state.isSelected && state.hasSubmenu}
+                        size="sm"
+                        className={cx("shrink-0", state.className)}
+                    />
+                );
+            }
+            if (selectionIndicator === "radio") {
+                return <RadioButtonBase isSelected={state.isSelected} className={cx("shrink-0", state.className)} />;
+            }
+            if (selectionIndicator === "toggle") {
+                return <ToggleBase slim size="sm" isSelected={state.isSelected} className={cx("shrink-0", state.className)} />;
+            }
+            return null;
+        },
+        [selectionIndicator],
+    );
+
     if (unstyled) {
-        return <AriaMenuItem id={label} textValue={label} {...props} />
+        return <AriaMenuItem id={label} textValue={label} {...props} />;
     }
 
     return (
@@ -43,7 +83,7 @@ const DropdownItem = ({ label, children, addon, icon: Icon, unstyled, ...props }
             className={(state) =>
                 cx(
                     "group block cursor-pointer px-1.5 py-px outline-hidden",
-                    state.isDisabled && "cursor-not-allowed",
+                    state.isDisabled && "cursor-not-allowed opacity-50",
                     typeof props.className === "function" ? props.className(state) : props.className,
                 )
             }
@@ -51,59 +91,50 @@ const DropdownItem = ({ label, children, addon, icon: Icon, unstyled, ...props }
             {(state) => (
                 <div
                     className={cx(
-                        "relative flex items-center rounded-sm px-2.5 py-2 outline-focus-ring transition duration-100 ease-linear",
+                        "relative flex items-center rounded-md px-2.5 py-2 outline-focus-ring transition duration-100 ease-linear",
                         !state.isDisabled && "group-hover:bg-primary_hover",
                         state.isFocused && "bg-primary_hover",
                         state.isFocusVisible && "outline-2 -outline-offset-2",
+                        state.hasSubmenu && "pr-1.5",
                     )}
                 >
-                    {Icon && (
-                        <Icon
-                            aria-hidden="true"
-                            className={cx("mr-2 size-4 shrink-0 stroke-[2.25px]", state.isDisabled ? "text-fg-disabled" : "text-fg-quaternary")}
-                        />
+                    {state.selectionMode !== "none" && !avatarUrl && !Icon && <SelectionIndicator {...state} className="mr-2" />}
+
+                    {avatarUrl && (
+                        <div className="mr-2 flex size-4 items-center justify-center">
+                            <Avatar aria-hidden="true" size="xs" src={avatarUrl} alt={label} className="size-5" />
+                        </div>
                     )}
 
-                    <span
-                        className={cx(
-                            "grow truncate text-sm font-semibold",
-                            state.isDisabled ? "text-disabled" : "text-secondary",
-                            state.isFocused && "text-secondary_hover",
-                        )}
-                    >
+                    {Icon && <Icon aria-hidden="true" className="mr-2 size-4 shrink-0 stroke-[2.25px] text-fg-quaternary" />}
+
+                    <span className={cx("grow truncate text-sm font-semibold text-secondary", state.isFocused && "text-secondary_hover")}>
                         {label || (typeof children === "function" ? children(state) : children)}
                     </span>
 
-                    {addon && (
-                        <span
-                            className={cx(
-                                "ml-3 shrink-0 rounded px-1 py-px text-xs font-medium ring-1 ring-secondary ring-inset",
-                                state.isDisabled ? "text-disabled" : "text-quaternary",
-                            )}
-                        >
-                            {addon}
-                        </span>
-                    )}
+                    {addon && <span className="ml-1 shrink-0 pr-1 text-xs font-medium text-quaternary">{addon}</span>}
+
+                    {state.selectionMode !== "none" && (avatarUrl || Icon) && <SelectionIndicator {...state} className="ml-1" />}
+
+                    {state.hasSubmenu && <ChevronRight aria-hidden="true" className="ml-auto size-4 shrink-0 stroke-[2.25px] text-fg-quaternary" />}
                 </div>
             )}
         </AriaMenuItem>
-    )
-}
+    );
+};
 
 interface DropdownMenuProps<T extends object> extends AriaMenuProps<T> {}
 
 const DropdownMenu = <T extends object>(props: DropdownMenuProps<T>) => {
     return (
         <AriaMenu
-            disallowEmptySelection
-            selectionMode="single"
             {...props}
             className={(state) =>
                 cx("h-min overflow-y-auto py-1 outline-hidden select-none", typeof props.className === "function" ? props.className(state) : props.className)
             }
         />
-    )
-}
+    );
+};
 
 interface DropdownPopoverProps extends AriaPopoverProps {}
 
@@ -125,12 +156,12 @@ const DropdownPopover = (props: DropdownPopoverProps) => {
         >
             {props.children}
         </AriaPopover>
-    )
-}
+    );
+};
 
 const DropdownSeparator = (props: AriaSeparatorProps) => {
-    return <AriaSeparator {...props} className={cx("my-1 h-px w-full bg-border-secondary", props.className)} />
-}
+    return <AriaSeparator {...props} className={cx("my-1 h-px w-full bg-border-secondary", props.className)} />;
+};
 
 const DropdownDotsButton = (props: AriaButtonProps & RefAttributes<HTMLButtonElement>) => {
     return (
@@ -148,8 +179,8 @@ const DropdownDotsButton = (props: AriaButtonProps & RefAttributes<HTMLButtonEle
         >
             <DotsVertical className="size-5 transition-inherit-all" />
         </AriaButton>
-    )
-}
+    );
+};
 
 export const Dropdown = {
     Root: AriaMenuTrigger,
@@ -160,4 +191,4 @@ export const Dropdown = {
     Item: DropdownItem,
     Separator: DropdownSeparator,
     DotsButton: DropdownDotsButton,
-}
+};
