@@ -463,10 +463,61 @@
       "date-picker": {
         "uuiName": "date-picker",
         "figmaNodeIds": [],
-        "circosUiPath": "packages/ui/src/components/application/date-picker/",
+        "circosUiPath": "packages/ui/src/components/application/date-picker/date-picker.tsx",
+        "storyPath": "packages/ui/src/components/application/date-picker/date-picker.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Canonical UUI v7.0 Theseus replacement. Replaces drifted CircOS custom. Requires @internationalized/date + @react-stately/utils + input-date + input-group. Adds size prop passthrough."
+      },
+      "date-picker-calendar": {
+        "uuiName": "date-picker-calendar",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/date-picker/calendar.tsx",
+        "storyPath": "packages/ui/src/components/application/date-picker/date-picker.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Exported as DatePickerCalendar via application/index.ts. Supports highlightedDates prop (preserved from CircOS API)."
+      },
+      "date-range-picker": {
+        "uuiName": "date-range-picker",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/date-picker/date-range-picker.tsx",
+        "storyPath": "packages/ui/src/components/application/date-picker/date-picker.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "range-calendar": {
+        "uuiName": "range-calendar",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/date-picker/range-calendar.tsx",
+        "storyPath": "packages/ui/src/components/application/date-picker/date-picker.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "useBreakpoint adapted (CircOS returns current, not checks >=). RangePresetButton co-located here per clone structure."
+      },
+      "input-date": {
+        "uuiName": "input-date",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/input/input-date.tsx",
         "storyPath": null,
         "installed": true,
-        "proOnly": false
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Installed as dependency of date-picker canonical. Label isInvalid prop removed (CircOS Label lacks it)."
+      },
+      "input-group": {
+        "uuiName": "input-group",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/input/input-group.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Size lg->md downmap (CircOS TextField sizes sm|md only). Installed as dependency of date-picker canonical."
       },
       "empty-state": {
         "uuiName": "empty-state",
@@ -707,10 +758,7 @@
       }
     },
     "application": {
-      "date-picker-calendar": { "blocker": "requires @internationalized/date + input-date + input-group install" },
-      "date-range-picker": { "blocker": "same as date-picker-calendar" },
-      "range-calendar": { "blocker": "same as date-picker-calendar" },
-      "range-preset": { "blocker": "not present in reference clone" },
+      "range-preset": { "blocker": "not present in reference clone (clone co-locates RangePresetButton in range-calendar.tsx — already installed)" },
       "file-upload-base": { "blocker": "uses motion/react which CLAUDE.md forbids — needs tailwindcss-animate adaptation" },
       "filter-bar": { "blocker": "not present in reference clone" },
       "filter-dropdown-menu": { "blocker": "not present in reference clone" },
