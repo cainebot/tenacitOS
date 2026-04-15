@@ -9,10 +9,7 @@
  * Cubre:
  *   - RotatingReasoningDemo: ticker de razonamiento animado (auto-contenido)
  *   - Working / Worked header verb tokens
- *   - Previews de IssueChatThread (placeholders hasta que se porte el componente)
- *
- * IssueChatThread requiere @assistant-ui/react + useCircOSTaskRuntime.
- * Ver: components/application/PENDING_PORTS.md
+ *   - Chat thread samples con fixtures estáticos (ChatThread de chat-lab/)
  */
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -20,6 +17,12 @@ import { cx } from '@circos/ui'
 import { MessageSquare01, Route, MagicWand01, CheckCircle, Zap } from '@untitledui/icons'
 import { FlaskConical, Loader2, Brain } from 'lucide-react'
 import Link from 'next/link'
+import { ChatThread } from '@/components/application/chat-lab'
+import {
+  liveExecutionItems,
+  submittingItems,
+  settledReviewItems,
+} from '@/components/application/chat-lab/fixtures'
 
 // ---------------------------------------------------------------------------
 // RotatingReasoningDemo — auto-contenido, no depende de IssueChatThread
@@ -130,37 +133,6 @@ function LabSection({
   )
 }
 
-// ---------------------------------------------------------------------------
-// ChatThreadPlaceholder — sección pendiente de IssueChatThread
-// ---------------------------------------------------------------------------
-
-function ChatThreadPlaceholder({
-  label,
-  description,
-}: {
-  label: string
-  description: string
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-secondary bg-primary/60 px-6 py-10 text-center">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-secondary bg-secondary">
-        <MessageSquare01 className="h-5 w-5 text-tertiary" />
-      </div>
-      <div>
-        <p className="font-semibold text-primary text-sm">{label}</p>
-        <p className="mt-1 max-w-sm text-sm text-tertiary">{description}</p>
-      </div>
-      <div className="flex flex-wrap justify-center gap-2 text-[11px] text-tertiary">
-        <span className="rounded-full border border-secondary bg-secondary px-3 py-1">
-          requiere @assistant-ui/react
-        </span>
-        <span className="rounded-full border border-secondary bg-secondary px-3 py-1">
-          requiere useCircOSTaskRuntime
-        </span>
-      </div>
-    </div>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // Highlights para el aside
@@ -205,7 +177,7 @@ export default function IssueChatLabPage() {
                 /ui/chat
               </span>
               <span className="inline-flex items-center rounded-full border border-secondary bg-secondary px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-tertiary">
-                @assistant-ui/react thread
+                @circos/ui chat-lab
               </span>
               <span className="inline-flex items-center rounded-full border border-secondary bg-secondary px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-tertiary">
                 fixture-backed live run
@@ -325,10 +297,7 @@ export default function IssueChatLabPage() {
         description="Muestra el estado completamente activo: eventos de timeline, marcador de run histórico, una reply de asistente en ejecución con razonamiento y herramientas, y un follow-up del usuario en cola."
         accentClassName="bg-[linear-gradient(180deg,rgba(68,76,231,0.05),transparent_28%)]"
       >
-        <ChatThreadPlaceholder
-          label="IssueChatThread — live execution"
-          description="Requiere @assistant-ui/react instalado y useCircOSTaskRuntime conectado a Supabase Realtime. Ver PENDING_PORTS.md para el checklist completo."
-        />
+        <ChatThread items={liveExecutionItems} showComposer={showComposer} />
       </LabSection>
 
       {/* Submitting state */}
@@ -338,10 +307,7 @@ export default function IssueChatLabPage() {
         description='Cuando el usuario envía un mensaje, la burbuja muestra brevemente un label "Enviando..." con opacidad reducida hasta que el servidor confirma la recepción. Este preview renderiza ese estado transitorio.'
         accentClassName="bg-[linear-gradient(180deg,rgba(59,130,246,0.06),transparent_28%)]"
       >
-        <ChatThreadPlaceholder
-          label="IssueChatThread — submitting state"
-          description="Preview del estado de burbuja pending. Disponible una vez portado IssueChatThread con los fixtures issueChatUxSubmittingComments."
-        />
+        <ChatThread items={submittingItems} />
       </LabSection>
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -352,10 +318,7 @@ export default function IssueChatLabPage() {
           description="Muestra el estado post-run: controles de feedback de comentarios de asistente, contexto de run histórico y reasignación de timeline sin ningún stream activo."
           accentClassName="bg-[linear-gradient(180deg,rgba(168,85,247,0.05),transparent_26%)]"
         >
-          <ChatThreadPlaceholder
-            label="IssueChatThread — settled review"
-            description="Preview con feedbackVotes y estado in_review. Disponible una vez portado IssueChatThread."
-          />
+          <ChatThread items={settledReviewItems} />
         </LabSection>
 
         <div className="space-y-6">
@@ -366,9 +329,10 @@ export default function IssueChatLabPage() {
             description="Mantiene el área de mensajes visible incluso cuando no hay thread, y reemplaza el compositor con un aviso explícito cuando las replies están bloqueadas."
             accentClassName="bg-[linear-gradient(180deg,rgba(245,158,11,0.08),transparent_26%)]"
           >
-            <ChatThreadPlaceholder
-              label="IssueChatThread — empty state"
-              description="Preview de thread vacío con composerDisabledReason. Disponible una vez portado IssueChatThread."
+            <ChatThread
+              items={[]}
+              showComposer
+              composerDisabledReason="This workspace is closed. Replies are disabled until the issue is reopened."
             />
           </LabSection>
 

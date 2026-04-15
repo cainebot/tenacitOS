@@ -88,16 +88,16 @@ export function TranscriptToolCard({
   const hasOutput = Boolean(output)
 
   const headerColor = isError || status === 'error'
-    ? 'border-utility-error-300 bg-utility-error-50 dark:border-utility-error-800 dark:bg-utility-error-950'
+    ? 'border-error bg-error-solid/5'
     : status === 'running'
     ? 'border-secondary bg-secondary'
-    : 'border-utility-success-300 bg-utility-success-50 dark:border-utility-success-800 dark:bg-utility-success-950'
+    : 'border-secondary bg-secondary'
 
   const iconColor = isError || status === 'error'
-    ? 'text-utility-error-500'
+    ? 'text-error-primary'
     : status === 'running'
     ? 'text-fg-tertiary animate-spin'
-    : 'text-utility-success-500'
+    : 'text-success-primary'
 
   return (
     <div className="rounded-lg border border-secondary bg-primary overflow-hidden text-sm">
@@ -123,7 +123,7 @@ export function TranscriptToolCard({
 
       {/* Error output — always visible */}
       {(isError || status === 'error') && output && (
-        <div className="border-t border-utility-error-200 px-3 py-2 dark:border-utility-error-800">
+        <div className="border-t border-error px-3 py-2">
           <p className="text-xs text-error-primary">{output}</p>
         </div>
       )}
