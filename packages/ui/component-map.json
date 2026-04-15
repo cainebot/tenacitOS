@@ -400,6 +400,26 @@
       }
     },
     "application": {
+      "carousel-base": {
+        "uuiName": "carousel-base",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/carousel/carousel-base.tsx",
+        "storyPath": "packages/ui/src/components/application/carousel/carousel.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Embla-based. Exports Carousel compound (Root, Content, Item, PrevTrigger, NextTrigger, IndicatorGroup, Indicator) + CarouselContext + useCarousel. Requires embla-carousel-react@^8.5."
+      },
+      "charts-base": {
+        "uuiName": "charts-base",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/charts/charts-base.tsx",
+        "storyPath": "packages/ui/src/components/application/charts/charts.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Recharts-based primitives. Exports ChartLegendContent, ChartTooltipContent, ChartActiveDot, selectEvenlySpacedItems. Pair with Recharts Bar/Line/Area/Pie. Requires recharts@^2.15."
+      },
       "modal": {
         "uuiName": "modal",
         "figmaNodeIds": [],
@@ -687,8 +707,6 @@
       }
     },
     "application": {
-      "carousel-base": { "blocker": "requires embla-carousel-react npm dependency" },
-      "charts-base": { "blocker": "requires recharts npm dependency" },
       "date-picker-calendar": { "blocker": "requires @internationalized/date + input-date + input-group install" },
       "date-range-picker": { "blocker": "same as date-picker-calendar" },
       "range-calendar": { "blocker": "same as date-picker-calendar" },

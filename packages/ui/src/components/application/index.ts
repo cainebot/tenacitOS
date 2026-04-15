@@ -1,3 +1,5 @@
+export { Carousel, CarouselContext, useCarousel } from "./carousel/carousel-base"
+export { ChartLegendContent, ChartTooltipContent, ChartActiveDot, selectEvenlySpacedItems } from "./charts/charts-base"
 export { Modal, ModalHeader, ModalBody, ModalFooter } from "./modal"
 export type { ModalProps, ModalSize } from "./modal"
 
