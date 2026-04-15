@@ -1,7 +1,7 @@
 "use client";
 
 import { type HTMLAttributes } from "react";
-import { RatingStars } from "@/components/foundations/rating-stars";
+import { RatingStars } from "./rating-stars";
 import { cx } from "@/utils/cx";
 
 export const Wreath = (props: HTMLAttributes<HTMLOrSVGElement>) => (
