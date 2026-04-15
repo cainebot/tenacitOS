@@ -1,323 +1,462 @@
 'use client'
 
 /**
- * /ui/transcript — Preview page for RunTranscriptView variants
+ * /ui/transcript — Agent Activity Component Lab
  *
- * Shows every block type with mock data:
- *   message (user + assistant), thinking, tool (running/completed/error),
- *   command_group (running/completed/error), tool_group,
- *   activity (running/completed), event (info/warn/error/neutral),
- *   diff_group, stderr_group, system_group, stdout, empty state, raw mode
+ * Catálogo temporal de los componentes de actividad de agentes en CircOS.
+ * Inspirado en Paperclip's AgentActivityComponentLab.tsx.
+ *
+ * Componentes cubiertos:
+ *   1. IssueChatThread family — pending port (@assistant-ui/react required)
+ *   2. RunTranscriptView family — ✓ portado en run-transcript-view-full.tsx
+ *   3. ActivityRow — ✓ portado en activity-row.tsx
  */
 
-import { useState } from 'react'
+import { MessageSquare01, TerminalSquare, Route, ClockRewind } from '@untitledui/icons'
+import { FlaskConical } from 'lucide-react'
+import Link from 'next/link'
 import { cx } from '@circos/ui'
 import { RunTranscriptView } from '@/components/application/run-transcript-view-full'
-import type { TranscriptEntry, TranscriptDensity, TranscriptMode } from '@/components/application/run-transcript-view-full'
+import type { TranscriptEntry } from '@/components/application/run-transcript-view-full'
+import { ActivityRow } from '@/components/application/activity-row'
+import type { ActivityEvent, Agent } from '@/components/application/activity-row'
 
 // ---------------------------------------------------------------------------
-// Mock data sets
+// Component catalog data
 // ---------------------------------------------------------------------------
 
-const NOW = new Date().toISOString()
-const T = (offset: number) => new Date(Date.now() - offset * 1000).toISOString()
-
-const MOCK_FULL: TranscriptEntry[] = [
-  // Init
-  { kind: 'init', ts: T(120), text: '', model: 'claude-sonnet-4-6', sessionId: 'sess_abc123' },
-
-  // User message
-  { kind: 'user', ts: T(110), text: 'Busca leads de consultoras tech en Madrid y crea un resumen.' },
-
-  // Assistant thinking
-  { kind: 'thinking', ts: T(100), text: 'Voy a buscar leads en LinkedIn y otras fuentes. Primero ejecutaré una búsqueda web para encontrar consultoras tech en Madrid. Luego organizaré los resultados.' },
-
-  // Tool call: web search (tool_group candidate)
-  { kind: 'tool_call', ts: T(95), text: '', name: 'web_search', input: { query: 'consultoras tech Madrid 2025' }, toolUseId: 'tu_001' },
-  { kind: 'tool_result', ts: T(90), text: '', toolUseId: 'tu_001', content: 'Everis, Accenture España, Indra, Minsait, NTT Data, Sopra Steria, Capgemini, Atos' },
-
-  // Tool call: another tool (will group with above into tool_group)
-  { kind: 'tool_call', ts: T(88), text: '', name: 'web_search', input: { query: 'top IT consultancies Madrid LinkedIn' }, toolUseId: 'tu_002' },
-  { kind: 'tool_result', ts: T(84), text: '', toolUseId: 'tu_002', content: 'Deloitte Digital, KPMG Technology, PwC Advisory, EY Technology' },
-
-  // Assistant message
-  { kind: 'assistant', ts: T(80), text: 'Encontré varias consultoras. Voy a ejecutar un comando para formatear los datos.' },
-
-  // Command group: running then completed
-  { kind: 'tool_call', ts: T(75), text: '', name: 'bash', input: { command: 'echo "Everis\\nAccenture\\nIndra\\nMinsait" > leads.txt && wc -l leads.txt' }, toolUseId: 'tu_003' },
-  { kind: 'tool_result', ts: T(70), text: '', toolUseId: 'tu_003', content: 'command: bash\nstatus: completed\nexit_code: 0\n\n4 leads.txt' },
-
-  // Command with error
-  { kind: 'tool_call', ts: T(68), text: '', name: 'bash', input: { command: 'cat /nonexistent/file.txt' }, toolUseId: 'tu_004' },
-  { kind: 'tool_result', ts: T(65), text: '', toolUseId: 'tu_004', content: 'command: cat\nstatus: failed\nexit_code: 1\n\ncat: /nonexistent/file.txt: No such file or directory', isError: true },
-
-  // System activity
-  { kind: 'system', ts: T(60), text: 'item started: linkedin-scraper (id=act_001)' },
-  { kind: 'system', ts: T(55), text: 'item completed: linkedin-scraper (id=act_001)' },
-
-  // Diff
-  { kind: 'diff', ts: T(50), text: 'leads.txt', changeType: 'file_header' },
-  { kind: 'diff', ts: T(50), text: '@@ -0,0 +1,4 @@', changeType: 'hunk' },
-  { kind: 'diff', ts: T(50), text: 'Everis', changeType: 'add' },
-  { kind: 'diff', ts: T(50), text: 'Accenture', changeType: 'add' },
-  { kind: 'diff', ts: T(50), text: 'Indra', changeType: 'add' },
-  { kind: 'diff', ts: T(50), text: 'Minsait', changeType: 'add' },
-
-  // Stdout
-  { kind: 'stdout', ts: T(45), text: 'Processing leads...\nFound 8 companies\nExporting to CSV' },
-
-  // Stderr
-  { kind: 'stderr', ts: T(40), text: 'Warning: rate limit approaching (80%)' },
-  { kind: 'stderr', ts: T(39), text: 'Warning: 2 duplicate entries removed' },
-
-  // System messages
-  { kind: 'system', ts: T(35), text: 'Cache cleared' },
-  { kind: 'system', ts: T(34), text: 'Session checkpoint saved' },
-
-  // Event: info
-  { kind: 'result', ts: T(10), text: 'Análisis completado. 8 leads encontrados y exportados.', isError: false, errors: [], inputTokens: 4200, outputTokens: 890, costUsd: 0.00512 },
-]
-
-const MOCK_RUNNING: TranscriptEntry[] = [
-  { kind: 'user', ts: T(30), text: '¿Cuál es el estado del pipeline de ventas?' },
-  { kind: 'thinking', ts: T(25), text: 'Voy a revisar el CRM y calcular las métricas del pipeline...', delta: true },
-  { kind: 'tool_call', ts: T(20), text: '', name: 'bash', input: { command: 'psql $DATABASE_URL -c "SELECT count(*) FROM leads WHERE stage=\'qualified\'"' }, toolUseId: 'tu_live_001' },
-  // No tool_result → status stays 'running'
-]
-
-const MOCK_ERROR_EVENT: TranscriptEntry[] = [
-  { kind: 'user', ts: T(20), text: 'Ejecuta el enriquecimiento de datos' },
-  { kind: 'assistant', ts: T(15), text: 'Iniciando proceso de enriquecimiento...' },
-  { kind: 'result', ts: T(5), text: 'Connection timeout after 30s', isError: true, errors: ['ECONNREFUSED 127.0.0.1:5432'], inputTokens: 800, outputTokens: 120, costUsd: 0.00041 },
-]
-
-const MOCK_EMPTY: TranscriptEntry[] = []
-
-// ---------------------------------------------------------------------------
-// Preview page
-// ---------------------------------------------------------------------------
-
-const SECTIONS = [
-  { id: 'full', label: 'Full transcript (all block types)' },
-  { id: 'running', label: 'Running / streaming state' },
-  { id: 'error', label: 'Error result' },
-  { id: 'empty', label: 'Empty state' },
-  { id: 'raw', label: 'Raw mode' },
-  { id: 'compact', label: 'Compact density' },
+const componentGroups = [
+  {
+    title: 'Issue activity thread',
+    mount: 'TaskDetail → IssueChatThread',
+    route: '/ui/chat',
+    description: 'Superficie principal de actividad conversacional. Compone comentarios, eventos de línea de tiempo, runs en vivo y el compositor. Requiere @assistant-ui/react.',
+    status: 'pending' as const,
+    items: [
+      {
+        name: 'IssueChatThread',
+        file: 'components/application/issue-chat-thread.tsx',
+        role: 'Renderizador de chat de nivel superior. Orquesta comentarios, eventos, runs en vivo y el compositor de respuesta.',
+      },
+      {
+        name: 'IssueChatAssistantMessage',
+        file: 'components/application/issue-chat-thread.tsx',
+        role: 'Burbuja de agente. Contiene el header Working/Worked, estado de fold, acciones de feedback y partes respaldadas por transcript.',
+      },
+      {
+        name: 'IssueChatChainOfThought',
+        file: 'components/application/issue-chat-thread.tsx',
+        role: 'Renderiza la unidad de razonamiento/herramienta agrupada dentro de un mensaje de asistente.',
+      },
+      {
+        name: 'IssueChatReasoningPart',
+        file: 'components/application/issue-chat-thread.tsx',
+        role: 'Ticker animado de razonamiento de una línea usado mientras el agente está pensando.',
+      },
+      {
+        name: 'IssueChatRollingToolPart',
+        file: 'components/application/issue-chat-thread.tsx',
+        role: 'Fila animada de herramienta actual durante trabajo activo (ej. "Executing command" durante run en vivo).',
+      },
+      {
+        name: 'IssueChatToolPart',
+        file: 'components/application/issue-chat-thread.tsx',
+        role: 'Tarjeta de herramienta expandible usada después de que finaliza el run.',
+      },
+      {
+        name: 'IssueChatSystemMessage',
+        file: 'components/application/issue-chat-thread.tsx',
+        role: 'Fila de timeline/sistema para asignación, estado y eventos de flujo de trabajo.',
+      },
+      {
+        name: 'IssueChatUserMessage',
+        file: 'components/application/issue-chat-thread.tsx',
+        role: 'Burbuja de mensaje humano, incluyendo estados en cola y enviando.',
+      },
+    ],
+  },
+  {
+    title: 'Run transcript surface',
+    mount: 'AgentDetail / LiveRunWidget → RunTranscriptView',
+    route: null,
+    description: 'Renderizador compartido de transcript para actividad raw del run. Potencia el detalle de run y las superficies de run-en-vivo fuera del thread de chat.',
+    status: 'ready' as const,
+    items: [
+      {
+        name: 'RunTranscriptView',
+        file: 'components/application/run-transcript-view-full.tsx',
+        role: 'Parser y renderizador compartido de transcript. Soporta modos nice/raw, densidades comfortable/compact, y streaming.',
+      },
+      {
+        name: 'TranscriptMessageBlock',
+        file: 'components/application/run-transcript-view-full.tsx',
+        role: 'Bloques de texto de asistente y usuario dentro del transcript.',
+      },
+      {
+        name: 'TranscriptThinkingBlock',
+        file: 'components/application/run-transcript-view-full.tsx',
+        role: 'Bloque de razonamiento/thinking, expandible cuando está terminado.',
+      },
+      {
+        name: 'TranscriptCommandGroup / TranscriptToolGroup',
+        file: 'components/application/run-transcript-view-full.tsx',
+        role: 'Filas de herramienta agrupadas para ejecución de comandos y otra actividad de herramientas.',
+      },
+      {
+        name: 'TranscriptActivityRow / TranscriptEventRow',
+        file: 'components/application/run-transcript-view-full.tsx',
+        role: 'Fila pequeña para elementos de actividad del sistema y fila de evento/resultado resaltada.',
+      },
+    ],
+  },
+  {
+    title: 'Board activity feed',
+    mount: 'Activity → ActivityRow',
+    route: null,
+    description: 'Lista de actividad genérica a nivel de board. Menos conversacional que el chat de issue, parte de la familia activity-message en la UI.',
+    status: 'ready' as const,
+    items: [
+      {
+        name: 'ActivityRow',
+        file: 'components/application/activity-row.tsx',
+        role: 'Línea de actividad individual con actor, verbo, etiqueta de entidad y timestamp relativo.',
+      },
+    ],
+  },
 ] as const
 
-type SectionId = typeof SECTIONS[number]['id']
+// ---------------------------------------------------------------------------
+// Mock data — RunTranscriptView
+// ---------------------------------------------------------------------------
 
-export default function TranscriptPreviewPage() {
-  const [activeSection, setActiveSection] = useState<SectionId>('full')
-  const [density, setDensity] = useState<TranscriptDensity>('comfortable')
-  const [mode, setMode] = useState<TranscriptMode>('nice')
+const T = (offsetSeconds: number) => new Date(Date.now() - offsetSeconds * 1000).toISOString()
 
-  const getEntries = () => {
-    if (activeSection === 'running') return MOCK_RUNNING
-    if (activeSection === 'error') return MOCK_ERROR_EVENT
-    if (activeSection === 'empty') return MOCK_EMPTY
-    if (activeSection === 'raw') return MOCK_FULL
-    return MOCK_FULL
+const TRANSCRIPT_PREVIEW: TranscriptEntry[] = [
+  { kind: 'user', ts: T(110), text: 'Busca leads de consultoras tech en Madrid y crea un resumen.' },
+  { kind: 'thinking', ts: T(100), text: 'Voy a buscar consultoras tech en Madrid. Ejecutaré web_search primero y luego organizaré los resultados.' },
+  { kind: 'tool_call', ts: T(95), text: '', name: 'web_search', input: { query: 'consultoras tech Madrid 2026' }, toolUseId: 'tu_001' },
+  { kind: 'tool_result', ts: T(90), text: '', toolUseId: 'tu_001', content: 'Everis (NTT Data), Accenture España, Indra, Minsait, NTT Data, Sopra Steria, Capgemini' },
+  { kind: 'tool_call', ts: T(75), text: '', name: 'bash', input: { command: 'echo "Everis\\nAccenture\\nIndra\\nMinsait" > leads.txt && wc -l leads.txt' }, toolUseId: 'tu_002' },
+  { kind: 'tool_result', ts: T(70), text: '', toolUseId: 'tu_002', content: 'command: bash\nstatus: completed\nexit_code: 0\n\n4 leads.txt' },
+  { kind: 'assistant', ts: T(60), text: 'Encontré 7 consultoras tech principales en Madrid. Las más relevantes son Everis (NTT Data), Accenture España e Indra.' },
+  { kind: 'result', ts: T(10), text: '7 leads encontrados y exportados.', isError: false, errors: [], inputTokens: 3200, outputTokens: 680, costUsd: 0.00391 },
+]
+
+// ---------------------------------------------------------------------------
+// Mock data — ActivityRow
+// ---------------------------------------------------------------------------
+
+const ACTIVITY_AGENT_1: Agent = { id: 'agent-1', name: 'Kinger', icon: 'sparkles' }
+const ACTIVITY_AGENT_2: Agent = { id: 'agent-2', name: 'Pomni', icon: 'brain' }
+
+const ACTIVITY_AGENT_MAP = new Map<string, Agent>([
+  [ACTIVITY_AGENT_1.id, ACTIVITY_AGENT_1],
+  [ACTIVITY_AGENT_2.id, ACTIVITY_AGENT_2],
+])
+
+const ACTIVITY_ENTITY_NAMES = new Map<string, string>([
+  ['card:card-ux', 'Audit prospect list'],
+  ['agent:agent-1', 'Kinger'],
+  ['agent:agent-2', 'Pomni'],
+  ['approval:approval-1', 'Enviar propuesta a Accenture'],
+])
+
+const ACTIVITY_ENTITY_TITLES = new Map<string, string>([
+  ['card:card-ux', 'Revisa todos los leads del Q2'],
+])
+
+const ACTIVITY_PREVIEW_EVENTS: ActivityEvent[] = [
+  {
+    id: 'activity-1',
+    actorType: 'user',
+    actorId: 'user-1',
+    action: 'card.updated',
+    entityType: 'card',
+    entityId: 'card-ux',
+    details: { status: 'in_review', _previous: { status: 'todo' } },
+    createdAt: new Date(Date.now() - 9 * 60 * 1000),
+  },
+  {
+    id: 'activity-2',
+    actorType: 'agent',
+    actorId: 'agent-1',
+    action: 'heartbeat.invoked',
+    entityType: 'heartbeat_run',
+    entityId: 'run-live-1',
+    agentId: 'agent-1',
+    runId: 'run-live-1',
+    details: { agentId: 'agent-1' },
+    createdAt: new Date(Date.now() - 10 * 60 * 1000 + 30 * 1000),
+  },
+  {
+    id: 'activity-3',
+    actorType: 'system',
+    actorId: 'system',
+    action: 'approval.created',
+    entityType: 'approval',
+    entityId: 'approval-1',
+    createdAt: new Date(Date.now() - 12 * 60 * 1000),
+  },
+  {
+    id: 'activity-4',
+    actorType: 'agent',
+    actorId: 'agent-2',
+    action: 'card.completed',
+    entityType: 'card',
+    entityId: 'card-ux',
+    details: {},
+    createdAt: new Date(Date.now() - 25 * 60 * 1000),
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Shared sub-components
+// ---------------------------------------------------------------------------
+
+function StatusPill({ status }: { status: 'ready' | 'pending' }) {
+  if (status === 'ready') {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-success-secondary bg-success-secondary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-success-primary">
+        <span className="h-1.5 w-1.5 rounded-full bg-success-solid" />
+        Portado
+      </span>
+    )
   }
-
-  const getMode = (): TranscriptMode => {
-    if (activeSection === 'raw') return 'raw'
-    return mode
-  }
-
-  const getDensity = (): TranscriptDensity => {
-    if (activeSection === 'compact') return 'compact'
-    return density
-  }
-
   return (
-    <div className="min-h-screen bg-primary">
-      {/* Header */}
-      <div className="border-b border-secondary bg-primary sticky top-0 z-10">
-        <div className="mx-auto max-w-5xl px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-lg font-semibold text-primary">Transcript Components</h1>
-              <p className="text-xs text-tertiary">RunTranscriptView — all block variants</p>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Mode toggle */}
-              <div className="flex items-center gap-1 rounded-lg border border-secondary bg-secondary p-0.5 text-xs">
-                {(['nice', 'raw'] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setMode(m)}
-                    className={cx(
-                      'rounded-md px-2.5 py-1 font-medium capitalize transition-colors',
-                      mode === m && activeSection !== 'raw'
-                        ? 'bg-primary text-primary shadow-sm'
-                        : 'text-tertiary hover:text-secondary',
-                    )}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-              {/* Density toggle */}
-              <div className="flex items-center gap-1 rounded-lg border border-secondary bg-secondary p-0.5 text-xs">
-                {(['comfortable', 'compact'] as const).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDensity(d)}
-                    className={cx(
-                      'rounded-md px-2.5 py-1 font-medium capitalize transition-colors',
-                      density === d
-                        ? 'bg-primary text-primary shadow-sm'
-                        : 'text-tertiary hover:text-secondary',
-                    )}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          {/* Section nav */}
-          <div className="mt-3 flex gap-1 overflow-x-auto">
-            {SECTIONS.map((section) => (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => setActiveSection(section.id)}
-                className={cx(
-                  'shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                  activeSection === section.id
-                    ? 'bg-brand-solid text-white'
-                    : 'text-tertiary hover:bg-secondary hover:text-secondary',
-                )}
-              >
-                {section.label}
-              </button>
-            ))}
-          </div>
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-warning-secondary bg-warning-secondary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-warning-primary">
+      <span className="h-1.5 w-1.5 rounded-full bg-warning-solid" />
+      Pendiente
+    </span>
+  )
+}
+
+function SurfaceCard({
+  title,
+  mount,
+  route,
+  description,
+  status,
+  items,
+}: (typeof componentGroups)[number]) {
+  return (
+    <div className="rounded-2xl border border-secondary bg-primary/85">
+      <div className="space-y-3 px-5 py-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-secondary bg-secondary px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-secondary">
+            {mount}
+          </span>
+          <StatusPill status={status} />
+          {route ? (
+            <Link
+              href={route}
+              className="inline-flex items-center gap-1 rounded-full border border-secondary bg-primary/80 px-3 py-1 text-[11px] text-tertiary transition-colors hover:text-secondary"
+            >
+              Abrir ruta
+              <Route className="h-3 w-3" />
+            </Link>
+          ) : null}
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-primary">{title}</h2>
+          <p className="mt-1.5 text-sm text-tertiary">{description}</p>
         </div>
       </div>
-
-      {/* Content */}
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        {/* Individual block showcases when viewing 'full' */}
-        {activeSection === 'full' && (
-          <div className="mb-8 grid gap-4">
-            <SectionLabel>Block: message (user)</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[{ kind: 'user', ts: T(0), text: 'Busca los mejores leads en Madrid para consultoras tech.' }]} />
-
-            <SectionLabel>Block: message (assistant)</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[{ kind: 'assistant', ts: T(0), text: 'Voy a analizar el mercado de consultoras tech en Madrid. Comenzaré con una búsqueda exhaustiva de LinkedIn y Glassdoor.' }]} />
-
-            <SectionLabel>Block: thinking (streaming — loader activo)</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} streaming
-              entries={[{ kind: 'thinking', ts: T(0), text: 'Analizando el pipeline de ventas...', delta: true }]} />
-
-            <SectionLabel>Block: thinking (completado — expandible)</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()}
-              entries={[{ kind: 'thinking', ts: T(0), text: 'Necesito buscar consultoras tech en Madrid. Las principales son Everis, Accenture, Indra y Minsait. Voy a verificar su presencia en LinkedIn y extraer contactos relevantes del área de ventas y tecnología.' }]} />
-
-            <SectionLabel>Block: tool (running)</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[{ kind: 'tool_call', ts: T(0), text: '', name: 'web_search', input: { query: 'consultoras tech Madrid LinkedIn 2025' }, toolUseId: 'p1' }]} />
-
-            <SectionLabel>Block: tool (completed)</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[
-              { kind: 'tool_call', ts: T(5), text: '', name: 'web_search', input: { query: 'consultoras tech Madrid' }, toolUseId: 'p2' },
-              { kind: 'tool_result', ts: T(0), text: '', toolUseId: 'p2', content: 'Everis (NTT Data), Accenture España, Indra, Minsait, Capgemini, Sopra Steria — all headquartered in Madrid.' },
-            ]} />
-
-            <SectionLabel>Block: tool (error)</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[
-              { kind: 'tool_call', ts: T(5), text: '', name: 'file_read', input: { path: '/private/secrets.txt' }, toolUseId: 'p3' },
-              { kind: 'tool_result', ts: T(0), text: '', toolUseId: 'p3', content: 'Permission denied: /private/secrets.txt', isError: true },
-            ]} />
-
-            <SectionLabel>Block: command_group (running — "Executing command")</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[
-              { kind: 'tool_call', ts: T(10), text: '', name: 'bash', input: { command: 'git log --oneline -10' }, toolUseId: 'c1' },
-              // No result → running
-            ]} streaming />
-
-            <SectionLabel>Block: command_group (completed — "Executed 2 commands")</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[
-              { kind: 'tool_call', ts: T(10), text: '', name: 'bash', input: { command: 'ls -la src/' }, toolUseId: 'c2' },
-              { kind: 'tool_result', ts: T(8), text: '', toolUseId: 'c2', content: 'command: ls\nstatus: completed\nexit_code: 0\n\ntotal 48\ndrwxr-xr-x  12 user  staff   384 Apr 13 18:30 .\n-rw-r--r--   1 user  staff  1024 Apr 13 18:30 adapters.ts' },
-              { kind: 'tool_call', ts: T(6), text: '', name: 'bash', input: { command: 'npx tsc --noEmit 2>&1 | tail -5' }, toolUseId: 'c3' },
-              { kind: 'tool_result', ts: T(2), text: '', toolUseId: 'c3', content: 'command: npx tsc\nstatus: completed\nexit_code: 0\n\nFound 0 errors. Watching for file changes.' },
-            ]} />
-
-            <SectionLabel>Block: activity (running + completed)</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[
-              { kind: 'system', ts: T(10), text: 'item started: linkedin-scraper (id=act_001)' },
-              { kind: 'system', ts: T(5), text: 'item completed: linkedin-scraper (id=act_001)' },
-              { kind: 'system', ts: T(3), text: 'item started: data-enrichment (id=act_002)' },
-            ]} />
-
-            <SectionLabel>Block: event (info / warn / error)</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[
-              { kind: 'result', ts: T(10), text: 'Proceso completado con éxito', isError: false, errors: [], inputTokens: 4200, outputTokens: 890, costUsd: 0.00512 },
-              { kind: 'result', ts: T(5), text: 'Rate limit exceeded', isError: true, errors: ['429 Too Many Requests'], inputTokens: 200, outputTokens: 30, costUsd: 0.00021 },
-            ]} />
-
-            <SectionLabel>Block: diff_group</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[
-              { kind: 'diff', ts: T(5), text: 'src/lib/adapters.ts', changeType: 'file_header' },
-              { kind: 'diff', ts: T(5), text: '@@ -225,6 +225,10 @@', changeType: 'hunk' },
-              { kind: 'diff', ts: T(5), text: '  attachment_remove: \'attachment_remove\',', changeType: 'context' },
-              { kind: 'diff', ts: T(5), text: '  tool_use: \'tool_use\',', changeType: 'add' },
-              { kind: 'diff', ts: T(5), text: '  tool_result: \'tool_result\',', changeType: 'add' },
-              { kind: 'diff', ts: T(5), text: '  thinking: \'thinking\',', changeType: 'add' },
-              { kind: 'diff', ts: T(5), text: '  error: \'error\',', changeType: 'add' },
-              { kind: 'diff', ts: T(5), text: '}', changeType: 'context' },
-            ]} />
-
-            <SectionLabel>Block: stderr_group</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[
-              { kind: 'stderr', ts: T(5), text: 'Warning: rate limit approaching (80%)' },
-              { kind: 'stderr', ts: T(4), text: 'Warning: 2 duplicate entries skipped' },
-              { kind: 'stderr', ts: T(3), text: 'DeprecationWarning: old API endpoint /v1/leads used' },
-            ]} />
-
-            <SectionLabel>Block: system_group</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[
-              { kind: 'system', ts: T(5), text: 'Session checkpoint saved' },
-              { kind: 'system', ts: T(4), text: 'Cache invalidated' },
-              { kind: 'system', ts: T(3), text: 'Context window: 68% used' },
-            ]} />
-
-            <SectionLabel>Block: stdout</SectionLabel>
-            <RunTranscriptView density={getDensity()} mode={getMode()} entries={[
-              { kind: 'stdout', ts: T(0), text: 'Processing 8 leads...\nEveris → enriched\nAccenture → enriched\nIndra → rate limited, retry in 2s\nMinsait → enriched\nAll done.' },
-            ]} />
+      <div className="space-y-2.5 px-5 pb-5">
+        {items.map((item) => (
+          <div
+            key={`${title}:${item.name}`}
+            className="rounded-xl border border-secondary bg-primary/80 px-4 py-3"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="font-medium text-primary text-sm">{item.name}</div>
+              <code className="rounded bg-secondary px-1.5 py-0.5 text-[11px] text-tertiary">
+                {item.file}
+              </code>
+            </div>
+            <p className="mt-1.5 text-sm text-tertiary">{item.role}</p>
           </div>
-        )}
-
-        {/* Full RunTranscriptView with selected scenario */}
-        <div className={cx(activeSection === 'full' && 'mt-8')}>
-          {activeSection === 'full' && <SectionLabel>Complete conversation (normalizeTranscript)</SectionLabel>}
-          <div className="rounded-2xl border border-secondary bg-primary p-6">
-            <RunTranscriptView
-              entries={getEntries()}
-              mode={getMode()}
-              density={getDensity()}
-              streaming={activeSection === 'running'}
-              emptyMessage="Sin actividad del agente todavía."
-            />
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   )
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function PreviewShell({
+  title,
+  description,
+  icon: Icon,
+  children,
+  className,
+}: {
+  title: string
+  description: string
+  icon: React.ComponentType<{ className?: string }>
+  children: React.ReactNode
+  className?: string
+}) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-quaternary">{children}</span>
-      <div className="h-px flex-1 bg-secondary" />
+    <section
+      className={cx(
+        'overflow-hidden rounded-[28px] border border-secondary bg-primary/80 shadow-[0_24px_60px_rgba(15,23,42,0.08)]',
+        className,
+      )}
+    >
+      <div className="border-b border-secondary px-5 py-4">
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-tertiary">
+          <Icon className="h-4 w-4 fg-brand-primary" />
+          Preview
+        </div>
+        <h2 className="mt-2 text-lg font-semibold text-primary">{title}</h2>
+        <p className="mt-1 text-sm text-tertiary">{description}</p>
+      </div>
+      <div className="p-5">{children}</div>
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+export default function AgentActivityLabPage() {
+  return (
+    <div className="space-y-6 p-6">
+      {/* Hero header */}
+      <div className="overflow-hidden rounded-[32px] border border-secondary bg-[linear-gradient(135deg,rgba(68,76,231,0.12),transparent_28%),linear-gradient(180deg,rgba(68,76,231,0.08),transparent_44%)] shadow-[0_30px_80px_rgba(15,23,42,0.10)]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_320px]">
+          <div className="p-6 sm:p-7">
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-secondary">
+              <FlaskConical className="h-3.5 w-3.5" />
+              Catálogo temporal de UI
+            </div>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-primary">
+              Componentes de actividad de agentes
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-tertiary">
+              Storybook vive en <code className="rounded bg-secondary px-1.5 py-0.5 text-xs text-secondary">packages/ui/.storybook/</code> (port 6006).
+              Esta página temporal cataloga los componentes de actividad de agentes de CircOS y muestra previews
+              en vivo respaldados por fixtures, sin necesitar datos reales de backend.
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-secondary bg-secondary px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-tertiary">
+                RunTranscriptView ✓ portado
+              </span>
+              <span className="inline-flex items-center rounded-full border border-secondary bg-secondary px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-tertiary">
+                ActivityRow ✓ portado
+              </span>
+              <span className="inline-flex items-center rounded-full border border-secondary bg-secondary px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-tertiary">
+                IssueChatThread ⏳ pendiente
+              </span>
+            </div>
+          </div>
+
+          <aside className="border-t border-secondary bg-primary/70 p-6 lg:border-l lg:border-t-0">
+            <div className="space-y-3">
+              <div className="rounded-xl border border-secondary bg-primary/85 px-4 py-3 text-sm text-tertiary">
+                El thread conversacional se renderiza vía <code className="text-secondary">IssueChatThread</code> (familia de{' '}
+                <code className="text-secondary">@assistant-ui/react</code>), no a través del feed genérico de actividad.
+              </div>
+              <div className="rounded-xl border border-secondary bg-primary/85 px-4 py-3 text-sm text-tertiary">
+                Los labels <code className="text-secondary">Working</code>, <code className="text-secondary">Worked</code>,{' '}
+                y <code className="text-secondary">Executing command</code> vienen de subcomponentes dentro de{' '}
+                <code className="text-secondary">issue-chat-thread.tsx</code>.
+              </div>
+              <div className="rounded-xl border border-secondary bg-primary/85 px-4 py-3 text-sm text-tertiary">
+                Esta ruta es temporal e intencional. No está enlazada desde el sidebar principal.
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      {/* Component catalog cards */}
+      <div className="grid gap-6 xl:grid-cols-3">
+        {componentGroups.map((group) => (
+          <SurfaceCard key={group.title} {...group} />
+        ))}
+      </div>
+
+      {/* Previews */}
+      <div className="grid gap-6 xl:grid-cols-2">
+        {/* RunTranscriptView preview */}
+        <PreviewShell
+          title="Run transcript renderer"
+          description="RunTranscriptView en modo nice. Renderizador de bajo nivel usado por el detalle de run y las superficies de run-en-vivo."
+          icon={TerminalSquare}
+          className="bg-[linear-gradient(180deg,rgba(14,165,233,0.05),transparent_26%)]"
+        >
+          <div className="max-h-[480px] overflow-y-auto rounded-xl border border-secondary bg-primary/85 p-4">
+            <RunTranscriptView
+              entries={TRANSCRIPT_PREVIEW}
+              mode="nice"
+              density="comfortable"
+              limit={12}
+            />
+          </div>
+        </PreviewShell>
+
+        {/* ActivityRow preview */}
+        <PreviewShell
+          title="Board activity rows"
+          description="ActivityRow — filas del feed genérico de actividad del board con actor, verbo, entidad y timestamp."
+          icon={ClockRewind}
+          className="bg-[linear-gradient(180deg,rgba(245,158,11,0.06),transparent_24%)]"
+        >
+          <div className="overflow-hidden rounded-xl border border-secondary bg-primary/85">
+            {ACTIVITY_PREVIEW_EVENTS.map((event) => (
+              <ActivityRow
+                key={event.id}
+                event={event}
+                agentMap={ACTIVITY_AGENT_MAP}
+                entityNameMap={ACTIVITY_ENTITY_NAMES}
+                entityTitleMap={ACTIVITY_ENTITY_TITLES}
+              />
+            ))}
+          </div>
+        </PreviewShell>
+      </div>
+
+      {/* IssueChatThread pending port */}
+      <section className="overflow-hidden rounded-[28px] border border-secondary bg-[linear-gradient(180deg,rgba(68,76,231,0.05),transparent_26%)] shadow-[0_24px_60px_rgba(15,23,42,0.06)]">
+        <div className="border-b border-secondary px-5 py-4">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-tertiary">
+            <MessageSquare01 className="h-4 w-4 fg-brand-primary" />
+            Pendiente de port
+          </div>
+          <h2 className="mt-2 text-lg font-semibold text-primary">Issue chat thread</h2>
+          <p className="mt-1 text-sm text-tertiary">
+            Preview en vivo de IssueChatThread — estados de ejecución en vivo, razonamiento, herramientas y mensajes en cola.
+          </p>
+        </div>
+        <div className="p-5">
+          <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-secondary bg-primary/60 px-6 py-10 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-secondary bg-secondary">
+              <MessageSquare01 className="h-6 w-6 text-tertiary" />
+            </div>
+            <div>
+              <p className="font-semibold text-primary">IssueChatThread — pendiente de port</p>
+              <p className="mt-1.5 max-w-sm text-sm text-tertiary">
+                Este componente requiere <code className="rounded bg-secondary px-1.5 py-0.5 text-xs text-secondary">@assistant-ui/react</code> y un
+                runtime hook adaptado al schema de CircOS (Supabase Realtime + cards).
+                El archivo copiado está en{' '}
+                <code className="text-secondary">components/application/issue-chat-thread.tsx</code>.
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2 text-[11px] text-tertiary">
+              <span className="rounded-full border border-secondary bg-secondary px-3 py-1">
+                1. npm install @assistant-ui/react
+              </span>
+              <span className="rounded-full border border-secondary bg-secondary px-3 py-1">
+                2. Adaptar usePaperclipIssueRuntime → useCircOSTaskRuntime
+              </span>
+              <span className="rounded-full border border-secondary bg-secondary px-3 py-1">
+                3. Adaptar tipos @paperclipai/shared → CircOS
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
