@@ -2528,33 +2528,16 @@ function SectionComments({
         </TabPanel>
 
         <TabPanel id="activity">
-          {/* Actor filter bar — D-06, D-07 */}
-          <div className="flex items-center gap-2 pt-3 pb-2">
-            <button
-              type="button"
-              onClick={resetFilters}
-              className={cx(
-                "inline-flex cursor-pointer select-none items-center rounded-full py-0.5 px-2 text-xs font-medium transition",
-                activeFilters.size === 0
-                  ? "bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"
-                  : "bg-secondary text-secondary hover:bg-secondary_hover",
-              )}
-            >
-              Todo
+          {/* Actor filter badges — modern style */}
+          <div className="flex items-center gap-1.5 pb-2">
+            <button type="button" onClick={resetFilters} className="cursor-pointer">
+              <Badge type="modern" size="lg" color={activeFilters.size === 0 ? 'brand' : 'gray'}>All</Badge>
             </button>
             {(['human', 'agent', 'system'] as const).map((filterType) => (
-              <button
-                key={filterType}
-                type="button"
-                onClick={() => toggleFilter(filterType)}
-                className={cx(
-                  "inline-flex cursor-pointer select-none items-center rounded-full py-0.5 px-2 text-xs font-medium transition",
-                  activeFilters.has(filterType)
-                    ? "bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"
-                    : "bg-secondary text-secondary hover:bg-secondary_hover",
-                )}
-              >
-                {filterType === 'human' ? 'Humano' : filterType === 'agent' ? 'Agente' : 'Sistema'}
+              <button key={filterType} type="button" onClick={() => toggleFilter(filterType)} className="cursor-pointer">
+                <Badge type="modern" size="lg" color={activeFilters.has(filterType) ? 'brand' : 'gray'}>
+                  {filterType === 'human' ? 'Users' : filterType === 'agent' ? 'Agent' : 'System'}
+                </Badge>
               </button>
             ))}
           </div>
