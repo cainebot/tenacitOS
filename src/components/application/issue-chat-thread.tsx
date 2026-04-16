@@ -1,8 +1,12 @@
 /**
+ * @deprecated Phase 89.2 — Replaced by chat-lab/ components.
+ * This Paperclip port requires @assistant-ui/react (not installed).
+ * Kept for reference only. Will be deleted in cleanup phase.
+ *
  * issue-chat-thread.tsx
  * Direct port of Paperclip's IssueChatThread — copied 2026-04-14.
  *
- * STATUS: WIP — imports adapted, internals NOT yet adapted.
+ * STATUS: DEPRECATED — superseded by chat-lab/chat-thread.tsx.
  *
  * Adaptaciones realizadas:
  *   - cn() → cx() from @circos/ui
