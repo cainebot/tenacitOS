@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { FC } from "react";
 import {
-  BarChartSquare02,
   Building06,
   Calendar,
   ChevronRight,
@@ -180,7 +179,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
     return [
       { divider: true, label: "General" },
-      { label: "Dashboard", href: "/", icon: BarChartSquare02 },
       { label: "Office", href: "/office", icon: Map01 },
       {
         label: "Chat",
