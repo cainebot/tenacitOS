@@ -183,7 +183,7 @@ function ExpandedContent({
 
       <NavList activeUrl={activeUrl} items={items} className="mt-5 pb-5 lg:flex-1 lg:overflow-y-auto" />
 
-      <div className="mt-auto flex flex-col gap-4 border-t border-secondary px-2 pb-4 lg:shrink-0 lg:px-4 lg:pb-6">
+      <div className="mt-auto flex flex-col gap-4 border-t border-secondary px-2 pt-4 pb-4 lg:shrink-0 lg:px-4 lg:pt-6 lg:pb-6">
         <div className="flex flex-col gap-0.5">
           <NavItemBase type="link" href="/settings" icon={Settings01} current={activeUrl === "/settings"}>
             Settings
