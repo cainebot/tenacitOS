@@ -22,6 +22,11 @@ import type {
 } from '@/components/application/task-detail-panel'
 import type { TaskType } from '@/components/application/task-type-indicator'
 import type { BadgeColor } from '@circos/ui'
+import type {
+  ChatThreadItem,
+  ChatAssistantMessageData,
+  ChatToolCallData,
+} from '@/components/application/chat-lab/types'
 
 // ---------------------------------------------------------------------------
 // Tag color mapping (D-14 — deterministic hash)
@@ -372,4 +377,264 @@ export function taskMessagesToActivityEvents(
       durationMs: row.duration_ms ?? undefined,
     }
   })
+}
+
+// ---------------------------------------------------------------------------
+// taskMessagesToChatItems (TaskMessageRow[] + ActivityEvent[] -> ChatThreadItem[])
+// Phase 89.2 — Adapter for chat-lab thread in Comments tab
+// ---------------------------------------------------------------------------
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map(w => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
+function resolveAgentForChat(
+  actorId: string | null,
+  agents: AgentRow[],
+): { name: string; initials: string } {
+  if (!actorId) return { name: 'You', initials: 'Y' }
+  const agent = agents.find(a => a.agent_id === actorId)
+  if (!agent) return { name: actorId, initials: actorId.slice(0, 2).toUpperCase() }
+  return { name: agent.name, initials: getInitials(agent.name) }
+}
+
+/**
+ * Converts raw TaskMessageRow[] from DB + card_activity ActivityEvent[] into
+ * ChatThreadItem[] for the chat-lab ChatThread component.
+ *
+ * Grouping logic: consecutive tool_use, tool_result, and thinking rows are
+ * folded into the chainOfThought of the preceding assistant-message. If none
+ * exists, a synthetic assistant-message with empty body is created.
+ */
+export function taskMessagesToChatItems(
+  messages: TaskMessageRow[],
+  activities: ActivityEvent[],
+  agents: AgentRow[],
+): ChatThreadItem[] {
+  const items: ChatThreadItem[] = []
+
+  // --- Convert task_messages ---
+  // We iterate in order and group CoT items into the previous assistant-message.
+  let lastAssistantItem: { type: 'assistant-message'; id: string; data: ChatAssistantMessageData } | null = null
+
+  for (const msg of messages) {
+    const { name: authorName, initials: authorInitials } = resolveAgentForChat(msg.actor_id, agents)
+    const isAgent = msg.actor_id ? agents.some(a => a.agent_id === msg.actor_id) : false
+
+    switch (msg.message_type) {
+      case 'text': {
+        if (isAgent) {
+          const assistantItem: ChatThreadItem = {
+            type: 'assistant-message',
+            id: msg.id,
+            data: {
+              authorName,
+              authorInitials,
+              body: msg.content ?? '',
+              createdAt: msg.created_at,
+              isRunning: false,
+            },
+          }
+          items.push(assistantItem)
+          lastAssistantItem = assistantItem as typeof lastAssistantItem
+        } else {
+          // Human message
+          items.push({
+            type: 'user-message',
+            id: msg.id,
+            data: {
+              body: msg.content ?? '',
+              createdAt: msg.created_at,
+              status: 'settled',
+            },
+          })
+          lastAssistantItem = null
+        }
+        break
+      }
+
+      case 'tool_use': {
+        // Group into previous assistant-message's chainOfThought
+        if (!lastAssistantItem) {
+          // Create synthetic assistant-message
+          const synth: ChatThreadItem = {
+            type: 'assistant-message',
+            id: `synth-${msg.id}`,
+            data: {
+              authorName,
+              authorInitials,
+              body: '',
+              createdAt: msg.created_at,
+              isRunning: false,
+            },
+          }
+          items.push(synth)
+          lastAssistantItem = synth as typeof lastAssistantItem
+        }
+        const cot = lastAssistantItem!.data.chainOfThought ??= {
+          reasoningLines: [],
+          tools: [],
+          isActive: false,
+        }
+        cot.tools.push({
+          id: msg.id,
+          toolName: msg.tool_name ?? 'unknown',
+          input: msg.input ?? undefined,
+          status: 'running',
+        })
+        break
+      }
+
+      case 'tool_result': {
+        // Find and update the matching tool_use in the current assistant's CoT
+        if (lastAssistantItem?.data.chainOfThought) {
+          const tools = lastAssistantItem.data.chainOfThought.tools
+          // Match by tool_name or update last running tool
+          const target = tools.findLast(t => t.status === 'running')
+          if (target) {
+            target.output = msg.output ?? msg.content ?? undefined
+            target.status = 'completed'
+          }
+        }
+        // If no matching tool_use found, skip (data inconsistency)
+        break
+      }
+
+      case 'thinking': {
+        if (!lastAssistantItem) {
+          const synth: ChatThreadItem = {
+            type: 'assistant-message',
+            id: `synth-${msg.id}`,
+            data: {
+              authorName,
+              authorInitials,
+              body: '',
+              createdAt: msg.created_at,
+              isRunning: false,
+            },
+          }
+          items.push(synth)
+          lastAssistantItem = synth as typeof lastAssistantItem
+        }
+        const cot = lastAssistantItem!.data.chainOfThought ??= {
+          reasoningLines: [],
+          tools: [],
+          isActive: false,
+        }
+        if (msg.content) {
+          cot.reasoningLines.push(...msg.content.split('\n'))
+        }
+        break
+      }
+
+      case 'error': {
+        items.push({
+          type: 'assistant-message',
+          id: msg.id,
+          data: {
+            authorName,
+            authorInitials,
+            body: '',
+            createdAt: msg.created_at,
+            isRunning: false,
+            notices: [msg.content ?? 'Unknown error'],
+          },
+        })
+        lastAssistantItem = null
+        break
+      }
+
+      case 'status': {
+        items.push({
+          type: 'run-marker',
+          id: msg.id,
+          data: {
+            runId: msg.id,
+            agentName: authorName,
+            agentInitials: authorInitials,
+            status: parseRunStatus(msg.content),
+          },
+        })
+        lastAssistantItem = null
+        break
+      }
+    }
+  }
+
+  // --- Convert filtered activities (only state_change and assignment) ---
+  const activityItems: ChatThreadItem[] = []
+  for (const act of activities) {
+    if (act.type === 'state_change') {
+      activityItems.push({
+        type: 'timeline-event',
+        id: act.id,
+        data: {
+          actorName: act.actor.name,
+          actorInitials: getInitials(act.actor.name),
+          createdAt: act.createdAt,
+          statusChange: { from: act.oldValue ?? null, to: act.newValue ?? 'Unknown' },
+        },
+      })
+    } else if (act.type === 'assignment') {
+      activityItems.push({
+        type: 'timeline-event',
+        id: act.id,
+        data: {
+          actorName: act.actor.name,
+          actorInitials: getInitials(act.actor.name),
+          createdAt: act.createdAt,
+          assigneeChange: { from: act.oldValue ?? null, to: act.newValue ?? 'Unknown' },
+        },
+      })
+    }
+    // All other activity types are excluded from Comments tab
+  }
+
+  // --- Merge and sort by createdAt ascending ---
+  const all = [...items, ...activityItems]
+  all.sort((a, b) => {
+    const timeA = 'data' in a ? new Date((a.data as { createdAt?: string }).createdAt ?? 0).getTime() : 0
+    const timeB = 'data' in b ? new Date((b.data as { createdAt?: string }).createdAt ?? 0).getTime() : 0
+    return timeA - timeB
+  })
+
+  return all
+}
+
+function parseRunStatus(content: string | null): 'running' | 'succeeded' | 'failed' | 'timed_out' | 'cancelled' {
+  if (!content) return 'running'
+  const lower = content.toLowerCase()
+  if (lower.includes('success') || lower.includes('completed') || lower.includes('done')) return 'succeeded'
+  if (lower.includes('fail') || lower.includes('error')) return 'failed'
+  if (lower.includes('timeout') || lower.includes('timed')) return 'timed_out'
+  if (lower.includes('cancel')) return 'cancelled'
+  return 'running'
+}
+
+// ---------------------------------------------------------------------------
+// activityEventsForActivityTab (Phase 89.2 — filter for Activity tab)
+// ---------------------------------------------------------------------------
+
+/**
+ * Filters and merges card_activity events + task_message status events
+ * for the Activity tab. Excludes comment/tool_use/tool_result/thinking/error
+ * which now live in the Comments tab via ChatThread.
+ */
+export function activityEventsForActivityTab(
+  activities: ActivityEvent[],
+  taskMessages: ActivityEvent[],
+): ActivityEvent[] {
+  // From taskMessages: only pass 'status' events (agent state changes)
+  const statusMessages = taskMessages.filter(m => m.type === 'status')
+
+  // Merge and sort by createdAt ascending
+  return [...activities, ...statusMessages].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  )
 }
