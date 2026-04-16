@@ -55,16 +55,15 @@ export function ChatComposer({ disabled, disabledReason, onSend }: ChatComposerP
           }
         }}
       />
-      <span onClick={handleSubmit}>
-        <Button
-          size="sm"
-          color="primary"
-          iconLeading={Send03}
-          isDisabled={disabled || !text.trim()}
-        >
-          Send
-        </Button>
-      </span>
+      <Button
+        size="sm"
+        color="primary"
+        iconLeading={Send03}
+        isDisabled={disabled || !text.trim()}
+        onPress={handleSubmit}
+      >
+        Send
+      </Button>
     </div>
   )
 }
