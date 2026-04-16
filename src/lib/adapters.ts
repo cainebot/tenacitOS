@@ -599,12 +599,23 @@ export function taskMessagesToChatItems(
   // --- Merge and sort by createdAt ascending ---
   const all = [...items, ...activityItems]
   all.sort((a, b) => {
-    const timeA = 'data' in a ? new Date((a.data as { createdAt?: string }).createdAt ?? 0).getTime() : 0
-    const timeB = 'data' in b ? new Date((b.data as { createdAt?: string }).createdAt ?? 0).getTime() : 0
+    const timeA = getItemTime(a)
+    const timeB = getItemTime(b)
     return timeA - timeB
   })
 
   return all
+}
+
+function getItemTime(item: ChatThreadItem): number {
+  switch (item.type) {
+    case 'user-message':
+    case 'assistant-message':
+    case 'timeline-event':
+      return new Date(item.data.createdAt).getTime() || 0
+    case 'run-marker':
+      return 0 // run-markers don't have createdAt — keep insertion order
+  }
 }
 
 function parseRunStatus(content: string | null): 'running' | 'succeeded' | 'failed' | 'timed_out' | 'cancelled' {
