@@ -21,7 +21,6 @@ export async function validateAgentKey(key: string): Promise<{ valid: boolean; a
     .from('agents')
     .select('agent_id, api_key_hash')
     .not('api_key_hash', 'is', null)
-    .neq('status', 'offline')
 
   if (error || !agents) {
     console.error('[agent-auth] Failed to query agents:', error)
