@@ -60,6 +60,8 @@ import {
 import { formatDistanceToNow, isYesterday, format } from "date-fns"
 import { TaskTypeIndicator, type TaskType } from "./task-type-indicator"
 import { TranscriptToolCard, TranscriptThinkingBlock } from "./run-transcript-view"
+import { ChatThread } from '@/components/application/chat-lab'
+import { taskMessagesToChatItems, activityEventsForActivityTab } from '@/lib/adapters'
 import { getLocalTimeZone, isToday, today } from "@internationalized/date"
 import { I18nProvider } from "react-aria"
 import type { DateValue, Key } from "react-aria-components"
@@ -266,8 +268,12 @@ export interface TaskDetailPanelProps {
   comments?: TaskComment[]
   onAddComment?: (content: string) => void
   activities?: ActivityEvent[]
-  /** Phase 89 — agent execution events from task_messages Realtime */
+  /** Phase 89 — agent execution events from task_messages Realtime (as ActivityEvent[]) */
   taskMessages?: ActivityEvent[]
+  /** Phase 89.2 — raw task_messages rows for ChatThread adapter */
+  rawTaskMessages?: import('@/types/project').TaskMessageRow[]
+  /** Phase 89.2 — agent rows for ChatThread author resolution */
+  agents?: import('@/types/supabase').AgentRow[]
 
   // Goal breadcrumb — D-05 cascade: card.goal_id (override) -> project.goal_id -> null
   /** The card's own goal_id (explicit override, takes precedence) */
@@ -370,6 +376,8 @@ export function TaskDetailPanel({
   onAddComment,
   activities = [],
   taskMessages = [],
+  rawTaskMessages = [],
+  agents = [],
   goalId,
   projectGoalId,
   className,
@@ -518,6 +526,8 @@ export function TaskDetailPanel({
             comments={comments}
             activities={activities}
             taskMessages={taskMessages}
+            rawTaskMessages={rawTaskMessages}
+            agents={agents}
             onAddComment={onAddComment}
           />
         </div>
@@ -2430,33 +2440,34 @@ function SectionComments({
   comments,
   activities,
   taskMessages = [],
+  rawTaskMessages = [],
+  agents = [],
   onAddComment,
 }: {
   comments: TaskComment[]
   activities: ActivityEvent[]
   taskMessages?: ActivityEvent[]
+  rawTaskMessages?: import('@/types/project').TaskMessageRow[]
+  agents?: import('@/types/supabase').AgentRow[]
   onAddComment?: (content: string) => void
 }) {
-  const [commentText, setCommentText] = useState("")
   const [sortNewest, setSortNewest] = useState(false)
   const [activeFilters, setActiveFilters] = useState<Set<'human' | 'agent' | 'system'>>(new Set())
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
-  const commentOnlyEvents = comments
-    .filter((c) => !c.isSystemEvent)
-    .map((c): ActivityEvent => ({
-      id: c.id,
-      actor: c.author,
-      type: "comment",
-      createdAt: c.createdAt,
-      content: c.content,
-      actorType: (c.author.role ? 'agent' : 'human') as 'human' | 'agent' | 'system',
-    }))
+  // Phase 89.2 — ChatThread items for Comments tab
+  const chatItems = useMemo(
+    () => taskMessagesToChatItems(rawTaskMessages, activities, agents),
+    [rawTaskMessages, activities, agents],
+  )
 
-  const allEvents = mergeTimeline(comments, activities, taskMessages)
+  // Phase 89.2 — Filtered events for Activity tab (excludes comment/tool/thinking/error)
+  const activityTabItems = useMemo(
+    () => activityEventsForActivityTab(activities, taskMessages),
+    [activities, taskMessages],
+  )
 
-  const sortedComments = sortNewest ? [...commentOnlyEvents].reverse() : commentOnlyEvents
-  const sortedAll = sortNewest ? [...allEvents].reverse() : allEvents
+  const sortedAll = sortNewest ? [...activityTabItems].reverse() : activityTabItems
 
   const filteredEvents = activeFilters.size === 0
     ? sortedAll
@@ -2486,12 +2497,6 @@ function SectionComments({
     })
   }
 
-  const handleSubmit = () => {
-    if (!commentText.trim()) return
-    onAddComment?.(commentText.trim())
-    setCommentText("")
-  }
-
   return (
     <div className="py-4">
       <Tabs>
@@ -2510,18 +2515,15 @@ function SectionComments({
           </button>
         </div>
 
+        {/* Phase 89.2 — Comments tab now uses ChatThread */}
         <TabPanel id="comments">
-          <div className="flex flex-col gap-4 pt-3">
-            {sortedComments.map((event) => (
-              <ActivityFeedEntry
-                key={event.id}
-                event={event}
-                connector={false}
-              />
-            ))}
-            {sortedComments.length === 0 && (
-              <p className="py-4 text-center text-sm text-quaternary">No comments yet</p>
-            )}
+          <div className="pt-3">
+            <ChatThread
+              items={chatItems}
+              showComposer
+              composerDisabledReason={undefined}
+              onSend={onAddComment}
+            />
           </div>
         </TabPanel>
 
@@ -2587,35 +2589,6 @@ function SectionComments({
           </div>
         </TabPanel>
       </Tabs>
-
-      {/* Comment input */}
-      <div className="mt-4 flex items-start gap-3">
-        <Avatar size="sm" />
-        <div className="flex flex-1 items-end gap-2 rounded-lg border border-secondary bg-secondary/30 px-3 py-2 transition focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
-          <textarea
-            value={commentText}
-            onChange={(e) => {
-              setCommentText(e.target.value)
-              e.target.style.height = "auto"
-              e.target.style.height = `${e.target.scrollHeight}px`
-            }}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
-            placeholder="Add a comment..."
-            rows={1}
-            className="w-full max-h-32 resize-none overflow-y-auto bg-transparent text-sm leading-5 text-primary placeholder:text-quaternary outline-none [&::-webkit-resizer]:hidden"
-            style={{ resize: "none" }}
-          />
-          {commentText.trim() && (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="shrink-0 cursor-pointer text-brand-secondary transition hover:text-brand-tertiary"
-            >
-              <Send01 className="size-4" />
-            </button>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

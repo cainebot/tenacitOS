@@ -12,12 +12,15 @@ interface ChatThreadProps {
   items: ChatThreadItem[]
   showComposer?: boolean
   composerDisabledReason?: string
+  /** Phase 89.2 — callback when user sends a message from the composer */
+  onSend?: (text: string) => void
 }
 
 export function ChatThread({
   items,
   showComposer = false,
   composerDisabledReason,
+  onSend,
 }: ChatThreadProps) {
   if (items.length === 0) {
     return (
@@ -27,6 +30,7 @@ export function ChatThread({
           <ChatComposer
             disabled={!!composerDisabledReason}
             disabledReason={composerDisabledReason}
+            onSend={onSend}
           />
         )}
       </div>
@@ -63,6 +67,7 @@ export function ChatThread({
         <ChatComposer
           disabled={!!composerDisabledReason}
           disabledReason={composerDisabledReason}
+          onSend={onSend}
         />
       )}
     </div>

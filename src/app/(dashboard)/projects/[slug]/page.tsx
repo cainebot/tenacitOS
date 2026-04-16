@@ -1231,6 +1231,8 @@ export default function ProjectBoardPage() {
             onAddComment={handlePanelAddComment}
             activities={activityEvents}
             taskMessages={taskMessageEvents}
+            rawTaskMessages={taskMessages}
+            agents={agents}
             className="h-full border-l border-secondary"
           />
           )}
