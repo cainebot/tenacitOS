@@ -5,9 +5,13 @@ import { validateAgentKey } from '@/lib/agent-auth'
 export const dynamic = 'force-dynamic'
 
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  pending:     ['in_progress'],
+  claimed:     ['in_progress'],
   in_progress: ['blocked', 'completed'],
   blocked:     ['in_progress'],
 }
+
+const ALLOWED_BLOCK_CATEGORIES = ['external', 'internal', 'technical', 'human_approval']
 
 export async function POST(request: NextRequest) {
   // 1. Auth
@@ -43,6 +47,12 @@ export async function POST(request: NextRequest) {
   if (new_status === 'blocked') {
     if (!block_reason || typeof block_reason !== 'string' || !(block_reason as string).trim()) {
       return NextResponse.json({ error: 'block_reason is required when blocking' }, { status: 400 })
+    }
+    if (block_category && (typeof block_category !== 'string' || !ALLOWED_BLOCK_CATEGORIES.includes(block_category))) {
+      return NextResponse.json(
+        { error: `block_category must be one of: ${ALLOWED_BLOCK_CATEGORIES.join(', ')}` },
+        { status: 400 }
+      )
     }
   }
 
@@ -112,17 +122,23 @@ export async function POST(request: NextRequest) {
     const agentName = agent?.name ?? agentId
 
     // 8b. Post auto-comment on card (per D-12)
-    await supabase.rpc('append_card_comment', {
+    const { error: commentError } = await supabase.rpc('append_card_comment', {
       p_card_id: task.card_id,
       p_author: agentId,
       p_text: `Tarea bloqueada por ${agentName}: ${(block_reason as string).trim()}`,
     })
+    if (commentError) {
+      console.error('[update-task-status] Failed to post block comment:', commentError.message)
+    }
 
     // 8c. Update card agent_status to blocked (trigger doesn't handle this — per Pitfall 2)
-    await supabase
+    const { error: cardError } = await supabase
       .from('cards')
       .update({ agent_status: 'blocked' })
       .eq('card_id', task.card_id)
+    if (cardError) {
+      console.error('[update-task-status] Failed to update card agent_status:', cardError.message)
+    }
   }
 
   return NextResponse.json({ success: true, task_id: task.task_id, status: new_status })
