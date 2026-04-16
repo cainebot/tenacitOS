@@ -75,12 +75,11 @@ export default function ProjectBoardPage() {
 
   useEffect(() => {
     if (!slug) return
-    fetch(`/api/projects?slug=${encodeURIComponent(slug)}`)
-      .then((r) => {
+    ;(async () => {
+      try {
+        const r = await fetch(`/api/projects?slug=${encodeURIComponent(slug)}`)
         if (!r.ok) throw new Error(`Project not found: ${slug}`)
-        return r.json()
-      })
-      .then((project: import('@/types/project').ProjectRow) => {
+        const project: import('@/types/project').ProjectRow = await r.json()
         if (!project?.project_id) throw new Error('Project not found')
         setProjectId(project.project_id)
         setProjectDescription(project.description ?? null)
@@ -89,15 +88,15 @@ export default function ProjectBoardPage() {
         setProjectName(project.name)
         setProjectIcon(project.cover_icon ?? null)
         setProjectMembers(project.members ?? [])
-        return fetch(`/api/boards?project_id=${project.project_id}`)
-      })
-      .then((r) => r.json())
-      .then((boards: BoardRow[]) => {
-        const board = boards[0]
-        if (board) setBoardId(board.board_id)
-      })
-      .catch((err) => { console.error('[board-discovery] Failed:', err) })
-      .finally(() => setDiscoveryDone(true))
+        const br = await fetch(`/api/boards?project_id=${project.project_id}`)
+        const boards: BoardRow[] = await br.json()
+        if (boards[0]) setBoardId(boards[0].board_id)
+      } catch (err) {
+        console.error('[board-discovery] Failed:', err)
+      } finally {
+        setDiscoveryDone(true)
+      }
+    })()
   }, [slug])
 
   // Live board data
@@ -645,8 +644,9 @@ export default function ProjectBoardPage() {
 
   // Signed URLs for attachments
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({})
+  const attachmentCount = detailCard?.attachments.length ?? 0
   useEffect(() => {
-    if (!detailCard || detailCard.attachments.length === 0) {
+    if (!detailCard || attachmentCount === 0) {
       setSignedUrls({})
       return
     }
@@ -660,7 +660,7 @@ export default function ProjectBoardPage() {
       .then(r => r.json())
       .then((urls: Record<string, string>) => setSignedUrls(urls))
       .catch((err) => { console.error('[signed-urls] Failed:', err) })
-  }, [detailCard?.card_id, detailCard?.attachments.length])
+  }, [detailCard?.card_id, attachmentCount])
 
   // Activity events for the card — Realtime hook (replaces manual fetch + refetchActivities)
   const detailCardId = detailCard?.card_id ?? null
