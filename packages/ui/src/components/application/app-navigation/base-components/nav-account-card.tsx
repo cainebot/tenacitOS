@@ -164,7 +164,8 @@ export const NavAccountCard = ({
     items?: NavAccountType[];
 }) => {
     const triggerRef = useRef<HTMLDivElement>(null);
-    const isDesktop = useBreakpoint("lg");
+    const breakpoint = useBreakpoint();
+    const isDesktop = breakpoint === "lg" || breakpoint === "xl" || breakpoint === "2xl";
 
     const selectedAccount = placeholderAccounts.find((account) => account.id === selectedAccountId);
 
