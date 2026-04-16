@@ -42,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{__html:`if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")`}} />
+        <script dangerouslySetInnerHTML={{__html:`if("serviceWorker"in navigator){if(location.hostname==="localhost"){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(w){w.unregister()})})}else{navigator.serviceWorker.register("/sw.js")}}`}} />
       </head>
       <body
         className={`${inter.variable} ${sora.variable} ${jetbrainsMono.variable} font-sans bg-primary text-primary font-[family-name:var(--font-text)]`}

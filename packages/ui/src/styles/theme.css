@@ -110,6 +110,8 @@
     --bg-primary_alt: var(--bg-secondary);
     --bg-tertiary: var(--gray-800);
     --bg-quaternary: var(--gray-700);
+    --bg-secondary_alt: var(--bg-primary);
+    --bg-primary_hover: var(--gray-800);
 
     /* -----------------------------------------------------------------------
        Text Tokens (DARK mode — light text on dark bg)
@@ -405,6 +407,8 @@
     --bg-secondary: var(--gray-50);
     --bg-tertiary: var(--gray-100);
     --bg-quaternary: var(--gray-200);
+    --bg-secondary_alt: var(--gray-50);
+    --bg-primary_hover: var(--gray-50);
 
     /* Text tokens (LIGHT mode — dark text on light bg) */
     --text-primary-900: var(--gray-900);
@@ -506,6 +510,11 @@
     --utility-gray-blue-400: #717BBC;
     --utility-gray-blue-500: #4E5BA6;
     --utility-gray-blue-700: #363F72;
+
+    /* Error background tokens — light mode (Figma variables table) */
+    --color-error-primary: var(--error-50);
+    --color-error-primary_hover: var(--error-100);
+    --color-error-solid_hover: var(--error-700);
 
     /* Shadows — lighter for light mode */
     --shadow-xs: 0px 1px 2px 0px rgba(0, 0, 0, 0.05);
@@ -619,7 +628,7 @@
   --color-primary_alt: var(--bg-primary_alt);
   --color-primary_hover: var(--bg-secondary);
   --color-primary-solid: var(--bg-primary-solid);
-  --color-secondary_alt: var(--bg-quaternary);
+  --color-secondary_alt: var(--bg-secondary_alt);
   --color-secondary_hover: var(--secondary_hover);
   --color-tertiary_hover: var(--tertiary_hover);
   --color-active: var(--bg-active);
@@ -631,9 +640,9 @@
   --color-brand-primary_alt: var(--brand-50);
   --color-brand-secondary_hover: var(--brand-400);
   --color-brand-tertiary: var(--brand-300);
-  --color-error-primary: var(--error-50);
-  --color-error-primary_hover: var(--error-100);
-  --color-error-solid_hover: var(--error-700);
+  --color-error-primary: var(--error-950);
+  --color-error-primary_hover: var(--error-800);
+  --color-error-solid_hover: var(--error-500);
   --color-bg-error-solid: var(--error-600);
   --color-bg-success-solid: var(--success-600);
   --color-overlay: rgba(0, 0, 0, 0.70);
@@ -861,8 +870,9 @@
   /* --- Background Color (bg-*) --- */
   --background-color-primary: var(--bg-primary);
   --background-color-primary_alt: var(--bg-primary_alt);
-  --background-color-primary_hover: var(--bg-secondary);
+  --background-color-primary_hover: var(--bg-primary_hover);
   --background-color-secondary: var(--bg-secondary);
+  --background-color-secondary_alt: var(--bg-secondary_alt);
   --background-color-secondary_hover: var(--bg-tertiary);
   --background-color-tertiary: var(--bg-tertiary);
   --background-color-quaternary: var(--bg-quaternary);
@@ -871,9 +881,9 @@
   --background-color-overlay: rgba(0, 0, 0, 0.70);
   --background-color-brand-solid: var(--brand-600);
   --background-color-brand-solid_hover: var(--brand-700);
-  --background-color-error-primary: var(--error-50);
-  --background-color-error-solid: var(--error-600);
-  --background-color-error-solid_hover: var(--error-700);
+  --background-color-error-primary: var(--color-error-primary);
+  --background-color-error-solid: var(--color-bg-error-solid);
+  --background-color-error-solid_hover: var(--color-error-solid_hover);
   --background-color-success-solid: var(--success-600);
 
   /* --- Text Color (text-*) --- */

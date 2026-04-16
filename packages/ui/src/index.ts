@@ -21,7 +21,7 @@ export * from "./providers"
 // Hooks
 export * from "./hooks"
 
-// Custom Icons (not available in @untitledui/icons)
+// Custom Icons (supplements @untitledui/icons)
 export * from "./icons"
 
 // Utils

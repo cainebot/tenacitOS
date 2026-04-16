@@ -1,10 +1,11 @@
 "use client"
 
 import type { FC, HTMLAttributes } from "react"
-import { Map01, SearchLg, Settings01 } from "@untitledui/icons"
+import { SearchLg, Settings01 } from "@untitledui/icons"
 import { Button as AriaButton, DialogTrigger as AriaDialogTrigger, Popover as AriaPopover } from "react-aria-components"
 import { motion } from "motion/react"
 import { Avatar } from "../../../base/avatar/avatar"
+import { ButtonUtility } from "../../../base/buttons/button-utility"
 import { Input } from "../../../base/input/input"
 import { cx } from "../../../../utils/cx"
 import { UntitledLogo } from "../../../foundations/logo/untitledui-logo"
@@ -164,25 +165,31 @@ function ExpandedContent({
   return (
     <>
       <div className="flex flex-col gap-5 px-4 pt-4 lg:px-5 lg:pt-5">
-        <UntitledLogo className="h-8" />
+        <div className="flex items-center justify-between">
+          <UntitledLogo className="h-8" />
+          {onCollapse && (
+            <ButtonUtility
+              icon={collapseIcon}
+              size="xs"
+              color="secondary"
+              tooltip={collapseLabel}
+              tooltipPlacement="right"
+              onClick={onCollapse}
+            />
+          )}
+        </div>
         <Input shortcut size="sm" aria-label="Search" placeholder="Search" icon={SearchLg} />
       </div>
 
       <NavList activeUrl={activeUrl} items={items} className="mt-5 pb-5 lg:flex-1 lg:overflow-y-auto" />
 
-      <div className="mt-auto flex flex-col gap-5 border-t border-secondary px-2 py-4 lg:shrink-0 lg:gap-6 lg:px-4 lg:py-4">
+      <div className="mt-auto flex flex-col gap-4 border-t border-secondary px-2 pb-4 lg:shrink-0 lg:px-4 lg:pb-6">
         <div className="flex flex-col gap-0.5">
-          <NavItemBase type="link" href="/office" icon={Map01} current={activeUrl === "/office"}>
-            Office
-          </NavItemBase>
           <NavItemBase type="link" href="/settings" icon={Settings01} current={activeUrl === "/settings"}>
             Settings
           </NavItemBase>
-          <NavItemBase type="link" icon={collapseIcon} onClick={onCollapse}>
-            {collapseLabel}
-          </NavItemBase>
         </div>
-        <div className="-mx-2 px-2 lg:-mx-4 lg:px-4 flex gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-2 px-2 lg:-mx-4 lg:px-4 flex gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {(featuredCards ?? []).map((card) => (
             <FeaturedCardProgressBar
               key={card.title}
@@ -252,7 +259,6 @@ function SlimFooter({
   return (
     <div className="mt-auto flex flex-col items-center gap-4 px-3 pb-5">
       <div className="flex flex-col gap-0.5">
-        <NavItemButton size="md" href="/office" label="Office" icon={Map01} current={activeUrl === "/office"} />
         <NavItemButton size="md" href="/settings" label="Settings" icon={Settings01} current={activeUrl === "/settings"} />
         {expandIcon && <NavItemButton size="md" label="Expand" icon={expandIcon} onClick={onCollapse} />}
       </div>
