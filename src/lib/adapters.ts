@@ -380,7 +380,7 @@ export function taskMessagesToActivityEvents(
 }
 
 // ---------------------------------------------------------------------------
-// taskMessagesToChatItems (TaskMessageRow[] + ActivityEvent[] -> ChatThreadItem[])
+// taskMessagesToChatItems (TaskMessageRow[] -> ChatThreadItem[])
 // Phase 89.2 — Adapter for chat-lab thread in Comments tab
 // ---------------------------------------------------------------------------
 
@@ -405,8 +405,8 @@ function resolveAgentForChat(
 }
 
 /**
- * Converts raw TaskMessageRow[] from DB + card_activity ActivityEvent[] into
- * ChatThreadItem[] for the chat-lab ChatThread component.
+ * Converts raw TaskMessageRow[] from DB into ChatThreadItem[] for the
+ * chat-lab ChatThread component (Comments tab only — no activity events).
  *
  * Grouping logic: consecutive tool_use, tool_result, and thinking rows are
  * folded into the chainOfThought of the preceding assistant-message. If none
@@ -414,7 +414,6 @@ function resolveAgentForChat(
  */
 export function taskMessagesToChatItems(
   messages: TaskMessageRow[],
-  activities: ActivityEvent[],
   agents: AgentRow[],
 ): ChatThreadItem[] {
   const items: ChatThreadItem[] = []
@@ -567,44 +566,14 @@ export function taskMessagesToChatItems(
     }
   }
 
-  // --- Convert filtered activities (only state_change and assignment) ---
-  const activityItems: ChatThreadItem[] = []
-  for (const act of activities) {
-    if (act.type === 'state_change') {
-      activityItems.push({
-        type: 'timeline-event',
-        id: act.id,
-        data: {
-          actorName: act.actor.name,
-          actorInitials: getInitials(act.actor.name),
-          createdAt: act.createdAt,
-          statusChange: { from: act.oldValue ?? null, to: act.newValue ?? 'Unknown' },
-        },
-      })
-    } else if (act.type === 'assignment') {
-      activityItems.push({
-        type: 'timeline-event',
-        id: act.id,
-        data: {
-          actorName: act.actor.name,
-          actorInitials: getInitials(act.actor.name),
-          createdAt: act.createdAt,
-          assigneeChange: { from: act.oldValue ?? null, to: act.newValue ?? 'Unknown' },
-        },
-      })
-    }
-    // All other activity types are excluded from Comments tab
-  }
-
-  // --- Merge and sort by createdAt ascending ---
-  const all = [...items, ...activityItems]
-  all.sort((a, b) => {
+  // --- Sort by createdAt ascending ---
+  items.sort((a, b) => {
     const timeA = getItemTime(a)
     const timeB = getItemTime(b)
     return timeA - timeB
   })
 
-  return all
+  return items
 }
 
 function getItemTime(item: ChatThreadItem): number {

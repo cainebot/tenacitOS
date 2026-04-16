@@ -672,7 +672,7 @@ export default function ProjectBoardPage() {
   )
 
   // Task messages (Phase 89 — Realtime streaming)
-  const { messages: taskMessages } = useRealtimeTaskMessages(detailCardId)
+  const { messages: taskMessages, addOptimisticMessage } = useRealtimeTaskMessages(detailCardId)
   const taskMessageEvents = useMemo(
     () => taskMessagesToActivityEvents(taskMessages, agents),
     [taskMessages, agents],
@@ -798,21 +798,18 @@ export default function ProjectBoardPage() {
     detailUpdateField('priority', p)
   }, [selectedCardId, detailUpdateField])
 
-  // Add comment (optimistic — no skeleton flash)
+  // Add comment → task_messages (optimistic + persist)
   const handlePanelAddComment = useCallback(async (content: string) => {
     if (!detailCard) return
-    // Optimistic: append comment instantly
-    detailAppendComment('user', content)
-    // Persist in background
-    fetch(`/api/cards/${detailCard.card_id}/comments`, {
+    // Optimistic: append to task_messages local state immediately
+    addOptimisticMessage(content)
+    // Persist to task_messages via API
+    fetch(`/api/cards/${detailCard.card_id}/task-messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ author: 'user', text: content }),
-    })
-      .then(() => detailRefetch())
-      .catch((err) => { console.error('[add-comment] Failed:', err) })
-    refetch()
-  }, [detailCard, detailAppendComment, detailRefetch, refetch])
+      body: JSON.stringify({ content }),
+    }).catch((err) => { console.error('[add-task-message] Failed:', err) })
+  }, [detailCard, addOptimisticMessage])
 
   // Upload attachment (called by onFilesSelected from FileUpload component)
   const handlePanelFilesSelected = useCallback(async (files: File[]) => {

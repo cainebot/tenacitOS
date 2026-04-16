@@ -2457,8 +2457,8 @@ function SectionComments({
 
   // Phase 89.2 — ChatThread items for Comments tab
   const chatItems = useMemo(
-    () => taskMessagesToChatItems(rawTaskMessages, activities, agents),
-    [rawTaskMessages, activities, agents],
+    () => taskMessagesToChatItems(rawTaskMessages, agents),
+    [rawTaskMessages, agents],
   )
 
   // Phase 89.2 — Filtered events for Activity tab (excludes comment/tool/thinking/error)

@@ -7,6 +7,7 @@ import type { TaskMessageRow } from '@/types/project'
 export interface UseRealtimeTaskMessagesResult {
   messages: TaskMessageRow[]
   loading: boolean
+  addOptimisticMessage: (content: string) => void
 }
 
 /**
@@ -105,7 +106,19 @@ export function useRealtimeTaskMessages(cardId: string | null): UseRealtimeTaskM
               },
               (payload) => {
                 if (alive && isTaskMessageRow(payload.new)) {
-                  setMessages((prev) => [...prev, payload.new as TaskMessageRow])
+                  const real = payload.new as TaskMessageRow
+                  setMessages((prev) => {
+                    // Deduplicate: if an optimistic version exists, replace it
+                    const optimisticIdx = prev.findIndex(
+                      (m) => m.id.startsWith('optimistic-') && m.content === real.content,
+                    )
+                    if (optimisticIdx !== -1) {
+                      const next = [...prev]
+                      next[optimisticIdx] = real
+                      return next
+                    }
+                    return [...prev, real]
+                  })
                 }
               }
             )
@@ -129,5 +142,23 @@ export function useRealtimeTaskMessages(cardId: string | null): UseRealtimeTaskM
     }
   }, [fetchMessages, supabase, cardId])
 
-  return { messages, loading }
+  const addOptimisticMessage = useCallback((content: string) => {
+    const optimistic: TaskMessageRow = {
+      id: `optimistic-${Date.now()}`,
+      task_id: 'optimistic',
+      seq: messages.length + 1,
+      message_type: 'text',
+      actor_id: null,
+      tool_name: null,
+      content,
+      input: null,
+      output: null,
+      duration_ms: null,
+      metadata: {},
+      created_at: new Date().toISOString(),
+    }
+    setMessages((prev) => [...prev, optimistic])
+  }, [messages.length])
+
+  return { messages, loading, addOptimisticMessage }
 }
