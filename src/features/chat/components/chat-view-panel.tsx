@@ -209,11 +209,6 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
   const sentinelRef = useRef<HTMLDivElement>(null)
   const scrollObserverRef = useRef<IntersectionObserver | null>(null)
 
-  // ── Viewport-based read receipts (1-second debounce per message) ──────────
-  // Ported from agent-chat-tab.tsx:287-327 — closes the unread-badge loop
-  // on the primary /chat surface. Only non-own messages get data-message-id.
-  const readObserverRef = useRef<IntersectionObserver | null>(null)
-
   // Reset scroll state when switching conversations
   useEffect(() => {
     hasInitialScrolled.current = false
@@ -279,58 +274,28 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
     }
   }, [streamingMessages])
 
-  // ── Viewport-based read receipts observer setup ──────────────────────────
-  // Creates the IntersectionObserver once per ConversationView mount and tears
-  // it down on unmount (or when conversationId changes — which remounts the
-  // component via the parent's keyed render). Observed elements are (un)observed
-  // separately below whenever chat.messages changes.
+  // ── Bulk mark-on-open read receipts ───────────────────────────────────────
+  // Viewport-based observer was insufficient: chat-view-panel.tsx hides
+  // placeholder messages with empty text and no attachments (see filter near
+  // the render loop below). Those hidden messages never produce DOM nodes, so
+  // an IntersectionObserver never sees them and they stay unread forever —
+  // keeping the badge counts inflated by orphan streaming placeholders from
+  // Phase 102. Instead, on every message list change we bulk-mark every
+  // non-own message that does NOT already have a `read` receipt from the
+  // current participant. The /api/conversations/[id]/receipts endpoint is
+  // idempotent (onConflict upsert) so repeated calls are safe.
   useEffect(() => {
-    const pendingReads = new Map<string, NodeJS.Timeout>()
-
-    readObserverRef.current = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const messageId = (entry.target as HTMLElement).dataset.messageId
-          if (!messageId) continue
-
-          if (entry.isIntersecting) {
-            if (!pendingReads.has(messageId)) {
-              const timer = setTimeout(() => {
-                chat.markMessagesRead([messageId])
-                pendingReads.delete(messageId)
-              }, 1000)
-              pendingReads.set(messageId, timer)
-            }
-          } else {
-            const timer = pendingReads.get(messageId)
-            if (timer) {
-              clearTimeout(timer)
-              pendingReads.delete(messageId)
-            }
-          }
-        }
-      },
-      { threshold: 0.5 }
-    )
-
-    return () => {
-      readObserverRef.current?.disconnect()
-      for (const timer of pendingReads.values()) {
-        clearTimeout(timer)
-      }
-      pendingReads.clear()
-    }
+    if (chat.loading || chat.messages.length === 0) return
+    const unreadIds = chat.messages
+      .filter(m =>
+        !m.isMine &&
+        !m.receipts?.some(r => r.status === 'read' && r.participant_id === myParticipantId)
+      )
+      .map(m => m.message_id)
+    if (unreadIds.length === 0) return
+    chat.markMessagesRead(unreadIds)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chat.markMessagesRead])
-
-  // ── Observe/unobserve message DOM nodes on message list changes ──────────
-  useEffect(() => {
-    const observer = readObserverRef.current
-    if (!observer) return
-    const elements = scrollRef.current?.querySelectorAll<HTMLElement>('[data-message-id]') ?? []
-    elements.forEach(el => observer.observe(el))
-    return () => elements.forEach(el => observer.unobserve(el))
-  }, [chat.messages])
+  }, [chat.messages, chat.loading, chat.markMessagesRead, myParticipantId])
 
   const uiType = conversation ? conversationUiType(conversation.conversation_type) : null
   const isAnnouncement = uiType === 'announcement'
@@ -446,11 +411,6 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                     (msgProps as { content: string }).content = streamingText
                   }
 
-                  // Wrapper for viewport-based read receipts. Only non-own
-                  // messages need observing (own messages are already "read"
-                  // for the author); optimistic previews are always own.
-                  const observeAttr = !msg.isMine ? { 'data-message-id': msg.message_id } : {}
-
                   // Phase 102.1: Upload states for optimistic image preview messages
                   if (msg._isLocalPreview) {
                     if (msg._uploadError) {
@@ -500,11 +460,7 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                     )
                   }
 
-                  return (
-                    <div key={msg.message_id} {...observeAttr}>
-                      <Message {...msgProps} />
-                    </div>
-                  )
+                  return <Message key={msg.message_id} {...msgProps} />
                 })}
               </ChatPanelSection>
             ))}
