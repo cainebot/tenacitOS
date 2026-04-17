@@ -28,7 +28,11 @@ import { AnimatedSidebar } from "@/components/application/animated-sidebar";
 import { DevPerfProfiler } from "@/components/dev-perf-profiler";
 import { BotIcon } from "@/components/icons/bot-icon";
 import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
-import { PROJECT_COVER_COLORS, PROJECT_COVER_ICONS, type ProjectCoverColorId, type ProjectCoverIcon } from "@/components/application/project-cover/project-cover";
+import {
+  ProjectIconBadge,
+  type ProjectCoverColorId,
+  type ProjectCoverIcon,
+} from "@/components/application/project-cover";
 import type { ProjectRow } from "@/types/project";
 import { useConversations } from "@/features/chat/hooks/use-conversations";
 import { ChatHoverMenu } from "@/features/chat/components/chat-hover-menu";
@@ -36,16 +40,17 @@ import officeEvents from "@/lib/office-events";
 
 /** Tiny display-only project icon for the sidebar (no picker). */
 function ProjectIcon({ color, icon }: { color: ProjectCoverColorId; icon: ProjectCoverIcon }) {
-  const bg = PROJECT_COVER_COLORS.find((c) => c.id === color)?.bg ?? "#b0b0b0";
-  const Icon = PROJECT_COVER_ICONS[icon];
-  return () => (
-    <span
-      className="mr-2 inline-flex shrink-0 items-center justify-center rounded"
-      style={{ backgroundColor: bg, width: 20, height: 20 }}
-    >
-      {Icon && <Icon size={12} color="white" />}
-    </span>
+  const Badge = () => (
+    <ProjectIconBadge
+      color={color}
+      icon={icon}
+      size={20}
+      iconSize={12}
+      rounded="rounded"
+      className="mr-2"
+    />
   );
+  return Badge;
 }
 
 // Mock agent data for the agent board panel
