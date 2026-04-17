@@ -195,6 +195,10 @@ type MessageImageProps = MessageBase & {
   caption?: string           // D-03: text content for text+image messages
   attachmentId?: string      // D-01: for on-demand signed URL refresh
   createdAt?: string         // D-01: message timestamp for proactive expiry detection
+  /** Phase 91.2-01: Reserve height via CSS aspect-ratio to prevent scroll-jump on load.
+   *  When null/undefined (historical images pre-fix), renderer falls back to 16/9 (D-03). */
+  width_px?: number | null
+  height_px?: number | null
   onClick?: () => void
 }
 
@@ -707,6 +711,8 @@ function ImageBubble({
   caption,
   attachmentId,
   createdAt,
+  width_px,
+  height_px,
   sent,
 }: {
   src: string
@@ -716,6 +722,9 @@ function ImageBubble({
   caption?: string
   attachmentId?: string
   createdAt?: string
+  /** Phase 91.2-01: DB-sourced dims for aspect-ratio reservation. null → 16/9 fallback. */
+  width_px?: number | null
+  height_px?: number | null
   sent: boolean
   onClick?: () => void
 }) {
@@ -809,6 +818,12 @@ function ImageBubble({
     )
   }
 
+  // Phase 91.2-01 (Pattern 2, D-03): reserve height via CSS aspect-ratio so the image
+  // wrapper occupies its final box BEFORE the pixel data arrives. Uses DB-stored dims
+  // when available; falls back to 16/9 for historical attachments with NULL width_px/height_px.
+  // Allowlisted inline style — dynamic aspect-ratio cannot be expressed with Tailwind utilities.
+  const aspectRatio = width_px && height_px ? `${width_px} / ${height_px}` : '16 / 9'
+
   return (
     <>
       <div className={cx('flex flex-col w-full', caption ? '' : 'gap-1.5')}>
@@ -816,36 +831,40 @@ function ImageBubble({
           type="button"
           onClick={openLightbox}
           className={cx(
-            'relative max-w-[280px] overflow-clip border border-secondary cursor-pointer hover:opacity-95 transition duration-100 ease-linear',
+            'relative w-full max-w-[280px] overflow-clip border border-secondary cursor-pointer hover:opacity-95 transition duration-100 ease-linear',
             caption ? 'rounded-t-md' : bubbleRadius(sent),
           )}
+          style={{ aspectRatio }}
         >
-          {/* Loading placeholder */}
+          {/* Loading placeholder — fills reserved aspect-ratio box */}
           {!imgLoaded && !imgError && !refreshing && (
-            <div className="w-[280px] h-[180px] bg-tertiary" />
+            <div className="size-full bg-tertiary" />
           )}
 
           {/* Refreshing spinner */}
           {refreshing && (
-            <div className="flex items-center justify-center w-[280px] h-[180px] bg-tertiary">
+            <div className="flex items-center justify-center size-full bg-tertiary">
               <div className="size-4 border-2 border-fg-brand-primary border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
           {/* Error fallback */}
           {imgError && (
-            <div className="flex items-center justify-center w-[280px] h-[120px] bg-secondary rounded-md">
+            <div className="flex items-center justify-center size-full bg-secondary rounded-md">
               <FileTypeIcon fileType={fileName?.split('.').pop()?.toUpperCase() ?? 'IMG'} color="bg-purple-600" size="md" />
             </div>
           )}
 
-          {/* Actual image — eager load (lazy + hidden = deadlock) */}
+          {/* Actual image — eager load (lazy + hidden = deadlock).
+              size-full + object-cover fills the aspect-ratio wrapper without deforming. */}
           {!imgError && !refreshing && activeSrc && (
             <img
               src={activeSrc}
               alt={alt ?? fileName ?? 'Image'}
+              width={width_px ?? undefined}
+              height={height_px ?? undefined}
               className={cx(
-                'max-w-[280px] max-h-[320px] object-contain',
+                'size-full object-cover',
                 imgLoaded ? 'block' : 'hidden',
               )}
               onLoad={() => setImgLoaded(true)}
@@ -1074,6 +1093,8 @@ export function Message(props: MessageProps) {
             caption={props.caption}
             attachmentId={props.attachmentId}
             createdAt={props.createdAt}
+            width_px={props.width_px}
+            height_px={props.height_px}
             sent={sent}
             onClick={props.onClick}
           />

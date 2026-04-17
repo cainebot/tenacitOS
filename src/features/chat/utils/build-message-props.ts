@@ -134,6 +134,9 @@ export function buildMessageProps(
         caption: msg.text || undefined,
         attachmentId: att?.attachment_id,
         createdAt: msg.created_at,
+        // Phase 91.2-01: Forward DB-stored pixel dims for aspect-ratio reservation (SC-91.2-1/5).
+        width_px: att?.width_px ?? null,
+        height_px: att?.height_px ?? null,
       }
     case 'audio': {
       // T-99-05: Extract waveformData from metadata.waveform (number[] persisted at send time)
