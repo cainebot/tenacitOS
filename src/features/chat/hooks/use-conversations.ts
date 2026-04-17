@@ -77,6 +77,16 @@ export function useConversations() {
         // conversations-row touch.
         fetchConversations()
       })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+      }, () => {
+        // New inbound message → increment unread badges immediately. Without
+        // this the sidebar only refreshes when the `conversations` row is
+        // touched, which can lag behind the message insert by seconds.
+        fetchConversations()
+      })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }

@@ -6,6 +6,7 @@ import { Message, type MessageProps } from '@/components/application/message'
 import { AgentPanelSection, AgentPanelDivider } from '@/components/application/agent-panel'
 import { useDirectConversation } from '@/hooks/use-direct-conversation'
 import { useAgentChat } from '@/hooks/use-agent-chat'
+import { useMyParticipant } from '@/contexts/my-participant-context'
 import { useAgentSkills } from '@/hooks/use-agent-skills'
 import { useRealtimeAgents } from '@/hooks/useRealtimeAgents'
 import { useChatSend } from '@/features/chat/hooks/use-chat-send'
@@ -197,8 +198,35 @@ export function AgentChatTab({
   onSendRef,
 }: AgentChatTabProps) {
   const { conversationId, loading: conversationLoading } = useDirectConversation(agentParticipantId)
+  const { participant } = useMyParticipant()
+  const myParticipantId = participant?.participant_id ?? ''
 
   const chat = useAgentChat({ conversationId, recipientIds: [agentParticipantId] })
+
+  // Mark all unread messages as read when this side-panel chat opens. Covers
+  // older messages outside the 30-message window that the viewport observer
+  // below cannot reach.
+  useEffect(() => {
+    if (!conversationId || !myParticipantId) return
+    let cancelled = false
+    void (async () => {
+      try {
+        await fetch(`/api/conversations/${conversationId}/receipts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mark_all_unread: true,
+            participant_id: myParticipantId,
+            status: 'read',
+          }),
+        })
+      } catch {
+        // best-effort
+      }
+      if (cancelled) return
+    })()
+    return () => { cancelled = true }
+  }, [conversationId, myParticipantId])
   const isGenerationActive = chat.waitingForReply || !!chat.processingState || chat.isStreaming
   const { shortcuts } = useAgentSkills(agentId)
 
