@@ -110,6 +110,9 @@ export async function sendMessageWithAttachments(
   payload: {
     text: string
     files: File[]
+    /** Phase 91.2-01: Per-file pixel dimensions aligned by index with `files`.
+     *  `null` entries (non-image, audio, measurement-failed) are skipped on the wire. */
+    fileDimensions?: Array<{ width: number; height: number } | null>
     parent_message_id?: string
     /** T-99-05: Normalized frequency bars [0..1] captured from AnalyserNode during recording */
     waveformData?: number[]
@@ -124,9 +127,16 @@ export async function sendMessageWithAttachments(
   if (payload.waveformData && payload.waveformData.length > 0) {
     form.append('attachment_metadata', JSON.stringify({ waveform: payload.waveformData }))
   }
-  for (const file of payload.files) {
+  payload.files.forEach((file, i) => {
     form.append('files', file, file.name)
-  }
+    // Phase 91.2-01: Attach image pixel dimensions for aspect-ratio reservation on render.
+    // Keys match the API route's formData.get(`attachments[${i}][width_px]`) contract.
+    const dims = payload.fileDimensions?.[i]
+    if (dims && Number.isFinite(dims.width) && Number.isFinite(dims.height)) {
+      form.append(`attachments[${i}][width_px]`, String(dims.width))
+      form.append(`attachments[${i}][height_px]`, String(dims.height))
+    }
+  })
 
   const res = await fetch(
     `/api/conversations/${conversationId}/messages`,

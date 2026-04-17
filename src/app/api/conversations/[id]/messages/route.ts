@@ -155,6 +155,9 @@ export async function POST(
       filename: string
       size_bytes: number
       mime_type: string
+      /** Phase 91.2-01: Persisted for aspect-ratio reservation on render (chat-input → route → DB). */
+      width_px: number | null
+      height_px: number | null
       metadata?: Record<string, unknown>
     }> = []
 
@@ -185,6 +188,16 @@ export async function POST(
         .from('chat-attachments')
         .createSignedUrl(storagePath, 3600)
 
+      // Phase 91.2-01: Defensive parse of client-supplied image dimensions.
+      // Client sends attachments[i][width_px] / attachments[i][height_px] as numeric strings;
+      // invalid / missing / non-positive values → NULL (DB tolerates, render falls back to 16/9).
+      const widthRaw = formData.get(`attachments[${fileIdx}][width_px]`)
+      const heightRaw = formData.get(`attachments[${fileIdx}][height_px]`)
+      const widthNum = typeof widthRaw === 'string' ? Number(widthRaw) : NaN
+      const heightNum = typeof heightRaw === 'string' ? Number(heightRaw) : NaN
+      const widthPx = Number.isFinite(widthNum) && widthNum > 0 ? widthNum : null
+      const heightPx = Number.isFinite(heightNum) && heightNum > 0 ? heightNum : null
+
       // T-99-05: Attach metadata (waveform) to the first file only
       const row: (typeof attachmentRows)[0] = {
         message_id: messageId,
@@ -193,6 +206,8 @@ export async function POST(
         filename: file.name,
         size_bytes: file.size,
         mime_type: file.type || 'application/octet-stream',
+        width_px: widthPx,
+        height_px: heightPx,
       }
       if (fileIdx === 0 && attachmentMetadata) {
         row.metadata = attachmentMetadata

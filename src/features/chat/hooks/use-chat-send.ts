@@ -29,6 +29,13 @@ export function useChatSend({ conversationId, sendMessage, shortcuts = [] }: Use
         ...(payload.files ?? []),
       ]
 
+      // Phase 91.2-01: Per-file dimensions aligned by index with allFiles.
+      // Images come first (payload.imageDimensions); non-image files and audio have no dims.
+      const allFileDimensions: Array<{ width: number; height: number } | null> = [
+        ...(payload.imageDimensions ?? payload.images.map(() => null)),
+        ...(payload.files?.map(() => null) ?? []),
+      ]
+
       if (payload.audioBlob) {
         const ext = payload.audioBlob.type.includes('mp4') ? 'mp4' : 'webm'
         const audioFile = new File(
@@ -37,6 +44,7 @@ export function useChatSend({ conversationId, sendMessage, shortcuts = [] }: Use
           { type: payload.audioBlob.type }
         )
         allFiles.push(audioFile)
+        allFileDimensions.push(null)
       }
 
       const parentMessageId = replyToRef.current
@@ -46,6 +54,7 @@ export function useChatSend({ conversationId, sendMessage, shortcuts = [] }: Use
           await sendMessageWithAttachments(conversationId, {
             text: payload.text,
             files: allFiles,
+            fileDimensions: allFileDimensions,
             ...(parentMessageId ? { parent_message_id: parentMessageId } : {}),
             // T-99-05: Pass waveform snapshot for audio attachments
             ...(payload.waveformData ? { waveformData: payload.waveformData } : {}),
