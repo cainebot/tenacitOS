@@ -66,6 +66,17 @@ export function useConversations() {
       }, () => {
         fetchConversations()
       })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'message_receipts',
+        filter: `participant_id=eq.${participant.participant_id}`,
+      }, () => {
+        // Refetch when own receipts change (delivered/read) so the per-conversation
+        // and global unread badges decrement in real-time without waiting for a
+        // conversations-row touch.
+        fetchConversations()
+      })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
