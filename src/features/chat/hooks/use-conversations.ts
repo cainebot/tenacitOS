@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useId, useState, useCallback } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
 import { useMyParticipant } from '@/contexts/my-participant-context'
 
@@ -21,6 +21,7 @@ export interface ConversationWithMeta {
  * Falls back gracefully when Supabase browser auth is unavailable.
  */
 export function useConversations() {
+  const hookId = useId()
   const { participant, loading: participantLoading } = useMyParticipant()
   const [conversations, setConversations] = useState<ConversationWithMeta[]>([])
   const [loading, setLoading] = useState(true)
@@ -58,7 +59,7 @@ export function useConversations() {
   useEffect(() => {
     if (!participant) return
     const supabase = createBrowserClient()
-    const channel = supabase.channel('chat-conversations-list')
+    const channel = supabase.channel(`chat-conversations-list-${hookId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -90,7 +91,7 @@ export function useConversations() {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [participant, fetchConversations])
+  }, [participant, fetchConversations, hookId])
 
   // Split into channels (broadcast + group) and dms (direct)
   const channels = conversations.filter(
