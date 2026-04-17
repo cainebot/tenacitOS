@@ -1,7 +1,7 @@
 'use client'
 
 import { Button as AriaButton } from 'react-aria-components'
-import { Badge, cx } from '@circos/ui'
+import { Avatar, Badge, cx } from '@circos/ui'
 import { Hash02, Announcement03 } from '@untitledui/icons'
 import type { ConversationWithMeta } from '../hooks/use-conversations'
 import { conversationUiType } from '@/lib/chat'
@@ -12,23 +12,6 @@ interface ConversationRowProps {
   conversation: ConversationWithMeta
   isActive: boolean
   onPress: () => void
-}
-
-// ── 20px avatar matching Figma spec (UUI Avatar xs=24px is too large) ────────
-
-function NavAvatar({ src, alt, initials }: { src?: string | null; alt: string; initials: string }) {
-  return (
-    <div className="relative shrink-0 size-5 rounded-full border-[0.5px] border-[rgba(0,0,0,0.08)] bg-tertiary">
-      {src ? (
-        <img src={src} alt={alt} className="absolute inset-0 size-full rounded-full object-cover" />
-      ) : (
-        <span className="flex size-full items-center justify-center text-[8px] font-semibold text-primary">
-          {initials}
-        </span>
-      )}
-      <div className="absolute -bottom-px -right-px size-1.5 rounded-full border-[1.5px] border-primary bg-fg-success-secondary" />
-    </div>
-  )
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -61,14 +44,11 @@ export function ConversationRow({ conversation, isActive, onPress }: Conversatio
         {/* Icon and text — Figma gap-md (8px) */}
         <div className="flex flex-1 items-center gap-2 min-w-0">
           {uiType === 'dm' ? (
-            <NavAvatar
-              src={conversation.agent_avatar}
+            <Avatar
+              src={conversation.agent_avatar ?? undefined}
               alt={conversation.agent_name ?? ''}
-              initials={
-                conversation.agent_name
-                  ? conversation.agent_name.slice(0, 2).toUpperCase()
-                  : '??'
-              }
+              size="xs"
+              status="online"
             />
           ) : uiType === 'announcement' ? (
             <Announcement03 className="size-5 shrink-0 text-fg-quaternary" />
