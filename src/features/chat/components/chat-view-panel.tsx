@@ -21,6 +21,7 @@ import { DmCreationPanel } from './dm-creation-panel'
 import { ChannelCreationPanel } from './channel-creation-panel'
 import { AnnouncementNotice } from './announcement-notice'
 import { OAuthReconnectBanner } from './oauth-reconnect-banner'
+import { MessageBubbleSkeleton } from './message-bubble-skeleton'
 
 // ── Processing state strings (D-07) ──────────────────────────────────────────
 const PROCESSING_STATE_STRINGS: Record<string, { en: string; es: string }> = {
@@ -379,8 +380,20 @@ function ConversationView({ conversationId, conversation, refetch }: { conversat
           height changes (image decode, audio mount) per Pattern 1 of RESEARCH.md. */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 py-4 [overflow-anchor:auto]">
         {chat.loading ? (
-          <div className="flex items-center justify-center py-8">
-            <p className="text-sm text-tertiary">Loading messages...</p>
+          // D-02 (91.2-03): layout-accurate skeleton screen during initial load
+          // replaces the legacy "Loading messages..." text. 6 alternating bubbles
+          // per Open Question #3 of RESEARCH.md — mix of sent/received, image,
+          // text-short, text-long to give realistic density and cover the
+          // variants users see most. The skeletons live inside the scroll
+          // container so they inherit [overflow-anchor:auto] for the
+          // skeleton→real-message transition.
+          <div className="flex flex-col gap-3 py-4" aria-label="Loading messages">
+            <MessageBubbleSkeleton variant="text-short" sent={false} />
+            <MessageBubbleSkeleton variant="text-long" sent={true} />
+            <MessageBubbleSkeleton variant="image" sent={false} />
+            <MessageBubbleSkeleton variant="text-short" sent={true} />
+            <MessageBubbleSkeleton variant="text-long" sent={false} />
+            <MessageBubbleSkeleton variant="text-short" sent={true} />
           </div>
         ) : chat.messages.length === 0 ? (
           <div className="flex items-center justify-center py-8">
