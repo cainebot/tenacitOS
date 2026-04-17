@@ -1,7 +1,7 @@
 'use client'
 
 import { Button as AriaButton } from 'react-aria-components'
-import { cx } from '@circos/ui'
+import { Badge, cx } from '@circos/ui'
 import { Hash02, Announcement03 } from '@untitledui/icons'
 import type { ConversationWithMeta } from '../hooks/use-conversations'
 import { conversationUiType } from '@/lib/chat'
@@ -80,9 +80,7 @@ export function ConversationRow({ conversation, isActive, onPress }: Conversatio
 
         {/* Unread badge — Figma gap-lg (12px) from icon+text group */}
         {isUnread && (
-          <span className="shrink-0 rounded border border-secondary px-1 py-px text-xs font-medium text-tertiary">
-            {conversation.unread_count}
-          </span>
+          <Badge color="brand" type="modern" size="sm">{conversation.unread_count}</Badge>
         )}
       </div>
     </AriaButton>

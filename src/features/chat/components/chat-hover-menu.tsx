@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Avatar, cx, SIDEBAR } from '@circos/ui'
+import { Avatar, Badge, cx, SIDEBAR } from '@circos/ui'
 import { Announcement03, ChevronDown, Hash02 } from '@untitledui/icons'
 import type { ConversationWithMeta } from '../hooks/use-conversations'
 
@@ -58,9 +58,7 @@ function MenuItem({
           <span className="flex-1 text-sm font-semibold text-secondary truncate">{label}</span>
         </div>
         {badge !== undefined && badge > 0 && (
-          <span className="flex items-start border border-secondary rounded-xs px-1 py-px text-xs font-medium text-tertiary shrink-0">
-            {badge}
-          </span>
+          <Badge color="brand" type="modern" size="sm">{badge}</Badge>
         )}
       </button>
     </div>
@@ -99,9 +97,7 @@ export function ChatHoverMenu({ channels, dms, totalUnread = 0, onSelectConversa
       <div className="flex items-center gap-2 px-4 py-2 shrink-0 w-full">
         <p className="flex-1 text-lg font-semibold text-primary">Chat</p>
         {totalUnread > 0 && (
-          <span className="flex items-start border border-secondary rounded-xs px-1.5 py-px text-xs font-medium text-tertiary shrink-0">
-            {totalUnread}
-          </span>
+          <Badge color="brand" type="modern" size="sm">{totalUnread}</Badge>
         )}
       </div>
 
