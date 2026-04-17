@@ -147,15 +147,31 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     setChatHoverOpen(false)
   }, [router]);
 
-  const handleSelectAgent = (agentId: string, agentName: string) => {
-    officeEvents.emit('agent:select', {
-      agent_id: agentId,
-      name: agentName,
-      role: '',
-      status: 'active',
-    });
+  // Selecting an agent from the chat hover popover:
+  // - On /office: emit officeEvents so the Phaser scene focuses/selects the agent.
+  // - Elsewhere: navigate to /chat?conversation=<id> (the popover's primary purpose
+  //   outside the office is navigation to the chat view).
+  // The officeEvents-only path previously made the click a no-op on non-office pages.
+  const handleSelectAgent = useCallback((agentId: string, agentName: string) => {
+    const isOffice = pathname === '/office' || pathname.startsWith('/office/');
+    if (isOffice) {
+      officeEvents.emit('agent:select', {
+        agent_id: agentId,
+        name: agentName,
+        role: '',
+        status: 'active',
+      });
+      setChatHoverOpen(false);
+      return;
+    }
+    const dm = dms.find((c) => c.agent_id === agentId);
+    if (dm) {
+      router.push(`/chat?conversation=${dm.conversation_id}`);
+    } else {
+      router.push('/chat');
+    }
     setChatHoverOpen(false);
-  };
+  }, [pathname, dms, router]);
 
   const handleSidebarLeave = () => {
     // Chat hover menu manages its own close via onMouseLeave
