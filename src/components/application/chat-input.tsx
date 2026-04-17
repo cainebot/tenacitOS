@@ -41,6 +41,9 @@ interface AttachedImage {
   id: string
   file: File
   preview: string
+  /** Phase 91.2-01: Post-resize pixel dimensions. Undefined if measurement failed. */
+  width?: number
+  height?: number
 }
 
 export interface ChatShortcut {
@@ -53,29 +56,44 @@ export interface ChatShortcut {
 export interface ChatInputPayload {
   text: string
   images: File[]
+  /** Phase 91.2-01: Per-image pixel dimensions, aligned by index with `images`.
+   *  Entry is `null` if measurement failed (upload still proceeds; render falls back to 16/9). */
+  imageDimensions?: Array<{ width: number; height: number } | null>
   files?: File[]          // Non-image attachments (PDFs, docs, etc.)
   audioBlob?: Blob        // Audio recording from MediaRecorder
   waveformData?: number[] // Normalized frequency bars [0..1], 40 samples captured at stop
   command?: string
 }
 
-/** D-02: Resize image to max 800px on longest side using Canvas. Returns original if already within bounds. */
-function resizeImageToMax800(file: File): Promise<File> {
+/**
+ * Phase 91.2-01: Resize image to max 800px on longest side AND capture post-resize pixel
+ * dimensions for chat scroll-anchor (aspect-ratio reservation in `message.tsx`).
+ *
+ * Returns `{ file, width, height }` where width/height are the naturalWidth/naturalHeight
+ * of the image that will actually be uploaded (i.e. after any canvas resize). For images
+ * already within 800px on both sides, the original file is returned with its original
+ * dimensions.
+ *
+ * Supersedes the previous `resizeImageToMax800` helper — the old export is preserved as
+ * a thin wrapper for any external callers that only need the resized `File`.
+ */
+function fileWithDimensions(file: File): Promise<{ file: File; width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
     img.onload = () => {
       const maxDim = 800
-      let { width, height } = img
-      // Skip resize if already within bounds
-      if (width <= maxDim && height <= maxDim) {
+      const originalWidth = img.naturalWidth
+      const originalHeight = img.naturalHeight
+      // Skip resize if already within bounds — measure original dims and return as-is
+      if (originalWidth <= maxDim && originalHeight <= maxDim) {
         URL.revokeObjectURL(url)
-        resolve(file)
+        resolve({ file, width: originalWidth, height: originalHeight })
         return
       }
-      const ratio = Math.min(maxDim / width, maxDim / height)
-      width = Math.round(width * ratio)
-      height = Math.round(height * ratio)
+      const ratio = Math.min(maxDim / originalWidth, maxDim / originalHeight)
+      const width = Math.round(originalWidth * ratio)
+      const height = Math.round(originalHeight * ratio)
       const canvas = document.createElement('canvas')
       canvas.width = width
       canvas.height = height
@@ -84,8 +102,13 @@ function resizeImageToMax800(file: File): Promise<File> {
         (blob) => {
           URL.revokeObjectURL(url)
           if (blob) {
-            // Wrap blob back into File to preserve .name and .type
-            resolve(new File([blob], file.name, { type: file.type }))
+            // Wrap blob back into File to preserve .name and .type.
+            // width/height come from the canvas we just drew — guaranteed to match the upload.
+            resolve({
+              file: new File([blob], file.name, { type: file.type }),
+              width,
+              height,
+            })
           } else {
             reject(new Error('Canvas toBlob failed'))
           }
@@ -430,17 +453,21 @@ export function ChatInput({
       if (ACCEPTED_IMAGE_TYPES.includes(file.type)) {
         // Use ref for live count to avoid stale closure on rapid multi-file drops
         if (imagesCountRef.current + newImages.length >= MAX_IMAGES) continue
-        // D-02: Resize image to max 800px before preview and upload
+        // D-02 + Phase 91.2-01: Resize image to max 800px AND capture post-resize dims
         let resizedFile = file
+        let dims: { width: number; height: number } | undefined
         try {
-          resizedFile = await resizeImageToMax800(file)
+          const measured = await fileWithDimensions(file)
+          resizedFile = measured.file
+          dims = { width: measured.width, height: measured.height }
         } catch {
-          // If resize fails, use original file
+          // If resize/measure fails, use original file; dims stays undefined → 16/9 fallback
         }
         newImages.push({
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           file: resizedFile,
           preview: URL.createObjectURL(resizedFile),
+          ...(dims ? { width: dims.width, height: dims.height } : {}),
         })
       } else {
         newFiles.push(file)
@@ -564,9 +591,30 @@ export function ChatInput({
 
   const handleSend = useCallback(() => {
     if (!hasContent || isDisabled) return
+    // Phase 91.2-01: Build FormData-field names for per-image dimensions so downstream
+    // callers (use-chat-send → sendMessageWithAttachments) can forward `attachments[i][width_px]`
+    // and `attachments[i][height_px]` to the API route. Keys are stable — width_px / height_px.
+    const imageDimensions = images.map((img) =>
+      typeof img.width === 'number' && typeof img.height === 'number'
+        ? { width: img.width, height: img.height }
+        : null,
+    )
+    if (process.env.NODE_ENV === 'development' && images.length > 0) {
+      // Developer trace: matches the FormData key pattern used on the wire.
+      images.forEach((_img, i) => {
+        const d = imageDimensions[i]
+        if (d) {
+          // eslint-disable-next-line no-console
+          console.debug(
+            `[chat-input] attachments[${i}][width_px]=${d.width} attachments[${i}][height_px]=${d.height}`,
+          )
+        }
+      })
+    }
     onSend?.({
       text: text.trim(),
       images: images.map((i) => i.file),
+      ...(images.length > 0 ? { imageDimensions } : {}),
       ...(nonImageFiles.length > 0 ? { files: nonImageFiles } : {}),
       ...(activeCommand ? { command: activeCommand.id } : {}),
     })
