@@ -8,6 +8,7 @@ import type { ConversationWithMeta } from '../hooks/use-conversations'
 interface ChatHoverMenuProps {
   channels: ConversationWithMeta[]
   dms: ConversationWithMeta[]
+  totalUnread?: number
   onSelectConversation: (conversationId: string) => void
   onSelectAgent: (agentId: string, agentName: string) => void
   onOpenWorkspace: () => void
@@ -66,7 +67,7 @@ function MenuItem({
   )
 }
 
-export function ChatHoverMenu({ channels, dms, onSelectConversation, onSelectAgent, onOpenWorkspace, onHoverEnter, onHoverLeave, onClose }: ChatHoverMenuProps) {
+export function ChatHoverMenu({ channels, dms, totalUnread = 0, onSelectConversation, onSelectAgent, onOpenWorkspace, onHoverEnter, onHoverLeave, onClose }: ChatHoverMenuProps) {
   const [announcementsOpen, setAnnouncementsOpen] = useState(true)
   const [channelsOpen, setChannelsOpen] = useState(true)
   const [dmsOpen, setDmsOpen] = useState(true)
@@ -95,8 +96,13 @@ export function ChatHoverMenu({ channels, dms, onSelectConversation, onSelectAge
       onMouseLeave={onHoverLeave}
     >
       {/* Header */}
-      <div className="flex items-center px-4 py-2 shrink-0 w-full">
+      <div className="flex items-center gap-2 px-4 py-2 shrink-0 w-full">
         <p className="flex-1 text-lg font-semibold text-primary">Chat</p>
+        {totalUnread > 0 && (
+          <span className="flex items-start border border-secondary rounded-xs px-1.5 py-px text-xs font-medium text-tertiary shrink-0">
+            {totalUnread}
+          </span>
+        )}
       </div>
 
       {/* Announcement section — Menu items wrapper */}

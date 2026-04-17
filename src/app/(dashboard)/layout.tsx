@@ -239,6 +239,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <ChatHoverMenu
           channels={channels}
           dms={dms}
+          totalUnread={totalUnread}
           onSelectConversation={(id) => handleOpenWorkspace(id)}
           onSelectAgent={handleSelectAgent}
           onOpenWorkspace={() => handleOpenWorkspace()}
