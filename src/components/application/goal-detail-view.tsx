@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, ProgressBar, cx } from '@circos/ui'
+import { Button, ProgressBar, Skeleton, cx } from '@circos/ui'
 import { Plus, Target04, ArrowNarrowLeft } from '@untitledui/icons'
 import { GoalProgress } from './goal-progress'
 import { GoalPropertiesPanel, type EpicOption } from './goal-properties-panel'
@@ -76,17 +76,20 @@ function calcSubGoalProgress(sg: GoalRow): number {
 // ---------------------------------------------------------------------------
 
 function GoalDetailSkeleton() {
+  // Phase 91.2-02 (D-11): migrated from hand-rolled pulse divs to @circos/ui
+  // Skeleton primitive. Tailwind size classes preserved 1:1 to keep visual
+  // dimensions identical (feedback_no_frontend_aesthetic_changes).
   return (
-    <div className="animate-pulse space-y-6">
-      <div className="h-8 bg-secondary rounded-lg w-2/3" />
+    <div className="space-y-6">
+      <Skeleton className="h-8 w-2/3 rounded-lg" />
       <div className="grid grid-cols-[1fr_403px] gap-6">
         <div className="space-y-4">
-          <div className="h-4 bg-secondary rounded w-full" />
-          <div className="h-4 bg-secondary rounded w-5/6" />
-          <div className="h-4 bg-secondary rounded w-4/6" />
-          <div className="h-24 bg-secondary rounded-xl" />
+          <Skeleton variant="text" className="h-4 w-full" />
+          <Skeleton variant="text" className="h-4 w-5/6" />
+          <Skeleton variant="text" className="h-4 w-4/6" />
+          <Skeleton className="h-24 w-full rounded-xl" />
         </div>
-        <div className="h-48 bg-secondary rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     </div>
   )
