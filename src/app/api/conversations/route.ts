@@ -83,26 +83,41 @@ export async function GET() {
         .limit(1)
         .maybeSingle()
 
-      // Count unread: messages from others that have no 'read' receipt for Joan
+      // Count unread: messages from others that have no 'read' receipt for Joan.
+      // Exclude placeholder messages with neither text nor attachments — these
+      // are orphan streaming rows (Phase 102) whose follow-up UPDATE with tokens
+      // never persisted. They are invisible to the user (the UI filters them
+      // out in chat-view-panel.tsx) and must not count toward the badge.
       const { data: unreadMessages } = await supabase
         .from('messages')
-        .select('message_id')
+        .select('message_id, text, message_attachments(attachment_id)')
         .eq('conversation_id', conv.conversation_id)
         .neq('sender_id', joanParticipantId)
         .is('deleted_at', null)
 
       let unreadCount = 0
       if (unreadMessages && unreadMessages.length > 0) {
-        const msgIds = unreadMessages.map((m) => m.message_id)
-        const { data: readReceipts } = await supabase
-          .from('message_receipts')
-          .select('message_id')
-          .in('message_id', msgIds)
-          .eq('participant_id', joanParticipantId)
-          .eq('status', 'read')
+        // Post-fetch filter: keep only messages with non-empty text OR at least
+        // one attachment. The embedded join with message_attachments returns an
+        // array; a zero-length array means no attachments.
+        const visibleMessages = unreadMessages.filter((m) => {
+          const hasText = typeof m.text === 'string' && m.text.length > 0
+          const attachments = (m as unknown as { message_attachments?: unknown[] }).message_attachments
+          const hasAttachments = Array.isArray(attachments) && attachments.length > 0
+          return hasText || hasAttachments
+        })
+        if (visibleMessages.length > 0) {
+          const msgIds = visibleMessages.map((m) => m.message_id)
+          const { data: readReceipts } = await supabase
+            .from('message_receipts')
+            .select('message_id')
+            .in('message_id', msgIds)
+            .eq('participant_id', joanParticipantId)
+            .eq('status', 'read')
 
-        const readIds = new Set((readReceipts ?? []).map((r) => r.message_id))
-        unreadCount = msgIds.filter((id) => !readIds.has(id)).length
+          const readIds = new Set((readReceipts ?? []).map((r) => r.message_id))
+          unreadCount = msgIds.filter((id) => !readIds.has(id)).length
+        }
       }
 
       // For direct conversations, resolve the other participant's name, avatar + agent_id
