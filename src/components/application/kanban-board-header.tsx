@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type FC } from "react"
 import { Plus, SwitchVertical01, Settings04, SearchMd } from "@untitledui/icons"
 import { Button, Dropdown, InputBase, cx } from "@circos/ui"
 import { BotIcon } from "@/components/icons/bot-icon"
@@ -39,6 +39,14 @@ export interface KanbanBoardHeaderProps {
   search?: string
   onSearchChange?: (search: string) => void
   className?: string
+  /** Hide the "Agent's board" toggle (used on pages outside a specific board). */
+  hideAgentBoard?: boolean
+  /** Hide the Settings button (used on pages without per-board settings). */
+  hideSettings?: boolean
+  /** Override the primary button label. Defaults to "Add task". */
+  primaryLabel?: string
+  /** Override the primary button icon. Defaults to Plus. */
+  primaryIcon?: FC<{ className?: string }>
 }
 
 export function KanbanBoardHeader({
@@ -52,6 +60,10 @@ export function KanbanBoardHeader({
   search: searchProp,
   onSearchChange,
   className,
+  hideAgentBoard = false,
+  hideSettings = false,
+  primaryLabel = "Add task",
+  primaryIcon: PrimaryIcon = Plus,
 }: KanbanBoardHeaderProps) {
   const { agentBoardActive, setAgentBoardActive } = useAgentBoard()
   const [internalSort, setInternalSort] = useState<SortOption | null>(null)
@@ -83,24 +95,26 @@ export function KanbanBoardHeader({
         <Button
           color="primary"
           size="sm"
-          iconLeading={Plus}
+          iconLeading={PrimaryIcon}
           onClick={onAddTask}
         >
-          Add task
+          {primaryLabel}
         </Button>
-        <Button
-          color="secondary"
-          size="sm"
-          iconLeading={BotIcon}
-          onClick={() => setAgentBoardActive(!agentBoardActive)}
-          className={agentBoardActive ? "!ring-0 !font-semibold *:data-icon:!text-fg-brand-primary" : undefined}
-          style={agentBoardActive ? {
-            background: "color-mix(in srgb, var(--bg-brand-primary, #6172F3), transparent 80%)",
-            border: "1px solid var(--color-border-brand, #8098F9)",
-          } : undefined}
-        >
-          Agent&apos;s board
-        </Button>
+        {!hideAgentBoard && (
+          <Button
+            color="secondary"
+            size="sm"
+            iconLeading={BotIcon}
+            onClick={() => setAgentBoardActive(!agentBoardActive)}
+            className={agentBoardActive ? "!ring-0 !font-semibold *:data-icon:!text-fg-brand-primary" : undefined}
+            style={agentBoardActive ? {
+              background: "color-mix(in srgb, var(--bg-brand-primary, #6172F3), transparent 80%)",
+              border: "1px solid var(--color-border-brand, #8098F9)",
+            } : undefined}
+          >
+            Agent&apos;s board
+          </Button>
+        )}
       </div>
 
       {/* Right: Filter + Order + Settings + Search */}
@@ -135,14 +149,16 @@ export function KanbanBoardHeader({
         </Dropdown.Root>
 
         {/* Settings — navigates to board-setting page */}
-        <Button
-          color="tertiary"
-          size="sm"
-          iconLeading={Settings04}
-          onClick={onSettings}
-        >
-          Settings
-        </Button>
+        {!hideSettings && (
+          <Button
+            color="tertiary"
+            size="sm"
+            iconLeading={Settings04}
+            onClick={onSettings}
+          >
+            Settings
+          </Button>
+        )}
 
         {/* Search */}
         <div className="w-[225px]">
