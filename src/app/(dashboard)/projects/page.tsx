@@ -1,12 +1,14 @@
 "use client";
 
-import { HomeLine, SearchLg, Trash01, Edit05, Plus } from "@untitledui/icons";
+import { HomeLine, Trash01, Edit05, Plus } from "@untitledui/icons";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader, Input, MemberSelector, Avatar, AvatarGroup, Table, TableCard, Button, ModalForm, ConfirmActionDialog } from "@circos/ui";
+import { PageHeader, Input, MemberSelector, AvatarGroup, Table, TableCard, Button, ModalForm, ConfirmActionDialog } from "@circos/ui";
 import { PaginationCardDefault } from "@/components/application/pagination/pagination";
 import type { ProjectRow } from "@/types/project";
 import { ProjectCover, type ProjectCoverValue } from "@/components/application/project-cover/project-cover";
+import { KanbanBoardHeader } from "@/components/application/kanban-board-header";
+import { ProjectIconBadge, type ProjectCoverColorId, type ProjectCoverIcon } from "@/components/application/project-cover";
 
 export default function ProjectsPage() {
   const PAGE_SIZE = 7; // matches current mock count per page
@@ -158,7 +160,7 @@ export default function ProjectsPage() {
 
   return (
     <>
-      <div className="flex flex-col items-start gap-8 self-stretch px-8">
+      <div className="flex flex-col items-start gap-8 self-stretch px-8 pt-6">
         <PageHeader
           title="Search Projects"
           breadcrumbs={[
@@ -166,24 +168,20 @@ export default function ProjectsPage() {
             { label: "Dashboard", href: "/" },
             { label: "Projects" },
           ]}
-          actions={
-            <div className="flex items-center gap-3">
-              <Input
-                className="w-full min-w-[200px] max-w-[320px]"
-                size="sm"
-                aria-label="Search"
-                placeholder="Search"
-                icon={SearchLg}
-                shortcut
-                value={search}
-                onChange={(v: string) => { setSearch(v); setPage(1); }}
-              />
-              <Button size="sm" iconLeading={Plus} onClick={openCreate}>
-                Create new
-              </Button>
-            </div>
-          }
           bordered={false}
+        />
+      </div>
+
+      <div className="self-stretch px-8">
+        <KanbanBoardHeader
+          filterFields={[]}
+          search={search}
+          onSearchChange={(v) => { setSearch(v); setPage(1); }}
+          onAddTask={openCreate}
+          primaryLabel="Create project"
+          primaryIcon={Plus}
+          hideAgentBoard
+          hideSettings
         />
       </div>
 
@@ -227,7 +225,13 @@ export default function ProjectsPage() {
               <Table.Row key={project.project_id}>
                 <Table.Cell>
                   <div className="flex items-center gap-3">
-                    <Avatar src={project.cover_icon ?? undefined} alt={project.name} size="md" />
+                    <ProjectIconBadge
+                      color={(project.cover_color ?? "gray") as ProjectCoverColorId}
+                      icon={(project.cover_icon ?? "clipboard-list") as ProjectCoverIcon}
+                      size={40}
+                      iconSize={18}
+                      rounded="rounded-xl"
+                    />
                     <span className="text-sm font-medium text-primary">{project.name}</span>
                   </div>
                 </Table.Cell>
