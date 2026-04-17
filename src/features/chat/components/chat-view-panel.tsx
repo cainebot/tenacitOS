@@ -274,6 +274,33 @@ function ConversationView({ conversationId, conversation, refetch }: { conversat
     }
   }, [streamingMessages])
 
+  // D-04 (91.2-03): ResizeObserver per-message anchor.
+  // overflow-anchor CSS on the container handles most cases natively, but
+  // (a) Safari <17 does not fully support it, and (b) native anchor heuristics
+  // sometimes miss asynchronous image decode / audio waveform mounts.
+  // This observer re-anchors to bottom whenever an observed message changes
+  // height AND the user was already within 150px of the bottom.
+  // CRITICAL (RESEARCH.md Pitfall 1): the callback only writes `scrollTop` on
+  // the SCROLL CONTAINER — it never mutates styles or dimensions of observed
+  // nodes, so the ResizeObserver loop detector never fires.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || !hasInitialScrolled.current) return
+    if (typeof ResizeObserver === 'undefined') return // SSR / old browser guard
+
+    const observer = new ResizeObserver(() => {
+      const gap = el.scrollHeight - el.scrollTop - el.clientHeight
+      if (gap < 150) {
+        el.scrollTop = el.scrollHeight
+      }
+    })
+
+    const nodes = el.querySelectorAll<HTMLElement>('[data-message-id]')
+    nodes.forEach((node) => observer.observe(node))
+
+    return () => observer.disconnect()
+  }, [chat.messages.length])
+
   // ── Bulk mark-on-open read receipts ───────────────────────────────────────
   // Opening a conversation marks ALL unread messages as read — including ones
   // older than the 30-message window currently held in memory by useAgentChat.
@@ -347,7 +374,10 @@ function ConversationView({ conversationId, conversation, refetch }: { conversat
       <OAuthReconnectBanner visible={oauthExpired} />
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 py-4">
+      {/* D-04 (91.2-03): [overflow-anchor:auto] gives native browsers the first line
+          of defense; the ResizeObserver useEffect below re-anchors on message
+          height changes (image decode, audio mount) per Pattern 1 of RESEARCH.md. */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 py-4 [overflow-anchor:auto]">
         {chat.loading ? (
           <div className="flex items-center justify-center py-8">
             <p className="text-sm text-tertiary">Loading messages...</p>
@@ -422,7 +452,7 @@ function ConversationView({ conversationId, conversation, refetch }: { conversat
                     if (msg._uploadError) {
                       // D-06: Error state — show bubble with (!) icon + retry/delete dropdown
                       return (
-                        <div key={msg.message_id} className="flex items-center gap-1 justify-end">
+                        <div key={msg.message_id} data-message-id={msg.message_id} className="flex items-center gap-1 justify-end">
                           <Message {...msgProps} />
                           <Dropdown.Root>
                             <ButtonUtility icon={AlertCircle} size="sm" color="tertiary" className="text-error-primary" aria-label="Error al enviar" />
@@ -457,7 +487,7 @@ function ConversationView({ conversationId, conversation, refetch }: { conversat
 
                     // Normal uploading state — loading overlay
                     return (
-                      <div key={msg.message_id} className="relative">
+                      <div key={msg.message_id} data-message-id={msg.message_id} className="relative">
                         <Message {...msgProps} />
                         <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-primary/40">
                           <LoadingIndicator size="sm" />
@@ -466,7 +496,15 @@ function ConversationView({ conversationId, conversation, refetch }: { conversat
                     )
                   }
 
-                  return <Message key={msg.message_id} {...msgProps} />
+                  // D-04 (91.2-03): wrap Message in a data-message-id div so
+                  // the ResizeObserver (useEffect above) can observe per-message
+                  // height changes. Message itself does not forward arbitrary
+                  // data-* attributes, so the wrapper is the only safe anchor.
+                  return (
+                    <div key={msg.message_id} data-message-id={msg.message_id}>
+                      <Message {...msgProps} />
+                    </div>
+                  )
                 })}
               </ChatPanelSection>
             ))}
