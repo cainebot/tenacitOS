@@ -209,6 +209,11 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
   const sentinelRef = useRef<HTMLDivElement>(null)
   const scrollObserverRef = useRef<IntersectionObserver | null>(null)
 
+  // ── Viewport-based read receipts (1-second debounce per message) ──────────
+  // Ported from agent-chat-tab.tsx:287-327 — closes the unread-badge loop
+  // on the primary /chat surface. Only non-own messages get data-message-id.
+  const readObserverRef = useRef<IntersectionObserver | null>(null)
+
   // Reset scroll state when switching conversations
   useEffect(() => {
     hasInitialScrolled.current = false
@@ -273,6 +278,59 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
       el.scrollTop = el.scrollHeight
     }
   }, [streamingMessages])
+
+  // ── Viewport-based read receipts observer setup ──────────────────────────
+  // Creates the IntersectionObserver once per ConversationView mount and tears
+  // it down on unmount (or when conversationId changes — which remounts the
+  // component via the parent's keyed render). Observed elements are (un)observed
+  // separately below whenever chat.messages changes.
+  useEffect(() => {
+    const pendingReads = new Map<string, NodeJS.Timeout>()
+
+    readObserverRef.current = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const messageId = (entry.target as HTMLElement).dataset.messageId
+          if (!messageId) continue
+
+          if (entry.isIntersecting) {
+            if (!pendingReads.has(messageId)) {
+              const timer = setTimeout(() => {
+                chat.markMessagesRead([messageId])
+                pendingReads.delete(messageId)
+              }, 1000)
+              pendingReads.set(messageId, timer)
+            }
+          } else {
+            const timer = pendingReads.get(messageId)
+            if (timer) {
+              clearTimeout(timer)
+              pendingReads.delete(messageId)
+            }
+          }
+        }
+      },
+      { threshold: 0.5 }
+    )
+
+    return () => {
+      readObserverRef.current?.disconnect()
+      for (const timer of pendingReads.values()) {
+        clearTimeout(timer)
+      }
+      pendingReads.clear()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat.markMessagesRead])
+
+  // ── Observe/unobserve message DOM nodes on message list changes ──────────
+  useEffect(() => {
+    const observer = readObserverRef.current
+    if (!observer) return
+    const elements = scrollRef.current?.querySelectorAll<HTMLElement>('[data-message-id]') ?? []
+    elements.forEach(el => observer.observe(el))
+    return () => elements.forEach(el => observer.unobserve(el))
+  }, [chat.messages])
 
   const uiType = conversation ? conversationUiType(conversation.conversation_type) : null
   const isAnnouncement = uiType === 'announcement'
@@ -388,6 +446,11 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                     (msgProps as { content: string }).content = streamingText
                   }
 
+                  // Wrapper for viewport-based read receipts. Only non-own
+                  // messages need observing (own messages are already "read"
+                  // for the author); optimistic previews are always own.
+                  const observeAttr = !msg.isMine ? { 'data-message-id': msg.message_id } : {}
+
                   // Phase 102.1: Upload states for optimistic image preview messages
                   if (msg._isLocalPreview) {
                     if (msg._uploadError) {
@@ -437,7 +500,11 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
                     )
                   }
 
-                  return <Message key={msg.message_id} {...msgProps} />
+                  return (
+                    <div key={msg.message_id} {...observeAttr}>
+                      <Message {...msgProps} />
+                    </div>
+                  )
                 })}
               </ChatPanelSection>
             ))}
