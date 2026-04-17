@@ -62,7 +62,7 @@ interface ConversationParticipant {
   avatar_url: string | null
 }
 
-function ConversationView({ conversationId, conversation }: { conversationId: string; conversation: ConversationWithMeta | undefined }) {
+function ConversationView({ conversationId, conversation, refetch }: { conversationId: string; conversation: ConversationWithMeta | undefined; refetch: () => void }) {
   const { participant } = useMyParticipant()
   const myParticipantId = participant?.participant_id ?? ''
   const [recipientIds, setRecipientIds] = useState<string[]>([])
@@ -275,27 +275,33 @@ function ConversationView({ conversationId, conversation }: { conversationId: st
   }, [streamingMessages])
 
   // ── Bulk mark-on-open read receipts ───────────────────────────────────────
-  // Viewport-based observer was insufficient: chat-view-panel.tsx hides
-  // placeholder messages with empty text and no attachments (see filter near
-  // the render loop below). Those hidden messages never produce DOM nodes, so
-  // an IntersectionObserver never sees them and they stay unread forever —
-  // keeping the badge counts inflated by orphan streaming placeholders from
-  // Phase 102. Instead, on every message list change we bulk-mark every
-  // non-own message that does NOT already have a `read` receipt from the
-  // current participant. The /api/conversations/[id]/receipts endpoint is
-  // idempotent (onConflict upsert) so repeated calls are safe.
+  // Opening a conversation marks ALL unread messages as read — including ones
+  // older than the 30-message window currently held in memory by useAgentChat.
+  // The server resolves the full unread set via `mark_all_unread: true`. The
+  // /api/conversations/[id]/receipts endpoint is idempotent (onConflict upsert)
+  // so repeated calls are safe. After write we refetch the conversations list
+  // so the sidebar/global badges converge without relying on Realtime.
   useEffect(() => {
-    if (chat.loading || chat.messages.length === 0) return
-    const unreadIds = chat.messages
-      .filter(m =>
-        !m.isMine &&
-        !m.receipts?.some(r => r.status === 'read' && r.participant_id === myParticipantId)
-      )
-      .map(m => m.message_id)
-    if (unreadIds.length === 0) return
-    chat.markMessagesRead(unreadIds)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chat.messages, chat.loading, chat.markMessagesRead, myParticipantId])
+    if (!conversationId || !myParticipantId) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch(`/api/conversations/${conversationId}/receipts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mark_all_unread: true,
+            participant_id: myParticipantId,
+            status: 'read',
+          }),
+        })
+        if (!cancelled && res.ok) refetch()
+      } catch {
+        // best-effort
+      }
+    })()
+    return () => { cancelled = true }
+  }, [conversationId, myParticipantId, refetch])
 
   const uiType = conversation ? conversationUiType(conversation.conversation_type) : null
   const isAnnouncement = uiType === 'announcement'
@@ -637,6 +643,7 @@ export function ChatViewPanel({
   view,
   onConversationCreated,
   onBack,
+  refetch,
 }: ChatViewPanelProps) {
   if (view === 'new-dm') {
     return <DmCreationPanel onBack={onBack} onConversationCreated={onConversationCreated} />
@@ -653,7 +660,7 @@ export function ChatViewPanel({
   }
 
   if (activeConversationId) {
-    return <ConversationView conversationId={activeConversationId} conversation={conversation} />
+    return <ConversationView conversationId={activeConversationId} conversation={conversation} refetch={refetch} />
   }
 
   return (

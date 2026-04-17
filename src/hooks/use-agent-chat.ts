@@ -1339,15 +1339,19 @@ export function useAgentChat({
     if (!conversationId || !myParticipantId || messageIds.length === 0) return
 
     // Route through API to bypass RLS (browser has no auth session)
-    fetch(`/api/conversations/${conversationId}/receipts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message_ids: messageIds,
-        participant_id: myParticipantId,
-        status: 'read',
-      }),
-    }).catch(() => {}) // fire-and-forget — receipt insertion is best-effort
+    try {
+      await fetch(`/api/conversations/${conversationId}/receipts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message_ids: messageIds,
+          participant_id: myParticipantId,
+          status: 'read',
+        }),
+      })
+    } catch {
+      // best-effort — receipt insertion can fail silently, caller still proceeds
+    }
   }, [conversationId, myParticipantId])
 
   return {

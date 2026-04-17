@@ -15,11 +15,8 @@ export async function POST(
   const supabase = createServiceRoleClient()
 
   const body = await request.json()
-  const { message_ids, status, participant_id } = body
+  const { message_ids, status, participant_id, mark_all_unread } = body
 
-  if (!Array.isArray(message_ids) || message_ids.length === 0) {
-    return NextResponse.json({ error: 'message_ids array required' }, { status: 400 })
-  }
   if (!participant_id) {
     return NextResponse.json({ error: 'participant_id required' }, { status: 400 })
   }
@@ -27,7 +24,41 @@ export async function POST(
     return NextResponse.json({ error: 'status must be delivered or read' }, { status: 400 })
   }
 
-  const receipts = message_ids.map((mid: string) => ({
+  // mark_all_unread mode: server-side resolves every message in the conversation
+  // sent by someone else that lacks a `read` receipt for this participant, then
+  // upserts receipts for all of them. Needed because the client only holds the
+  // 30 most recent messages in memory, but the unread_count covers the full
+  // history. Without this, old unread messages stay "unread" forever.
+  let ids: string[]
+  if (mark_all_unread) {
+    const { data: msgs, error: fetchErr } = await supabase
+      .from('messages')
+      .select('message_id, sender_id, message_receipts(participant_id, status)')
+      .eq('conversation_id', conversationId)
+      .is('deleted_at', null)
+      .neq('sender_id', participant_id)
+
+    if (fetchErr) {
+      return NextResponse.json({ error: fetchErr.message }, { status: 500 })
+    }
+    ids = (msgs ?? [])
+      .filter(m => !(m.message_receipts ?? []).some(
+        (r: { participant_id: string; status: string }) =>
+          r.participant_id === participant_id && r.status === 'read'
+      ))
+      .map(m => m.message_id)
+  } else {
+    if (!Array.isArray(message_ids) || message_ids.length === 0) {
+      return NextResponse.json({ error: 'message_ids array required' }, { status: 400 })
+    }
+    ids = message_ids
+  }
+
+  if (ids.length === 0) {
+    return NextResponse.json({ ok: true, marked: 0 })
+  }
+
+  const receipts = ids.map((mid: string) => ({
     message_id: mid,
     conversation_id: conversationId,
     participant_id,
@@ -42,5 +73,5 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, marked: ids.length })
 }
