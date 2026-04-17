@@ -88,11 +88,15 @@ export function AgentPanel({
 }: AgentPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to bottom when chat content changes
+  // Auto-scroll to bottom when chat content changes.
+  // Only active in legacy (!hideInput) mode where AgentPanel owns the scroll region.
+  // When hideInput=true, the consumer (e.g. AgentChatTab) owns the scroll container
+  // and manages its own initial-scroll / new-message scroll behavior.
   useEffect(() => {
+    if (hideInput) return
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [children])
+  }, [children, hideInput])
 
   return (
     <Tabs
@@ -167,23 +171,32 @@ export function AgentPanel({
 
       {/* ── Chat tab ─────────────────────────────────────────────────── */}
       <TabPanel id="chat" className="flex-1 flex flex-col overflow-hidden p-0 min-h-0">
-        {/* Scrollable messages — Figma: justify-end, gap-8, px-6 pb-6 */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0">
-          <div className="flex flex-col justify-end min-h-full gap-8 px-6 pb-6">
+        {hideInput ? (
+          // Pass-through layout — consumer (e.g. AgentChatTab) owns scroll region + input.
+          // AgentPanel MUST NOT wrap children in overflow-y-auto here, otherwise the
+          // child's top sentinel sits inside this container and fires loadMore on mount.
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {children}
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Scrollable messages — Figma: justify-end, gap-8, px-6 pb-6 */}
+            <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0">
+              <div className="flex flex-col justify-end min-h-full gap-8 px-6 pb-6">
+                {children}
+              </div>
+            </div>
 
-        {/* Message input — Figma: ChatInput advanced, px-5 pb-4 */}
-        {!hideInput && (
-          <div className="shrink-0 px-5 pb-4">
-            <ChatInput
-              type="advanced"
-              avatarSrc={avatarSrc}
-              userName={name}
-              onSend={onSend}
-            />
-          </div>
+            {/* Message input — Figma: ChatInput advanced, px-5 pb-4 */}
+            <div className="shrink-0 px-5 pb-4">
+              <ChatInput
+                type="advanced"
+                avatarSrc={avatarSrc}
+                userName={name}
+                onSend={onSend}
+              />
+            </div>
+          </>
         )}
       </TabPanel>
 
