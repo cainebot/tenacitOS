@@ -221,21 +221,55 @@ export function AgentChatTab({
     }
   }, [handleSend, onSendRef])
 
-  // ── Auto-scroll anchor ────────────────────────────────────────────────────
-  const bottomRef = useRef<HTMLDivElement>(null)
+  // ── Scroll management (ported from chat-view-panel, per D-02/D-03/D-04) ──
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const hasInitialScrolled = useRef(false)
+  const prevMessageCountRef = useRef(0)
 
   // ── Infinite scroll sentinel ──────────────────────────────────────────────
   const sentinelRef = useRef<HTMLDivElement>(null)
   const scrollObserverRef = useRef<IntersectionObserver | null>(null)
 
+  // Reset scroll state when switching conversations
+  useEffect(() => {
+    hasInitialScrolled.current = false
+    prevMessageCountRef.current = 0
+  }, [conversationId])
+
+  // D-04: Initial load always scrolls to bottom (once per conversation)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    if (!hasInitialScrolled.current && chat.messages.length > 0 && !chat.loading) {
+      el.scrollTop = el.scrollHeight
+      hasInitialScrolled.current = true
+    }
+  }, [chat.messages.length, chat.loading])
+
+  // D-03: Auto-scroll on new messages only if within 150px of bottom
+  // (skip for loadMore which prepends older messages)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || !hasInitialScrolled.current) return
+    if (chat.messages.length > prevMessageCountRef.current && prevMessageCountRef.current > 0) {
+      const gap = el.scrollHeight - el.scrollTop - el.clientHeight
+      if (gap < 150) {
+        el.scrollTop = el.scrollHeight
+      }
+    }
+    prevMessageCountRef.current = chat.messages.length
+  }, [chat.messages.length])
+
+  // Sentinel — loadMore ONLY after initial scroll completed, otherwise the
+  // sentinel sits at the viewport on mount and fires a runaway chain.
   useEffect(() => {
     if (!sentinelRef.current) return
 
     scrollObserverRef.current = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting && chat.hasMore) {
-            chat.loadMore()
+          if (entry.isIntersecting && chat.hasMore && hasInitialScrolled.current) {
+            void chat.loadMore()
           }
         }
       },
@@ -292,30 +326,25 @@ export function AgentChatTab({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.markMessagesRead])
 
-  // ── Auto-scroll when typing indicator appears or new messages arrive ──────
+  // ── Auto-scroll when typing indicator appears (uses owned scrollRef) ──────
   useEffect(() => {
-    const el = bottomRef.current
-    if (!el) return
-
-    // Find parent scroll container (AgentPanel's overflow-y-auto div)
-    const scrollContainer = el.closest('.overflow-y-auto') as HTMLElement | null
-    if (!scrollContainer) return
-
-    // Only auto-scroll if user is near the bottom (within 150px)
-    const gap = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight
+    const el = scrollRef.current
+    if (!el || !hasInitialScrolled.current) return
+    const gap = el.scrollHeight - el.scrollTop - el.clientHeight
     if (gap < 150) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      el.scrollTop = el.scrollHeight
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAgentTyping, chat.messages.length])
+  }, [isAgentTyping])
 
   // ── Loading state ─────────────────────────────────────────────────────────
   const isLoading = conversationLoading || chat.loading
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center py-8">
-        <p className="text-sm text-tertiary">Loading messages...</p>
+      <div className="flex h-full flex-col min-h-0">
+        <div className="flex flex-1 items-center justify-center py-8">
+          <p className="text-sm text-tertiary">Loading messages...</p>
+        </div>
       </div>
     )
   }
@@ -334,7 +363,12 @@ export function AgentChatTab({
   const isEmpty = chat.messages.length === 0 && !isAgentTyping
 
   return (
-    <div className="flex flex-col gap-4 w-full flex-1">
+    <div className="flex h-full flex-col min-h-0">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 pb-6"
+      >
+        <div className="flex flex-col gap-4 w-full">
       {isEmpty ? (
         <div className="flex flex-1 items-center justify-center py-8">
           <p className="text-sm text-tertiary text-center px-4">
@@ -344,7 +378,7 @@ export function AgentChatTab({
       ) : (
         <>
           {/* Infinite scroll sentinel — top sentinel triggers loadMore when scrolled up */}
-          <div ref={sentinelRef} className="h-1" />
+          <div ref={sentinelRef} className="h-1 shrink-0" />
 
           {Array.from(groups.entries()).map(([dateKey, group]) => (
             <div key={dateKey} className="flex flex-col gap-4 w-full">
@@ -436,14 +470,13 @@ export function AgentChatTab({
               timestamp=""
             />
           )}
-
-          {/* Auto-scroll anchor — scrollIntoView target for typing/new messages */}
-          <div ref={bottomRef} aria-hidden />
         </>
       )}
+        </div>
+      </div>
 
-      {/* Chat input — always rendered so user can start new conversations */}
-      <div className="shrink-0 px-0 pb-0 mt-auto">
+      {/* Chat input — pinned outside scroll region so it stays visible */}
+      <div className="shrink-0 px-5 pb-4">
         <ChatInput
           type="advanced"
           avatarSrc={userAvatarSrc}
