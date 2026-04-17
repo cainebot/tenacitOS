@@ -53,7 +53,7 @@ function MenuItem({
         <div className="flex flex-1 gap-2 items-center min-w-0">
           {icon}
           {avatar !== undefined && (
-            <Avatar src={avatar ?? undefined} alt={label} size="xs" status="online" />
+            <Avatar src={avatar ?? undefined} alt={label} size="sm" status="online" />
           )}
           <span className="flex-1 text-sm font-semibold text-secondary truncate">{label}</span>
         </div>
