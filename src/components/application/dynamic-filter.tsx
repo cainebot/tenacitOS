@@ -46,7 +46,7 @@ import { GripVertical } from "@/components/icons/grip-vertical"
 
 export type FilterOperator = "equal" | "not_equal" | "greater" | "greater_equal" | "less" | "less_equal" | "contains" | "not_contains"
 
-export type FilterFieldType = "member" | "priority" | "date" | "tags" | "card_type"
+export type FilterFieldType = "member" | "agent" | "priority" | "date" | "tags" | "card_type"
 
 export interface FilterFieldDefinition {
   type: FilterFieldType
