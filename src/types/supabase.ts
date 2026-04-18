@@ -18,19 +18,35 @@ export type TaskType = 'general' | 'code-review' | 'deploy' | 'research' | 'buil
 export type AgentRole = 'lead' | 'specialist' | 'intern';
 export type AgentBadge = 'LEAD' | 'SPC' | 'INT';
 
+// Phase 64.5.2 Plan 03: NodeRow is a SUPERSET — preserves legacy fields
+// (ram_usage_mb, ram_total_mb, agent_count, last_heartbeat) consumed by
+// (dashboard)/layout.tsx and api/nodes/list/route.ts, AND adds the new
+// columns introduced by migrations 014/016 (tailscale_*, deprovisioned_at,
+// last_heartbeat_at, hostname, platform, available_adapters). Removing
+// any legacy field breaks the dashboard layout — Codex Plan03-HIGH-#1.
 export interface NodeRow {
+  // --- Preserved (consumed by (dashboard)/layout.tsx) ---
   node_id: string;
-  tailscale_ip: string;
-  gateway_port: number;
-  auth_token_hash: string;
-  status: NodeStatus;
-  agent_count: number;
-  ram_usage_mb: number;
-  ram_total_mb: number;
-  cpu_percent: number;
-  last_heartbeat: string; // ISO timestamp
-  created_at: string;
-  updated_at: string;
+  tailscale_ip: string | null;
+  gateway_port: number | null;
+  auth_token_hash?: string;
+  status: NodeStatus | string | null;
+  agent_count: number;          // KEEP — layout.tsx reads this
+  ram_usage_mb: number;         // KEEP — layout.tsx computes ramPct
+  ram_total_mb: number;         // KEEP — layout.tsx computes ramPct
+  cpu_percent?: number;
+  last_heartbeat: string | null; // KEEP (legacy alias) — aliased from last_heartbeat_at server-side
+  created_at: string | null;
+  updated_at: string | null;
+  // --- Added by Phase 64.5.2 (superset) ---
+  last_heartbeat_at: string | null;    // canonical column name per migration 014
+  tailscale_hostname: string | null;
+  hostname: string | null;
+  deprovisioned_at: string | null;
+  platform: string | null;
+  available_adapters: string[] | null;
+  // Runtime-only (not in schema)
+  ram_pct?: number;
 }
 
 // Phase 9: Department table
