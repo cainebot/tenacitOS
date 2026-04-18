@@ -1,13 +1,19 @@
 "use client";
 
-import { HomeLine, Trash01, Edit05, Plus } from "@untitledui/icons";
+import { HomeLine, Trash01, Edit05, Plus, User01 } from "@untitledui/icons";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader, Input, MemberSelector, AvatarGroup, Table, TableCard, Button, ModalForm, ConfirmActionDialog } from "@circos/ui";
+import { PageHeader, Input, AvatarGroup, Table, TableCard, Button, ModalForm, ConfirmActionDialog } from "@circos/ui";
 import { PaginationCardDefault } from "@/components/application/pagination/pagination";
 import type { ProjectRow } from "@/types/project";
 import { ProjectCover, type ProjectCoverValue } from "@/components/application/project-cover/project-cover";
-import { KanbanBoardHeader } from "@/components/application/kanban-board-header";
+import { KanbanBoardHeader, type SortOption } from "@/components/application/kanban-board-header";
+import {
+  type FilterRow,
+  type FilterFieldDefinition,
+  type FilterFieldType,
+} from "@/components/application/dynamic-filter";
+import { BotIcon } from "@/components/icons/bot-icon";
 import { ProjectIconBadge, type ProjectCoverColorId, type ProjectCoverIcon } from "@/components/application/project-cover";
 
 export default function ProjectsPage() {
@@ -30,9 +36,9 @@ export default function ProjectsPage() {
   const router = useRouter();
   const [formCover, setFormCover] = useState<ProjectCoverValue>({ color: "gray", icon: "clipboard-list" });
 
-  // MemberSelector filter state
-  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
-  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+  // Dynamic filter + sort state (Phase 111-01)
+  const [filters, setFilters] = useState<FilterRow[]>([]);
+  const [sortBy, setSortBy] = useState<SortOption | null>(null);
 
   useEffect(() => {
     fetch("/api/projects")
@@ -72,20 +78,56 @@ export default function ProjectsPage() {
     return Array.from(map.values());
   }, [projects]);
 
+  const filterFields: FilterFieldDefinition[] = useMemo(() => [
+    {
+      type: "member",
+      label: "Member",
+      icon: User01,
+      operators: ["equal", "not_equal"],
+      values: allMembers.map((m) => ({ id: m.id, label: m.name, avatarUrl: m.avatarUrl })),
+    },
+    {
+      type: "agent",
+      label: "Agent",
+      icon: BotIcon,
+      operators: ["equal", "not_equal"],
+      values: allAgents.map((a) => ({ id: a.id, label: a.name, avatarUrl: a.avatarUrl })),
+    },
+  ], [allMembers, allAgents]);
+
   const filtered = useMemo(() => {
     let result = projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
-    if (selectedMemberIds.length > 0) {
-      result = result.filter((p) =>
-        (p.members ?? []).some((m) => m.type === "user" && selectedMemberIds.includes(m.id))
-      );
+
+    // Agrupar filters por fieldType: equals del mismo tipo → OR-group (legacy multi-select);
+    // not_equals → AND; grupos de distinto fieldType → AND entre sí.
+    const fieldTypeToMemberType = (t: FilterFieldType): "user" | "agent" | null =>
+      t === "member" ? "user" : t === "agent" ? "agent" : null;
+    const grouped = filters.reduce<Record<string, FilterRow[]>>((acc, f) => {
+      if (!f.value) return acc;
+      if (!fieldTypeToMemberType(f.fieldType)) return acc;
+      (acc[f.fieldType] ??= []).push(f);
+      return acc;
+    }, {});
+
+    for (const [fieldType, rows] of Object.entries(grouped)) {
+      const memberType = fieldTypeToMemberType(fieldType as FilterFieldType)!;
+      const equalValues = rows.filter((r) => r.operator === "equal").map((r) => r.value!);
+      const notEqualValues = rows.filter((r) => r.operator === "not_equal").map((r) => r.value!);
+      result = result.filter((p) => {
+        const memberIds = new Set((p.members ?? []).filter((m) => m.type === memberType).map((m) => m.id));
+        if (equalValues.length > 0 && !equalValues.some((id) => memberIds.has(id))) return false;
+        if (notEqualValues.some((id) => memberIds.has(id))) return false;
+        return true;
+      });
     }
-    if (selectedAgentIds.length > 0) {
-      result = result.filter((p) =>
-        (p.members ?? []).some((m) => m.type === "agent" && selectedAgentIds.includes(m.id))
-      );
-    }
+
+    if (sortBy === "alpha_asc")  result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+    if (sortBy === "alpha_desc") result = [...result].sort((a, b) => b.name.localeCompare(a.name));
+    if (sortBy === "date_asc")   result = [...result].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    if (sortBy === "date_desc")  result = [...result].sort((a, b) => b.created_at.localeCompare(a.created_at));
+
     return result;
-  }, [projects, search, selectedMemberIds, selectedAgentIds]);
+  }, [projects, search, filters, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -174,7 +216,11 @@ export default function ProjectsPage() {
 
       <div className="self-stretch px-8">
         <KanbanBoardHeader
-          filterFields={[]}
+          filterFields={filterFields}
+          filters={filters}
+          onFiltersChange={(f) => { setFilters(f); setPage(1); }}
+          sortBy={sortBy}
+          onSortChange={(s) => { setSortBy(s); setPage(1); }}
           search={search}
           onSearchChange={(v) => { setSearch(v); setPage(1); }}
           onAddTask={openCreate}
@@ -182,21 +228,6 @@ export default function ProjectsPage() {
           primaryIcon={Plus}
           hideAgentBoard
           hideSettings
-        />
-      </div>
-
-      <div className="flex items-start gap-6 self-stretch px-8">
-        <MemberSelector
-          users={allMembers}
-          selected={selectedMemberIds}
-          onChange={(ids) => { setSelectedMemberIds(ids); setPage(1); }}
-          label="Members"
-        />
-        <MemberSelector
-          users={allAgents}
-          selected={selectedAgentIds}
-          onChange={(ids) => { setSelectedAgentIds(ids); setPage(1); }}
-          label="Agents"
         />
       </div>
 
