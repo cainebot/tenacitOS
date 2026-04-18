@@ -1,5 +1,6 @@
 // CircOS Phase 64.5.2 Plan 03 Task 3 — Admin CRUD for public.error_messages.
 //
+// GET  /api/admin/error-messages — list all rows (admin-gated)
 // PUT  /api/admin/error-messages — upsert (error_code, lang) row
 // POST /api/admin/error-messages — alias for PUT (curl-friendly)
 // DELETE /api/admin/error-messages?error_code=X&lang=Y — delete one row
@@ -15,6 +16,10 @@
 //
 // DELETE blocks live error codes (those still in @circos/cli-connect/shared/
 // error-codes registry) — only orphan codes can be removed.
+//
+// [Rule 1 - Bug fix in 64.5.2-05] Plan 03 schema (message/remediation/category)
+// did not match the live error_messages table (title/description/next_step/
+// doc_link). Schema realigned + GET added so the admin editor can list rows.
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createServiceRoleClient } from "@/lib/supabase";
@@ -26,10 +31,10 @@ export const dynamic = "force-dynamic";
 const upsertSchema = z.object({
   error_code: z.string().min(1).max(64),
   lang: z.enum(["es", "en"]),
-  message: z.string().min(1),
-  remediation: z.string().min(1),
-  doc_link: z.string().min(1),
-  category: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  next_step: z.string().min(1).nullable(),
+  doc_link: z.string().min(1).nullable(),
 });
 
 const deleteSchema = z.object({
@@ -101,6 +106,29 @@ async function handleUpsert(req: NextRequest): Promise<NextResponse> {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const gate = isAdmin(req);
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: "forbidden", message: "admin access required" },
+      { status: 403 },
+    );
+  }
+  const sb = createServiceRoleClient();
+  const { data, error } = await sb
+    .from("error_messages")
+    .select("error_code, lang, title, description, next_step, doc_link, updated_at, updated_by")
+    .order("error_code", { ascending: true })
+    .order("lang", { ascending: true });
+  if (error) {
+    return NextResponse.json(
+      { error: "db_error", message: error.message },
+      { status: 500 },
+    );
+  }
+  return NextResponse.json({ rows: data ?? [] });
 }
 
 export async function PUT(req: NextRequest): Promise<NextResponse> {
