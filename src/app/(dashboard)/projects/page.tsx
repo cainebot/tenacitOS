@@ -1,7 +1,7 @@
 "use client";
 
 import { HomeLine, Trash01, Edit05, Plus, User01 } from "@untitledui/icons";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader, Input, AvatarGroup, Table, TableCard, Button, ModalForm, ConfirmActionDialog } from "@circos/ui";
 import { PaginationCardDefault } from "@/components/application/pagination/pagination";
@@ -235,8 +235,8 @@ export default function ProjectsPage() {
         <TableCard.Root size="md" className="w-full">
           <Table aria-label="Projects table" className="w-full">
             <Table.Header>
-            <Table.Head id="company" isRowHeader allowsSorting className="w-full">
-              <span className="text-xs font-medium text-quaternary">Company</span>
+            <Table.Head id="project" isRowHeader allowsSorting className="w-full">
+              <span className="text-xs font-medium text-quaternary">Project</span>
             </Table.Head>
             <Table.Head id="key">
               <span className="text-xs font-medium text-quaternary">Key</span>
@@ -253,7 +253,12 @@ export default function ProjectsPage() {
           </Table.Header>
           <Table.Body>
             {visible.map((project) => (
-              <Table.Row key={project.project_id}>
+              // a11y: row-click solo funciona con mouse. Para navegación keyboard-only, usar la ruta /projects (browser URL) o abrir el board desde otro affordance en una fase futura.
+              <Table.Row
+                key={project.project_id}
+                className="cursor-pointer"
+                onClick={() => router.push(`/projects/${project.slug}`)}
+              >
                 <Table.Cell>
                   <div className="flex items-center gap-3">
                     <ProjectIconBadge
@@ -285,8 +290,8 @@ export default function ProjectsPage() {
                 </Table.Cell>
                 <Table.Cell>
                   <div className="flex items-center gap-1">
-                    <Button color="tertiary" size="sm" iconLeading={Trash01} aria-label="Delete" onClick={() => setDeleteTarget(project)} />
-                    <Button color="tertiary" size="sm" iconLeading={Edit05} aria-label="Edit" onClick={() => openEdit(project)} />
+                    <Button color="tertiary" size="sm" iconLeading={Trash01} aria-label="Delete" onClick={(e: MouseEvent) => { e.stopPropagation(); setDeleteTarget(project); }} />
+                    <Button color="tertiary" size="sm" iconLeading={Edit05} aria-label="Edit" onClick={(e: MouseEvent) => { e.stopPropagation(); openEdit(project); }} />
                   </div>
                 </Table.Cell>
               </Table.Row>
