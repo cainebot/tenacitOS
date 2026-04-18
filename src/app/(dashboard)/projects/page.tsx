@@ -257,7 +257,7 @@ export default function ProjectsPage() {
               <Table.Row
                 key={project.project_id}
                 className="cursor-pointer"
-                onClick={() => router.push(`/projects/${project.slug}`)}
+                onAction={() => router.push(`/projects/${project.slug}`)}
               >
                 <Table.Cell>
                   <div className="flex items-center gap-3">
