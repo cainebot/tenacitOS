@@ -6,6 +6,7 @@ import type { NodeRow } from '@/types/supabase'
 
 export interface UseRealtimeNodesResult {
   nodes: NodeRow[]
+  activeNodes: NodeRow[]
   loading: boolean
   error: string | null
   resync: () => Promise<void>
@@ -71,5 +72,11 @@ export function useRealtimeNodes(): UseRealtimeNodesResult {
     }
   }, [fetchAllNodes, supabase])
 
-  return { nodes, loading, error, resync }
+  // Phase 64.5.2-04: activeNodes excludes soft-deleted (deprovisioned_at IS NOT NULL).
+  // Mesh tile and downstream UI consumers MUST use activeNodes; the raw `nodes` is
+  // preserved for callers (e.g. (dashboard)/layout.tsx) that already accommodate
+  // historical/deprovisioned rows.
+  const activeNodes = nodes.filter((n) => !n.deprovisioned_at)
+
+  return { nodes, activeNodes, loading, error, resync }
 }
