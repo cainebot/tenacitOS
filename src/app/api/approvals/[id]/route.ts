@@ -71,6 +71,26 @@ export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ): Promise<NextResponse<ApprovalPatchResponse>> {
+  // ME-02 (POST-EXEC) — defense-in-depth CSRF check on top of SameSite
+  // cookie behaviour. Require the request Origin to match this app's
+  // origin. A cross-site attacker cannot spoof Origin in a fetch, so
+  // this defeats any stray CORS / redirect pivot that a subtle
+  // SameSite=Lax on `mc_auth` would leave exposed.
+  const origin = req.headers.get("origin");
+  if (origin !== null) {
+    try {
+      const expected = req.nextUrl.origin;
+      if (origin !== expected) {
+        return NextResponse.json(
+          { ok: false, error: "bad_origin", message: "cross-origin PATCH denied" },
+          { status: 403 },
+        );
+      }
+    } catch {
+      // nextUrl.origin unavailable — conservative allow only when no Origin header.
+    }
+  }
+
   const { id } = await context.params;
 
   if (!id || typeof id !== "string" || id.length > 64) {

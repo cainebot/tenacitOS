@@ -67,14 +67,12 @@ export function useApprovalsCount(): UseApprovalsCountResult {
               setCount((prev) => prev + 1);
             }
           } else if (eventType === "UPDATE") {
-            const before = payload.old as Partial<ApprovalRow>;
-            const after = payload.new as ApprovalRow;
-            const wasActive = isActiveStatus(
-              (before.status as ApprovalStatus) ?? "pending",
-            );
-            const isActive = isActiveStatus(after.status);
-            if (wasActive && !isActive) setCount((prev) => Math.max(0, prev - 1));
-            else if (!wasActive && isActive) setCount((prev) => prev + 1);
+            // ME-03 (POST-EXEC): Supabase Realtime only ships `payload.old.status`
+            // when the table has `REPLICA IDENTITY FULL`. `approvals` does not,
+            // so `before.status` can be undefined — the `!wasActive && isActive`
+            // branch would then fire on every UPDATE and inflate the counter.
+            // Safer: authoritative re-count against the server on any UPDATE.
+            fetchCount();
           } else if (eventType === "DELETE") {
             const before = payload.old as Partial<ApprovalRow>;
             if (isActiveStatus((before.status as ApprovalStatus) ?? "pending")) {
