@@ -33,23 +33,54 @@ anon session cannot satisfy that, so:
 Both symptoms were caught as **GAP-68-01** during Phase 68 verification
 and closed by Plan 08.
 
-## Why polling instead of Realtime?
+## Phase 68.1 Item 2 — JWT-mint Realtime shipped
 
-Our operator queue is ~10s granularity; polling at 3s (pause-on-hidden)
-gives <2s effective latency and requires zero new infrastructure.
+- `POST /api/auth/realtime-token` mints an HS256 JWT (TTL 5min) signed
+  with `SUPABASE_JWT_SECRET` using `jose.SignJWT`.
+- `useRealtimeToken` hook renews every 4min; returns
+  `{ token, realtimeEnabled }`. `realtimeEnabled=false` when the
+  endpoint returns 500 (auth_misconfigured), so consumers suppress
+  "Realtime disconnected" warnings for known misconfig.
+- `approvals-table.tsx` uses a **stable channel pattern** (Codex MEDIUM
+  Option B):
+  - `useEffect([])` — channel setup, persists across token rotations.
+  - `useEffect([token])` — `sb.realtime.setAuth(newToken)` imperatively,
+    no re-subscribe. Renewal every 4min does NOT tear down the
+    subscription.
+- The Realtime callback calls `refetch()` exposed by `useApprovalsList`
+  (Codex HIGH Option A — explicit refetch contract).
+- Latency instrumented via `console.log("[realtime-latency-ms]", n)`
+  — use the browser devtools console to compare against the polling
+  baseline. Spike measured ~500ms end-to-end (see
+  `.planning/phases/68.1-approvals-dynamism-followups/68.1-SPIKE-JWT.md`).
+- **Polling 3s from Plan 68-08 STAYS as defence-in-depth.** If the
+  Realtime channel fails (CHANNEL_ERROR / CLOSED), the hook keeps
+  pulling rows every 3s.
 
-Real Realtime requires either:
+### Security note — JWT blast radius
 
-1. Full Supabase Auth integration (out of scope for v1.9), or
-2. Minting a short-lived JWT with `role='authenticated'` signed by
-   `SUPABASE_JWT_SECRET`, handing it to the browser via an endpoint
-   like `GET /api/approvals/token`, then calling
-   `supabase.realtime.setAuth(token)` before subscribing.
+The minted JWT is **usage-scoped, not cryptographically scoped**. Blast
+radius of a leaked token = everything `role='authenticated'` can read
+or write under RLS during TTL=5min. Mitigations:
 
-Option 2 is the documented upgrade path. It's intentionally deferred:
-we haven't verified that a non-Supabase-Auth JWT signed by the same
-secret is accepted by Supabase Realtime in our deployment, and the
-polling interim has no security debt.
+- TTL=5min (short attack window).
+- `mc_auth` gate on the mint endpoint.
+- RLS is the actual authorisation boundary.
+- Token lives in-memory only (hook never persists to localStorage).
+
+See `src/app/api/auth/realtime-token/route.ts` for the full security
+comment and `68.1-SPIKE-JWT.md` for the RLS pre-check evidence.
+
+---
+
+## Historical note — Plan 68-08 polling-only path
+
+Before Phase 68.1 Item 2 landed, the approvals page polled `GET
+/api/approvals` every 3s (pause-on-hidden) and did NOT subscribe to
+Realtime. Rationale was that a non-Supabase-Auth JWT signed by the same
+secret had not been verified to pass Supabase Realtime's gateway. The
+Phase 68.1 spike proved it does (see `68.1-SPIKE-JWT.md`), so the
+upgrade path above is now live.
 
 ## Files
 

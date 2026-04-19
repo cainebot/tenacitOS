@@ -29,6 +29,8 @@ import {
 } from "@circos/ui";
 import { ShieldTick, Eye, AlertTriangle, Clock } from "@untitledui/icons";
 import { useApprovalsList } from "@/hooks/useApprovalsList";
+import { useRealtimeToken } from "@/hooks/useRealtimeToken";
+import { createBrowserClient } from "@/lib/supabase";
 import {
   ACTIVE_APPROVAL_STATUSES,
   type ApprovalAction,
@@ -121,10 +123,11 @@ function payloadPreview(row: ApprovalRow): string {
 }
 
 export function ApprovalsTable() {
-  const { rows, loading, error: loadError, setRows, refresh } = useApprovalsList({
+  const { rows, loading, error: loadError, setRows, refresh, refetch } = useApprovalsList({
     statuses: ALL_STATUSES,
     limit: 200,
   });
+  const { token, realtimeEnabled } = useRealtimeToken();
   const [typeFilter, setTypeFilter] = useState<ApprovalType | "all">("all");
   const [statusFilter, setStatusFilter] =
     useState<"active" | ApprovalStatus>("active");
@@ -140,6 +143,64 @@ export function ApprovalsTable() {
     const t = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(t);
   }, []);
+
+  // Phase 68.1 Item 2 — Realtime subscription with stable channel (Codex
+  // MEDIUM Option B). The channel setup lives in a `[]` effect so it is
+  // NOT recreated on token rotation; a second `[token]` effect calls
+  // `setAuth()` imperatively. Polling (useApprovalsList) stays as
+  // defence-in-depth: if Realtime silently fails, polling covers the
+  // gap within 3s.
+  useEffect(() => {
+    const sb = createBrowserClient();
+    const ch = sb
+      .channel("approvals:queue")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "approvals" },
+        (payload) => {
+          // Codex MEDIUM — latency instrumentation. Compare the DB
+          // timestamp on the payload against the browser clock; the
+          // console log lets an operator compare Realtime (<500ms) vs
+          // polling (~1500ms) without rebuilding the app.
+          const createdAt =
+            (payload as { new?: { created_at?: string; updated_at?: string } })
+              ?.new?.created_at ??
+            (payload as { new?: { created_at?: string; updated_at?: string } })
+              ?.new?.updated_at;
+          if (createdAt) {
+            const latency = Date.now() - new Date(createdAt).getTime();
+            // eslint-disable-next-line no-console
+            console.log("[realtime-latency-ms]", latency);
+          }
+          // Codex HIGH — explicit refetch contract (Option A). The hook
+          // exposes `refetch()`; we let it re-fetch the authoritative
+          // server-proxied list instead of reconstructing state from the
+          // payload (RLS + server filters stay the single source of truth).
+          void refetch();
+        },
+      )
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "CLOSED") {
+          // Polling (3s, pause-on-hidden) keeps covering.
+          // eslint-disable-next-line no-console
+          console.warn("[ApprovalsTable] Realtime fallback to polling", status);
+        }
+      });
+    return () => {
+      sb.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Phase 68.1 Item 2 — imperative setAuth only. Renewing the JWT every
+  // 4min must NOT tear down the subscription above. Two effects =
+  // stable channel pattern.
+  useEffect(() => {
+    if (!realtimeEnabled) return;
+    if (!token) return;
+    const sb = createBrowserClient();
+    sb.realtime.setAuth(token);
+  }, [token, realtimeEnabled]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {

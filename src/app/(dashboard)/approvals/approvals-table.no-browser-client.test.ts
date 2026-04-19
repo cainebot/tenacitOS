@@ -1,10 +1,18 @@
 // @vitest-environment node
-// Phase 68 Plan 08 — invariant guard.
+// Phase 68 Plan 08 + Phase 68.1 Item 2 — invariant guard.
 //
 // Closes GAP-68-01 by construction: asserts the /approvals client
-// bundle never re-imports `createBrowserClient` (direct browser
-// Supabase SELECT is blocked by RLS vs anon). If a future refactor
-// accidentally re-introduces the dependency, this test fails loud.
+// bundle never calls the browser Supabase client for a DATA SELECT
+// (the anon session cannot satisfy approvals_human_read RLS).
+//
+// Phase 68.1 Item 2 RELAXED the invariant: approvals-table.tsx may now
+// import `createBrowserClient` for the Realtime subscription +
+// `setAuth()` imperatively (the minted JWT carries role='authenticated'
+// and does satisfy RLS). But it STILL may never call
+// `.from('approvals').select(...)` on a browser client — the server
+// proxy (/api/approvals) remains the sole data path.
+//
+// useApprovalsCount + useApprovalsList stay fully browser-client-free.
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -37,6 +45,14 @@ function hasBrowserClient(src: string): boolean {
   );
 }
 
+// Phase 68.1 Item 2 — approvals-table.tsx is allowed to use the browser
+// client for Realtime (channel + setAuth) but never for a DATA SELECT.
+// This stricter regex catches `.from("approvals").select(...)` calls.
+function hasBrowserApprovalsSelect(src: string): boolean {
+  const code = stripComments(src);
+  return /\.from\s*\(\s*["']approvals["']\s*\)[\s\S]*?\.select\s*\(/.test(code);
+}
+
 describe("approvals UI — no browser Supabase client", () => {
   const tableSrc = readFileSync(
     join(__dirname, "approvals-table.tsx"),
@@ -51,8 +67,10 @@ describe("approvals UI — no browser Supabase client", () => {
     "utf8",
   );
 
-  it("approvals-table.tsx does not import createBrowserClient", () => {
-    expect(hasBrowserClient(tableSrc)).toBe(false);
+  // Phase 68.1 Item 2 — Realtime subscription re-introduces createBrowserClient
+  // but NOT for data SELECT. The stricter check runs instead.
+  it("approvals-table.tsx does not perform a browser-client .from('approvals').select(...) call", () => {
+    expect(hasBrowserApprovalsSelect(tableSrc)).toBe(false);
   });
 
   it("useApprovalsCount does not import the browser Supabase client", () => {

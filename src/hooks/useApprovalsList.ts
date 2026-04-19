@@ -42,6 +42,10 @@ export interface UseApprovalsListResult {
   setRows: React.Dispatch<React.SetStateAction<ApprovalRow[]>>;
   /** Force an immediate refetch (used after a PATCH mutation). */
   refresh: () => void;
+  /** Alias of `refresh` — Phase 68.1 Item 2 explicit refetch contract
+   *  (Codex HIGH Option A). Returns a Promise so callers can await it
+   *  when they need to chain UI work after the fetch completes. */
+  refetch: () => Promise<void>;
 }
 
 interface ListResponse {
@@ -144,5 +148,9 @@ export function useApprovalsList(
     void fetcherRef.current();
   }, []);
 
-  return { rows, loading, error, setRows, refresh };
+  const refetch = useCallback(async () => {
+    await fetcherRef.current();
+  }, []);
+
+  return { rows, loading, error, setRows, refresh, refetch };
 }
