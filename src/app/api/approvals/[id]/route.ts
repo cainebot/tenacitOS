@@ -16,6 +16,20 @@
 // bypass RLS via service_role here because mc_auth is the canonical
 // control-panel auth and does not mint a Supabase session.
 //
+// BL-01 (Phase 68 POST-EXEC review) — approver identity is derived
+// server-side, NEVER from the client-supplied `x-user-email` header.
+// Rationale: `mc_auth` is a shared deployment-scoped secret (all humans
+// using the Admin Panel share the same cookie value); it has no binding
+// to a specific email. Trusting a client header to stamp
+// `approver_human_id` would let any holder of mc_auth impersonate any
+// admin in the audit trail. Until a real auth provider (Supabase
+// Auth, Phase 69+) mints per-human sessions, we record the audit trail
+// as a stable deployment-scoped identity `system:<deployment>` where
+// <deployment> comes from CIRCOS_DEPLOYMENT_ID (falls back to
+// "control-panel"). This is a bounded, documented contract: the audit
+// field answers "which Admin Panel instance approved this" rather than
+// "which human", which is correct given the current auth model.
+//
 // The update is idempotent (Paperclip pattern): the WHERE clause only
 // matches rows whose current status is still in ('pending',
 // 'revision_requested'), so retries after the trigger has run are safe
@@ -107,11 +121,14 @@ export async function PATCH(
       ? body.decision_note.trim()
       : null;
 
-  // Identify the approver from the middleware-managed x-user-email header if
-  // present; otherwise fall back to mc_auth owner (constant 'control-panel').
-  const approverEmail =
-    req.headers.get("x-user-email")?.trim().toLowerCase() ?? null;
-  const approverHumanId = approverEmail ?? "control-panel";
+  // BL-01 — Do NOT trust `x-user-email`. `mc_auth` is a shared secret with
+  // no binding to a specific human, so any holder can forge any email.
+  // Until Phase 69 Supabase Auth lands, stamp a deployment-scoped identity
+  // instead. This records "which control-panel deployment approved" — the
+  // only non-forgeable fact we have today.
+  const deploymentId =
+    process.env.CIRCOS_DEPLOYMENT_ID?.trim() || "control-panel";
+  const approverHumanId = `system:${deploymentId}`;
 
   try {
     const sb = createServiceRoleClient();
