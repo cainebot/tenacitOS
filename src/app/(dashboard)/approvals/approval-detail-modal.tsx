@@ -79,15 +79,48 @@ function requiredConfirmation(approval: ApprovalRow): string | null {
     return null;
   }
   if (approval.type === "send_external_message") {
+    // HI-04 (POST-EXEC): the previous `recipient.includes('@')` heuristic
+    // only caught email. SMS / LinkedIn / Slack / other fell through
+    // without confirmation — one miss-click on Approve would dispatch an
+    // outbound message through the most reputation-expensive channels
+    // with no safety net. V3 §3.4 Golden Rule requires confirmation for
+    // ALL external channels.
     const recipient = (payload as { recipient?: string; to?: string }).recipient
       ?? (payload as { to?: string }).to;
-    // Only require typing for an external recipient (heuristic: contains '@').
-    if (typeof recipient === "string" && recipient.includes("@")) {
+    if (typeof recipient === "string" && recipient.length > 0) {
       return recipient;
     }
     return null;
   }
   return null;
+}
+
+/**
+ * HI-04 — channel-aware prompt copy. The recipient is always the
+ * confirmation target; this helper picks the human-facing noun so the
+ * modal reads naturally (e.g. "type the phone number" for SMS).
+ */
+function confirmationNoun(approval: ApprovalRow): string {
+  if (approval.type === "delete_agent") return "the agent id";
+  if (approval.type === "delete_agents_bulk") return "the literal string";
+  if (approval.type === "send_external_message") {
+    const channel = (approval.payload as { channel?: string } | null)?.channel;
+    switch (channel) {
+      case "email":
+        return "the email address";
+      case "sms":
+        return "the phone number";
+      case "linkedin":
+        return "the LinkedIn URL";
+      case "slack_external":
+        return "the Slack id";
+      case "other":
+        return "the recipient";
+      default:
+        return "the recipient";
+    }
+  }
+  return "the confirmation string";
 }
 
 export function ApprovalDetailModal({
@@ -102,6 +135,10 @@ export function ApprovalDetailModal({
 
   const confirmation = useMemo(
     () => (approval ? requiredConfirmation(approval) : null),
+    [approval],
+  );
+  const confirmNoun = useMemo(
+    () => (approval ? confirmationNoun(approval) : "the confirmation string"),
     [approval],
   );
 
@@ -200,7 +237,7 @@ export function ApprovalDetailModal({
                 Confirmación requerida
               </span>
               <p className="text-xs text-secondary">
-                Escribe exactamente{" "}
+                Escribe exactamente {confirmNoun}{" "}
                 <code className="font-mono text-primary">{confirmation}</code>{" "}
                 para habilitar Approve.
               </p>
