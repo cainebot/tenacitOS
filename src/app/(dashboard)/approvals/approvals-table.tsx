@@ -1,15 +1,19 @@
 "use client";
 
-// Phase 68 Plan 06 Task 3 — Approvals table (client component).
+// Phase 68 Plan 08 Task 4 — Approvals table (client component, server-proxy).
 //
-// - Loads initial rows via the browser Supabase client.
-// - Subscribes to `approvals` Realtime events and applies INSERT/UPDATE/
-//   DELETE to local state.
-// - Filters by type + status (default: pending + revision_requested).
-// - Each row exposes View details (opens the modal), Approve, Reject,
-//   Request revision inline actions. All mutations go through PATCH
-//   /api/approvals/[id] which uses the service-role client behind the
-//   middleware mc_auth gate (T-68-06-CSRF handled there).
+// Plan 06 landed this component against the browser Supabase client
+// with a Realtime subscription. GAP-68-01 (VERIFICATION.md) blocked
+// that path: anon role cannot satisfy the `auth.role()='authenticated'`
+// RLS gate on `approvals`. Plan 08 replaces the data path with the
+// server-proxied `GET /api/approvals` endpoint (gated by `mc_auth`,
+// service-role behind) and polls every 3s via `useApprovalsList`
+// (pause-on-hidden). No `createBrowserClient` import. No Realtime
+// subscription. When we later mint signed JWTs for Realtime we can
+// layer that inside the hook without touching this file.
+//
+// Everything else (type/status filters, action buttons, detail modal)
+// is unchanged from Plan 06.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -24,7 +28,7 @@ import {
   cx,
 } from "@circos/ui";
 import { ShieldTick, Eye, AlertTriangle, Clock } from "@untitledui/icons";
-import { createBrowserClient } from "@/lib/supabase";
+import { useApprovalsList } from "@/hooks/useApprovalsList";
 import {
   ACTIVE_APPROVAL_STATUSES,
   type ApprovalAction,
@@ -33,6 +37,18 @@ import {
   type ApprovalType,
 } from "@/types/approval";
 import { ApprovalDetailModal } from "./approval-detail-modal";
+
+// The table supports filtering by any status (active + resolved), so
+// we ask the server for every status and filter client-side. Keeps the
+// server contract simple and the filter UX snappy.
+const ALL_STATUSES: ApprovalStatus[] = [
+  "pending",
+  "revision_requested",
+  "approved",
+  "rejected",
+  "expired",
+  "cancelled",
+];
 
 const TYPE_BADGE: Record<ApprovalType, { color: Parameters<typeof Badge>[0]["color"]; label: string }> = {
   create_agent: { color: "brand", label: "Create" },
@@ -105,9 +121,10 @@ function payloadPreview(row: ApprovalRow): string {
 }
 
 export function ApprovalsTable() {
-  const [rows, setRows] = useState<ApprovalRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { rows, loading, error: loadError, setRows, refresh } = useApprovalsList({
+    statuses: ALL_STATUSES,
+    limit: 200,
+  });
   const [typeFilter, setTypeFilter] = useState<ApprovalType | "all">("all");
   const [statusFilter, setStatusFilter] =
     useState<"active" | ApprovalStatus>("active");
@@ -117,65 +134,11 @@ export function ApprovalsTable() {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Refresh relative times every 30s so countdowns update without
-  // waiting for a Realtime event.
+  // Refresh relative times every 30s so expiry countdowns update
+  // between poll ticks.
   useEffect(() => {
     const t = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    const supabase = createBrowserClient();
-    let cancelled = false;
-
-    const load = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("approvals")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200);
-
-      if (cancelled) return;
-
-      if (error) {
-        setLoadError(error.message);
-      } else {
-        setRows((data ?? []) as ApprovalRow[]);
-      }
-      setLoading(false);
-    };
-
-    load();
-
-    const topic = `approvals-queue-${Math.random().toString(36).slice(2)}`;
-    const channel = supabase
-      .channel(topic)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "approvals" },
-        (payload) => {
-          const eventType = payload.eventType;
-          if (eventType === "INSERT") {
-            const row = payload.new as ApprovalRow;
-            setRows((prev) => [row, ...prev.filter((r) => r.id !== row.id)]);
-          } else if (eventType === "UPDATE") {
-            const row = payload.new as ApprovalRow;
-            setRows((prev) => prev.map((r) => (r.id === row.id ? row : r)));
-          } else if (eventType === "DELETE") {
-            const before = payload.old as { id?: string };
-            if (before.id) {
-              setRows((prev) => prev.filter((r) => r.id !== before.id));
-            }
-          }
-        },
-      )
-      .subscribe();
-
-    return () => {
-      cancelled = true;
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -214,8 +177,9 @@ export function ApprovalsTable() {
         if (!res.ok) {
           throw new Error(body.message ?? body.error ?? `HTTP ${res.status}`);
         }
-        // Optimistic: Realtime will overwrite with authoritative row, but
-        // update immediately for snappier UX.
+        // Optimistic update: reflect the new status immediately while
+        // the next poll tick fetches the authoritative row (and the
+        // downstream dispatcher side effect, if any).
         setRows((prev) =>
           prev.map((r) =>
             r.id === row.id
@@ -233,13 +197,16 @@ export function ApprovalsTable() {
           ),
         );
         setModalOpen(false);
+        // Force an immediate refresh so the user sees the trigger-side
+        // effect (e.g. dispatcher outcome) without waiting up to 3s.
+        refresh();
       } catch (e) {
         setSubmitError((e as Error).message);
       } finally {
         setSubmittingId(null);
       }
     },
-    [],
+    [refresh, setRows],
   );
 
   if (loading) {
