@@ -11,6 +11,7 @@ import {
   Data,
   Rows01,
   Server01,
+  ShieldTick,
 } from "@untitledui/icons";
 import {
   Badge,
@@ -25,6 +26,7 @@ import { AgentBoardProvider, useAgentBoard } from "@/contexts/agent-board-contex
 import { AnimatedSidebar } from "@/components/application/animated-sidebar";
 import { BotIcon } from "@/components/icons/bot-icon";
 import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
+import { ApprovalsBadge } from "@/components/approvals-badge";
 import { PROJECT_COVER_COLORS, PROJECT_COVER_ICONS, type ProjectCoverColorId, type ProjectCoverIcon } from "@/components/application/project-cover/project-cover";
 
 /** Tiny display-only project icon for the sidebar (no picker). */
@@ -61,6 +63,7 @@ const navItems: (NavItemType | NavItemDividerType)[] = [
   { label: "Agents", href: "/agents", icon: BotIcon },
   { label: "Skills", href: "/skills", icon: Data },
   { label: "Workspaces", href: "/workspaces", icon: Server01 },
+  { label: "Approvals", href: "/approvals", icon: ShieldTick, badge: <ApprovalsBadge /> },
 ];
 
 // Mock agent data for the agent board panel
