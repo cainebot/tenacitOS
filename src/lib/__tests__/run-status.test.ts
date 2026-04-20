@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { isActiveRun, ACTIVE_RUN_STATUSES } from '../run-status';
+import type { AgentRunRow } from '../../types/supabase';
+
+// Minimal shape helper: isActiveRun only reads `status`, so we can pass a
+// partial row safely via an `unknown` upcast (no `any`).
+function rowWithStatus(status: AgentRunRow['status']): AgentRunRow {
+  return { status } as unknown as AgentRunRow;
+}
 
 describe('lib/run-status', () => {
   it('queued → true', () => { expect(isActiveRun('queued')).toBe(true); });
@@ -13,7 +20,7 @@ describe('lib/run-status', () => {
     expect([...ACTIVE_RUN_STATUSES]).toEqual(['queued', 'running']);
   });
   it('accepts whole row', () => {
-    expect(isActiveRun({ status: 'running' } as any)).toBe(true);
-    expect(isActiveRun({ status: 'completed' } as any)).toBe(false);
+    expect(isActiveRun(rowWithStatus('running'))).toBe(true);
+    expect(isActiveRun(rowWithStatus('completed'))).toBe(false);
   });
 });
