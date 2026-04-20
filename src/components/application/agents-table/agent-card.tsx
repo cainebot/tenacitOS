@@ -6,8 +6,11 @@
 // + node/skills badges.
 //
 // BLOCKING-2: consumes `AgentRow` (canonical). Display-only derivatives come
-// from `@/lib/agent-display`. The portrait renders initials via UUI Avatar
-// (the 7 unlicensed PNG portraits were removed in BLOCKING-4).
+// from `@/lib/agent-display`. The portrait renders initials via UUI Avatar.
+// The 7 LimeZu Premade_Character_*.png portraits that briefly shipped under
+// public/assets/characters/ were removed in Phase 69 close-out (HI-04 in
+// 69-REVIEW.md) — they lacked a LICENSE.md provenance trail and were
+// unreferenced from code. Initials fallback covers the UI.
 
 import type { FC } from "react";
 import { Avatar, Badge, cx } from "@circos/ui";
