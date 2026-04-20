@@ -20,6 +20,10 @@ import { ApprovalPayloadUpdateAgent } from "./approval-payload-update_agent";
 import { ApprovalPayloadDeleteAgent } from "./approval-payload-delete_agent";
 import { ApprovalPayloadDeleteAgentsBulk } from "./approval-payload-delete_agents_bulk";
 import { ApprovalPayloadSendExternalMessage } from "./approval-payload-send_external_message";
+import { ApprovalPayloadUpdateIdentityFileContent } from "./approval-payload-update_identity_file_content";
+import { ApprovalPayloadCreateUserInstruction } from "./approval-payload-create_user_instruction";
+import { ApprovalPayloadUpdateUserInstructionContent } from "./approval-payload-update_user_instruction_content";
+import { ApprovalPayloadDeleteUserInstruction } from "./approval-payload-delete_user_instruction";
 
 export function ApprovalPayloadRenderer({
   approval,
@@ -39,6 +43,14 @@ export function ApprovalPayloadRenderer({
       return <ApprovalPayloadDeleteAgentsBulk payload={payload} />;
     case "send_external_message":
       return <ApprovalPayloadSendExternalMessage payload={payload} />;
+    case "update_identity_file_content":
+      return <ApprovalPayloadUpdateIdentityFileContent payload={payload} />;
+    case "create_user_instruction":
+      return <ApprovalPayloadCreateUserInstruction payload={payload} />;
+    case "update_user_instruction_content":
+      return <ApprovalPayloadUpdateUserInstructionContent payload={payload} />;
+    case "delete_user_instruction":
+      return <ApprovalPayloadDeleteUserInstruction payload={payload} />;
     default:
       // Forward-compat: future approval types render as raw JSON.
       // React text children → auto-escaped; no dangerouslySetInnerHTML.
