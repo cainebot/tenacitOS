@@ -78,7 +78,7 @@ scope_grep() {
 # Phase 69 scope (UUI discipline + leak checks).
 SCOPE_DIRS=(
   "${CP_SRC}/app/(dashboard)/agents"
-  "${CP_SRC}/app/(dashboard)/office"
+  "${CP_SRC}/app/(dashboard)/organization"
   "${CP_SRC}/app/api/agents"
   "${CP_SRC}/app/api/agent-runs"
   "${CP_SRC}/app/api/nodes"

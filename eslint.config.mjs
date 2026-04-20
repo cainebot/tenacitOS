@@ -9,7 +9,7 @@ import nextTs from "eslint-config-next/typescript";
 // (see CLAUDE.md §Known Tech Debt). Global cleanup is a post-v1.9 phase.
 //
 // Scope (2026-04-20, extended per FIGMA-IMPLEMENTATION.md §4.6):
-// - app/(dashboard)/agents, /office
+// - app/(dashboard)/agents, /organization
 // - app/api/{agents, agent-runs, nodes}
 // - components/application/{agent-form, agent-detail, agents-table,
 //   node-status-strip, run-log-stream}
@@ -27,7 +27,7 @@ import nextTs from "eslint-config-next/typescript";
 
 const PHASE_69_FILES = [
   "src/app/(dashboard)/agents/**/*.{ts,tsx}",
-  "src/app/(dashboard)/office/**/*.{ts,tsx}",
+  "src/app/(dashboard)/organization/**/*.{ts,tsx}",
   "src/app/api/agents/**/*.ts",
   "src/app/api/agent-runs/**/*.ts",
   "src/app/api/nodes/**/*.ts",

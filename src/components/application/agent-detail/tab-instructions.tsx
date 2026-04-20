@@ -385,7 +385,7 @@ export const TabInstructions: React.FC<{
                 className="sticky left-0 z-10 select-none border-r border-secondary bg-secondary py-5"
               >
                 {Array.from({
-                  length: Math.max(draftContent.split("\n").length, 1),
+                  length: Math.max(draftContent.split("\n").length, 25),
                 }).map((_, i) => (
                   <div
                     key={i}
@@ -405,7 +405,7 @@ export const TabInstructions: React.FC<{
                 disabled={saving}
                 spellCheck={false}
                 wrap="off"
-                rows={Math.max(draftContent.split("\n").length, 1)}
+                rows={Math.max(draftContent.split("\n").length, 25)}
                 className="block w-full resize-none border-0 bg-transparent px-5 py-5 text-sm leading-5 text-primary outline-none [font-family:var(--font-code)] whitespace-pre overflow-x-auto"
               />
             </div>
