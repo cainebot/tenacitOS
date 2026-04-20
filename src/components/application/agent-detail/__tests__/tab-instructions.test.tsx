@@ -23,6 +23,62 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
+// Phase 69 Plan 10 — `tab-instructions.tsx` now consumes
+// `useInstructionFiles(agent)` (fetches /api/agents/[id]/instructions +
+// subscribes to Realtime). For Plan 09 unit tests we stub the hook with
+// a pure function derived from `agent.soul_content` so the existing
+// assertions stay valid without mocking fetch/Supabase. The shape must
+// match `UseInstructionFilesResult` exported from the hook module.
+vi.mock("@/hooks/useInstructionFiles", () => ({
+  useInstructionFiles: (agent: { soul_content: string | null; icon?: string | null }) => ({
+    files: [
+      {
+        file_name: "SOUL.md",
+        icon: agent.icon ?? "FileHeart02",
+        content: agent.soul_content ?? "",
+        is_canonical: true,
+        file_type: "soul",
+        updated_at: "2026-04-20T00:00:00Z",
+      },
+      {
+        file_name: "Tools.md",
+        icon: "Tool01",
+        content: "",
+        is_canonical: true,
+        file_type: "tools",
+        updated_at: "2026-04-20T00:00:00Z",
+      },
+      {
+        file_name: "Agents.md",
+        icon: "Users01",
+        content: "",
+        is_canonical: true,
+        file_type: "agents",
+        updated_at: "2026-04-20T00:00:00Z",
+      },
+      {
+        file_name: "Memoy.md",
+        icon: "BookOpen01",
+        content: "",
+        is_canonical: true,
+        file_type: "memory",
+        updated_at: "2026-04-20T00:00:00Z",
+      },
+      {
+        file_name: "Heartbeat.md",
+        icon: "Activity",
+        content: "",
+        is_canonical: true,
+        file_type: "heartbeat",
+        updated_at: "2026-04-20T00:00:00Z",
+      },
+    ],
+    loading: false,
+    error: null,
+    refetch: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
