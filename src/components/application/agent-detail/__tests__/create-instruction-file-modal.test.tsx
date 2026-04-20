@@ -1,7 +1,7 @@
 // Phase 69 Plan 10 — CreateInstructionFileModal unit tests.
 //
 // Covers:
-//   - pure validator: empty, canonical-shadow (SOUL/Tools/Memoy case-insensitive),
+//   - pure validator: empty, canonical-shadow (SOUL/Tools/Memory case-insensitive),
 //     invalid characters, duplicate, over-length.
 //
 // Full React render tests are deferred to Storybook smoke (per plan §7 stories);
@@ -23,7 +23,7 @@ describe("validateFileName", () => {
   });
 
   it("rejects canonical names case-insensitively", () => {
-    for (const name of ["SOUL", "soul", "Soul", "Tools", "memoy", "Memoy", "Heartbeat"]) {
+    for (const name of ["SOUL", "soul", "Soul", "Tools", "memory", "Memory", "memoy", "Heartbeat"]) {
       expect(validateFileName(name, [])).toMatch(/reserved/i);
     }
   });

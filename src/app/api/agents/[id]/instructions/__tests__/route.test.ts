@@ -291,13 +291,13 @@ describe("POST /api/agents/[id]/instructions", () => {
     expect((await res.json()).error).toBe("RESERVED_NAME");
   });
 
-  it("400 RESERVED_NAME for Memoy.md (Figma alias)", async () => {
+  it("400 RESERVED_NAME for Memory.md (canonical)", async () => {
     const { POST } = await importRoute();
     const res = await POST(
       makeReq("pomni", {
         method: "POST",
         cookie: cookieHeader(),
-        body: { file_name: "Memoy.md" },
+        body: { file_name: "Memory.md" },
       }),
       paramsOf("pomni"),
     );

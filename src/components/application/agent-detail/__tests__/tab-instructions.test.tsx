@@ -54,7 +54,7 @@ vi.mock("@/hooks/useInstructionFiles", () => ({
         updated_at: "2026-04-20T00:00:00Z",
       },
       {
-        file_name: "Memoy.md",
+        file_name: "Memory.md",
         icon: "BookOpen01",
         content: "",
         is_canonical: true,
@@ -254,7 +254,7 @@ describe("TabInstructions — Paperclip parity (quick 260420-nxb)", () => {
     const agent = makeAgent({ soul_content: "# hello" });
     render(<TabInstructions agent={agent} />);
 
-    const canonicals = ["SOUL.md", "Tools.md", "Agents.md", "Memoy.md", "Heartbeat.md"];
+    const canonicals = ["SOUL.md", "Tools.md", "Agents.md", "Memory.md", "Heartbeat.md"];
     for (const name of canonicals) {
       fireEvent.click(screen.getByRole("button", { name: new RegExp(name.replace(".", "\\.")) }));
       expect(screen.queryByRole("button", { name: /Delete /i })).toBeNull();

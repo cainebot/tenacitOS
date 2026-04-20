@@ -365,11 +365,11 @@ describe("DELETE", () => {
     expect((await res.json()).error).toBe("UNDELETABLE");
   });
 
-  it("400 UNDELETABLE for Memoy.md", async () => {
+  it("400 UNDELETABLE for Memory.md", async () => {
     const { DELETE } = await importRoute();
     const res = await DELETE(
-      makeReq("pomni", "Memoy.md", { method: "DELETE", cookie: cookieHeader() }),
-      paramsOf("pomni", "Memoy.md"),
+      makeReq("pomni", "Memory.md", { method: "DELETE", cookie: cookieHeader() }),
+      paramsOf("pomni", "Memory.md"),
     );
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe("UNDELETABLE");

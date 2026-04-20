@@ -32,7 +32,7 @@ export const CANONICAL_NAMES_LOWER = [
 
 // File name → DB handle mapping.
 //
-// The UI shows a human-friendly filename (`SOUL.md`, `Tools.md`, `Memoy.md`,
+// The UI shows a human-friendly filename (`SOUL.md`, `Tools.md`, `Memory.md`,
 // `Playbook.md`). The DB stores either:
 //   - SOUL.md         → agents table (agents.soul_content + agents.icon)
 //   - canonical 6     → agent_identity_files with file_type ∈ {agents, user,
@@ -108,7 +108,7 @@ export const CANONICAL_DISPLAY_NAMES = [
   "Identity.md",
   "Tools.md",
   "Heartbeat.md",
-  "Memoy.md",
+  "Memory.md",
 ] as const;
 
 // Set used by DELETE route to reject canonical deletions with 400 UNDELETABLE.
@@ -134,7 +134,7 @@ export function canonicalTypeToDisplayName(fileType: string): string {
     case "heartbeat":
       return "Heartbeat.md";
     case "memory":
-      return "Memoy.md";
+      return "Memory.md";
     default:
       return fileType;
   }
