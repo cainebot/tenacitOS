@@ -7,12 +7,23 @@
 //
 // BLOCKING-1/2 remediation (2026-04-20): consumes the canonical `NodeRow`
 // from `@/types/supabase` (Phase 64.5.2 shape). No import from fixtures.
+//
+// REMEDIATION-1 (Plan 69-07, 2026-04-20): active-run count is now derived
+// from the real `useRealtimeRuns()` subscription filtered by
+// `isActiveRun(run.status)` — the single source of truth defined in
+// `@/lib/run-status` (Plan 69-01). This closes REVIEW finding 3: the
+// strip, the route, and the unit tests all consume the same
+// `ACTIVE_RUN_STATUSES` constant, so "active" cannot drift.
+//
+// Aesthetic is FROZEN (Figma 1:1); only wiring changed.
 
-import type { FC } from "react";
+import { useMemo, type FC } from "react";
 import { Avatar, Badge, BadgeWithDot, Button, FeaturedIcon, cx } from "@circos/ui";
 import { Globe01, RefreshCw01 } from "@untitledui/icons";
-import type { NodeRow } from "@/types/supabase";
+import type { NodeRow, AgentRunRow } from "@/types/supabase";
 import { relativeTime } from "@/lib/relative-time";
+import { isActiveRun } from "@/lib/run-status";
+import { useRealtimeRuns } from "@/hooks/useRealtimeRuns";
 
 type StatusColor = "success" | "warning" | "error";
 
@@ -51,6 +62,24 @@ function adapterColor(name: string): "indigo" | "blue" | "gray" {
   return ADAPTER_COLOR[key] ?? "gray";
 }
 
+/**
+ * Builds a per-node map of active-run counts from the Realtime `agent_runs`
+ * snapshot. A run counts for a node when `run.node_id === node.node_id`
+ * AND `isActiveRun(run.status)` is true (ACTIVE_RUN_STATUSES =
+ * ['queued','running']). Uses `ACTIVE_RUN_STATUSES` indirectly via the
+ * predicate — single source of truth (REVIEW finding 3).
+ */
+export function computeActiveRunCounts(runs: readonly AgentRunRow[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const run of runs) {
+    if (!isActiveRun(run.status)) continue;
+    const nodeId = run.node_id;
+    if (!nodeId) continue;
+    counts.set(nodeId, (counts.get(nodeId) ?? 0) + 1);
+  }
+  return counts;
+}
+
 export interface NodeStatusStripProps {
   nodes: NodeRow[];
   loading?: boolean;
@@ -66,6 +95,11 @@ export const NodeStatusStrip: FC<NodeStatusStripProps> = ({
   onRetry,
   className,
 }) => {
+  // Real Realtime subscription (Plan 69-05 rewrite). Any INSERT / UPDATE /
+  // DELETE on `agent_runs` updates the map on the next render.
+  const { runs } = useRealtimeRuns();
+  const activeRunCounts = useMemo(() => computeActiveRunCounts(runs), [runs]);
+
   return (
     <section
       className={cx(
@@ -104,7 +138,11 @@ export const NodeStatusStrip: FC<NodeStatusStripProps> = ({
       {!loading && !error && nodes.length > 0 && (
         <ul className="flex flex-col gap-3" data-testid="node-status-list">
           {nodes.map((n) => (
-            <NodeRowView key={n.node_id} node={n} />
+            <NodeRowView
+              key={n.node_id}
+              node={n}
+              activeRuns={activeRunCounts.get(n.node_id) ?? 0}
+            />
           ))}
         </ul>
       )}
@@ -116,15 +154,18 @@ export const NodeStatusStrip: FC<NodeStatusStripProps> = ({
 // NodeRowView
 // ---------------------------------------------------------------------------
 
-const NodeRowView: FC<{ node: NodeRow }> = ({ node }) => {
+const NodeRowView: FC<{ node: NodeRow; activeRuns: number }> = ({ node, activeRuns }) => {
   const status = statusFor(node);
   const initials = node.node_id.replace(/^circus-/, "").slice(0, 2).toUpperCase();
   const heartbeat = node.last_heartbeat_at ?? node.last_heartbeat ?? null;
   const adapters = node.available_adapters ?? [];
-  const activeRuns = node.agent_count ?? 0;
 
   return (
-    <li className="flex items-center gap-5 rounded-xl border border-secondary bg-primary px-6 py-5">
+    <li
+      className="flex items-center gap-5 rounded-xl border border-secondary bg-primary px-6 py-5"
+      data-testid="node-status-row"
+      data-node-id={node.node_id}
+    >
       <Avatar size="md" initials={initials} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-base font-semibold text-primary [font-family:var(--font-code)]">
@@ -141,12 +182,12 @@ const NodeRowView: FC<{ node: NodeRow }> = ({ node }) => {
       </BadgeWithDot>
 
       {activeRuns > 0 && (
-        <Badge type="modern" color="brand" size="md">
+        <Badge type="modern" color="brand" size="md" data-testid="active-runs-badge">
           {activeRuns} {activeRuns === 1 ? "run" : "runs"}
         </Badge>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" data-testid="adapter-pills">
         {adapters.map((a) => (
           <Badge key={a} type="modern" color={adapterColor(a)} size="md">
             {a}
