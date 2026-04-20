@@ -63,6 +63,10 @@ export interface DepartmentRow {
   updated_at: string;
 }
 
+// Phase 62 (v1.9 CLI Agent Connect) extensions — migration
+// supabase/migrations/20260416_002_cli_connect_agents_extension.sql
+// All fields optional to preserve backwards-compatibility with legacy
+// consumers that rely on the Phase 9 shape.
 export interface AgentRow {
   agent_id: string;
   node_id: string;
@@ -83,6 +87,22 @@ export interface AgentRow {
   soul_config?: Record<string, unknown>;
   badge?: AgentBadge;
   soul_dirty?: boolean;
+  // Phase 62 extensions (V3 §12 L868-881) — see CLI-connect schema migration 002.
+  // TEXT PK `agent_id` is canonical (NOT `id`); seed agents are is_seed=true.
+  slug?: string;
+  soul_content?: string | null;
+  adapter_type?: string | null;
+  adapter_config?: Record<string, unknown>;
+  permissions?: Record<string, unknown>;
+  preferred_node_id?: string | null;
+  bound_node_id?: string | null;
+  session_id?: string | null;
+  session_params?: Record<string, unknown> | null;
+  session_updated_at?: string | null;
+  created_by_agent_id?: string | null;
+  is_seed?: boolean;
+  deleted_at?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface TaskRow {
@@ -218,3 +238,60 @@ export type RealtimePayload<T> = {
   new: T;
   old: T;
 };
+
+// ============================================================
+// Phase 62 / Phase 69: agent_runs + agent_run_logs
+// Spec: docs/RESEARCH-PAPERCLIP-CLI-CONNECT-v3.md §12 (lines 897-944)
+// Migration: supabase/migrations/20260416_003_cli_connect_agent_runs.sql
+// ============================================================
+
+export type AgentRunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+
+/**
+ * One row per agent wake (a single CLI invocation).
+ * Claimed atomically via the queued→running UPDATE (V3 §5.1).
+ * Realtime is enabled for this table; consumers use `useRealtimeRuns`.
+ */
+export interface AgentRunRow {
+  id: string;                      // UUID PK
+  agent_id: string;                // FK → agents(agent_id) TEXT
+  target_node_id: string | null;   // routing hint (filled by trigger)
+  node_id: string | null;          // node that claimed the run
+  adapter_type: string;            // e.g. claude_local | codex_local | openclaw_gateway
+  status: AgentRunStatus;
+  source: string;                  // task_assigned | manual | cron | mcp_call | approval_resolved
+  source_ref: Record<string, unknown> | null;
+  wake_reason: string | null;
+  context: Record<string, unknown> | null;
+  attempt: number;
+  max_attempts: number;
+  session_id: string | null;
+  session_params: Record<string, unknown> | null;
+  exit_code: number | null;
+  signal: string | null;
+  timed_out: boolean | null;
+  usage_json: Record<string, unknown> | null;
+  cost_usd: number | null;
+  summary: string | null;
+  result_json: Record<string, unknown> | null;
+  error_message: string | null;
+  error_code: string | null;
+  queued_at: string;               // ISO
+  claimed_at: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+}
+
+/**
+ * Chunked stdout/stderr output for a run.
+ * NOT realtime-published (V3 §12 L946 — too much volume).
+ * Consumers poll via `useRealtimeRunLogs` → GET /api/agent-runs/[runId]/logs.
+ */
+export interface AgentRunLogRow {
+  id: number;                      // BIGSERIAL PK
+  run_id: string;                  // FK → agent_runs(id) UUID
+  stream: 'stdout' | 'stderr';
+  chunk: string;
+  ts: string;                      // ISO (column name in migration: ts, NOT created_at)
+}
