@@ -7,7 +7,7 @@
 // Per Assumption A1 this is NOT an approval dialog; it is a direct control
 // action.
 
-import { useState, type FC } from "react";
+import { useEffect, useState, type FC } from "react";
 import {
   Button,
   Modal,
@@ -38,6 +38,15 @@ export const PauseAgentModal: FC<PauseAgentModalProps> = ({
   errorMessage = null,
 }) => {
   const [reason, setReason] = useState<string>("");
+
+  // ME-10 — reset reason whenever the controlled `isOpen` flips to false.
+  // React Aria only fires onOpenChange on user-driven close (overlay click
+  // / Esc), not on a programmatic `setPauseOpen(false)` from the parent's
+  // onConfirm. Without this reset, pausing agent A and then opening the
+  // modal for agent B surfaced A's reason pre-filled.
+  useEffect(() => {
+    if (!isOpen) setReason("");
+  }, [isOpen]);
 
   const handleOpenChange = (open: boolean) => {
     onOpenChange(open);
