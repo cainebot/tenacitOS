@@ -52,11 +52,32 @@ export const AGENT_DETAIL_COPY = {
   runDetailStreamingLabel: "Streaming live",
   runDetailTerminalLabel: "Finished",
   runDetailJumpToLive: "Jump to live",
+  // Sensitive-data banner — SECURITY T6 interim UX mitigation.
+  // NOTE: the full literal copy (including the "Secret masking is not enabled yet…"
+  // suffix) lives in `PAYLOAD_MASKING_WARNING` below — the constant Plan 08 smoke
+  // greps for. Keep the two in sync if updating the wording.
   runDetailLogsWarning: "Logs may contain sensitive data — do not share screenshots externally.",
   runDetailExitCodeLabel: "Exit code",
   runDetailDurationLabel: "Duration",
   runDetailStartedLabel: "Started",
   runDetailFinishedLabel: "Finished",
+  runDetailNodeLabel: "Node",
+  runDetailAdapterLabel: "Adapter",
+  runDetailRunIdLabel: "Run ID",
+  runDetailChunksLabel: "chunks",
+  runDetailAutoScrollLabel: "Auto-scroll",
+  runDetailPausedLabel: "Paused",
+  runDetailNotFoundTitle: "Run not found",
+  runDetailNotFoundDescription:
+    "This run does not exist for this agent. It may have been pruned or rerouted.",
 } as const;
+
+// SECURITY T6 interim UX — the persistent, non-dismissible warning banner
+// rendered by `RunLogStream`. Plan 08 smoke greps for this literal string;
+// do NOT edit without updating the smoke fixture. The interim mitigation is
+// documented in FOLLOW-UPS.md §F-69-01.
+export const PAYLOAD_MASKING_WARNING =
+  "Logs may contain sensitive data — do not share screenshots externally. Secret masking is not enabled yet (see FOLLOW-UPS.md).";
+
 
 export type AgentDetailCopyKey = keyof typeof AGENT_DETAIL_COPY;
