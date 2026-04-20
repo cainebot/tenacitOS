@@ -10,7 +10,7 @@
 // assert the bridge correctness from `useRealtimeAgents.agents[]` to
 // `officeEvents.emit()`.
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, cleanup } from '@testing-library/react'
 import type { AgentRow } from '@/types/supabase'
 
