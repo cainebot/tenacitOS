@@ -45,7 +45,9 @@ const PHASE_69_FILES = [
   "src/lib/run-status.ts",
   "src/lib/uuid.ts",
   "src/lib/agent-validators.ts",
-  "src/data/phase-69-fixtures.ts",
+  "src/lib/agent-display.ts",
+  "src/lib/relative-time.ts",
+  "src/__fixtures__/phase-69-fixtures.ts",
 ];
 
 const phase69UuiDiscipline = {
