@@ -89,18 +89,14 @@ export function useInstructionFiles(agent: AgentRow): UseInstructionFilesResult 
   }, [refetch]);
 
   // ME-01 — split the initial fetch into its own effect keyed only on
-  // agentId. Inlining the fetch (instead of calling `refetch()` which
-  // mutates state via setters) keeps react-compiler's
-  // set-state-during-effect rule happy: the effect's data flow is
-  // traceable end-to-end.
+  // agentId. Inlining the fetch (instead of calling `refetch()` via a
+  // useCallback indirection) makes the data flow visible to
+  // react-compiler. All setState calls live INSIDE the async IIFE —
+  // once the fetch resolves — so the linter can see the effect does
+  // not synchronously cycle state during mount.
   useEffect(() => {
-    if (!agentId) {
-      setLoading(false);
-      return;
-    }
+    if (!agentId) return;
     let cancelled = false;
-    setLoading(true);
-    setError(null);
     (async () => {
       try {
         const res = await fetch(
@@ -117,6 +113,7 @@ export function useInstructionFiles(agent: AgentRow): UseInstructionFilesResult 
         if (cancelled) return;
         const list = Array.isArray(data.files) ? data.files : [];
         setFiles(hideHiddenCanonicals(list));
+        setError(null);
         setLoading(false);
       } catch (err) {
         if (cancelled) return;

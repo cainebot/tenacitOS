@@ -44,7 +44,14 @@ export const PauseAgentModal: FC<PauseAgentModalProps> = ({
   // / Esc), not on a programmatic `setPauseOpen(false)` from the parent's
   // onConfirm. Without this reset, pausing agent A and then opening the
   // modal for agent B surfaced A's reason pre-filled.
+  //
+  // The effect runs once per `isOpen` transition; the setReason("") is a
+  // no-op when `reason` is already empty, so react-compiler's
+  // set-state-during-effect rule does not cycle. Disable the rule
+  // locally because the dependency graph is truly minimal (prop in,
+  // state out, no derived value).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!isOpen) setReason("");
   }, [isOpen]);
 

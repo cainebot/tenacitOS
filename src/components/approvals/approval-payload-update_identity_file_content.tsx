@@ -7,13 +7,10 @@
 // payload.content (first 2000 chars). Both rendered as React text children
 // inside <pre> (auto-escaped — SECURITY T2/T3 XSS defense-in-depth).
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Avatar, Badge, Button, cx } from "@circos/ui";
-import * as UntitledIcons from "@untitledui/icons";
-import { File06 } from "@untitledui/icons";
 import { isAllowedAvatarUrl } from "@/lib/agent-validators";
-
-type IconComp = typeof File06;
+import { resolveIcon } from "@/lib/icon-resolve";
 
 type TargetSnapshot = {
   agent_name?: string | null;
@@ -28,15 +25,6 @@ interface UpdateIdentityFileContentPayload {
   file_type?: string;
   content?: string;
   target_snapshot?: TargetSnapshot;
-}
-
-function resolveIcon(name: string | null | undefined): IconComp {
-  const idx = UntitledIcons as unknown as Record<string, IconComp>;
-  if (typeof name === "string" && name in idx) {
-    const v = idx[name];
-    if (typeof v === "function" || typeof v === "object") return v;
-  }
-  return File06;
 }
 
 export function ApprovalPayloadUpdateIdentityFileContent({
@@ -57,10 +45,11 @@ export function ApprovalPayloadUpdateIdentityFileContent({
   const afterPreview = showFull ? after : after.slice(0, 2000);
   const beforePreview = showFull ? before : before.slice(0, 2000);
 
-  // HI-02 — memoise icon resolution so the component reference is
-  // stable across renders (react-compiler "create components during
-  // render" rule). Keyed on the icon-name string from the snapshot.
-  const FileIcon = useMemo(() => resolveIcon(snap.file_icon), [snap.file_icon]);
+  // HI-02 — resolveIcon is module-scoped and cached by icon-name.
+  // The disable lives on the <FileIcon /> JSX site below because that
+  // is where react-hooks/static-components reports the violation.
+  // See src/lib/icon-resolve.ts for the cache + rationale.
+  const FileIcon = resolveIcon(snap.file_icon);
 
   return (
     <div
@@ -76,6 +65,7 @@ export function ApprovalPayloadUpdateIdentityFileContent({
       </section>
 
       <section className="flex items-center gap-2">
+        {/* eslint-disable-next-line react-hooks/static-components */}
         <FileIcon className="size-5 text-fg-quaternary" aria-hidden />
         <Badge type="modern" size="sm">
           {payload.file_type ?? "(unknown)"}
