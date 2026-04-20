@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate:icon-whitelist": "tsx scripts/generate-icon-whitelist.ts",
-    "prebuild": "npm run generate:icon-whitelist"
+    "prebuild": "npm run generate:icon-whitelist",
+    "smoke:phase-69": "bash scripts/phase-69-smoke.sh"
   },
   "dependencies": {
     "@circos/error-i18n": "*",
