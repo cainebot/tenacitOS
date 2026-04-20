@@ -24,8 +24,11 @@ import {
   TabSoul,
 } from "@/components/application/agent-detail";
 import { DeleteAgentModal } from "@/components/application/agent-form";
+import { AssignTaskModal } from "@/components/application/agent-detail/assign-task-modal";
+import { PauseAgentModal } from "@/components/application/agent-detail/pause-agent-modal";
 import type { AgentRow } from "@/types/supabase";
 import { getAgentSlug } from "@/lib/agent-display";
+import { useAgentActions } from "@/hooks/useAgentActions";
 
 type TabKey = "overview" | "identity" | "instructions" | "runs" | "skills" | "more";
 
@@ -59,6 +62,11 @@ export default function AgentDetailPage({
   const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Phase 69-11 — operator actions (pause / resume / invoke / assign-task).
+  const actions = useAgentActions(id);
+  const [pauseOpen, setPauseOpen] = useState<boolean>(false);
+  const [assignTaskOpen, setAssignTaskOpen] = useState<boolean>(false);
 
   const loadAgent = useCallback(async () => {
     setLoading(true);
@@ -150,17 +158,38 @@ export default function AgentDetailPage({
 
         <AgentHeader
           agent={agent}
-          onAssignTask={() => {
-            // TODO(plan-69-05): open assign-task-modal
+          actionPending={actions.pending !== null}
+          onAssignTask={() => setAssignTaskOpen(true)}
+          onRunHeartbeat={async () => {
+            try {
+              const out = await actions.invoke();
+              if (out.run_id) {
+                router.push(`/agents/${slug}/runs/${out.run_id}`);
+              }
+            } catch {
+              // error surfaced via actions.error; parent intentionally
+              // does not toast here — follow-up will add sonner.
+            }
           }}
-          onRunHeartbeat={() => {
-            // TODO(plan-69-05): POST /api/agents/[id]/heartbeat
-          }}
-          onPause={() => {
-            // TODO(plan-69-05): POST /api/agents/[id]/pause
+          onPause={() => setPauseOpen(true)}
+          onResume={async () => {
+            try {
+              await actions.resume();
+              void loadAgent();
+            } catch {
+              // handled
+            }
           }}
           onEdit={() => router.push(`/agents/${slug}/edit`)}
         />
+        {actions.error && (
+          <div
+            role="alert"
+            className="flex items-start gap-3 rounded-lg border border-error bg-error-primary/10 px-4 py-2 text-sm text-error-primary"
+          >
+            {actions.error}
+          </div>
+        )}
 
         <Tabs
           selectedKey={activeTab}
@@ -206,6 +235,37 @@ export default function AgentDetailPage({
         onConfirm={handleConfirmDelete}
         submitting={deleting}
         errorMessage={deleteError}
+      />
+
+      <PauseAgentModal
+        agent={agent}
+        isOpen={pauseOpen}
+        onOpenChange={setPauseOpen}
+        onConfirm={async (reason) => {
+          try {
+            await actions.pause(reason);
+            setPauseOpen(false);
+            void loadAgent();
+          } catch {
+            // error surfaced via actions.error
+          }
+        }}
+        submitting={actions.pending === "pause"}
+      />
+
+      <AssignTaskModal
+        agent={agent}
+        isOpen={assignTaskOpen}
+        onOpenChange={setAssignTaskOpen}
+        onConfirm={async (input) => {
+          try {
+            await actions.assignTask(input);
+            setAssignTaskOpen(false);
+          } catch {
+            // error surfaced via actions.error
+          }
+        }}
+        submitting={actions.pending === "assign-task"}
       />
     </section>
   );

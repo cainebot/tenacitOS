@@ -53,12 +53,25 @@ const VALID_CARD_TYPES: readonly CardType[] = [
   "subtask",
   "bug",
 ];
+// NOTE: Priority type uses Spanish values per Phase 85 Kanban schema
+// (baja/media/alta/critica). We keep these server-side; the client hook
+// exposes English aliases for operator ergonomics and maps them here.
 const VALID_PRIORITIES: readonly Priority[] = [
-  "low",
-  "medium",
-  "high",
-  "critical",
+  "baja",
+  "media",
+  "alta",
+  "critica",
 ];
+const PRIORITY_ALIAS: Record<string, Priority> = {
+  low: "baja",
+  medium: "media",
+  high: "alta",
+  critical: "critica",
+  baja: "baja",
+  media: "media",
+  alta: "alta",
+  critica: "critica",
+};
 const ALLOWED_BODY_KEYS = new Set([
   "title",
   "description",
@@ -234,23 +247,30 @@ export async function POST(
     cardType = payload.card_type as CardType;
   }
 
-  // priority — optional.
+  // priority — optional. Accept either the Spanish canonical values
+  // (baja/media/alta/critica) or the English aliases (low/medium/high/critical);
+  // the map coerces English → Spanish before hitting the DB.
   let priority: Priority | undefined;
   if (payload.priority !== undefined) {
-    if (
-      typeof payload.priority !== "string" ||
-      !VALID_PRIORITIES.includes(payload.priority as Priority)
-    ) {
+    const raw = typeof payload.priority === "string" ? payload.priority : "";
+    const mapped = PRIORITY_ALIAS[raw];
+    if (!mapped) {
       return NextResponse.json(
         {
           error: "VALIDATION_ERROR",
           field: "priority",
-          message: `priority must be one of: ${VALID_PRIORITIES.join(", ")}.`,
+          message: `priority must be one of: ${[
+            ...VALID_PRIORITIES,
+            "low",
+            "medium",
+            "high",
+            "critical",
+          ].join(", ")}.`,
         },
         { status: 400 },
       );
     }
-    priority = payload.priority as Priority;
+    priority = mapped;
   }
 
   // due_date — optional ISO.

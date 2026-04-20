@@ -226,7 +226,8 @@ describe("POST /api/agents/[id]/assign-task", () => {
         workflow_id: WORKFLOW_ID,
         state_id: STATE_ID,
         card_type: "task",
-        priority: "high",
+        // English 'high' is aliased to the canonical Spanish 'alta' at the boundary.
+        priority: "alta",
       }),
     );
   });
