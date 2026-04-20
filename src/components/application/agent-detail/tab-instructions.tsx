@@ -1,29 +1,37 @@
 "use client";
 
-// Phase 69 Plan 10 — Instructions tab (live CRUD via /api/agents/[id]/instructions).
+// Quick 260420-nxb — Paperclip parity: inline edit always on, dirty-driven
+// save/cancel, unified SOUL save, advanced section. See PLAN + CONTEXT in
+// .planning/quick/260420-nxb-instructions-tab-paridad-funcional-con-p/.
+//
+// Phase 69 Plan 10 (original) — Instructions tab (live CRUD via /api/agents/[id]/instructions).
 //
 // Source: Figma node 17036:109689 (B · Intrucciones).
-// Plan 69-09 shipped the read-only surface; Plan 69-10 wires:
-//   - Read — useInstructionFiles() merges canonical + user-created + SOUL.md.
-//   - Create — "+" button opens CreateInstructionFileModal → POST → approval.
-//   - Icon edit — IconPicker onChange → PATCH (direct UPDATE, non-gated).
-//   - Content edit — "Save" → PATCH (approval-gated; SOUL.md routes via AgentForm).
-//   - Delete user file — button visible only for user-created rows → DELETE → approval.
+// Plan 69-09 shipped the read-only surface; Plan 69-10 wired live CRUD.
+// Quick 260420-nxb refactors the surface to Paperclip parity:
+//   - `<TextArea>` is always active when a file is selected (no Edit toggle).
+//   - Save + Cancel render only when draft !== saved (dirty).
+//   - SOUL.md save routes to PATCH /api/agents/[id] { changes: { soul_content } }.
+//   - Non-SOUL save routes to PATCH /api/agents/[id]/instructions/[file_name] { content }.
+//   - Delete button is visible only for `active.is_canonical === false` files.
+//   - Advanced collapsible section at the bottom of the viewer panel
+//     (Mode / Root path / Entry file) — UI-only placeholder, persistence
+//     tracked as F-69-11 in .planning/phases/69-ui-integration/FOLLOW-UPS.md.
 //
-// SECURITY T3: all content rendered as React text children inside <pre> or
-// <Textarea>. No dangerouslySetInnerHTML. file_name + icon come from the
-// server-side whitelist-validated response.
+// SECURITY T3: all content rendered as React text children inside <TextArea>.
+// No dangerouslySetInnerHTML. file_name + icon come from the server-side
+// whitelist-validated response.
 
-import { Fragment, useCallback, useMemo, useState, type ComponentType, type SVGProps } from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentType, type SVGProps } from "react";
 import { Badge, Button, ButtonUtility, TextArea, cx } from "@circos/ui";
 import * as UntitledIcons from "@untitledui/icons";
 import {
+  ChevronDown,
+  ChevronRight,
   Copy03,
-  Edit05,
   File06,
   FileHeart02,
   Plus,
-  SearchLg,
   Trash02,
   X,
 } from "@untitledui/icons";
@@ -51,19 +59,32 @@ function resolveIcon(name: string | undefined): IconType {
 
 const countLines = (body: string): number => (body.length === 0 ? 0 : body.split("\n").length);
 
+// Threshold helper for confirm-before-discard on Cancel. Guards against
+// destroying a large chunk of unsaved work; small diffs revert silently.
+function isSignificantDiff(draft: string, saved: string): boolean {
+  if (draft === saved) return false;
+  if (Math.abs(draft.length - saved.length) > 200) return true;
+  if (draft.split("\n").length !== saved.split("\n").length) return true;
+  return false;
+}
+
 export const TabInstructions: React.FC<{
   agent: AgentRow;
+  // onEdit retained for backwards-compat with parent page — unused since
+  // Quick 260420-nxb unified SOUL save inline.
   onEdit?: () => void;
-}> = ({ agent, onEdit }) => {
+}> = ({ agent }) => {
   const { files, loading, error, refetch } = useInstructionFiles(agent);
   const [activeName, setActiveName] = useState<string>("SOUL.md");
   const [copied, setCopied] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [rootPathCopied, setRootPathCopied] = useState(false);
   const [draftContent, setDraftContent] = useState("");
+  const [savedContent, setSavedContent] = useState("");
   const [saving, setSaving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<InstructionFileRow | null>(null);
   const [opError, setOpError] = useState<string | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const active = useMemo<InstructionFileRow | null>(() => {
     if (files.length === 0) return null;
@@ -71,10 +92,24 @@ export const TabInstructions: React.FC<{
   }, [files, activeName]);
 
   const ActiveIcon = resolveIcon(active?.icon);
-  const isSoul = active?.file_name === "SOUL.md";
-  const isEmpty = !active || active.content.length === 0;
-  const lines = isEmpty ? [] : (active!.content.split("\n"));
+  const isSoul = active?.file_name === "SOUL.md" || active?.file_type === "soul";
   const charCount = active?.content.length ?? 0;
+  const isDirty = draftContent !== savedContent;
+
+  // Sync draft/saved to the active file. If the user has a dirty draft we
+  // preserve it across server-side refetches to avoid clobbering typing,
+  // but always keep savedContent authoritative on the server value.
+  useEffect(() => {
+    if (!active) {
+      setDraftContent("");
+      setSavedContent("");
+      return;
+    }
+    setSavedContent(active.content);
+    setDraftContent((prev) => (prev === savedContent ? active.content : prev));
+    // The dependency array intentionally reacts to file switches + server content.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.file_name, active?.content]);
 
   const handleCopy = async () => {
     if (!active) return;
@@ -87,15 +122,19 @@ export const TabInstructions: React.FC<{
     }
   };
 
-  const handleEdit = () => {
-    if (!active) return;
-    // SOUL.md edit → route through AgentForm (Plan 69-02).
-    if (isSoul) {
-      onEdit?.();
-      return;
+  const rootPath = useMemo(
+    () => `/agents/${agent.slug ?? agent.agent_id}/`,
+    [agent.slug, agent.agent_id],
+  );
+
+  const handleCopyRootPath = async () => {
+    try {
+      await navigator.clipboard.writeText(rootPath);
+      setRootPathCopied(true);
+      window.setTimeout(() => setRootPathCopied(false), 1500);
+    } catch {
+      // ignore
     }
-    setDraftContent(active.content);
-    setIsEditing(true);
   };
 
   const handleSave = useCallback(async () => {
@@ -103,29 +142,56 @@ export const TabInstructions: React.FC<{
     setSaving(true);
     setOpError(null);
     try {
-      const res = await fetch(
-        `/api/agents/${encodeURIComponent(agent.agent_id)}/instructions/${encodeURIComponent(active.file_name)}`,
-        {
-          method: "PATCH",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: draftContent }),
-        },
-      );
+      const url = isSoul
+        ? `/api/agents/${encodeURIComponent(agent.agent_id)}`
+        : `/api/agents/${encodeURIComponent(agent.agent_id)}/instructions/${encodeURIComponent(active.file_name)}`;
+      const body = isSoul
+        ? { changes: { soul_content: draftContent } }
+        : { content: draftContent };
+
+      const res = await fetch(url, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
-        setOpError(body.message ?? body.error ?? `Save failed (${res.status})`);
+        const errBody = (await res.json().catch(() => ({}))) as {
+          message?: string;
+          error?: string;
+        };
+        setOpError(errBody.message ?? errBody.error ?? `Save failed (${res.status})`);
         setSaving(false);
         return;
       }
-      setIsEditing(false);
+      setSavedContent(draftContent);
       setSaving(false);
       await refetch();
     } catch (err) {
       setOpError(err instanceof Error ? err.message : "Network error");
       setSaving(false);
     }
-  }, [active, agent.agent_id, draftContent, refetch]);
+  }, [active, agent.agent_id, draftContent, isSoul, refetch]);
+
+  const handleCancel = useCallback(() => {
+    if (!isDirty) return;
+    if (isSignificantDiff(draftContent, savedContent)) {
+      const ok = window.confirm("Discard unsaved changes?");
+      if (!ok) return;
+    }
+    setDraftContent(savedContent);
+  }, [draftContent, isDirty, savedContent]);
+
+  const handleSelectFile = useCallback(
+    (fileName: string) => {
+      if (isDirty) {
+        const ok = window.confirm("Discard unsaved changes and switch files?");
+        if (!ok) return;
+      }
+      setActiveName(fileName);
+    },
+    [isDirty],
+  );
 
   const handleIconChange = useCallback(
     async (_icon: IconType, name: string) => {
@@ -218,10 +284,7 @@ export const TabInstructions: React.FC<{
               <li key={file.file_name} className="py-0.5">
                 <button
                   type="button"
-                  onClick={() => {
-                    setActiveName(file.file_name);
-                    setIsEditing(false);
-                  }}
+                  onClick={() => handleSelectFile(file.file_name)}
                   className={cx(
                     "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors",
                     isActive ? "bg-active" : "hover:bg-primary_hover",
@@ -260,21 +323,17 @@ export const TabInstructions: React.FC<{
               size="sm"
               iconTrailing={Copy03}
               onClick={handleCopy}
-              isDisabled={isEmpty}
+              isDisabled={!active || active.content.length === 0}
             >
               {copied ? "Copied" : "Copy"}
             </Button>
-            {!isEditing ? (
-              <Button color="secondary" size="sm" iconTrailing={Edit05} onClick={handleEdit}>
-                Edit
-              </Button>
-            ) : (
+            {isDirty && (
               <>
                 <Button
                   color="tertiary"
                   size="sm"
                   iconTrailing={X}
-                  onClick={() => setIsEditing(false)}
+                  onClick={handleCancel}
                   isDisabled={saving}
                 >
                   Cancel
@@ -284,7 +343,7 @@ export const TabInstructions: React.FC<{
                   size="sm"
                   onClick={handleSave}
                   isLoading={saving}
-                  isDisabled={saving || isSoul}
+                  isDisabled={saving || draftContent.length > 50_000}
                 >
                   Save
                 </Button>
@@ -312,74 +371,100 @@ export const TabInstructions: React.FC<{
           </div>
         )}
 
-        {isEditing && !isSoul ? (
-          <div className="flex flex-1 flex-col gap-3 px-5 py-4">
+        {active ? (
+          <div
+            className="flex flex-1 flex-col gap-3 px-5 py-4"
+            data-testid="instructions-body"
+          >
             <TextArea
               label="Content"
               value={draftContent}
               onChange={(v) => setDraftContent(typeof v === "string" ? v : "")}
-              hint={`${draftContent.length.toLocaleString()} / 50,000 chars — saving requires human approval`}
+              hint={`${draftContent.length.toLocaleString()} / 50,000 chars${isSoul ? "" : " — saving requires human approval"}`}
               isInvalid={draftContent.length > 50_000}
               rows={16}
               isDisabled={saving}
+              textAreaClassName="[font-family:var(--font-code)] whitespace-pre text-sm leading-5"
             />
           </div>
-        ) : isEmpty ? (
-          <div
-            data-testid="instructions-empty-state"
-            className="flex min-h-[360px] flex-1 items-center justify-center px-5 py-10"
-          >
-            <div className="flex w-full max-w-sm flex-col items-center gap-5 text-center">
-              <div className="flex size-12 items-center justify-center rounded-[10px] border border-primary bg-primary shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05),inset_0px_0px_0px_1px_rgba(12,14,18,0.18),inset_0px_-2px_0px_0px_rgba(12,14,18,0.05)]">
-                <SearchLg className="size-6 text-fg-quaternary" aria-hidden />
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-lg font-semibold text-primary">No content yet</p>
-                <p className="text-sm text-tertiary">
-                  {active
-                    ? `${active.file_name} has no content for ${agent.name ?? agent.agent_id}.`
-                    : "No file selected."}
-                </p>
-              </div>
-              {active && !isSoul && (
-                <Button color="primary" size="md" iconLeading={Edit05} onClick={handleEdit}>
-                  Add content
-                </Button>
-              )}
-            </div>
-          </div>
         ) : (
-          <div className="flex items-start px-5 py-4">
-            <div
-              data-testid="instructions-body"
-              className="grid w-full grid-cols-[auto_1fr] overflow-x-auto rounded-xl border border-secondary bg-primary"
-            >
-              {lines.map((line, i) => (
-                <Fragment key={i}>
-                  <span
-                    aria-hidden
-                    className={cx(
-                      "sticky left-0 z-10 select-none border-r border-secondary bg-secondary px-4 text-right text-sm leading-5 text-quaternary [font-family:var(--font-code)]",
-                      i === 0 && "pt-5",
-                      i === lines.length - 1 && "pb-5",
-                    )}
-                  >
-                    {i + 1}
-                  </span>
-                  <pre
-                    className={cx(
-                      "min-h-5 px-5 text-sm leading-5 text-primary [font-family:var(--font-code)] whitespace-pre",
-                      i === 0 && "pt-5",
-                      i === lines.length - 1 && "pb-5",
-                    )}
-                  >
-                    {line}
-                  </pre>
-                </Fragment>
-              ))}
-            </div>
+          <div className="flex min-h-[360px] flex-1 items-center justify-center px-5 py-10">
+            <p className="text-sm text-tertiary">No file selected.</p>
           </div>
         )}
+
+        {/* Advanced — UI-only placeholder. F-69-11: Advanced backend persistence pending. */}
+        <div className="border-t border-secondary">
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((v) => !v)}
+            aria-expanded={advancedOpen}
+            aria-controls="instructions-advanced-panel"
+            data-testid="instructions-advanced-toggle"
+            className="flex w-full items-center gap-2 px-5 py-3 text-left text-sm font-semibold text-secondary hover:bg-primary_hover"
+          >
+            {advancedOpen ? (
+              <ChevronDown className="size-4 text-fg-quaternary" aria-hidden />
+            ) : (
+              <ChevronRight className="size-4 text-fg-quaternary" aria-hidden />
+            )}
+            Advanced
+          </button>
+          {advancedOpen && (
+            <div
+              id="instructions-advanced-panel"
+              data-testid="instructions-advanced-panel"
+              className="flex flex-col gap-4 px-5 py-4"
+            >
+              {/* Mode segmented — managed/external. Managed active; External disabled. */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-secondary">Mode</span>
+                <div className="flex w-fit gap-1 rounded-md border border-primary bg-primary p-0.5">
+                  <Button color="primary" size="sm" aria-pressed="true">
+                    Managed
+                  </Button>
+                  <Button color="tertiary" size="sm" aria-pressed="false" isDisabled>
+                    External
+                  </Button>
+                </div>
+                <p className="text-xs text-tertiary">
+                  Managed files are stored in Supabase and synced to the agent via OpenClaw.
+                </p>
+              </div>
+              {/* Root path — read-only with Copy button */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-secondary">Root path</span>
+                <div className="flex items-center gap-2">
+                  <code
+                    data-testid="advanced-root-path"
+                    className="flex-1 rounded-md border border-secondary bg-secondary px-3 py-2 text-sm text-primary [font-family:var(--font-code)]"
+                  >
+                    {rootPath}
+                  </code>
+                  <Button
+                    color="tertiary"
+                    size="sm"
+                    iconLeading={Copy03}
+                    onClick={handleCopyRootPath}
+                  >
+                    {rootPathCopied ? "Copied" : "Copy"}
+                  </Button>
+                </div>
+              </div>
+              {/* Entry file — read-only */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-secondary">Entry file</span>
+                <code
+                  data-testid="advanced-entry-file"
+                  className="w-fit rounded-md border border-secondary bg-secondary px-3 py-2 text-sm text-primary [font-family:var(--font-code)]"
+                >
+                  AGENTS.md
+                </code>
+              </div>
+              {/* F-69-11: Advanced backend persistence pending. See FOLLOW-UPS.md. */}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Create modal */}
