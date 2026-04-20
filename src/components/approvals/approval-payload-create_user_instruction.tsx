@@ -48,7 +48,12 @@ export function ApprovalPayloadCreateUserInstruction({
   const FileIcon = useMemo(() => resolveIcon(payload.icon), [payload.icon]);
 
   const content = typeof payload.content === "string" ? payload.content : "";
-  const preview = showFull ? content : content.slice(0, 500);
+  // ME-08 — 2000-char preview threshold for parity with every other Phase 69
+  // renderer (create_agent, update_agent, update_identity_file_content,
+  // update_user_instruction_content). The previous 500-char cap was an
+  // inconsistency that made a 1500-char creation look more truncated than a
+  // 1800-char SOUL edit.
+  const preview = showFull ? content : content.slice(0, 2000);
 
   return (
     <div
@@ -84,7 +89,7 @@ export function ApprovalPayloadCreateUserInstruction({
           >
             {preview}
           </pre>
-          {content.length > 500 && (
+          {content.length > 2000 && (
             <div>
               <Button color="tertiary" size="sm" onClick={() => setShowFull((v) => !v)}>
                 {showFull
