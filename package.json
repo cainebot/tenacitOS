@@ -11,7 +11,9 @@
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate:icon-whitelist": "tsx scripts/generate-icon-whitelist.ts",
+    "prebuild": "npm run generate:icon-whitelist"
   },
   "dependencies": {
     "@circos/error-i18n": "*",
