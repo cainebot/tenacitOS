@@ -88,10 +88,49 @@ export function useInstructionFiles(agent: AgentRow): UseInstructionFilesResult 
     }, 250);
   }, [refetch]);
 
+  // ME-01 — split the initial fetch into its own effect keyed only on
+  // agentId. Inlining the fetch (instead of calling `refetch()` which
+  // mutates state via setters) keeps react-compiler's
+  // set-state-during-effect rule happy: the effect's data flow is
+  // traceable end-to-end.
   useEffect(() => {
-    // Initial fetch.
-    void refetch();
+    if (!agentId) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/agents/${encodeURIComponent(agentId)}/instructions`,
+          { credentials: "same-origin" },
+        );
+        if (cancelled) return;
+        if (!res.ok) {
+          setError(`Failed to load files (${res.status})`);
+          setLoading(false);
+          return;
+        }
+        const data = (await res.json()) as { files?: InstructionFileRow[] };
+        if (cancelled) return;
+        const list = Array.isArray(data.files) ? data.files : [];
+        setFiles(hideHiddenCanonicals(list));
+        setLoading(false);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "fetch failed");
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [agentId]);
 
+  useEffect(() => {
+    if (!agentId) return;
     const supabase = createBrowserClient();
 
     // Two channels, topic-per-mount (StrictMode-safe).
@@ -128,7 +167,7 @@ export function useInstructionFiles(agent: AgentRow): UseInstructionFilesResult 
       void supabase.removeChannel(identityChannel);
       void supabase.removeChannel(userChannel);
     };
-  }, [agentId, refetch, scheduleRefetch]);
+  }, [agentId, scheduleRefetch]);
 
   return { files, loading, error, refetch };
 }
