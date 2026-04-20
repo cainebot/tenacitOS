@@ -89,9 +89,12 @@ function SoulDiffRow({
 }) {
   const [showFull, setShowFull] = useState(false);
   const afterStr = typeof after === "string" ? after : "";
+  const beforeStr = typeof before === "string" ? before : "";
   const afterLen = afterStr.length;
+  const beforeLen = beforeStr.length;
   const afterPreview = showFull ? afterStr : afterStr.slice(0, 2000);
-  const beforeAvailable = typeof before === "string" && before.length > 0;
+  const beforePreview = showFull ? beforeStr : beforeStr.slice(0, 2000);
+  const beforeAvailable = beforeLen > 0;
 
   return (
     <div className="flex flex-col gap-2">
@@ -106,8 +109,9 @@ function SoulDiffRow({
                 "max-h-48 overflow-auto rounded-md border border-secondary bg-tertiary p-2",
                 "font-mono text-xs text-tertiary whitespace-pre-wrap break-all line-through",
               )}
+              data-testid="approval-payload-update_agent-soul-before"
             >
-              {(before as string).slice(0, 2000)}
+              {beforePreview}
             </pre>
           ) : (
             <p className="text-xs text-tertiary italic">
@@ -135,7 +139,9 @@ function SoulDiffRow({
           </pre>
         </div>
       </div>
-      {afterLen > 2000 && (
+      {/* ME-07 — toggle gated on EITHER column exceeding 2000 chars so the
+          before-column (SECURITY T18 falsification) is always reachable. */}
+      {(afterLen > 2000 || beforeLen > 2000) && (
         <div>
           <Button
             color="tertiary"
@@ -144,7 +150,7 @@ function SoulDiffRow({
           >
             {showFull
               ? APPROVALS_COPY.createHideFullSoul
-              : `${APPROVALS_COPY.createShowFullSoul} (${afterLen} chars)`}
+              : `${APPROVALS_COPY.createShowFullSoul} (${Math.max(afterLen, beforeLen)} chars)`}
           </Button>
         </div>
       )}
