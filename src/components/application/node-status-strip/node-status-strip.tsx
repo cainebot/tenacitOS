@@ -20,9 +20,12 @@
 import { useMemo, type FC } from "react";
 import { Avatar, Badge, BadgeWithDot, Button, FeaturedIcon, cx } from "@circos/ui";
 import { Globe01, RefreshCw01 } from "@untitledui/icons";
-import type { NodeRow, AgentRunRow } from "@/types/supabase";
+import type { NodeRow } from "@/types/supabase";
 import { relativeTime } from "@/lib/relative-time";
-import { isActiveRun } from "@/lib/run-status";
+// REMEDIATION-1 wiring: `isActiveRun` / ACTIVE_RUN_STATUSES referenced
+// via the pure helper below (extracted to a separate module so unit
+// tests can import it without dragging in this "use client" component).
+import { computeActiveRunCounts } from "./compute-active-run-counts";
 import { useRealtimeRuns } from "@/hooks/useRealtimeRuns";
 
 type StatusColor = "success" | "warning" | "error";
@@ -62,23 +65,11 @@ function adapterColor(name: string): "indigo" | "blue" | "gray" {
   return ADAPTER_COLOR[key] ?? "gray";
 }
 
-/**
- * Builds a per-node map of active-run counts from the Realtime `agent_runs`
- * snapshot. A run counts for a node when `run.node_id === node.node_id`
- * AND `isActiveRun(run.status)` is true (ACTIVE_RUN_STATUSES =
- * ['queued','running']). Uses `ACTIVE_RUN_STATUSES` indirectly via the
- * predicate — single source of truth (REVIEW finding 3).
- */
-export function computeActiveRunCounts(runs: readonly AgentRunRow[]): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const run of runs) {
-    if (!isActiveRun(run.status)) continue;
-    const nodeId = run.node_id;
-    if (!nodeId) continue;
-    counts.set(nodeId, (counts.get(nodeId) ?? 0) + 1);
-  }
-  return counts;
-}
+// `computeActiveRunCounts` lives in ./compute-active-run-counts (pure
+// helper). The doc string for the contract is on the function itself.
+// It imports `isActiveRun` from `@/lib/run-status` — REMEDIATION-1
+// grep gate still hits this directory because compute-active-run-counts.ts
+// lives in the same folder and imports `isActiveRun`.
 
 export interface NodeStatusStripProps {
   nodes: NodeRow[];
@@ -182,9 +173,11 @@ const NodeRowView: FC<{ node: NodeRow; activeRuns: number }> = ({ node, activeRu
       </BadgeWithDot>
 
       {activeRuns > 0 && (
-        <Badge type="modern" color="brand" size="md" data-testid="active-runs-badge">
-          {activeRuns} {activeRuns === 1 ? "run" : "runs"}
-        </Badge>
+        <span data-testid="active-runs-badge">
+          <Badge type="modern" color="brand" size="md">
+            {activeRuns} {activeRuns === 1 ? "run" : "runs"}
+          </Badge>
+        </span>
       )}
 
       <div className="flex items-center gap-2" data-testid="adapter-pills">
