@@ -23,7 +23,7 @@
 // whitelist-validated response.
 
 import { useCallback, useEffect, useMemo, useState, type ComponentType, type SVGProps } from "react";
-import { Badge, Button, ButtonUtility, TextArea, cx } from "@circos/ui";
+import { Badge, Button, ButtonUtility, cx } from "@circos/ui";
 import * as UntitledIcons from "@untitledui/icons";
 import {
   ChevronDown,
@@ -372,20 +372,54 @@ export const TabInstructions: React.FC<{
         )}
 
         {active ? (
-          <div
-            className="flex flex-1 flex-col gap-3 px-5 py-4"
-            data-testid="instructions-body"
-          >
-            <TextArea
-              label="Content"
-              value={draftContent}
-              onChange={(v) => setDraftContent(typeof v === "string" ? v : "")}
-              hint={`${draftContent.length.toLocaleString()} / 50,000 chars${isSoul ? "" : " — saving requires human approval"}`}
-              isInvalid={draftContent.length > 50_000}
-              rows={16}
-              isDisabled={saving}
-              textAreaClassName="[font-family:var(--font-code)] whitespace-pre text-sm leading-5"
-            />
+          <div className="flex flex-1 flex-col gap-2 px-5 py-4">
+            <div
+              data-testid="instructions-body"
+              className={cx(
+                "grid w-full grid-cols-[auto_1fr] overflow-hidden rounded-xl border bg-primary",
+                draftContent.length > 50_000 ? "border-error" : "border-secondary",
+              )}
+            >
+              <div
+                aria-hidden
+                className="sticky left-0 z-10 select-none border-r border-secondary bg-secondary py-5"
+              >
+                {Array.from({
+                  length: Math.max(draftContent.split("\n").length, 1),
+                }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="px-4 text-right text-sm leading-5 text-quaternary [font-family:var(--font-code)]"
+                  >
+                    {i + 1}
+                  </div>
+                ))}
+              </div>
+              <label htmlFor="instructions-editor" className="sr-only">
+                Content
+              </label>
+              <textarea
+                id="instructions-editor"
+                value={draftContent}
+                onChange={(e) => setDraftContent(e.target.value)}
+                disabled={saving}
+                spellCheck={false}
+                wrap="off"
+                rows={Math.max(draftContent.split("\n").length, 1)}
+                className="block w-full resize-none border-0 bg-transparent px-5 py-5 text-sm leading-5 text-primary outline-none [font-family:var(--font-code)] whitespace-pre overflow-x-auto"
+              />
+            </div>
+            <p
+              className={cx(
+                "text-xs",
+                draftContent.length > 50_000
+                  ? "text-error-primary"
+                  : "text-tertiary",
+              )}
+            >
+              {draftContent.length.toLocaleString()} / 50,000 chars
+              {isSoul ? "" : " — saving requires human approval"}
+            </p>
           </div>
         ) : (
           <div className="flex min-h-[360px] flex-1 items-center justify-center px-5 py-10">
