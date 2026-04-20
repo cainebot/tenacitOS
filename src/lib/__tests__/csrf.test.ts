@@ -43,6 +43,7 @@ describe("lib/csrf — default dev allow-list (NODE_ENV=test)", () => {
     const mod = await import(CSRF_PATH);
     expect(mod.__testables.EFFECTIVE_ALLOW_LIST).toContain("http://localhost:3000");
     expect(mod.__testables.EFFECTIVE_ALLOW_LIST).toContain("http://localhost:3003");
+    expect(mod.__testables.EFFECTIVE_ALLOW_LIST).toContain("http://localhost:3007");
   });
 
   it("accepts POST with allow-listed Origin + JSON Content-Type → null", async () => {

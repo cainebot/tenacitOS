@@ -28,10 +28,16 @@ function readAllowList(): string[] {
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
   }
-  // Default dev allow-list. Explicitly includes both localhost ports used
-  // by the control-panel dev server (3000 canonical, 3003 alt).
+  // Default dev allow-list. Includes every localhost port the control-panel
+  // dev server may bind to (3000 canonical, 3003 page-projects worktree,
+  // 3007 cli-agent-connect worktree — auto-selected by Next.js when earlier
+  // ports are occupied).
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const fallback = ["http://localhost:3000", "http://localhost:3003"];
+  const fallback = [
+    "http://localhost:3000",
+    "http://localhost:3003",
+    "http://localhost:3007",
+  ];
   return siteUrl && siteUrl.trim().length > 0 ? [siteUrl, ...fallback] : fallback;
 }
 
