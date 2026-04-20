@@ -74,7 +74,12 @@ export function CreateInstructionFileModal({
 }: CreateInstructionFileModalProps) {
   const [fileName, setFileName] = useState("");
   const [content, setContent] = useState("");
-  const [selectedIcon, setSelectedIcon] = useState<IconType>(FileCheck02);
+  // HI-03 — lazy initializer defers the `FileCheck02` reference to
+  // first render. Vitest's ESM/CJS interop resolves the named export
+  // as `undefined` at module-load time; lazy-init sidesteps that by
+  // evaluating the identifier after React has mounted the component.
+  // Also a correctness win in StrictMode (no re-eval of the initial).
+  const [selectedIcon, setSelectedIcon] = useState<IconType>(() => FileCheck02);
   const [selectedIconName, setSelectedIconName] = useState<string>("FileCheck02");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
