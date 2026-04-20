@@ -3,7 +3,7 @@
 // Covers the refactored surface:
 //   - Textarea is always active when a file is selected (no Edit button).
 //   - Save + Cancel only render when draftContent !== savedContent (dirty).
-//   - Save on SOUL.md → PATCH /api/agents/[id] with { changes: { soul_content } }.
+//   - Save on SOUL.md → PATCH /api/agents/[id] with { soul_content }.
 //   - Save on non-SOUL → PATCH /api/agents/[id]/instructions/[file_name] with { content }.
 //   - Cancel reverts draft to saved (silently for small diffs).
 //   - Delete button hidden for canonical files; visible for user files.
@@ -197,7 +197,7 @@ describe("TabInstructions — Paperclip parity (quick 260420-nxb)", () => {
     expect(screen.getByRole("button", { name: /^Cancel$/ })).toBeTruthy();
   });
 
-  it("PATCHes /api/agents/[id] with changes.soul_content when saving SOUL.md", async () => {
+  it("PATCHes /api/agents/[id] with soul_content when saving SOUL.md", async () => {
     const agent = makeAgent({ soul_content: "# hello" });
     render(<TabInstructions agent={agent} />);
 
@@ -213,7 +213,7 @@ describe("TabInstructions — Paperclip parity (quick 260420-nxb)", () => {
     expect(url).toBe("/api/agents/jax");
     expect(init.method).toBe("PATCH");
     expect(JSON.parse(init.body as string)).toEqual({
-      changes: { soul_content: "# updated" },
+      soul_content: "# updated",
     });
   });
 

@@ -146,7 +146,7 @@ export const TabInstructions: React.FC<{
         ? `/api/agents/${encodeURIComponent(agent.agent_id)}`
         : `/api/agents/${encodeURIComponent(agent.agent_id)}/instructions/${encodeURIComponent(active.file_name)}`;
       const body = isSoul
-        ? { changes: { soul_content: draftContent } }
+        ? { soul_content: draftContent }
         : { content: draftContent };
 
       const res = await fetch(url, {
