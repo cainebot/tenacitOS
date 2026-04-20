@@ -118,7 +118,10 @@ describe("TabInstructions — Plan 69-09 real-data wiring", () => {
     render(<TabInstructions agent={agent} />);
 
     const body = screen.getByTestId("instructions-body");
-    expect(body.textContent).toBe("# hello");
+    const renderedContent = Array.from(body.querySelectorAll("pre"))
+      .map((p) => p.textContent ?? "")
+      .join("\n");
+    expect(renderedContent).toBe("# hello");
   });
 
   it("shows the empty state for Soul.md when soul_content is empty string", () => {
@@ -197,8 +200,11 @@ describe("TabInstructions — Plan 69-09 real-data wiring", () => {
     const { container } = render(<TabInstructions agent={agent} />);
 
     const body = screen.getByTestId("instructions-body");
-    // Literal text child — React escapes it.
-    expect(body.textContent).toBe(evil);
+    // Literal text child — React escapes it. Each `\n`-split line renders into its own <pre>.
+    const renderedContent = Array.from(body.querySelectorAll("pre"))
+      .map((p) => p.textContent ?? "")
+      .join("\n");
+    expect(renderedContent).toBe(evil);
     // And absolutely no live <script> element was injected anywhere.
     expect(container.querySelector("script")).toBeNull();
   });

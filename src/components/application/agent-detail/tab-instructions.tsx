@@ -14,7 +14,7 @@
 // <Textarea>. No dangerouslySetInnerHTML. file_name + icon come from the
 // server-side whitelist-validated response.
 
-import { useCallback, useMemo, useState, type ComponentType, type SVGProps } from "react";
+import { Fragment, useCallback, useMemo, useState, type ComponentType, type SVGProps } from "react";
 import { Badge, Button, ButtonUtility, TextArea, cx } from "@circos/ui";
 import * as UntitledIcons from "@untitledui/icons";
 import {
@@ -350,27 +350,33 @@ export const TabInstructions: React.FC<{
           </div>
         ) : (
           <div className="flex items-start px-5 py-4">
-            <div className="flex w-full overflow-hidden rounded-xl border border-secondary bg-primary">
-              <div className="flex shrink-0 flex-col items-end border-r border-secondary bg-secondary px-4 py-5">
-                {lines.map((_, i) => (
+            <div
+              data-testid="instructions-body"
+              className="grid w-full grid-cols-[auto_1fr] overflow-hidden rounded-xl border border-secondary bg-primary"
+            >
+              {lines.map((line, i) => (
+                <Fragment key={i}>
                   <span
-                    key={i}
-                    className="text-right text-sm leading-5 text-quaternary [font-family:var(--font-code)]"
+                    aria-hidden
+                    className={cx(
+                      "select-none border-r border-secondary bg-secondary px-4 text-right text-sm leading-5 text-quaternary [font-family:var(--font-code)]",
+                      i === 0 && "pt-5",
+                      i === lines.length - 1 && "pb-5",
+                    )}
                   >
                     {i + 1}
                   </span>
-                ))}
-              </div>
-              <pre
-                data-testid="instructions-body"
-                className={cx(
-                  "min-w-0 flex-1 overflow-auto px-5 py-5",
-                  "text-sm leading-5 text-primary",
-                  "[font-family:var(--font-code)] whitespace-pre-wrap",
-                )}
-              >
-                {active!.content}
-              </pre>
+                  <pre
+                    className={cx(
+                      "min-h-5 min-w-0 overflow-x-auto px-5 text-sm leading-5 text-primary [font-family:var(--font-code)] whitespace-pre-wrap",
+                      i === 0 && "pt-5",
+                      i === lines.length - 1 && "pb-5",
+                    )}
+                  >
+                    {line}
+                  </pre>
+                </Fragment>
+              ))}
             </div>
           </div>
         )}
