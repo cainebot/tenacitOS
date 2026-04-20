@@ -8,7 +8,7 @@
 export type NodeStatus = 'online' | 'offline' | 'degraded';
 
 // 7 states — executing_tool added in Phase 26 for tool-call visibility
-export type AgentStatus = 'idle' | 'working' | 'error' | 'offline' | 'thinking' | 'queued' | 'executing_tool';
+export type AgentStatus = 'idle' | 'working' | 'error' | 'offline' | 'thinking' | 'queued' | 'executing_tool' | 'paused';
 
 export type TaskStatus = 'pending' | 'claimed' | 'in_progress' | 'completed' | 'failed';
 
@@ -103,6 +103,9 @@ export interface AgentRow {
   is_seed?: boolean;
   deleted_at?: string | null;
   avatar_url?: string | null;
+  // Phase 69 Plan 11 — paused-status audit columns (migration 041).
+  paused_at?: string | null;
+  paused_reason?: string | null;
 }
 
 export interface TaskRow {

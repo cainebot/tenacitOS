@@ -52,6 +52,8 @@ export function getStatusLabel(status: AgentStatus | string | null | undefined):
       return "error";
     case "offline":
       return "offline";
+    case "paused":
+      return "paused";
     default:
       return String(status);
   }
@@ -79,6 +81,8 @@ export function getStatusColor(
       return "error";
     case "offline":
       return "gray";
+    case "paused":
+      return "warning";
     default:
       return "gray";
   }
