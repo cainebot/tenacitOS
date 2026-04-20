@@ -29,6 +29,7 @@ import type {
   ApprovalRow,
   ApprovalType,
 } from "@/types/approval";
+import { ApprovalPayloadRenderer } from "@/components/approvals/approval-payload-renderer";
 
 interface ApprovalDetailModalProps {
   approval: ApprovalRow | null;
@@ -147,8 +148,6 @@ export function ApprovalDetailModal({
 
   if (!approval) return null;
 
-  const payloadJson = JSON.stringify(approval.payload ?? {}, null, 2);
-
   const handle = async (action: ApprovalAction) => {
     await onSubmit(approval, action, decisionNote);
     setDecisionNote("");
@@ -200,14 +199,10 @@ export function ApprovalDetailModal({
 
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-quaternary">Payload</span>
-            <pre
-              className={cx(
-                "max-h-80 overflow-auto rounded-md border border-secondary bg-tertiary p-3",
-                "font-mono text-xs text-primary whitespace-pre-wrap break-all",
-              )}
-            >
-              {payloadJson}
-            </pre>
+            {/* Phase 69 Plan 06 — per-type structured renderer replaces
+                the raw JSON <pre>. Forward-compat: unknown/future types
+                fall back to a JSON <pre> inside the dispatcher. */}
+            <ApprovalPayloadRenderer approval={approval} />
           </div>
 
           <div className="flex flex-col gap-1">
