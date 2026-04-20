@@ -42,8 +42,12 @@ export function useRealtimeAgents(): UseRealtimeAgentsResult {
     // Full resync on mount before subscribing
     fetchAllAgents()
 
+    // ME-03 — mount-unique topic so StrictMode's dev-only double-mount does
+    // not collide with an already-subscribed channel (matches the pattern
+    // used by useRealtimeRuns / useInstructionFiles).
+    const topic = `agents-realtime-${Math.random().toString(36).slice(2)}`
     const channel = supabase
-      .channel('agents-realtime')
+      .channel(topic)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'agents' },
