@@ -95,16 +95,18 @@ export function ApprovalPayloadDeleteAgent({
   const nodeId = snapshot?.bound_node_id ?? snapshot?.preferred_node_id ?? null;
 
   // Pending-runs fetch is opt-in — only fires with a known node binding.
+  // When nodeId is null we reset the state through the effect cleanup
+  // instead of a sync setState body (react-hooks/set-state-in-effect).
   useEffect(() => {
-    if (!nodeId) {
-      setPendingRuns("unknown");
-      return;
-    }
+    if (!nodeId) return;
     const controller = new AbortController();
     void fetchActiveRuns(nodeId, controller.signal).then((count) => {
       setPendingRuns(count);
     });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      setPendingRuns("unknown");
+    };
   }, [nodeId]);
 
   const name = snapshot?.name ?? agentId ?? "(agent missing)";

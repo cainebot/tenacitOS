@@ -14,7 +14,7 @@
 // SECURITY T9 defense-in-depth: every rendered avatar_url passes
 // through isAllowedAvatarUrl before reaching <Avatar src>.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Avatar, Badge, FeaturedIcon, cx } from "@circos/ui";
 import { Trash02 } from "@untitledui/icons";
 import { isAllowedAvatarUrl } from "@/lib/agent-validators";
@@ -55,7 +55,12 @@ export function ApprovalPayloadDeleteAgentsBulk({
 }: {
   payload: DeleteAgentsBulkPayload;
 }) {
-  const ids = Array.isArray(payload.agent_ids) ? payload.agent_ids : [];
+  // Stabilise the array identity so the useEffect below doesn't
+  // re-fire every render (react-hooks/exhaustive-deps).
+  const ids = useMemo(
+    () => (Array.isArray(payload.agent_ids) ? payload.agent_ids : []),
+    [payload.agent_ids],
+  );
   const initialSnapshots = Array.isArray(payload.target_snapshots)
     ? payload.target_snapshots
     : null;
