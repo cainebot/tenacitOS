@@ -12,7 +12,11 @@ export type ApprovalType =
   | "delete_agent"
   | "delete_agents_bulk"
   | "update_agent"
-  | "send_external_message";
+  | "send_external_message"
+  | "update_identity_file_content"
+  | "create_user_instruction"
+  | "update_user_instruction_content"
+  | "delete_user_instruction";
 
 export type ApprovalStatus =
   | "pending"

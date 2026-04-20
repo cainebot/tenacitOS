@@ -49,6 +49,11 @@ const TYPE_BADGE_COLOR: Record<ApprovalType, Parameters<typeof Badge>[0]["color"
   delete_agents_bulk: "error",
   update_agent: "warning",
   send_external_message: "indigo",
+  // Phase 69 — 4 new types land on migration 039 §7.
+  update_identity_file_content: "warning",
+  create_user_instruction: "brand",
+  update_user_instruction_content: "warning",
+  delete_user_instruction: "error",
 };
 
 function typeLabel(t: ApprovalType): string {
@@ -58,6 +63,16 @@ function typeLabel(t: ApprovalType): string {
     case "delete_agents_bulk": return "Delete agents (bulk)";
     case "update_agent": return "Update agent";
     case "send_external_message": return "Send external message";
+    case "update_identity_file_content": return "Update identity file";
+    case "create_user_instruction": return "Create user instruction";
+    case "update_user_instruction_content": return "Update user instruction";
+    case "delete_user_instruction": return "Delete user instruction";
+    default: {
+      // Exhaustiveness guard — compile-time failure if a new ApprovalType
+      // lands without a matching label.
+      const _exhaustive: never = t;
+      return _exhaustive;
+    }
   }
 }
 
