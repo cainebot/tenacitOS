@@ -352,14 +352,14 @@ export const TabInstructions: React.FC<{
           <div className="flex items-start px-5 py-4">
             <div
               data-testid="instructions-body"
-              className="grid w-full grid-cols-[auto_1fr] overflow-hidden rounded-xl border border-secondary bg-primary"
+              className="grid w-full grid-cols-[auto_1fr] overflow-x-auto rounded-xl border border-secondary bg-primary"
             >
               {lines.map((line, i) => (
                 <Fragment key={i}>
                   <span
                     aria-hidden
                     className={cx(
-                      "select-none border-r border-secondary bg-secondary px-4 text-right text-sm leading-5 text-quaternary [font-family:var(--font-code)]",
+                      "sticky left-0 z-10 select-none border-r border-secondary bg-secondary px-4 text-right text-sm leading-5 text-quaternary [font-family:var(--font-code)]",
                       i === 0 && "pt-5",
                       i === lines.length - 1 && "pb-5",
                     )}
@@ -368,7 +368,7 @@ export const TabInstructions: React.FC<{
                   </span>
                   <pre
                     className={cx(
-                      "min-h-5 min-w-0 overflow-x-auto px-5 text-sm leading-5 text-primary [font-family:var(--font-code)] whitespace-pre-wrap",
+                      "min-h-5 px-5 text-sm leading-5 text-primary [font-family:var(--font-code)] whitespace-pre",
                       i === 0 && "pt-5",
                       i === lines.length - 1 && "pb-5",
                     )}
