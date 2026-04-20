@@ -7,7 +7,7 @@
 // payload.content (first 2000 chars). Both rendered as React text children
 // inside <pre> (auto-escaped — SECURITY T2/T3 XSS defense-in-depth).
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Avatar, Badge, Button, cx } from "@circos/ui";
 import * as UntitledIcons from "@untitledui/icons";
 import { File06 } from "@untitledui/icons";
@@ -57,7 +57,10 @@ export function ApprovalPayloadUpdateIdentityFileContent({
   const afterPreview = showFull ? after : after.slice(0, 2000);
   const beforePreview = showFull ? before : before.slice(0, 2000);
 
-  const FileIcon = resolveIcon(snap.file_icon);
+  // HI-02 — memoise icon resolution so the component reference is
+  // stable across renders (react-compiler "create components during
+  // render" rule). Keyed on the icon-name string from the snapshot.
+  const FileIcon = useMemo(() => resolveIcon(snap.file_icon), [snap.file_icon]);
 
   return (
     <div

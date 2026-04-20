@@ -2,6 +2,7 @@
 
 // Phase 69 Plan 10 — delete_user_instruction approval payload renderer.
 
+import { useMemo } from "react";
 import { Avatar, Badge, cx } from "@circos/ui";
 import * as UntitledIcons from "@untitledui/icons";
 import { File06, AlertTriangle } from "@untitledui/icons";
@@ -42,7 +43,8 @@ export function ApprovalPayloadDeleteUserInstruction({
   const slug = snap.agent_slug ?? payload.agent_id ?? "";
   const rawAvatar = snap.agent_avatar_url ?? null;
   const safeAvatar = isAllowedAvatarUrl(rawAvatar) ? rawAvatar ?? undefined : undefined;
-  const FileIcon = resolveIcon(snap.file_icon);
+  // HI-02 — memoise icon resolution (react-compiler lint).
+  const FileIcon = useMemo(() => resolveIcon(snap.file_icon), [snap.file_icon]);
   const priorLen =
     typeof snap.prior_content_length === "number" ? snap.prior_content_length : 0;
 

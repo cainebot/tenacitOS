@@ -2,7 +2,7 @@
 
 // Phase 69 Plan 10 — update_user_instruction_content approval payload renderer.
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Avatar, Badge, Button, cx } from "@circos/ui";
 import * as UntitledIcons from "@untitledui/icons";
 import { File06 } from "@untitledui/icons";
@@ -46,7 +46,8 @@ export function ApprovalPayloadUpdateUserInstructionContent({
   const slug = snap.agent_slug ?? payload.agent_id ?? "";
   const rawAvatar = snap.agent_avatar_url ?? null;
   const safeAvatar = isAllowedAvatarUrl(rawAvatar) ? rawAvatar ?? undefined : undefined;
-  const FileIcon = resolveIcon(snap.file_icon);
+  // HI-02 — memoise icon resolution (react-compiler lint).
+  const FileIcon = useMemo(() => resolveIcon(snap.file_icon), [snap.file_icon]);
 
   const before = typeof snap.prior_content === "string" ? snap.prior_content : "";
   const after = typeof payload.content === "string" ? payload.content : "";
