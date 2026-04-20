@@ -58,6 +58,7 @@ const navItems: (NavItemType | NavItemDividerType)[] = [
     ],
   },
   { label: "Organization", href: "/organization", icon: Building06 },
+  { label: "Office", href: "/office", icon: Building06 },
   { label: "Calendar", href: "/calendar", icon: Calendar },
   { divider: true, label: "Agents" },
   { label: "Agents", href: "/agents", icon: BotIcon },
