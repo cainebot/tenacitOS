@@ -46,7 +46,7 @@ import { GripVertical } from "@/components/icons/grip-vertical"
 
 export type FilterOperator = "equal" | "not_equal" | "greater" | "greater_equal" | "less" | "less_equal" | "contains" | "not_contains"
 
-export type FilterFieldType = "member" | "priority" | "date" | "tags" | "card_type"
+export type FilterFieldType = "member" | "agent" | "priority" | "date" | "tags" | "card_type"
 
 export interface FilterFieldDefinition {
   type: FilterFieldType
@@ -139,9 +139,10 @@ function SortableFilterRow({
       {/* Field selector */}
       <div className="min-w-0 flex-1">
         <Select
+          aria-label="Field"
           size="sm"
           placeholder="Field"
-          placeholderIcon={fieldDef?.icon}
+          icon={fieldDef?.icon}
           popoverClassName="min-w-[200px]"
           selectedKey={row.fieldType}
           onSelectionChange={(key) => {
@@ -157,9 +158,10 @@ function SortableFilterRow({
       {/* Operator selector */}
       <div className="w-[150px] shrink-0">
         <Select
+          aria-label="Operator"
           size="sm"
           placeholder="Operator"
-          placeholderIcon={Equal}
+          icon={Equal}
           popoverClassName="min-w-[200px]"
           selectedKey={row.operator}
           onSelectionChange={(key) => {
@@ -175,9 +177,10 @@ function SortableFilterRow({
       {/* Value selector */}
       <div className="min-w-0 flex-1">
         <Select
+          aria-label="Value"
           size="sm"
           placeholder="Select value"
-          placeholderIcon={valueDef?.icon}
+          icon={valueDef?.icon}
           popoverClassName="min-w-[200px]"
           selectedKey={row.value ?? undefined}
           onSelectionChange={(key) => {
@@ -343,7 +346,7 @@ export function DynamicFilter({
           )
         }
       >
-        <AriaDialog className="outline-none">
+        <AriaDialog aria-label="Dynamic filter" className="outline-none">
           {() => (
             <div className="flex flex-col gap-0">
               <p className="text-md font-semibold text-primary">Dynamic filter</p>

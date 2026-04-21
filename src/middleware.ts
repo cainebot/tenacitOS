@@ -4,9 +4,9 @@ import type { NextRequest } from "next/server";
 // Routes that never require authentication
 const PUBLIC_ROUTES = new Set(["/login"]);
 
-// API routes that are always public (auth endpoints + health check)
-// /api/auth/ covers login and logout; /api/health for uptime checks
-const PUBLIC_API_PREFIXES = ["/api/auth/", "/api/health"];
+// API routes that are always public (login/logout + health check)
+// /api/auth/session requires mc_auth — excluded from public list
+const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/auth/logout", "/api/health"];
 
 function isBrowserAuthenticated(request: NextRequest): boolean {
   const authCookie = request.cookies.get("mc_auth");

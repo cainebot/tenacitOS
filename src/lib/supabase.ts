@@ -19,6 +19,11 @@ export function createBrowserClient(): SupabaseClient {
   }
 
   browserClient = createClient(url, anonKey, {
+    global: {
+      // Bypass browser HTTP cache — ensures Supabase REST queries always hit the network.
+      // Without this, Cmd+R serves stale responses (e.g. old map versions after publish).
+      fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+    },
     realtime: {
       params: { eventsPerSecond: 10 }
     }

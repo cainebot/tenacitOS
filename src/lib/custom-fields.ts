@@ -3,7 +3,7 @@ import type {
   CustomFieldDefinitionRow,
   CardCustomFieldValueRow,
   CardType,
-} from '@/types/workflow'
+} from '@/types/project'
 
 // ---- Custom field reads (server client) ----
 
@@ -12,7 +12,7 @@ import type {
  * Returns fields scoped to the given card_type AND fields with no card_type (global to workflow).
  */
 export async function getFieldDefinitions(
-  workflowId: string,
+  projectId: string,
   cardType?: CardType
 ): Promise<CustomFieldDefinitionRow[]> {
   const client = createServerClient()
@@ -20,7 +20,7 @@ export async function getFieldDefinitions(
   let query = client
     .from('custom_field_definitions')
     .select('*')
-    .eq('workflow_id', workflowId)
+    .eq('project_id', projectId)
     .order('position')
 
   if (cardType) {
@@ -68,13 +68,13 @@ export interface CreateFieldDefinitionData {
 }
 
 export async function createFieldDefinition(
-  workflowId: string,
+  projectId: string,
   data: CreateFieldDefinitionData
 ): Promise<CustomFieldDefinitionRow> {
   const client = createServiceRoleClient()
   const { data: row, error } = await client
     .from('custom_field_definitions')
-    .insert({ workflow_id: workflowId, ...data })
+    .insert({ project_id: projectId, ...data })
     .select()
     .single()
 

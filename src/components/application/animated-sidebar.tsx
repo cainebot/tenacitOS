@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useState, useEffect } from "react"
+import { type ReactNode, useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { SideMenu, SIDEBAR, SIDEBAR_SPRING, type NavItemType, type NavItemDividerType } from "@circos/ui"
 import type { FeaturedCardData } from "@circos/ui"
@@ -27,6 +27,10 @@ interface AnimatedSidebarProps {
   onToggle: () => void
   secondaryPanel?: ReactNode
   showSecondaryPanel?: boolean
+  /** Keep sidebar in hover-expanded state even if pointer leaves (e.g. chat hover menu). */
+  keepHovering?: boolean
+  /** Called when pointer leaves the entire sidebar + secondary panel area. */
+  onPointerLeave?: () => void
 }
 
 export function AnimatedSidebar({
@@ -37,13 +41,23 @@ export function AnimatedSidebar({
   onToggle,
   secondaryPanel,
   showSecondaryPanel,
+  keepHovering,
+  onPointerLeave: onPointerLeaveProp,
 }: AnimatedSidebarProps) {
   const [isHovering, setIsHovering] = useState(false)
+  const pointerOverRef = useRef(false)
 
   // Clear hover when the sidebar is expanded externally
   useEffect(() => {
     if (!isSlim) setIsHovering(false)
   }, [isSlim])
+
+  // When keepHovering ends, collapse only if pointer is no longer over sidebar
+  useEffect(() => {
+    if (!keepHovering && !pointerOverRef.current) {
+      setIsHovering(false)
+    }
+  }, [keepHovering])
 
   // ── Derived state ──
   // Visual variant: expanded when hovering over slim OR when not slim
@@ -54,10 +68,9 @@ export function AnimatedSidebar({
   const isOverlay = isSlim && isHovering
 
   // Placeholder width: only accounts for the fixed (non-hover) layout
+  // Secondary panel always overlays — never pushes main content
   const baseWidth = isSlim ? SIDEBAR.SLIM_WIDTH : SIDEBAR.EXPANDED_WITH_PAD
-  const placeholderWidth = showSecondaryPanel
-    ? baseWidth + SIDEBAR.PANEL_WIDTH
-    : baseWidth
+  const placeholderWidth = baseWidth
 
   // ── Toggle handler ──
   // When expanding from hover, just consolidate the state — the SideMenu
@@ -75,15 +88,15 @@ export function AnimatedSidebar({
     <>
       {/* Single sidebar container — fixed position, grows with SideMenu */}
       <div
-        className={`z-50 hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:py-1 lg:pl-1${
+        className={`z-50 hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex py-2 pl-2${
           isOverlay ? " shadow-xl" : ""
         }`}
-        onPointerLeave={() => setIsHovering(false)}
+        onPointerLeave={() => { pointerOverRef.current = false; if (!keepHovering) setIsHovering(false); onPointerLeaveProp?.() }}
       >
         {/* Single SideMenu instance — always animated, variant derived from state */}
         {/* onPointerEnter on this wrapper so only the sidebar area triggers hover,
             while the outer onPointerLeave keeps hover alive across the agents panel */}
-        <div className="h-full" onPointerEnter={() => isSlim && setIsHovering(true)}>
+        <div className="h-full" onPointerEnter={() => { pointerOverRef.current = true; isSlim && setIsHovering(true) }}>
         <SideMenu
           variant={visualVariant}
           animated

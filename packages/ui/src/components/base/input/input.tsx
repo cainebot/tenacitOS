@@ -189,7 +189,7 @@ interface BaseProps {
     hint?: ReactNode
 }
 
-interface TextFieldProps
+export interface TextFieldProps
     extends BaseProps,
         AriaTextFieldProps,
         Pick<InputBaseProps, "size" | "wrapperClassName" | "inputClassName" | "iconClassName" | "tooltipClassName"> {

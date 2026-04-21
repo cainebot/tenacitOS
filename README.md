@@ -406,3 +406,12 @@ MIT — see [LICENSE](./LICENSE)
 - [OpenClaw Docs](https://docs.openclaw.ai)
 - [Discord Community](https://discord.com/invite/clawd)
 - [GitHub Issues](../../issues) — bug reports and feature requests
+
+---
+
+## Workspace Note
+
+This package is a git submodule of the [CircOS super-repo](../../). As of v1.9
+Phase 61, the canonical lockfile lives in the super-repo root (`/package-lock.json`),
+and `npm install` must be run from the super-repo root. Standalone clone of this
+submodule is no longer a supported workflow — install dependencies via the super-repo.

@@ -28,9 +28,16 @@ const config: StorybookConfig = {
         ([find, replacement]) => ({ find, replacement })
       )
     }
-    // Resolve @/components from app src (for app-level stories) — must come before generic @/
+    // Resolve @circos/ui barrel export (for app-level stories that import from it)
+    config.resolve.alias.push({ find: /^@circos\/ui$/, replacement: uiSrc + "/index.ts" })
+    config.resolve.alias.push({ find: /^@circos\/ui\//, replacement: uiSrc + "/" })
+
+    // Resolve app-level paths (for app-level stories) — must come before generic @/
     const appSrc = resolve(__dirname, "../../../src")
     config.resolve.alias.push({ find: /^@\/components\//, replacement: appSrc + "/components/" })
+    config.resolve.alias.push({ find: /^@\/types\//, replacement: appSrc + "/types/" })
+    config.resolve.alias.push({ find: /^@\/lib\//, replacement: appSrc + "/lib/" })
+    config.resolve.alias.push({ find: /^@\/hooks\//, replacement: appSrc + "/hooks/" })
     config.resolve.alias.push({ find: /^@\//, replacement: uiSrc + "/" })
 
     // Ensure Vite resolves node_modules from workspace root (for tailwindcss, etc.)

@@ -1,0 +1,783 @@
+{
+  "$schema": "./component-map.schema.json",
+  "version": "0.3.0",
+  "description": "Mapping between Figma nodes (UUI PRO VARIABLES v7.0) and @circos/ui components. Source of truth for /uui-figma-creator and /uui-code-creator skills.",
+  "figmaFile": {
+    "fileKey": "MBkN7H8nYLx7DNhzTf8vcD",
+    "name": "Untitled UI – PRO VARIABLES v7.0",
+    "url": "https://www.figma.com/design/MBkN7H8nYLx7DNhzTf8vcD/"
+  },
+  "lastUpdated": "2026-04-15",
+  "notes": {
+    "figmaNodeIds": "Deferred to follow-up session. Populate via /uui-figma-creator per component using Figma Desktop (archive must be active). Current snapshot uses [] for all entries.",
+    "installStrategy": "Clone-based from ~/Documents/references/untitledui-react/. See feedback_uui_install_strategy.md. UUI PRO MCP NOT authenticated in this session — all installs came from local clone."
+  },
+  "components": {
+    "base": {
+      "button": {
+        "uuiName": "button",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/button.tsx",
+        "storyPath": "packages/ui/src/components/base/button.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "notes": "Covers all color variants (primary, secondary, tertiary, link-*, destructive). Sizes sm/md/lg/xl."
+      },
+      "button-utility": {
+        "uuiName": "button-utility",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/buttons/button-utility.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false,
+        "notes": "Already exported from base/index.ts as ButtonUtility"
+      },
+      "badge": {
+        "uuiName": "badges",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/badge.tsx",
+        "storyPath": "packages/ui/src/components/base/badge.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "notes": "Also exports BadgeWithDot, BadgeWithIcon, BadgeWithButton."
+      },
+      "badge-groups": {
+        "uuiName": "badge-groups",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/badges/badge-groups.tsx",
+        "storyPath": "packages/ui/src/components/base/badges/badge-groups.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15"
+      },
+      "input": {
+        "uuiName": "input",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/input.tsx",
+        "storyPath": "packages/ui/src/components/base/input.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "textarea": {
+        "uuiName": "textarea",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/textarea.tsx",
+        "storyPath": "packages/ui/src/components/base/textarea.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "select": {
+        "uuiName": "select",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/select/select.tsx",
+        "storyPath": "packages/ui/src/components/base/select.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Canonical UUI v7.0 via Theseus replacement. Sizes sm|md|lg, 'icon' prop (was 'placeholderIcon'), select-shared.tsx architecture. Default size 'md'. Breaking: consumers using 'placeholderIcon' must migrate to 'icon'."
+      },
+      "select-shared": {
+        "uuiName": "select-shared",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/select/select-shared.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Exports SelectContext, sizes, SelectItemType, CommonProps (shared across Select/ComboBox/MultiSelect/TagSelect)."
+      },
+      "multi-select": {
+        "uuiName": "multi-select",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/select/multi-select.tsx",
+        "storyPath": "packages/ui/src/components/base/select/multi-select.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Adaptations: footer Button xs->sm, Label isInvalid prop removed, FeaturedIcon theme->variant."
+      },
+      "tag-select": {
+        "uuiName": "tag-select",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/select/tag-select.tsx",
+        "storyPath": "packages/ui/src/components/base/select/tag-select.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "select-native": {
+        "uuiName": "select-native",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/select/select-native.tsx",
+        "storyPath": "packages/ui/src/components/base/select/select-native.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Exported as NativeSelect."
+      },
+      "checkbox": {
+        "uuiName": "checkbox",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/checkbox.tsx",
+        "storyPath": "packages/ui/src/components/base/checkbox.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "toggle": {
+        "uuiName": "toggle",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/toggle.tsx",
+        "storyPath": "packages/ui/src/components/base/toggle.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "avatar": {
+        "uuiName": "avatar",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/avatar.tsx",
+        "storyPath": "packages/ui/src/components/base/avatar.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "tooltip": {
+        "uuiName": "tooltip",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/tooltip.tsx",
+        "storyPath": "packages/ui/src/components/base/tooltip.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "dropdown": {
+        "uuiName": "dropdown",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Canonical UUI v7.0 (Theseus replacement). Adds selectionIndicator (checkmark|checkbox|radio|toggle|none), submenu support, avatarUrl. 14 preconfigured variants installed alongside."
+      },
+      "dropdown-account-breadcrumb": {
+        "uuiName": "dropdown-account-breadcrumb",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-account-breadcrumb.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-account-button": {
+        "uuiName": "dropdown-account-button",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-account-button.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Button size adjusted xs->sm (CircOS Button lacks xs)."
+      },
+      "dropdown-account-card-xs": {
+        "uuiName": "dropdown-account-card-xs",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-account-card-xs.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-account-card-sm": {
+        "uuiName": "dropdown-account-card-sm",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-account-card-sm.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Avatar 'border' prop removed (CircOS Avatar lacks it)."
+      },
+      "dropdown-account-card-md": {
+        "uuiName": "dropdown-account-card-md",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-account-card-md.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-avatar": {
+        "uuiName": "dropdown-avatar",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-avatar.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Button size adjusted xs->sm."
+      },
+      "dropdown-button-advanced": {
+        "uuiName": "dropdown-button-advanced",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-button-advanced.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-button-link": {
+        "uuiName": "dropdown-button-link",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-button-link.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-button-simple": {
+        "uuiName": "dropdown-button-simple",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-button-simple.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-icon-advanced": {
+        "uuiName": "dropdown-icon-advanced",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-icon-advanced.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-icon-simple": {
+        "uuiName": "dropdown-icon-simple",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-icon-simple.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-integration": {
+        "uuiName": "dropdown-integration",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-integration.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-search-simple": {
+        "uuiName": "dropdown-search-simple",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-search-simple.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "dropdown-search-advanced": {
+        "uuiName": "dropdown-search-advanced",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/dropdown/dropdown-search-advanced.tsx",
+        "storyPath": "packages/ui/src/components/base/dropdown/dropdown.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Button size adjusted xs->sm."
+      },
+      "hook-form": {
+        "uuiName": "hook-form",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/form/hook-form.tsx",
+        "storyPath": "packages/ui/src/components/base/form/hook-form.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Exports HookForm, FormField, useFormFieldContext. Requires react-hook-form@^7.54."
+      },
+      "pin-input": {
+        "uuiName": "pin-input",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/input/pin-input.tsx",
+        "storyPath": "packages/ui/src/components/base/input/pin-input.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Requires input-otp@^1.4. Sizes xxxs|xxs|xs|sm|md|lg."
+      },
+      "progress-bar": {
+        "uuiName": "progress-indicators",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/progress-bar.tsx",
+        "storyPath": "packages/ui/src/components/base/progress-bar.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "progress-circles": {
+        "uuiName": "progress-circles",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/progress-indicators/progress-circles.tsx",
+        "storyPath": "packages/ui/src/components/base/progress-indicators/progress-circles.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Exports ProgressBarCircle + ProgressBarHalfCircle"
+      },
+      "simple-circle": {
+        "uuiName": "simple-circle",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/progress-indicators/simple-circle.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Exports CircleProgressBar. Story included in progress-circles.stories.tsx"
+      },
+      "social-button": {
+        "uuiName": "social-button",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/social-button.tsx",
+        "storyPath": "packages/ui/src/components/base/social-button.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "tags": {
+        "uuiName": "tags",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/tags/",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false
+      },
+      "feed-item": {
+        "uuiName": null,
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/feed-item.tsx",
+        "storyPath": "packages/ui/src/components/base/feed-item.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "notes": "Custom CircOS component — no direct UUI equivalent"
+      },
+      "app-store-buttons": {
+        "uuiName": "app-store-buttons",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/buttons/app-store-buttons.tsx",
+        "storyPath": "packages/ui/src/components/base/buttons/app-store-buttons.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Exported as namespace AppStoreButtons + AppStoreButtonsOutline. Covers GooglePlay, AppStore, GalaxyStore, AppGallery."
+      },
+      "button-group": {
+        "uuiName": "button-group",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/button-group/button-group.tsx",
+        "storyPath": "packages/ui/src/components/base/button-group/button-group.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15"
+      },
+      "file-upload-trigger": {
+        "uuiName": "file-upload-trigger",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/file-upload-trigger/file-upload-trigger.tsx",
+        "storyPath": "packages/ui/src/components/base/file-upload-trigger/file-upload-trigger.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Exports FileTrigger. Uses @react-aria/utils.filterDOMProps."
+      },
+      "slider": {
+        "uuiName": "slider",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/slider/slider.tsx",
+        "storyPath": "packages/ui/src/components/base/slider/slider.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15"
+      }
+    },
+    "application": {
+      "carousel-base": {
+        "uuiName": "carousel-base",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/carousel/carousel-base.tsx",
+        "storyPath": "packages/ui/src/components/application/carousel/carousel.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Embla-based. Exports Carousel compound (Root, Content, Item, PrevTrigger, NextTrigger, IndicatorGroup, Indicator) + CarouselContext + useCarousel. Requires embla-carousel-react@^8.5."
+      },
+      "charts-base": {
+        "uuiName": "charts-base",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/charts/charts-base.tsx",
+        "storyPath": "packages/ui/src/components/application/charts/charts.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Recharts-based primitives. Exports ChartLegendContent, ChartTooltipContent, ChartActiveDot, selectEvenlySpacedItems. Pair with Recharts Bar/Line/Area/Pie. Requires recharts@^2.15."
+      },
+      "modal": {
+        "uuiName": "modal",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/modal.tsx",
+        "storyPath": "packages/ui/src/components/application/modal.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "tabs": {
+        "uuiName": "tabs",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/tabs.tsx",
+        "storyPath": "packages/ui/src/components/application/tabs.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "table": {
+        "uuiName": "table",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/table.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false
+      },
+      "pagination": {
+        "uuiName": "pagination",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/pagination.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false
+      },
+      "combobox": {
+        "uuiName": "combobox",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/combobox.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false
+      },
+      "date-picker": {
+        "uuiName": "date-picker",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/date-picker/date-picker.tsx",
+        "storyPath": "packages/ui/src/components/application/date-picker/date-picker.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Canonical UUI v7.0 Theseus replacement. Replaces drifted CircOS custom. Requires @internationalized/date + @react-stately/utils + input-date + input-group. Adds size prop passthrough."
+      },
+      "date-picker-calendar": {
+        "uuiName": "date-picker-calendar",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/date-picker/calendar.tsx",
+        "storyPath": "packages/ui/src/components/application/date-picker/date-picker.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Exported as DatePickerCalendar via application/index.ts. Supports highlightedDates prop (preserved from CircOS API)."
+      },
+      "date-range-picker": {
+        "uuiName": "date-range-picker",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/date-picker/date-range-picker.tsx",
+        "storyPath": "packages/ui/src/components/application/date-picker/date-picker.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15"
+      },
+      "range-calendar": {
+        "uuiName": "range-calendar",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/date-picker/range-calendar.tsx",
+        "storyPath": "packages/ui/src/components/application/date-picker/date-picker.stories.tsx",
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "useBreakpoint adapted (CircOS returns current, not checks >=). RangePresetButton co-located here per clone structure."
+      },
+      "input-date": {
+        "uuiName": "input-date",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/input/input-date.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Installed as dependency of date-picker canonical. Label isInvalid prop removed (CircOS Label lacks it)."
+      },
+      "input-group": {
+        "uuiName": "input-group",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/base/input/input-group.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": true,
+        "installedAt": "2026-04-15",
+        "notes": "Size lg->md downmap (CircOS TextField sizes sm|md only). Installed as dependency of date-picker canonical."
+      },
+      "empty-state": {
+        "uuiName": "empty-state",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/empty-state.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false
+      },
+      "file-upload": {
+        "uuiName": "file-upload-base",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/file-upload.tsx",
+        "storyPath": "packages/ui/src/components/application/file-upload.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "notes": "CircOS custom implementation (single FileUpload component, onFilesSelected API). Clone's file-upload-base offers richer FileUploadDropZone + FileListItem with per-file progress/retry but requires motion/react (forbidden by CLAUDE.md). Port deferred until need for FileListItem arises — user directive 2026-04-15."
+      },
+      "loading-indicator": {
+        "uuiName": "loading-indicator",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/loading-indicator.tsx",
+        "storyPath": "packages/ui/src/components/application/loading-indicator.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "popover": {
+        "uuiName": null,
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/popover.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false,
+        "notes": "CircOS primitive — underlies multiple UUI-derived components"
+      },
+      "skeleton": {
+        "uuiName": null,
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/skeleton.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false,
+        "notes": "CircOS primitive for loading placeholders"
+      },
+      "slideout-menu": {
+        "uuiName": "slideout-menu",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/slideout-menu.tsx",
+        "storyPath": "packages/ui/src/components/application/slideout-menu.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "text-editor": {
+        "uuiName": null,
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/text-editor.tsx",
+        "storyPath": "packages/ui/src/components/application/text-editor.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "notes": "TipTap-based — custom to CircOS"
+      },
+      "app-navigation": {
+        "uuiName": null,
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/app-navigation/",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false,
+        "notes": "CircOS canonical — do NOT migrate to UUI sidebar-* variants (user directive 2026-04-15). All UUI sidebar + header-navigation entries are permanently deferred."
+      },
+      "featured-cards": {
+        "uuiName": null,
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/application/featured-cards/",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false
+      }
+    },
+    "foundations": {
+      "featured-icon": {
+        "uuiName": "featured-icon",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/featured-icon.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false
+      },
+      "dot-icon": {
+        "uuiName": "dot-icon",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/dot-icon.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false
+      },
+      "file-type-icon": {
+        "uuiName": null,
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/file-type-icon.tsx",
+        "storyPath": "packages/ui/src/components/foundations/file-type-icon.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "notes": "CircOS-specific — maps to @untitledui/file-icons"
+      },
+      "step-icon-base": {
+        "uuiName": null,
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/step-icon-base.tsx",
+        "storyPath": null,
+        "installed": true,
+        "proOnly": false
+      },
+      "untitledui-logo-minimal": {
+        "uuiName": "untitledui-logo-minimal",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/logo/untitledui-logo-minimal.tsx",
+        "storyPath": "packages/ui/src/components/foundations/untitledui-logo-minimal.stories.tsx",
+        "installed": true,
+        "proOnly": false
+      },
+      "untitledui-logo": {
+        "uuiName": "untitledui-logo",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/logo/untitledui-logo.tsx",
+        "storyPath": "packages/ui/src/components/foundations/logo/untitledui-logo.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15"
+      },
+      "rating-stars": {
+        "uuiName": "rating-stars",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/rating-stars.tsx",
+        "storyPath": "packages/ui/src/components/foundations/rating-stars.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Also exports StarIcon + getStarProgress — covers pending.star-icon entry."
+      },
+      "rating-badge": {
+        "uuiName": "rating-badge",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/rating-badge.tsx",
+        "storyPath": "packages/ui/src/components/foundations/rating-badge.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Exports RatingBadge + Wreath"
+      },
+      "integration-icons": {
+        "uuiName": "integration-icons",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/integration-icons/",
+        "storyPath": "packages/ui/src/components/foundations/integration-icons/integration-icons.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Namespace export `IntegrationIcons` from index. 16 AI/framework icons."
+      },
+      "payment-icons": {
+        "uuiName": "payment-icons",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/payment-icons/",
+        "storyPath": "packages/ui/src/components/foundations/payment-icons/payment-icons.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Namespace export `PaymentIcons`. 56 icons."
+      },
+      "social-icons": {
+        "uuiName": "social-icons",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/social-icons/",
+        "storyPath": "packages/ui/src/components/foundations/social-icons/social-icons.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Namespace export `SocialIcons`. 22 brand icons."
+      },
+      "play-button-icon": {
+        "uuiName": "play-button-icon",
+        "figmaNodeIds": [],
+        "circosUiPath": "packages/ui/src/components/foundations/play-button-icon.tsx",
+        "storyPath": "packages/ui/src/components/foundations/play-button-icon.stories.tsx",
+        "installed": true,
+        "proOnly": false,
+        "installedAt": "2026-04-15",
+        "notes": "Handoff listed under pending.base but clone places in foundations/. Installed to foundations."
+      }
+    },
+    "patterns": {
+      "_note": "CircOS-custom compound patterns. No UUI equivalents. Not installed from UUI — authored in-house.",
+      "PageHeader": { "circosUiPath": "packages/ui/src/components/patterns/PageHeader.tsx", "installed": true, "uuiName": null },
+      "FilterBar": { "circosUiPath": "packages/ui/src/components/patterns/FilterBar.tsx", "installed": true, "uuiName": null },
+      "DetailPanel": { "circosUiPath": "packages/ui/src/components/patterns/DetailPanel.tsx", "installed": true, "uuiName": null },
+      "SidePanel": { "circosUiPath": "packages/ui/src/components/patterns/SidePanel.tsx", "installed": true, "uuiName": null },
+      "OCEmptyState": { "circosUiPath": "packages/ui/src/components/patterns/OCEmptyState.tsx", "installed": true, "uuiName": null },
+      "StatusBadge": { "circosUiPath": "packages/ui/src/components/patterns/StatusBadge.tsx", "installed": true, "uuiName": null },
+      "MetricCard": { "circosUiPath": "packages/ui/src/components/patterns/MetricCard.tsx", "installed": true, "uuiName": null },
+      "TableActions": { "circosUiPath": "packages/ui/src/components/patterns/TableActions.tsx", "installed": true, "uuiName": null },
+      "ModalForm": { "circosUiPath": "packages/ui/src/components/patterns/ModalForm.tsx", "installed": true, "uuiName": null },
+      "ConfirmActionDialog": { "circosUiPath": "packages/ui/src/components/patterns/ConfirmActionDialog.tsx", "installed": true, "uuiName": null },
+      "AgentListItem": { "circosUiPath": "packages/ui/src/components/patterns/AgentListItem.tsx", "installed": true, "uuiName": null },
+      "AgentSubNav": { "circosUiPath": "packages/ui/src/components/patterns/AgentSubNav.tsx", "installed": true, "uuiName": null },
+      "FeedItem": { "circosUiPath": "packages/ui/src/components/patterns/FeedItem.tsx", "installed": true, "uuiName": null },
+      "TimelineItem": { "circosUiPath": "packages/ui/src/components/patterns/TimelineItem.tsx", "installed": true, "uuiName": null },
+      "member-selector": { "circosUiPath": "packages/ui/src/components/patterns/member-selector.tsx", "installed": true, "uuiName": null }
+    }
+  },
+  "pending": {
+    "_overview": "Deferred to follow-up sessions. Each entry documents blocker. Unblock path: add missing npm deps, resolve dependency-graph conflicts, or make migration decision for CircOS-adapted primitives.",
+    "base": {
+      "_resolved": {
+        "hook-form": "installed 2026-04-15 (react-hook-form@7.54 added) — components.base.hook-form",
+        "pin-input": "installed 2026-04-15 (input-otp@1.4 added) — components.base.pin-input",
+        "button-utility": "already installed — mapped in components.base",
+        "play-button-icon": "installed in foundations/ (clone location)",
+        "star-icon": "covered by rating-stars export",
+        "dropdown": "consolidated 2026-04-15 to UUI canonical v7.0 (Theseus replacement) — components.base.dropdown",
+        "dropdown-account-breadcrumb": "installed 2026-04-15 — components.base.dropdown-account-breadcrumb",
+        "dropdown-account-button": "installed 2026-04-15 — components.base.dropdown-account-button",
+        "dropdown-account-card-xs": "installed 2026-04-15 — components.base.dropdown-account-card-xs",
+        "dropdown-account-card-sm": "installed 2026-04-15 — components.base.dropdown-account-card-sm",
+        "dropdown-account-card-md": "installed 2026-04-15 — components.base.dropdown-account-card-md",
+        "dropdown-avatar": "installed 2026-04-15 — components.base.dropdown-avatar",
+        "dropdown-button-advanced": "installed 2026-04-15 — components.base.dropdown-button-advanced",
+        "dropdown-button-link": "installed 2026-04-15 — components.base.dropdown-button-link",
+        "dropdown-button-simple": "installed 2026-04-15 — components.base.dropdown-button-simple",
+        "dropdown-icon-advanced": "installed 2026-04-15 — components.base.dropdown-icon-advanced",
+        "dropdown-icon-simple": "installed 2026-04-15 — components.base.dropdown-icon-simple",
+        "dropdown-integration": "installed 2026-04-15 — components.base.dropdown-integration",
+        "dropdown-search-advanced": "installed 2026-04-15 — components.base.dropdown-search-advanced",
+        "dropdown-search-simple": "installed 2026-04-15 — components.base.dropdown-search-simple",
+        "select-shared": "installed 2026-04-15 — components.base.select-shared",
+        "tag-select": "installed 2026-04-15 — components.base.tag-select",
+        "multi-select": "installed 2026-04-15 — components.base.multi-select",
+        "select-native": "installed 2026-04-15 — components.base.select-native"
+      }
+    },
+    "application": {
+      "range-preset": { "blocker": "not present in reference clone (clone co-locates RangePresetButton in range-calendar.tsx — already installed)" },
+      "file-upload-base": { "blocker": "user directive 2026-04-15: defer clone port — CircOS custom file-upload.tsx works for sole consumer (task-detail-panel); motion/react adaptation to tailwindcss-animate not worth effort until FileListItem feature is needed elsewhere" },
+      "filter-bar": { "blocker": "not present in reference clone" },
+      "filter-dropdown-menu": { "blocker": "not present in reference clone" },
+      "header-navigation": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "pagination-dot": { "blocker": "requires pagination-base; would name-collide with existing application/pagination.tsx — migration decision pending" },
+      "pagination-line": { "blocker": "same as pagination-dot" },
+      "sidebar-dual-tier": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "sidebar-navigation-base": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "sidebar-section-dividers": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "sidebar-sections-subheadings": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "sidebar-simple": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" },
+      "sidebar-slim": { "blocker": "user directive 2026-04-15: not installing — CircOS app-navigation stays canonical" }
+    },
+    "foundations": {
+      "folder-icon": { "blocker": "not present in reference clone" }
+    },
+    "marketing": {
+      "_note": "Install on demand when marketing pages are being built, not in bulk."
+    }
+  }
+}

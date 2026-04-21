@@ -1,6 +1,6 @@
 "use client"
 
-import { type FC, useRef, useState } from "react"
+import { type FC, useRef, useState, useEffect, useLayoutEffect, memo } from "react"
 import { ChevronUpDouble, ChevronUp, ChevronDown, Minus, AlertCircle, Plus, MessageNotificationSquare, GitBranch01, Calendar, XClose, SearchLg, Tag01 } from "@untitledui/icons"
 import type { BadgeColor } from "@circos/ui"
 import { TaskTypeIndicator, type TaskType } from "./task-type-indicator"
@@ -47,6 +47,8 @@ export type KanbanCardSize = "sm" | "md"
 export interface KanbanCardProps {
   title: string
   onTitleChange?: (title: string) => void
+  /** Fires on every keystroke for real-time sync (store only, no API) */
+  onTitleInput?: (title: string) => void
   size?: KanbanCardSize
   taskType?: TaskType
   tags?: KanbanCardTag[]
@@ -64,6 +66,9 @@ export interface KanbanCardProps {
   onDoneChange?: (done: boolean) => void
   dueDate?: DateValue | null
   onDueDateChange?: (date: DateValue | null) => void
+  autoFocusTitle?: boolean
+  onTitleCommit?: (title: string) => void
+  onEscape?: () => void
   className?: string
 }
 
@@ -72,9 +77,12 @@ const cardSizeClasses: Record<KanbanCardSize, string> = {
   md: "w-[312px]",
 }
 
-export function KanbanCard({
+const dateFormatter = new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short" })
+
+function KanbanCardInner({
   title,
   onTitleChange,
+  onTitleInput,
   size = "sm",
   taskType,
   tags,
@@ -92,8 +100,30 @@ export function KanbanCard({
   onDoneChange,
   dueDate: dueDateProp,
   onDueDateChange,
+  autoFocusTitle,
+  onTitleCommit,
+  onEscape,
   className,
 }: KanbanCardProps) {
+  const titleRef = useRef<HTMLParagraphElement>(null)
+  const isTitleFocusedRef = useRef(false)
+
+  // Sync title prop → DOM via ref (avoids contentEditable + React reconciliation conflicts)
+  useLayoutEffect(() => {
+    if (titleRef.current && !isTitleFocusedRef.current) {
+      if (titleRef.current.textContent !== title) {
+        titleRef.current.textContent = title
+      }
+    }
+  }, [title])
+
+  useEffect(() => {
+    if (autoFocusTitle && titleRef.current) {
+      const el = titleRef.current
+      el.focus()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [internalPriority, setInternalPriority] = useState<Priority | null>(null)
   const [internalDate, setInternalDate] = useState<DateValue | null>(null)
   const [internalAssignee, setInternalAssignee] = useState<KanbanCardUser | null>(null)
@@ -119,12 +149,11 @@ export function KanbanCard({
     setIsAssigneeOpen(false)
   }
 
-  const formatter = new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short" })
   const hasDate = dueDate != null
 
   const formatDate = (date: DateValue) => {
     if (isToday(date, getLocalTimeZone())) return "Today"
-    return formatter.format(date.toDate(getLocalTimeZone()))
+    return dateFormatter.format(date.toDate(getLocalTimeZone()))
   }
 
   const priorityCfg = priority ? priorityConfig[priority] : null
@@ -148,19 +177,29 @@ export function KanbanCard({
           </div>
         )}
         <p
+          ref={titleRef}
           contentEditable
           suppressContentEditableWarning
-          onBlur={(e) => onTitleChange?.(e.currentTarget.textContent ?? "")}
+          onFocus={() => { isTitleFocusedRef.current = true }}
+          onBlur={(e) => {
+            isTitleFocusedRef.current = false
+            onTitleChange?.(e.currentTarget.textContent ?? "")
+          }}
+          onInput={(e) => onTitleInput?.((e.target as HTMLElement).textContent ?? "")}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault()
+              const text = (e.target as HTMLElement).textContent ?? ""
               ;(e.target as HTMLElement).blur()
+              onTitleCommit?.(text)
+            }
+            if (e.key === "Escape") {
+              e.preventDefault()
+              onEscape?.()
             }
           }}
           className="min-h-px min-w-0 flex-1 rounded-sm bg-transparent px-1 -ml-1 text-md font-semibold leading-6 text-primary outline-none transition-colors hover:bg-secondary_hover focus:bg-transparent focus:ring-1 focus:ring-brand-500"
-        >
-          {title}
-        </p>
+        />
         {commentsCount != null && (
           <BadgeWithIcon
             type="color"
@@ -209,6 +248,7 @@ export function KanbanCard({
         <div className="flex items-end gap-3">
           <I18nProvider locale="en-US">
           <AriaDatePicker
+            aria-label="Due date"
             shouldCloseOnSelect={false}
             value={dueDate}
             onChange={handleDateChange}
@@ -247,7 +287,7 @@ export function KanbanCard({
                 )
               }
             >
-              <AriaDialog className="rounded-2xl bg-primary shadow-xl ring ring-secondary_alt">
+              <AriaDialog aria-label="Date picker" className="rounded-2xl bg-primary shadow-xl ring ring-secondary_alt">
                 {({ close }) => (
                   <>
                     <div className="flex px-6 py-5">
@@ -286,6 +326,8 @@ export function KanbanCard({
     </div>
   )
 }
+
+export const KanbanCard = memo(KanbanCardInner) as typeof KanbanCardInner
 
 // ---------------------------------------------------------------------------
 // Tag Selector (search, select, create tags)
@@ -381,6 +423,7 @@ function TagSelector({
 
       <AriaDialogTrigger>
         <AriaButton
+          aria-label="Add tag"
           className={cx(
             "inline-flex cursor-pointer items-center justify-center rounded-full text-fg-quaternary outline-none transition-opacity",
             tags.length > 0
@@ -408,7 +451,7 @@ function TagSelector({
             )
           }
         >
-          <AriaDialog className="outline-none">
+          <AriaDialog aria-label="Tag picker" className="outline-none">
             {() => (
               <>
                 {/* Search */}
@@ -580,7 +623,7 @@ function PrioritySelector({
           )
         }
       >
-        <AriaDialog className="outline-none">
+        <AriaDialog aria-label="Priority picker" className="outline-none">
           {({ close }) => (
             <div className="py-1">
               {priorityKeys.map((key) => (
@@ -629,7 +672,7 @@ function AssigneeSelector({
 
   return (
     <AriaDialogTrigger>
-      <AriaButton className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full outline-none transition-shadow hover:ring-2 hover:ring-border-secondary focus-visible:ring-2 focus-visible:ring-border-secondary">
+      <AriaButton aria-label={assignee ? `Assigned to ${assignee.name}` : "Assign user"} className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full outline-none transition-shadow hover:ring-2 hover:ring-border-secondary focus-visible:ring-2 focus-visible:ring-border-secondary">
         <Avatar
           size="sm"
           src={assignee?.avatarUrl}
@@ -653,7 +696,7 @@ function AssigneeSelector({
           )
         }
       >
-        <AriaDialog className="outline-none">
+        <AriaDialog aria-label="Assignee picker" className="outline-none">
           {({ close }) => (
             <>
               {/* Search input */}

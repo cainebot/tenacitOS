@@ -1,3 +1,11 @@
+/**
+ * @deprecated Phase 89: Legacy hook replaced by useAgentChat (use-agent-chat.ts).
+ * Kept functional during v4.0 transition period per D-03.
+ * Will be removed at end of v4.0 per D-06.
+ *
+ * New code should use:
+ *   import { useAgentChat } from '@/hooks/use-agent-chat'
+ */
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'

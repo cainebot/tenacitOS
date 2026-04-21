@@ -6,16 +6,16 @@ import type {
   BoardWithColumns,
   CardRow,
   CardType,
-} from '@/types/workflow'
+} from '@/types/project'
 
 // ---- Board reads (server client) ----
 
-export async function getBoards(workflowId?: string): Promise<BoardRow[]> {
+export async function getBoards(projectId?: string): Promise<BoardRow[]> {
   const client = createServerClient()
   let query = client.from('boards').select('*')
 
-  if (workflowId) {
-    query = query.eq('workflow_id', workflowId)
+  if (projectId) {
+    query = query.eq('project_id', projectId)
   }
 
   const { data, error } = await query.order('name')
@@ -90,7 +90,7 @@ export async function getBoardCards(boardId: string): Promise<CardRow[]> {
 // ---- Board writes (service role client) ----
 
 export async function createBoard(
-  data: Pick<BoardRow, 'workflow_id' | 'name'> &
+  data: Pick<BoardRow, 'project_id' | 'name'> &
     Partial<Pick<BoardRow, 'description' | 'card_type_filter' | 'state_filter'>>
 ): Promise<BoardRow> {
   const client = createServiceRoleClient()
@@ -107,7 +107,7 @@ export async function createBoard(
 export async function updateBoard(
   id: string,
   data: Partial<
-    Pick<BoardRow, 'name' | 'description' | 'card_type_filter' | 'state_filter' | 'workflow_id' | 'scrum_master_agent_id'>
+    Pick<BoardRow, 'name' | 'description' | 'card_type_filter' | 'state_filter' | 'project_id' | 'project_lead_agent_id'>
   >
 ): Promise<BoardRow> {
   const client = createServiceRoleClient()
@@ -176,16 +176,27 @@ export async function updateColumn(
   const client = createServiceRoleClient()
   const { state_ids, ...columnData } = data
 
-  const { data: row, error } = await client
-    .from('board_columns')
-    .update(columnData)
-    .eq('column_id', columnId)
-    .select()
-    .single()
+  // When only state_ids is provided, columnData is {} — PostgREST cannot
+  // generate UPDATE...SET with zero columns and returns 0 rows (PGRST116→404).
+  // Skip the update and just fetch the row instead.
+  const hasColumnFields = Object.keys(columnData).length > 0
+
+  const { data: row, error } = hasColumnFields
+    ? await client
+        .from('board_columns')
+        .update(columnData)
+        .eq('column_id', columnId)
+        .select()
+        .single()
+    : await client
+        .from('board_columns')
+        .select()
+        .eq('column_id', columnId)
+        .single()
 
   if (error) throw error
 
-  // Replace board_column_states if provided
+  // Replace board_column_states: delete existing + insert new
   if (state_ids !== undefined) {
     const { error: delErr } = await client
       .from('board_column_states')

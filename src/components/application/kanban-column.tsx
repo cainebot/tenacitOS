@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, memo, useMemo, useCallback } from "react"
+import { type ReactNode, memo, useMemo, useCallback, useRef, useEffect } from "react"
 import { Plus } from "@untitledui/icons"
 import { cx } from "@circos/ui"
 import {
@@ -57,6 +57,7 @@ export function SortableCard({ id, columnId, activeCardId, children }: SortableC
       {...attributes}
       {...listeners}
       suppressHydrationWarning
+      data-card
       className={isBeingDragged ? "cursor-grabbing" : "cursor-pointer"}
     >
       {isBeingDragged ? (
@@ -91,7 +92,8 @@ export interface KanbanColumnProps<T extends KanbanColumnItem>
   isDragActive?: boolean
   onTitleChange?: (colId: string, title: string) => void
   onDelete?: (colId: string) => void
-  onAddCard?: () => void
+  onAddCard?: (columnId: string) => void
+  addingCard?: ReactNode
   renderCard: (item: T) => ReactNode
   className?: string
 }
@@ -107,6 +109,7 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
   activeCardId,
   isDragActive,
   onAddCard,
+  addingCard,
   renderCard,
   className,
 }: KanbanColumnProps<T>) {
@@ -127,44 +130,57 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
     onDelete?.(columnId)
   }, [columnId, onDelete])
 
-  const cardList = items.map((item) => (
-    <SortableCard key={item.id} id={item.id} columnId={columnId} activeCardId={activeCardId}>
-      {renderCard(item)}
-    </SortableCard>
-  ))
+  const handleAddCard = useCallback(() => {
+    onAddCard?.(columnId)
+  }, [columnId, onAddCard])
+
+  // Freeze column count during drag — prevents KanbanColumnHeader re-renders
+  // from count badge changes as cards move between columns (saves characterData mutations)
+  const lastStableCount = useRef(items.length)
+  useEffect(() => {
+    if (!isDragActive) lastStableCount.current = items.length
+  }, [items.length, isDragActive])
 
   return (
     <div className={cx("flex flex-col gap-3.5", columnWidthClasses[size], className)}>
-      <div className="sticky top-0 z-10 -mb-3.5 bg-primary pb-3.5">
+      <div className="sticky top-0 z-10 -mb-3.5 bg-primary pt-3.5 pb-3.5">
         <KanbanColumnHeader
           title={title}
           onTitleChange={handleTitleChange}
           onDelete={handleDelete}
-          onAddCard={onAddCard}
+          onAddCard={onAddCard ? handleAddCard : undefined}
           size={size}
-          count={items.length}
+          count={isDragActive ? lastStableCount.current : items.length}
           active={active}
         />
       </div>
 
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-        {isDragActive ? (
-          <div ref={setNodeRef} className="flex flex-col gap-2 rounded-lg min-h-[48px]">
-            {cardList.map((card) => (
-              <div key={card.key}>{card}</div>
-            ))}
-          </div>
-        ) : (
-          <div ref={setNodeRef} className={cx("flex flex-col gap-2 rounded-lg", activeCardId ? "min-h-[48px]" : "min-h-0")}>
+        <div
+          ref={setNodeRef}
+          className={cx(
+            "flex flex-col gap-2 rounded-lg",
+            isDragActive
+              ? items.length === 0 ? "min-h-[200px]" : "min-h-[48px]"
+              : "min-h-0",
+          )}
+          style={isDragActive ? undefined : { contain: "layout style" }}
+        >
+          {isDragActive ? (
+            items.map((item) => (
+              <SortableCard key={item.id} id={item.id} columnId={columnId} activeCardId={activeCardId}>
+                {renderCard(item)}
+              </SortableCard>
+            ))
+          ) : (
             <AnimatePresence initial={false}>
               {items.map((item) => (
                 <motion.div
                   key={item.id}
-                  layout
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
                 >
                   <SortableCard id={item.id} columnId={columnId} activeCardId={activeCardId}>
                     {renderCard(item)}
@@ -172,38 +188,26 @@ function KanbanColumnInner<T extends KanbanColumnItem>({
                 </motion.div>
               ))}
             </AnimatePresence>
-          </div>
-        )}
+          )}
+        </div>
       </SortableContext>
 
+      {/* Inline card creator slot */}
+      {addingCard}
+
       {/* Add card button */}
-      {isDragActive ? (
-        <button
-          type="button"
-          onClick={onAddCard}
-          className={cx(
-            "flex w-full cursor-pointer items-center gap-1 rounded-lg font-semibold text-tertiary transition-colors hover:bg-secondary_hover",
-            isMd ? "px-4 py-2.5 text-md" : "px-3.5 py-2.5 text-sm",
-          )}
-        >
-          <Plus className="size-5" />
-          <span className="px-0.5">Add card</span>
-        </button>
-      ) : (
-        <motion.button
-          layout
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          type="button"
-          onClick={onAddCard}
-          className={cx(
-            "flex w-full cursor-pointer items-center gap-1 rounded-lg font-semibold text-tertiary transition-colors hover:bg-secondary_hover",
-            isMd ? "px-4 py-2.5 text-md" : "px-3.5 py-2.5 text-sm",
-          )}
-        >
-          <Plus className="size-5" />
-          <span className="px-0.5">Add card</span>
-        </motion.button>
-      )}
+      <button
+        type="button"
+        data-add-card-button
+        onClick={handleAddCard}
+        className={cx(
+          "flex w-full cursor-pointer items-center gap-1 rounded-lg font-semibold text-tertiary transition-colors hover:bg-secondary_hover",
+          isMd ? "px-4 py-2.5 text-md" : "px-3.5 py-2.5 text-sm",
+        )}
+      >
+        <Plus className="size-5" />
+        <span className="px-0.5">Add card</span>
+      </button>
     </div>
   )
 }

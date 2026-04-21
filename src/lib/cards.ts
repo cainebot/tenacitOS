@@ -8,15 +8,15 @@ import type {
   CursorPage,
   Priority,
   CardType,
-  WorkflowStateRow,
+  ProjectStateRow,
   CustomFieldDefinitionRow,
-} from '@/types/workflow'
+} from '@/types/project'
 
 // ---- Card filter params for getCards() ----
 
 export interface CardFilters {
   board_id?: string
-  workflow_id?: string
+  project_id?: string
   state_id?: string
   card_type?: CardType
   assigned_agent_id?: string
@@ -35,7 +35,7 @@ export async function getCards(
 ): Promise<CursorPage<CardRow>> {
   const {
     board_id,
-    workflow_id,
+    project_id,
     state_id,
     card_type,
     assigned_agent_id,
@@ -57,6 +57,9 @@ export async function getCards(
     if (error) throw error
 
     let cards = data as CardRow[]
+
+    // Exclude subtasks from board view — they only appear inside their parent's detail panel
+    cards = cards.filter((c) => c.card_type !== 'subtask')
 
     // Apply remaining filters client-side (RPC already handles board visibility)
     if (card_type) cards = cards.filter((c) => c.card_type === card_type)
@@ -98,7 +101,7 @@ export async function getCards(
     .order('sort_order')
     .limit(limit + 1) // fetch one extra to determine has_more
 
-  if (workflow_id) query = query.eq('workflow_id', workflow_id)
+  if (project_id) query = query.eq('project_id', project_id)
   if (state_id) query = query.eq('state_id', state_id)
   if (card_type) query = query.eq('card_type', card_type)
   if (assigned_agent_id)
@@ -157,7 +160,7 @@ export async function getCard(id: string): Promise<CardDetail> {
         .order('created_at'),
       client
         .from('cards')
-        .select('card_id, title, card_type, state_id')
+        .select('card_id, title, card_type, state_id, priority, assigned_agent_id')
         .eq('parent_card_id', id),
       client
         .from('card_custom_field_values')
@@ -205,7 +208,7 @@ export async function getCard(id: string): Promise<CardDetail> {
     parent,
     children: childrenRes.data as Pick<
       CardRow,
-      'card_id' | 'title' | 'card_type' | 'state_id'
+      'card_id' | 'title' | 'card_type' | 'state_id' | 'priority' | 'assigned_agent_id'
     >[],
     breadcrumb,
     field_values: fieldValuesRes.data as CardCustomFieldValueRow[],
@@ -230,7 +233,7 @@ export async function getCardBreadcrumb(
   const client = createServerClient()
   const breadcrumb: Pick<CardRow, 'card_id' | 'title' | 'card_type' | 'code'>[] = []
 
-  // Start from the card itself and walk up parent chain (max 4 levels = subtask→task→story→epic)
+  // Start from the card itself and walk up parent chain (max depth 2 = subtask→level2→epic; MAX_LEVELS kept at 4 as defensive headroom)
   let currentId: string | null = cardId
   let level = 0
   const MAX_LEVELS = 4
@@ -254,11 +257,14 @@ export async function getCardBreadcrumb(
 
     const { data: ancestor, error: ancestorErr } = await client
       .from('cards')
-      .select('card_id, title, card_type, parent_card_id')
+      .select('card_id, title, card_type, code, parent_card_id')
       .eq('card_id', currentId)
       .single()
 
-    if (ancestorErr) break
+    if (ancestorErr) {
+      console.warn('[getCardBreadcrumb] Failed to fetch ancestor', currentId, ancestorErr.message)
+      break
+    }
 
     const ancestorRow = ancestor as CardRow & { parent_card_id: string | null }
     breadcrumb.unshift({
@@ -278,7 +284,7 @@ export async function getCardBreadcrumb(
 // ---- Card writes (service role client) ----
 
 export async function createCard(
-  data: Pick<CardRow, 'workflow_id' | 'state_id' | 'card_type' | 'title'> &
+  data: Pick<CardRow, 'project_id' | 'state_id' | 'card_type' | 'title'> &
     Partial<
       Pick<
         CardRow,
@@ -341,16 +347,78 @@ export async function deleteCard(id: string): Promise<void> {
 export async function moveCard(
   cardId: string,
   stateId: string,
-  movedBy: string
+  movedBy: string,
+  sortOrder?: string,
 ): Promise<void> {
   const client = createServiceRoleClient()
-  const { error } = await client.rpc('move_card', {
+
+  // If sortOrder not provided, fetch current sort_order to preserve it.
+  // This maintains backward compatibility with callers that don't compute sort keys
+  // (e.g. useCardDetail.ts status dropdown). Phase 69/70 will ensure all callers
+  // pass sort_order explicitly via the Zustand store.
+  let effectiveSortOrder = sortOrder
+  if (effectiveSortOrder === undefined) {
+    const { data } = await client
+      .from('cards')
+      .select('sort_order')
+      .eq('card_id', cardId)
+      .single()
+    effectiveSortOrder = data?.sort_order ?? ''
+  }
+
+  const { error } = await client.rpc('move_card_with_order', {
     p_card_id: cardId,
     p_new_state_id: stateId,
     p_moved_by: movedBy,
+    p_sort_order: effectiveSortOrder,
   })
 
   if (error) throw error
+}
+
+// ---- Phase 73: Sync-event-aware move (server-side helper) ----
+
+export interface MoveCardSyncResult {
+  cardId: string
+  acceptedSyncId: number
+  clientMutationId: string | null
+}
+
+/**
+ * moveCardWithSyncEvent — server-side card move that also emits a
+ * board_sync_events row in the same transaction.
+ *
+ * Used by server actions or other server-side callers that want causal
+ * event tracking. The HTTP route variant handles browser-side calls.
+ */
+export async function moveCardWithSyncEvent(
+  cardId: string,
+  stateId: string,
+  movedBy: string,
+  sortOrder: string,
+  boardId: string,
+  clientId?: string,
+  clientMutationId?: string,
+): Promise<MoveCardSyncResult> {
+  const client = createServiceRoleClient()
+
+  const { data: syncId, error } = await client.rpc('move_card_with_sync_event', {
+    p_card_id:     cardId,
+    p_new_state_id: stateId,
+    p_moved_by:    movedBy,
+    p_sort_order:  sortOrder,
+    p_board_id:    boardId,
+    p_client_id:   clientId ?? null,
+    p_mutation_id: clientMutationId ?? null,
+  })
+
+  if (error) throw error
+
+  return {
+    cardId,
+    acceptedSyncId: syncId as number,
+    clientMutationId: clientMutationId ?? null,
+  }
 }
 
 // ---- GDPR anonymization ----
@@ -364,7 +432,7 @@ export async function moveCard(
  * - Clears PII custom field values (text, email, url types)
  * - Adds 'gdpr-optout' label
  * - Moves card to a done-category state (lost equivalent)
- * - Logs a gdpr_anonymize action to card_activity
+ * - Logs a gdpr_anonymize action to activity_log
  */
 export async function gdprAnonymizeCard(cardId: string): Promise<CardRow> {
   const client = createServiceRoleClient()
@@ -382,14 +450,14 @@ export async function gdprAnonymizeCard(cardId: string): Promise<CardRow> {
   // Step 2: Find a done-category state — prefer one named "lost"
   let lostStateId: string | null = null
   const { data: doneStates } = await client
-    .from('workflow_states')
+    .from('project_states')
     .select('state_id, name, category')
-    .eq('workflow_id', card.workflow_id)
+    .eq('project_id', card.project_id)
     .eq('category', 'done')
     .order('position')
 
   if (doneStates && doneStates.length > 0) {
-    const states = doneStates as WorkflowStateRow[]
+    const states = doneStates as ProjectStateRow[]
     const lostState = states.find((s) =>
       s.name.toLowerCase().includes('lost')
     )
@@ -491,15 +559,18 @@ export async function gdprAnonymizeCard(cardId: string): Promise<CardRow> {
 
   if (updateErr) throw updateErr
 
-  // Step 9: Log GDPR anonymization to card_activity
+  // Step 9: Log GDPR anonymization to activity_log
   const { error: activityErr } = await client
-    .from('card_activity')
+    .from('activity_log')
     .insert({
       card_id: cardId,
-      actor: 'system',
+      actor_type: 'system',
+      actor_id: 'system',
       action: 'gdpr_anonymize',
-      old_value: { title: card.title },
-      new_value: { title: '[GDPR Removed]' },
+      details: {
+        old_value: { title: card.title },
+        new_value: { title: '[GDPR Removed]' },
+      },
     })
   if (activityErr) throw activityErr
 

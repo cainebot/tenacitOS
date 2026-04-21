@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import type { BoardWithColumns, CardRow } from '@/types/workflow'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import type { BoardWithColumns, CardRow } from '@/types/project'
 
 export interface BoardData {
   board: BoardWithColumns | null
   cards: CardRow[]
+  maxSyncId: number
   loading: boolean
   error: string | null
   refetch: () => Promise<void>
@@ -55,18 +56,25 @@ function assignCodes(cards: CardRow[], boardName: string): CardRow[] {
 export function useBoardData(boardId: string): BoardData {
   const [board, setBoard] = useState<BoardWithColumns | null>(null)
   const [cards, setCards] = useState<CardRow[]>([])
+  const [maxSyncId, setMaxSyncId] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const hasLoaded = useRef(false)
 
   const fetchData = useCallback(async () => {
     if (!boardId) return
-    setLoading(true)
+    if (!hasLoaded.current) {
+      setLoading(true)
+    }
     setError(null)
 
     try {
-      const [boardRes, cardsRes] = await Promise.all([
+      // Co-fetch board, cards, and max-sync-id in one Promise.all to avoid race conditions
+      // (RESEARCH Pitfall 4: maxSyncId must be fetched in the same request batch as board+cards)
+      const [boardRes, cardsRes, syncRes] = await Promise.all([
         fetch(`/api/boards/${boardId}`),
         fetch(`/api/cards?board_id=${boardId}`),
+        fetch(`/api/boards/${boardId}/max-sync-id`),
       ])
 
       if (!boardRes.ok) {
@@ -79,8 +87,17 @@ export function useBoardData(boardId: string): BoardData {
       const boardData: BoardWithColumns = await boardRes.json()
       const cardsData: { data: CardRow[] } = await cardsRes.json()
 
+      // Parse max-sync-id — non-fatal, default to 0 if request fails
+      let syncMaxId = 0
+      if (syncRes.ok) {
+        const syncData: { max_sync_id: number } = await syncRes.json()
+        syncMaxId = syncData.max_sync_id ?? 0
+      }
+
       setBoard(boardData)
       setCards(assignCodes(cardsData.data ?? [], boardData.name))
+      setMaxSyncId(syncMaxId)
+      hasLoaded.current = true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load board data')
     } finally {
@@ -89,8 +106,9 @@ export function useBoardData(boardId: string): BoardData {
   }, [boardId])
 
   useEffect(() => {
+    hasLoaded.current = false
     fetchData()
   }, [fetchData])
 
-  return { board, cards, loading, error, refetch: fetchData }
+  return { board, cards, maxSyncId, loading, error, refetch: fetchData }
 }

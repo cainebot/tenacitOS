@@ -211,10 +211,10 @@ export function Tab({ className, children, ...props }: TabProps) {
               "px-3 py-2",
             )
           : cx(
-              "inline-flex items-center gap-2",
+              "inline-flex items-center justify-center gap-2",
               "transition-all duration-150 ease-in-out",
               "text-quaternary hover:text-secondary",
-              "selected:text-brand-secondary selected:border-b-2 selected:border-brand-600 selected:-mb-px",
+              "selected:text-brand-secondary selected:border-b-2 selected:border-brand-500 selected:-mb-px",
               size === "sm" ? "px-1 py-1.5 text-sm" : "px-1 py-2 text-sm",
             ),
         fullWidth && "flex-1",

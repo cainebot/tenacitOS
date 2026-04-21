@@ -1,14 +1,15 @@
 import React from 'react'
 
-export const MENTION_REGEX = /@([\w-]+)/g
+export const MENTION_REGEX = /@([\w-]+)/gi
 
 /**
  * Parse all @mentions from a string.
  * Returns an array of mention names (without the @ prefix).
+ * Case-insensitive: @Pomni and @pomni both match (GROUP-04, D-11).
  */
 export function parseMentions(text: string): string[] {
   const matches: string[] = []
-  const regex = new RegExp(MENTION_REGEX.source, 'g')
+  const regex = new RegExp(MENTION_REGEX.source, 'gi')
   let match: RegExpExecArray | null
   while ((match = regex.exec(text)) !== null) {
     matches.push(match[1])
@@ -22,7 +23,7 @@ export function parseMentions(text: string): string[] {
  */
 export function renderMentionText(text: string): React.ReactNode[] {
   const parts: React.ReactNode[] = []
-  const regex = new RegExp(MENTION_REGEX.source, 'g')
+  const regex = new RegExp(MENTION_REGEX.source, 'gi')
   let lastIndex = 0
   let match: RegExpExecArray | null
   let key = 0

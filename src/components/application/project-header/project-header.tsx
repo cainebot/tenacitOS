@@ -1,7 +1,7 @@
 "use client"
 
 import { type FC, type ReactNode } from "react"
-import { ChevronDown, Star01, List, Calendar, PieChart03 } from "@untitledui/icons"
+import { ChevronDown, Star01, List, Calendar, PieChart03, Users01, File06 } from "@untitledui/icons"
 import { ButtonUtility, AvatarGroup, Tabs, TabList, Tab, TabPanel, cx } from "@circos/ui"
 import { ProjectCover, type ProjectCoverValue } from "../project-cover/project-cover"
 import { Kanban } from "@/components/icons/kanban-icon"
@@ -36,12 +36,14 @@ export interface ProjectHeaderProps {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_TABS: ProjectHeaderTab[] = [
+  { id: "overview", label: "Overview", icon: File06 },
   { id: "list", label: "List", icon: List },
   { id: "board", label: "Board", icon: Kanban },
   { id: "timeline", label: "Timeline", icon: ChartNoAxesGantt },
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "workflow", label: "Workflow", icon: Workflow },
   { id: "dashboard", label: "Dashboard", icon: PieChart03 },
+  { id: "team-chart", label: "Team Chart", icon: Users01 },
 ]
 
 // ---------------------------------------------------------------------------
@@ -63,7 +65,7 @@ export function ProjectHeader({
   return (
     <div className={cx("flex flex-col", className)}>
       {/* Title bar */}
-      <div className="flex items-center justify-between px-6 py-2">
+      <div className="flex items-center justify-between px-6 pt-4 pb-2">
         {/* Left side */}
         <div className="flex items-center gap-2.5">
           <ProjectCover value={cover} onChange={onCoverChange} size="sm" />

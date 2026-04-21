@@ -1,33 +1,49 @@
+/**
+ * @deprecated Phase 89: Legacy compatibility shim.
+ * Converts PATCH /read into message_receipts inserts.
+ * Will be removed at end of v4.0 per D-06.
+ */
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceRoleClient } from '@/lib/supabase'
+import { createServerClient, createServiceRoleClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params: _params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
+  const supabase = createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await request.json()
-
-  const messageIds = body.message_ids
-  if (!Array.isArray(messageIds) || messageIds.length === 0) {
-    return NextResponse.json({ error: 'message_ids array is required' }, { status: 400 })
+  const messageIds: string[] = body.message_ids ?? []
+  if (messageIds.length === 0) {
+    return NextResponse.json({ error: 'message_ids required' }, { status: 400 })
   }
 
-  const supabase = createServiceRoleClient()
-
-  const { data, error } = await supabase
-    .from('agent_messages')
-    .update({ read_at: new Date().toISOString() })
+  // Look up conversation_ids for each message
+  const serviceClient = createServiceRoleClient()
+  const { data: msgs } = await serviceClient
+    .from('messages')
+    .select('message_id, conversation_id')
     .in('message_id', messageIds)
-    .eq('recipient_agent_id', id)
-    .is('read_at', null)
-    .select('message_id')
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!msgs || msgs.length === 0) {
+    return NextResponse.json({ error: 'Messages not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ updated: data?.length ?? 0 })
+  // Insert 'read' receipts into message_receipts
+  const receipts = msgs.map((m: { message_id: string; conversation_id: string }) => ({
+    message_id: m.message_id,
+    conversation_id: m.conversation_id,
+    participant_id: user.id,
+    status: 'read',
+  }))
+
+  await serviceClient.from('message_receipts').upsert(receipts, {
+    onConflict: 'message_id,participant_id,status',
+  })
+
+  return NextResponse.json({ ok: true })
 }

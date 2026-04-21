@@ -1,3 +1,5 @@
+export { Carousel, CarouselContext, useCarousel } from "./carousel/carousel-base"
+export { ChartLegendContent, ChartTooltipContent, ChartActiveDot, selectEvenlySpacedItems } from "./charts/charts-base"
 export { Modal, ModalHeader, ModalBody, ModalFooter } from "./modal"
 export type { ModalProps, ModalSize } from "./modal"
 
@@ -24,6 +26,9 @@ export type { EmptyStateProps } from "./empty-state"
 
 export { LoadingIndicator } from "./loading-indicator"
 export type { LoadingIndicatorProps, LoadingSize } from "./loading-indicator"
+
+export { Skeleton } from "./skeleton"
+export type { SkeletonProps, SkeletonVariant, SkeletonSize } from "./skeleton"
 
 export { AppNavigation } from "./app-navigation"
 export type { AppNavigationProps, NavItem } from "./app-navigation"

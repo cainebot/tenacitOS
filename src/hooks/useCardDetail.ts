@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { CardDetail, CustomFieldDefinitionRow } from '@/types/workflow'
+import type { CardDetail, CustomFieldDefinitionRow } from '@/types/project'
+import { useBoardStore } from '@/stores/board-store'
 
 interface UseCardDetailReturn {
   card: CardDetail | null
@@ -14,6 +15,7 @@ interface UseCardDetailReturn {
   deleteCard: () => Promise<void>
   reorderField: (fieldId: string, newPosition: number, type: 'core' | 'custom') => Promise<void>
   refetch: () => Promise<void>
+  appendComment: (author: string, text: string) => void
 }
 
 export function useCardDetail(cardId: string | null): UseCardDetailReturn {
@@ -25,8 +27,8 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
   // Track in-flight field updates to implement last-write-wins
   const updateTimestamps = useRef<Record<string, number>>({})
 
-  const fetchCard = useCallback(async (id: string) => {
-    setLoading(true)
+  const fetchCard = useCallback(async (id: string, silent = false) => {
+    if (!silent) setLoading(true)
     setError(null)
     try {
       const res = await fetch(`/api/cards/${id}`)
@@ -38,9 +40,9 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
       const data: CardDetail = await res.json()
       setCard(data)
 
-      // Fetch field definitions in parallel using the card's workflow and type
+      // Fetch field definitions in parallel using the card's project and type
       const fieldsRes = await fetch(
-        `/api/workflows/${data.workflow_id}/fields?card_type=${data.card_type}`
+        `/api/projects/${data.project_id}/fields?card_type=${data.card_type}`
       )
       if (fieldsRes.ok) {
         const defs: CustomFieldDefinitionRow[] = await fieldsRes.json()
@@ -63,9 +65,53 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
     }
   }, [cardId, fetchCard])
 
+  // Subscribe to board store — sync non-positional field changes (from patchCardInStore or
+  // Realtime updates that patched the store) into local detail state without a refetch.
+  // Uses .subscribe() (imperative) not useBoardStore() (reactive) to avoid coupling render cycles.
+  useEffect(() => {
+    if (!cardId) return
+
+    const unsub = useBoardStore.subscribe((state) => {
+      // Find this card in the board store columns
+      for (const col of state.columns) {
+        const storeCard = col.items.find(c => c.card_id === cardId)
+        if (storeCard) {
+          setCard(prev => {
+            if (!prev) return prev
+            // Equality check — avoid unnecessary re-renders and infinite loops
+            if (
+              prev.title === storeCard.title &&
+              prev.priority === storeCard.priority &&
+              prev.assigned_agent_id === storeCard.assigned_agent_id &&
+              prev.due_date === storeCard.due_date &&
+              JSON.stringify(prev.labels) === JSON.stringify(storeCard.labels) &&
+              prev.description === storeCard.description &&
+              prev.state_id === storeCard.state_id
+            ) {
+              return prev // no change
+            }
+            return {
+              ...prev,
+              title: storeCard.title,
+              priority: storeCard.priority,
+              assigned_agent_id: storeCard.assigned_agent_id,
+              due_date: storeCard.due_date,
+              labels: storeCard.labels,
+              description: storeCard.description ?? prev.description,
+              state_id: storeCard.state_id,
+            }
+          })
+          return
+        }
+      }
+    })
+
+    return unsub
+  }, [cardId])
+
   const refetch = useCallback(async () => {
     if (cardId) {
-      await fetchCard(cardId)
+      await fetchCard(cardId, true)
     }
   }, [cardId, fetchCard])
 
@@ -197,7 +243,7 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
         })
 
         try {
-          const res = await fetch(`/api/workflows/${fieldDef.workflow_id}/fields/${fieldId}`, {
+          const res = await fetch(`/api/projects/${fieldDef.project_id}/fields/${fieldId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ position: newPosition }),
@@ -211,7 +257,7 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
         }
       } else {
         // Core field order — stored in localStorage
-        const storageKey = `card-field-order-${card.workflow_id}`
+        const storageKey = `card-field-order-${card.project_id}`
         const defaultOrder = ['card_type', 'priority', 'assigned_agent_id', 'due_date', 'labels']
         const stored = localStorage.getItem(storageKey)
         const currentOrder: string[] = stored ? JSON.parse(stored) : defaultOrder
@@ -228,6 +274,20 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
     [card, fieldDefs, fetchCard]
   )
 
+  const appendComment = useCallback((author: string, text: string) => {
+    setCard(prev => {
+      if (!prev) return prev
+      const optimistic: CardDetail['comments'][number] = {
+        comment_id: `optimistic-${Date.now()}`,
+        card_id: prev.card_id,
+        author,
+        text,
+        created_at: new Date().toISOString(),
+      }
+      return { ...prev, comments: [...prev.comments, optimistic] }
+    })
+  }, [])
+
   return {
     card,
     fieldDefs,
@@ -239,5 +299,6 @@ export function useCardDetail(cardId: string | null): UseCardDetailReturn {
     deleteCard,
     reorderField,
     refetch,
+    appendComment,
   }
 }

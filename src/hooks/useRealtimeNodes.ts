@@ -6,6 +6,7 @@ import type { NodeRow } from '@/types/supabase'
 
 export interface UseRealtimeNodesResult {
   nodes: NodeRow[]
+  activeNodes: NodeRow[]
   loading: boolean
   error: string | null
   resync: () => Promise<void>
@@ -42,8 +43,12 @@ export function useRealtimeNodes(): UseRealtimeNodesResult {
     // Full resync on mount before subscribing
     fetchAllNodes()
 
+    // Unique topic per mount so React StrictMode's double-invoke in dev
+    // doesn't reuse an already-subscribed channel (Supabase caches by topic
+    // and rejects `.on()` after `.subscribe()`).
+    const topic = `nodes-realtime-${Math.random().toString(36).slice(2)}`
     const channel = supabase
-      .channel('nodes-realtime')
+      .channel(topic)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'nodes' },
@@ -71,5 +76,11 @@ export function useRealtimeNodes(): UseRealtimeNodesResult {
     }
   }, [fetchAllNodes, supabase])
 
-  return { nodes, loading, error, resync }
+  // Phase 64.5.2-04: activeNodes excludes soft-deleted (deprovisioned_at IS NOT NULL).
+  // Mesh tile and downstream UI consumers MUST use activeNodes; the raw `nodes` is
+  // preserved for callers (e.g. (dashboard)/layout.tsx) that already accommodate
+  // historical/deprovisioned rows.
+  const activeNodes = nodes.filter((n) => !n.deprovisioned_at)
+
+  return { nodes, activeNodes, loading, error, resync }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCards, createCard } from '@/lib/cards'
-import type { CardType, Priority } from '@/types/workflow'
+import type { CardType, Priority } from '@/types/project'
 
 // GET /api/cards — list cards with cursor-based pagination and filters
 // Query params: board_id, workflow_id, state_id, card_type, assigned_agent_id,
@@ -65,14 +65,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { title, workflow_id, state_id, card_type } = body
+  const { title, state_id, card_type } = body
+  const project_id = (body.project_id ?? body.workflow_id) as string | undefined
 
   if (!title || typeof title !== 'string' || !title.trim()) {
     return NextResponse.json({ message: 'title is required' }, { status: 400 })
   }
-  if (!workflow_id || typeof workflow_id !== 'string') {
+  if (!project_id || typeof project_id !== 'string') {
     return NextResponse.json(
-      { message: 'workflow_id is required' },
+      { message: 'project_id (or workflow_id) is required' },
       { status: 400 }
     )
   }
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     )
   }
-  const validCardTypes: CardType[] = ['epic', 'story', 'task', 'subtask', 'bug']
+  const validCardTypes: CardType[] = ['epic', 'story', 'task', 'subtask', 'bug', 'spike', 'research']
   if (!card_type || !validCardTypes.includes(card_type as CardType)) {
     return NextResponse.json(
       {
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
   try {
     const card = await createCard({
       title: (title as string).trim(),
-      workflow_id: workflow_id as string,
+      project_id: project_id as string,
       state_id: state_id as string,
       card_type: card_type as CardType,
       parent_card_id: (body.parent_card_id as string | undefined) ?? undefined,
