@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import type { FC } from "react";
 import {
-  BarChartSquare02,
   Building06,
-  Calendar,
   ChevronRight,
   Data,
+  Home02,
+  MessageChatCircle,
   Rows01,
   Server01,
+  Settings01,
   ShieldTick,
 } from "@untitledui/icons";
 import {
@@ -43,10 +44,13 @@ function ProjectIcon({ color, icon }: { color: ProjectCoverColorId; icon: Projec
   );
 }
 
-// Navigation items
+// Navigation items — D-27 order (Phase 71):
+// Office / Chat / Projects / Agents / Approvals / Skills / Organization / Settings.
+// Nodes is nested under Settings → Operations. Dashboard/Calendar/Workspaces are intentionally absent.
 const navItems: (NavItemType | NavItemDividerType)[] = [
   { divider: true, label: "General" },
-  { label: "Dashboard", href: "/", icon: BarChartSquare02 },
+  { label: "Office", href: "/office", icon: Home02 },
+  { label: "Chat", href: "/chat", icon: MessageChatCircle },
   {
     label: "Projects",
     icon: Rows01,
@@ -57,25 +61,36 @@ const navItems: (NavItemType | NavItemDividerType)[] = [
       { label: "See all", href: "/projects", iconTrailing: ChevronRight },
     ],
   },
-  { label: "Organization", href: "/organization", icon: Building06 },
-  { label: "Calendar", href: "/calendar", icon: Calendar },
   { divider: true, label: "Agents" },
   { label: "Agents", href: "/agents", icon: BotIcon },
-  { label: "Skills", href: "/skills", icon: Data },
-  { label: "Workspaces", href: "/workspaces", icon: Server01 },
   { label: "Approvals", href: "/approvals", icon: ShieldTick, badge: <ApprovalsBadge /> },
+  { label: "Skills", href: "/skills", icon: Data },
+  { divider: true, label: "System" },
+  { label: "Organization", href: "/organization", icon: Building06 },
+  {
+    label: "Settings",
+    href: "/settings",
+    icon: Settings01,
+    items: [
+      { label: "Operations", items: [
+        { label: "Nodes", href: "/settings/nodes", icon: Server01 },
+      ]},
+    ],
+  },
 ];
 
-// Mock agent data for the agent board panel
+// Mock agent data for the agent board panel — 5-agent roster per D-09 (Phase 71):
+// jax / kinger / pomni / ragatha / zooble. gangle + kaufmo removed in v1.9.
 function AgentBoardContent() {
   return (
-    <AgentSubNav title="Agents" count={4}>
-      <AgentListItem name="All agents" subtitle="7 total" badgeText="5 active" badgeColor="success" onClick={() => {}} />
+    <AgentSubNav title="Agents" count={5}>
+      <AgentListItem name="All agents" subtitle="5 total" badgeText="5 active" badgeColor="success" onClick={() => {}} />
       <AgentSubNavDivider />
-      <AgentListItem name="Ragatha" badgeText="Inactive" badgeColor="error" onClick={() => {}} />
-      <AgentListItem name="Pomni" subtitle="Scrum master" badgeText="IDLE" badgeColor="indigo" onClick={() => {}} />
-      <AgentListItem name="Kinger" badgeText="Working" badgeColor="success" onClick={() => {}} />
       <AgentListItem name="Jax" badgeText="Working" badgeColor="success" onClick={() => {}} />
+      <AgentListItem name="Kinger" badgeText="Working" badgeColor="success" onClick={() => {}} />
+      <AgentListItem name="Pomni" subtitle="Scrum master" badgeText="IDLE" badgeColor="indigo" onClick={() => {}} />
+      <AgentListItem name="Ragatha" badgeText="Inactive" badgeColor="error" onClick={() => {}} />
+      <AgentListItem name="Zooble" badgeText="Working" badgeColor="success" onClick={() => {}} />
     </AgentSubNav>
   );
 }
