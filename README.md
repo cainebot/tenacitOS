@@ -1,3 +1,18 @@
+> ⚠️ **This repository has been absorbed into [cainebot/CircOS](https://github.com/cainebot/CircOS)**
+> at path `control-panel/` on **2026-04-21**.
+>
+> This repository is **archived for historical reference**. All active development now
+> happens in the CircOS monorepo. Pre-absorb history is preserved under the tag
+> [`absorbed-into-circos-2026-04-21`](https://github.com/cainebot/tenacitOS/releases/tag/absorbed-into-circos-2026-04-21).
+>
+> For new clones use:
+> ```bash
+> git clone git@github.com:cainebot/CircOS.git
+> cd CircOS/control-panel
+> ```
+
+---
+
 # TenacitOS — Mission Control
 
 A real-time dashboard and control center for [OpenClaw](https://openclaw.ai) AI agent instances. Built with Next.js, React 19, and Tailwind CSS v4.
