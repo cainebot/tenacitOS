@@ -58,6 +58,16 @@ interface AgentSession {
   createdAt?: string;
 }
 
+// ME-02 — shape of an agent entry in openclaw.json. Replaces the
+// legacy `agent: any` cast at the config.agents.list.map call below.
+// Keep narrow on purpose: the file is operator-controlled local config,
+// not user input.
+interface OpenClawAgent {
+  id: string;
+  name?: string;
+  workspace: string;
+}
+
 async function getAgentStatusFromGateway(): Promise<
   Record<string, { isActive: boolean; currentTask: string; lastSeen: number }>
 > {
@@ -189,7 +199,7 @@ export async function GET() {
     // Try gateway first, fallback to file-based
     const gatewayStatus = await getAgentStatusFromGateway();
 
-    const agents = config.agents.list.map((agent: any) => {
+    const agents = (config.agents.list as OpenClawAgent[]).map((agent) => {
       const agentInfo = AGENT_CONFIG[agent.id as keyof typeof AGENT_CONFIG] || {
         emoji: "🤖",
         color: "#666",
